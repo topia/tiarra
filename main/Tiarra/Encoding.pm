@@ -33,6 +33,7 @@ sub new {
     } else {
 	my $this = {};
 	bless $this, $class;
+	$this->_init(%options) if $this->can('_init');
 	$this->set($str, $icode, $encode, %options);
     }
 }
