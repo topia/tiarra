@@ -74,9 +74,18 @@ sub close {
 	croak "already detached; can't close!";
     }
 
-    my $sock = $this->sock;
+    $this->shutdown(2);
     $this->detach;
-    $sock->shutdown(2);
+}
+
+sub shutdown {
+    my ($this, $type) = @_;
+
+    if (!defined $this->sock) {
+	croak "already detached; can't shutdown!";
+    }
+
+    $this->sock->shutdown($type);
 }
 
 sub install {
