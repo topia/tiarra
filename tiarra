@@ -423,8 +423,12 @@ sub shutdown {
     } elsif ($terminated == 2) {
 	printmsg("Second Terminate Request; Force Exit! [$msg]");
 	# force
+	print "cleanup ModuleManager...";
 	ModuleManager->shared_manager->terminate;
+	print "done.\n";
+	print "cleanup TerminateManager...";
 	Tiarra::TerminateManager->terminate('main');
+	print "done.\n";
 	exit;
     } else {
 	printmsg("Third Terminate Request; Fatal Exit! [$msg]");
@@ -434,5 +438,7 @@ sub shutdown {
 }
 
 my $exitval = main;
+print "cleanup TerminateManager...";
 Tiarra::TerminateManager->terminate('main');
+print "done.\n";
 exit $exitval;
