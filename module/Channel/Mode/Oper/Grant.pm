@@ -13,7 +13,7 @@ use Timer;
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
-    $this->{queue} = {}; # network name => [[IrcIO::Server,channel(short),nick]]
+    $this->{queue} = {}; # network name => [[channel(short),nick], ...]
     $this->{timer} = undef; # queueが空でない時だけ必要になるTimer
     $this;
 }
@@ -75,7 +75,7 @@ sub push_to_queue {
 	    if (!defined $queue) {
 		$queue = $this->{queue}->{$server->network_name} = [];
 	    }
-	    push @$queue,[$server,$ch_short,$nick];
+	    push @$queue,[$ch_short,$nick];
 	    $this->prepare_timer;
 	})->install;
 }
@@ -93,34 +93,32 @@ sub prepare_timer {
 
 		# 鯖毎に3つずつ消化する。
 		# チャンネル毎に最大３つずつ纏める。
-		my $queue_has_elem;
-		foreach my $queue (values %{$this->{queue}}) {
+		foreach my $network_name (keys %{$this->{queue}}) {
+		    my $queue = $this->{queue}->{$network_name};
+		    my $server = $this->_runloop->network($network_name);
 		    my $channels = {}; # ch_shortname => [nick,nick,...]
-		    for (my $i = 0; $i < @$queue && $i < 3; $i++) {
-			my $elem = $queue->[$i];
-			my $nicks = $channels->{$elem->[1]};
+		    for (my $i = 0; @$queue && $i < 3; $i++) {
+			my $elem = shift(@$queue);
+			my $nicks = $channels->{$elem->[0]};
 			if (!defined $nicks) {
-			    $nicks = $channels->{$elem->[1]} = [];
+			    $nicks = $channels->{$elem->[0]} = [];
 			}
-			push @$nicks,$elem->[2];
+			push @$nicks,$elem->[1];
 		    }
 		    while (my ($ch_short,$nicks) = each %$channels) {
-			$queue->[0]->[0]->send_message(
+			$server->send_message(
 			    IRCMessage->new(
 				Command => 'MODE',
 				Params => [$ch_short,
 					   '+'.('o' x @$nicks),
 					   @$nicks]));
 		    }
-		    splice @$queue,0,3;
-		    # キューが空でなければ$queue_has_elemに1を入れる。
-		    if (@$queue > 0) {
-			$queue_has_elem = 1;
-		    }
+		    # キューが空になったらキーごと消す。
+		    delete $this->{queue}->{$network_name} unless @$queue;
 		}
 
 		# 全てのキューが空になったら終了。
-		if (!$queue_has_elem) {
+		if (!%{$this->{queue}}) {
 		    $timer->uninstall;
 		    $this->{timer} = undef;
 		}
