@@ -229,12 +229,12 @@ sub _queue_retry {
     $this->state_reconnecting(1);
 
     $this->_cleanup if defined $this->{timer};
+    $this->{connecting} = undef;
     $this->{timer} = Timer->new(
 	Name => $this->_gen_msg('retry timer'),
 	After => 15,
 	Code => sub {
 	    $this->{timer} = undef;
-	    $this->{connecting} = undef;
 	    return if $this->finalizing;
 	    $this->reconnect;
 	})->install;
@@ -489,6 +489,7 @@ sub disconnect {
 sub _cleanup {
     my ($this, $mode) = @_;
 
+    $this->{connecting} = undef;
     if (defined $this->{connector}) {
 	$this->{connector}->interrupt;
 	$this->{connector} = undef;
