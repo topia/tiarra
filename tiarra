@@ -110,8 +110,15 @@ sub check_changelog {
 		$svnversion = <$fh>;
 		chomp $svnversion;
 	    } elsif (-e File::Spec->catdir($dir, '.svn')) {
+		use File::chdir;
 		(my $svndir = $dir) =~ s/'/'\''/;
-		$svnversion = `svnversion -n '$svndir'`;
+		do {
+		    local $CWD = $svndir;
+		    # special cleanup for taint check
+		    $ENV{PATH} =~ /^(.*)$/;
+		    local $ENV{PATH} = $1;
+		    $svnversion = `svnversion -n .`;
+		};
 	    }
 	    $version .= '+svn-' . $svnversion if defined $svnversion && length $svnversion;
 	    return;
