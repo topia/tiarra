@@ -57,12 +57,15 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
 
   - Auto::Utils(module/Auto/Utils.pm)
     + generate_reply_closures(...)	一般的な自動反応をするのに有用なクロージャを生成する。
+    + sendto_channel_closure(...)	チャンネル等に PRIVMSG / NOTICE を送るクロージャを生成する。
       一般的な使い方は Skelton.pm に書いておきました。
 
 * remark のあるオブジェクト
+  remark とは、オブジェクトに関連づけられた、自由に使える key/value pair です。
   remark 機能の存在するオブジェクトと、(あるなら)広く使われている既定の remark を挙げます。
   - IrcIO::Client
   - IrcIO::Server
+    再接続時には remark はクリアされません。
     + 情報取得系
       * server_hops		自分のつながっている server と、あるサーバの hop 数の対応を
 				(情報が得られたときに)記録しています。
@@ -93,3 +96,7 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
       * creation-time		RPL_CREATIONTIME が返した値。
   - PersonInChannel
   - PersonalInfo
+
+Local variables:
+mode: text
+End:
