@@ -29,9 +29,10 @@ use ExternalSocket;
 use Unicode::Japanese;
 use RunLoop;
 
-use SelfLoader;
-1;
-__DATA__
+# 複数のパッケージを混在させてるとSelfLoaderが使えない…？
+#use SelfLoader;
+#1;
+#__DATA__
 
 sub new {
     my ($class,$sockname) = @_;
