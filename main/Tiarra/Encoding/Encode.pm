@@ -57,14 +57,24 @@ sub _find_canon_encs {
 sub decode {
     my ($this, $str, $encoding) = @_;
 
-    $this->{str} = Encode::decode($this->_find_canon_encs($encoding), $str);
+    if (defined $str) {
+	if (ref($str) && !overload::Method($str,'""')) {
+	    croak "string neither scalar nor stringifiable";
+	}
+	# do stringify force to avoid bug on old Encode
+	$this->{str} = Encode::decode($this->_find_canon_encs($encoding), "$str");
+    }
     $this;
 }
 
 sub encode {
     my ($this, $encoding) = @_;
 
-    Encode::encode($this->_find_canon_encs($encoding), $this->{str});
+    if (defined $this->{str}) {
+	Encode::encode($this->_find_canon_encs($encoding), $this->{str});
+    } else {
+	undef;
+    }
 }
 
 sub getcode {
