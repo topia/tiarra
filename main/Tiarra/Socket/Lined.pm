@@ -21,7 +21,7 @@ sub new {
     $this->eol(utils->get_first_defined(
 	$opts{eol},
 	"\x0d\x0a"));
-    $this->{recvqueue} = [];
+    $this->{recv_queue} = [];
     $this;
 }
 
