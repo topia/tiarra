@@ -255,38 +255,40 @@ sub _receive_while_logging_in {
 		# single server mode
 		my $network = (RunLoop->shared_loop->networks_list)[0];
 
-		# send isupport
-		my $msg_tmpl = IRCMessage->new(
-		    Prefix => $prefix,
-		    Command => RPL_ISUPPORT,
-		    Params => [$current_nick],
-		   );
-		# last param is reserved for 'are supported...'
-		my $max_params = IRCMessage::MAX_PARAMS - 1;
-		my @params = ();
-		my $length = 0;
-		my $flush_msg = sub {
-		    if (@params) {
-			my $msg = $msg_tmpl->clone;
-			$msg->push(@params);
-			$msg->push('are supported by this server');
-			$this->send_message($msg);
+		if (defined $network) {
+		    # send isupport
+		    my $msg_tmpl = IRCMessage->new(
+			Prefix => $prefix,
+			Command => RPL_ISUPPORT,
+			Params => [$current_nick],
+		       );
+		    # last param is reserved for 'are supported...'
+		    my $max_params = IRCMessage::MAX_PARAMS - 1;
+		    my @params = ();
+		    my $length = 0;
+		    my $flush_msg = sub {
+			if (@params) {
+			    my $msg = $msg_tmpl->clone;
+			    $msg->push(@params);
+			    $msg->push('are supported by this server');
+			    $this->send_message($msg);
+			}
+			@params = ();
+			$length = 0;
+		    };
+		    foreach my $key (keys %{$network->isupport}) {
+			my $value = $network->isupport->{$key};
+			my $str = length($value) ? ($key.'='.$value) : $key;
+			$length += length($str) + 1; # $str and space
+			# 余裕を見て400バイトを越えたら行を分ける。
+			if ($length >= 400 || scalar(@params) >= $max_params) {
+			    $flush_msg->();
+			    $length = length($str);
+			}
+			push(@params, $str);
 		    }
-		    @params = ();
-		    $length = 0;
-		};
-		foreach my $key (keys %{$network->isupport}) {
-		    my $value = $network->isupport->{$key};
-		    my $str = length($value) ? ($key.'='.$value) : $key;
-		    $length += length($str) + 1; # $str and space
-		    # 余裕を見て400バイトを越えたら行を分ける。
-		    if ($length >= 400 || scalar(@params) >= $max_params) {
-			$flush_msg->();
-			$length = length($str);
-		    }
-		    push(@params, $str);
+		    $flush_msg->();
 		}
-		$flush_msg->();
 	    }
 	    $send_message->(RPL_MOTDSTART, "- $prefix Message of the Day -");
 	    foreach my $line (main::get_credit()) {
