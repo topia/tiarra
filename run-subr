@@ -1,4 +1,6 @@
 #!/bin/sh
+# $Id$
+# copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
 
 THISDIR="${THISDIR-$(dirname $0)}"
 [ "${DEBUG}" -ge 1 ] && echo "${THISDIR}/subr: start"
