@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: IrcIO.pm,v 1.19 2003/09/20 11:06:19 admin Exp $
+# $Id: IrcIO.pm,v 1.20 2004/01/27 14:25:29 admin Exp $
 # -----------------------------------------------------------------------------
 # IrcIOはIRCサーバー又はクライアントと接続し、IRCメッセージをやり取りする抽象クラスです。
 # -----------------------------------------------------------------------------
@@ -143,18 +143,21 @@ sub receive {
     }
     
     while (1) {
-	# CRLFが行の終わり。	
-	my $crlf_pos = index($this->{recvbuf},"\x0d\x0a");
-	if ($crlf_pos == -1) {
+	# CRLFまたはLFが行の終わり。	
+	my $newline_pos = index($this->{recvbuf},"\x0a");
+	if ($newline_pos == -1) {
 	    # 一行分のデータが届いていない。
 	    last;
 	}
 
-	my $current_line = substr($this->{recvbuf},0,$crlf_pos);
-	$this->{recvbuf} = substr($this->{recvbuf},$crlf_pos+2);
+	my $current_line = substr($this->{recvbuf},0,$newline_pos);
+	$this->{recvbuf} = substr($this->{recvbuf},$newline_pos+1);
 
-	push @{$this->{recv_queue}},IRCMessage->new(Line => $current_line,
-						    Encoding => $encoding);
+	# CRLFだった場合、末尾にCRが付いているので取る。
+	$current_line =~ s/\x0d$//;
+
+	push @{$this->{recv_queue}},IRCMessage->new(
+	    Line => $current_line, Encoding => $encoding);
     }
 }
 

@@ -1,3 +1,12 @@
+2004-01-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* main/NumericReply.pm: 追加
+	ニューメリックリプライをシンボルとして定義するクラス。
+	useで全シンボルをエクスポート。
+
+	* main/IrcIO.pm: 
+	CRが無く、LFだけで終わっているメッセージも受け入れる。
+	
 2004-01-23  Topia  <topia@clovery.jp>
 
 	* tiarra: $0 自体が symlink だったときに、@INC に symlink 先の
@@ -5,19 +14,19 @@
 	カレントディレクトリ・$0 のディレクトリは常に含むようにした。
 	(make_password): --make-password=password を可能にした。
 
-2004-01-23  phonohawk  <phonohawk@lycos.co.uk>
+2004-01-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra: 起動時オプション --make-password 追加。
 	make-passwordの機能をtiarra本体に移した。
 	
 	* make-password: 削除
 
-2004-01-20  phonohawk  <phonohawk@lycos.co.uk>
+2004-01-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Unicode/Japanese.pm:
 	同梱のUniJPを0.18から0.19に。JISの問題は解決。
 
-2004-01-14  phonohawk  <phonohawk@lycos.co.uk>
+2004-01-14  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Mask.pm:
 	マスクから作った正規表現をqrでコンパイルする際、
@@ -56,7 +65,7 @@
 	PRIVMSG/NOTICE のブロードキャストで、 network-suffix 付きの
 	チャンネルに送信してしまっていた。
 
-2003-11-09  phonohawk  <phonohawk@lycos.co.uk>
+2003-11-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra (help):
 	メッセージ中のstdinとstderrの間違いを修正。
@@ -77,7 +86,7 @@
 	single-server-mode 時に、クライアントから送られて来るメッセージに
 	network-suffix を付けるようにした。
 
-2003-10-25  phonohawk  <phonohawk@lycos.co.uk>
+2003-10-25  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IRCMessage.pm (serialize):
 	最後のパラメータが空文字列だった場合、コロンを残さない為に
@@ -86,7 +95,7 @@
 	* main/IrcIO/Server.pm (_receive_while_logging_in):
 	サーバーがERRORを返した時、その内容でdieするように。
 
-2003-10-24  phonohawk  <phonohawk@lycos.co.uk>
+2003-10-24  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Configuration/Block.pm:
 	$block->foo_bar('block') とした時、戻り値が常にブロックとなる。
@@ -106,7 +115,7 @@
 	* module/Auto/Alias.pm (message_arrived):
 	返り値がおかしかったのを修正。
 
-2003-10-19  phonohawk  <phonohawk@lycos.co.uk>
+2003-10-19  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO/Server.pm
 	(person_if_exists):
@@ -114,7 +123,7 @@
 	(_RPL_WHOREPLY):
 	サーバー名とnickの位置を間違えていたので修正。
 
-2003-10-16  phonohawk  <phonohawk@lycos.co.uk>
+2003-10-16  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/System/Raw.pm:
 	追加。Tiarraに改変されない生のメッセージをサーバーに送るためのモジュール。
@@ -138,12 +147,12 @@
 	single-server-mode 時の NICK 処理に RunLoop/set_current_nick を追加。
 	437 での if 条件であほなミスをしていたので修正。
 
-2003-10-12  phonohawk  <phonohawk@lycos.co.uk>
+2003-10-12  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IRCMessage.pm (serialize):
 	最後のパラメータがコロンを含んでいる時に、間違った文字列化をする問題を解決。
 
-2003-09-28  phonohawk  <phonohawk@lycos.co.uk>
+2003-09-28  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.el:
 	mmm-modeがインストールされていて、(require 'mmm-mode)または
@@ -216,7 +225,7 @@
 	Channel::Join::Connect の ブロックを TiarraDoc から再生成。
 	指定項目の変化はありません。
 
-2003-09-24  phonohawk  <phonohawk@lycos.co.uk>
+2003-09-24  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Multicast.pm (nick_p):
 	「|」を含むnickをnickと認識していなかったので修正。
@@ -224,7 +233,7 @@
 	* module/Log/Recent.pm:
 	configのcommandを小文字で書くとログが取られない問題を解決。
 
-2003-09-23  phonohawk  <phonohawk@lycos.co.uk>
+2003-09-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/ModuleManager.pm:
 	use Module::Useされたサブモジュールが破棄される時に、
@@ -245,7 +254,7 @@
 	* module/Log/Channel.pm:
 	configのcommandを小文字で書くとログが取られない問題を解決。
 
-2003-09-20  phonohawk  <phonohawk@lycos.co.uk>
+2003-09-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/ChannelInfo.pm, main/IRCMessage.pm,
 	main/PersonInChannel.pm, main/PersonalInfo.pm,
@@ -279,7 +288,7 @@
 	アドレスコピーなどの機能が使えない症状が無くなった。
 	$client_sent の numeric reply にコメントを補完。
 
-2003-08-12  phonohawk  <phonohawk@lycos.co.uk>
+2003-08-12  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/FunctionalVariable.pm:
 	追加。与えられた任意のハンドラを変数にtieする。
@@ -305,7 +314,7 @@
 	_inform_joinning_channelsをプライベートメソッドでなくした。
 	新しいメソッド名はinform_joinning_channels。
 
-2003-08-04  phonohawk  <phonohawk@lycos.co.uk>
+2003-08-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* makedoc:
 	追加。このスクリプトはdoc-src下のファイルとmodule下のモジュール、
@@ -400,12 +409,12 @@
 	* sample.conf:
 	mask 関連を修正。
 
-2003-07-28  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-28  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO/Server.pm (person_list):
 	追加。覚えている全てのPersonalInfoのリストを返す。
 
-2003-07-26  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-26  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra:
 	起動時に`-Dfoo'や`-Dfoo=bar'を指定すると、confに`@define foo'や
@@ -427,7 +436,7 @@
 	* main/Multicast.pm:
 	352(WHOREPLY)のチャンネル名にネットワーク名をアタッチするようにした。
 
-2003-07-23  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/InstantCapsule.pm:
 	SelfLoader使用中止。SelfLoaderでDESTROYが定義されると
@@ -437,7 +446,7 @@
 	コマンド「/VANISHDEBUG 1」でメッセージの改変される様子が見えるように。
 	現在残っている妙な不具合の原因が解り次第削除。
 
-2003-07-22  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-22  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Channel/Freeze.pm
 	(freeze):
@@ -447,13 +456,13 @@
 	凍結していないチャンネルをdefrostするとエラーが起こる問題を解決。
 	チャンネル名をマスクとして扱うように変更。
 
-2003-07-20  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO/Server.pm (_PART):
 	PART受信時、入っているどのチャンネルにも最早その人物が
 	居なくなった場合は、その人物についてのPersonalInfoを削除する。
 
-2003-07-19  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-19  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/ChannelInfo.pm (remark):
 	remarks()のエイリアスとしてremark()を使用可能に。
@@ -465,13 +474,13 @@
 	* main/IrcIO/Server.pm (_TOPIC): 
 	TOPICメッセージを受信した時、古いトピックを'old-topic'として註釈を付ける。
 
-2003-07-17  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-17  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.el (tiarra-conf-jump-to-block): 
 	ブロック名を入力し、その位置へジャンプするコマンド。
 	デフォルトでは C-c C-. 及び C-c . に割当てられている。
 
-2003-07-16  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-16  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.el (tiarra-conf-next-token):
 	追加。カレントバッファの現在のカーソル位置の次にあるトークンを返す。
@@ -484,14 +493,14 @@
 	プリプロセッサ指令があると変な動作をするバグ有り。
 	nextは M-n に、prevは M-p に割当てた。
 
-2003-07-10  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-10  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Channel/Freeze.pm:
 	追加。特定のチャンネルのNOTICEやPRIVMSGの中継を
 	一時的に中断するためのモジュール。
 	発言を見たくないがPARTはしたくない、といった場合に有効。
 
-2003-07-03  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-03  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Configuration/Block.pm (get):
 	$config->foo('random')のような呼出しを可能に。
@@ -508,19 +517,19 @@
 	作成されたクロージャに、発言内容としてundefを渡した場合、
 	何もせずに処理を終える。
 
-2003-06-21  phonohawk  <phonohawk@lycos.co.uk>
+2003-06-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra:
 	ActivePerlで起動時に出ていた警告を出ないように変更。
 	SIGHUPのハンドラをインストールする際の警告だった。
 
-2003-06-19  phonohawk  <phonohawk@lycos.co.uk>
+2003-06-19  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Multicast.pm (attach,detach) :
 	チャンネル/nickとネットワーク名の区切り文字として、二文字以上の文字列も使用可能に。
 	つまり、今後は区切り文字として「空白を含まない1文字以上の任意の文字列」を使う事が出来ます。
 
-2003-06-06  phonohawk  <phonohawk@lycos.co.uk>
+2003-06-06  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* PersonInChannel.pm (remark) :
 	明示的に二番目の引数にundefを渡すと、その註釈が削除される。
@@ -548,7 +557,7 @@
 	* IrcIO.pm (send) : 接続チェックの対象に $this->{sock}->connected も追加。
 	これが接続されてない状態で書き込もうとすると perl 自体がエラー落ちすることがあるらしい。
 
-2003-06-04  phonohawk  <phonohawk@lycos.co.uk>
+2003-06-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra (ipv6_enabled) : IPv6が有効かどうかを真偽値で返す。
 
@@ -559,7 +568,7 @@
 
 	* ChannelInfo.pm, PersonalInfo.pm: DESTROY時にエラーが起こる問題を解決。
 
-2003-05-27  phonohawk  <phonohawk@lycos.co.uk>
+2003-05-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* RunLoop.pm:
 	(notify_warn): 追加。全クライアントとコンソールに警告文を出力する。
@@ -571,7 +580,7 @@
 	* ExternalSocket.pm:
 	WantToWriteが返した真偽値によらず、常に「書き込みが必要」として処理していた問題を解決。
 
-2003-05-26  phonohawk  <phonohawk@lycos.co.uk>
+2003-05-26  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Timer.pm (new):
 	AtとAfter(又はInterval)が、両方とも指定されていなければcroakする。
@@ -581,7 +590,7 @@
 	%PREの評価結果がundefになった時に警告が出ていたのを修正。
 	@if文や@elsif文の評価結果がエラーになった時、そのエラー内容を表示していなかったので修正。
 
-2003-05-24  phonohawk  <phonohawk@lycos.co.uk>
+2003-05-24  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* IO/Socket/INET6.pm: 追加。
 	IO::Socket::INETをIPv6に移植。Socket6.pmが必要。
@@ -609,7 +618,7 @@
 	  無視する行を指定するクロージャを引数に取れるようになった。省略された場合は # で始まる行を無視する。(従来)
 	  del_value は削除出来た値の数を返すようになった。また、 value が未指定ならキーごと削除する。
 
-2003-05-21  phonohawk  <phonohawk@lycos.co.uk>
+2003-05-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.l: 追加。
 	  Noboruhiさんによるxyzzy用tiarra.conf編集モード。
@@ -621,7 +630,7 @@
 	  NOTICE/PRIVMSG の処理は面倒なので、これを自動的に処理する。
 	  sendto_channel_closure, generate_reply_closures に使用方法のコメントを追加。
 	
-2003-05-15  phonohawk  <phonohawk@lycos.co.uk>
+2003-05-15  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* conf:
 	  general/control-socket-nameを定義すると、外部プログラムからtiarraをコントロールする為の
@@ -641,7 +650,7 @@
 
 	* Log/Channel.pm: "ID: synchronize"で外部からのログの同期を可能に。
 
-2003-04-29  phonohawk  <phonohawk@lycos.co.uk>
+2003-04-29  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* IrcIO/Server.pm: ログイン時、サーバーから送られてきたニューメリックリプライ以外のメッセージを無視する。
 	  ログイン前にNOTICEを送るようなサーバーに繋げられない問題を解決。
@@ -655,7 +664,7 @@
 
 	* RunLoop.pm: サーバーへの再接続時、+kされたチャンネルへの再JOINに失敗していたのを修正。
 
-2003-04-25  phonohawk  <phonohawk@lycos.co.uk>
+2003-04-25  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Configuration.pm: general/client-allowedが省略された場合、
 	  間違った値をデフォルト値として設定していたので修正。
@@ -666,7 +675,7 @@
 	* Configuration.pm: networksのnameで列挙されたネットワーク名に対応する
 	  ブロックの定義が無かった場合、適切なエラーメッセージを出さずに処理を止めていたので修正。
 
-2003-04-18  phonohawk  <phonohawk@lycos.co.uk>
+2003-04-18  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra: SIGHUPを受信した時の動作を変更。
 	  これまではシャットダウンしていたが、以後は設定をリロードする。
@@ -683,7 +692,7 @@
 	  それぞれIrcIO::Serverであれば1を返すメソッドと
 	  IrcIO::Clientであれば1を返すメソッド。
 	
-2003-04-13  phonohawk  <phonohawk@lycos.co.uk>
+2003-04-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* User/Vanish.pm: 追加
 	  特定のチャンネルでの特定の人物の存在をクライアントに隠すモジュール。
@@ -695,7 +704,7 @@
 
 	* ChannelInfo.pm (AUTOLOAD): ハッシュマップの操作コマンドとして'keys'と'values'を追加。
 
-2003-04-10  phonohawk  <phonohawk@lycos.co.uk>
+2003-04-10  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* RunLoop.pm: 切断に気付かない場合があるので、3分毎に各サーバーにPINGを発行する。
 	  PING自動発行後にサーバーから来た最初のPONGは破棄される。
@@ -705,7 +714,7 @@
 	* LinedINETSocket.pm: メソッドconnectの動作をconnectとattachの二つに分けた。
 	  これにより予め開かれたIO::Socket::INETに対してLinedINETSocketの機能を適用可能。
 	
-2003-04-05  phonohawk  <phonohawk@lycos.co.uk>
+2003-04-05  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Auto/Joined.pm: 追加。
 	  特定のチャンネルに誰かがJOINする度に特定の発言を行なうモジュール。
@@ -722,7 +731,7 @@
 	* Mask.pm: add array_or_(all|all_chan), (all|all_chan)_mask.
 	  for not known maskmode, use Tiarra mode; and do warn.
 
-2003-03-23  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* IrcIO/Server.pm: general/bind-addrでサーバーへの接続時のローカルアドレスを指定可能に。
 	  また、各ネットワーク設定でbind-addrはオーバーライドできる。
@@ -735,7 +744,7 @@
 
 	* tiarra: ChangeLogからDateとRevisionを読んでバージョン情報に付加するようにした。
 
-2003-03-23  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* User/Filter.pm: 追加。特定のユーザーの発言にフィルタをかけるモジュール。
 
@@ -804,7 +813,7 @@
 	  add #(file_lines:fpath:mode:charset).
 	(register_callback): $reg_callback accept scalar function name.
 
-2003-03-15  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-15  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* BulletinBoard.pm:
 	  ・AUTOLOAD経由で値を設定可能に。
@@ -820,7 +829,7 @@
 	  CTCP/UserInfo.pm,
 	  CTCP/Version.pm     : 追加。
 
-2003-03-10  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-10  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* IrcIO/Server.pm: ネットワーク毎の設定でin-encoding,out-encodingを定義する事により
 	  文字エンコーディングの設定をオーバーライド可能に。
@@ -830,7 +839,7 @@
 	* Auto/Response.pm: plum でのキー名が response だったのを勘違いして reply にしていた。
 	  (りんりんさんバグレポートありがとうございます)
 
-2003-03-09  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Configuration/Block.pm: %CODE{ }EDOC%の解釈でメモリリークを起こす不具合を回避。
 
@@ -839,7 +848,7 @@
 	* Auto/AliasDB/CallbackUtils.pm: register_RandomNickConvertでメッセージがIrcIO::Client
 	  発信だった場合に登録しないようにした。 (りんりんさんバグレポートありがとうございます)
 
-2003-03-08  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-08  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* IrcIO/Server.pm: オプションnetworks/always-notify-new-nickが設定されていたら
 	  nickを変更する度に、変更したサーバーの新しいグローバルnickをNOTICEで通知する。
@@ -872,7 +881,7 @@
 	* LinedINETSocket.pm: ExternalSocketのuninstall等も必要かも知れないので
 	  DESTROYを復活させる。
 
-2003-03-04  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* ExternalSocket.pm: read/write/want_to_writeで、callerをチェックする位置を変更。
 
@@ -895,7 +904,7 @@
 
 	* Auto/Response.pm: rateを使えるようにした。
 
-2003-03-03  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-03  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Configuration/Block.pm: ブロック内ブロックを扱えるように。
 	
@@ -939,12 +948,12 @@
 
 	* Tools/GroupDB.pm: 新規追加。AliasDBから独立させた。
 
-2003-03-02  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-02  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Configuration/Preprocessor.pm: 新規追加。
 	  confファイルのプリプロセッサとして使用する。
 
-2003-03-01  phonohawk  <phonohawk@lycos.co.uk>
+2003-03-01  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* ConfigBlock.pm: 削除。Configuration::Blockに移動。
 
@@ -976,7 +985,7 @@
 
 	* LinedINETSocket.pm: 新規追加。行単位のキューを使用した入出力を行う。
 
-2003-02-26  phonohawk  <phonohawk@lycos.co.uk>
+2003-02-26  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* ExternalSocket.pm: 新規追加。
 
@@ -985,7 +994,7 @@
 
 	* Timer.pm: uninstallした時はrunloopにundefを代入する。
 	
-2003-02-20  phonohawk  <phonohawk@lycos.co.uk>
+2003-02-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Module.pm (notification_of_message_io) : 新規追加。
 	  サーバーやクライアントと実際に送受信したメッセージが通知されるメソッド。デバッグ用。
@@ -995,13 +1004,13 @@
 	* IrcIO/Client.pm : 複数のクライアントを接続している際、
 	  NICKの変更が他のクライアントへ伝わっていなかったので修正。
 
-2003-02-19  phonohawk  <phonohawk@lycos.co.uk>
+2003-02-19  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.el: 新規追加。confファイルのEmacs用モード。試作品。
 	  このファイルが置かれている場所をload-pathに追加し、次のようなautoloadを実行すれば良い。
 	  (autoload 'tiarra-conf-mode "tiarra-conf" "tiarra.conf editing mode" t)
 
-2003-02-17  phonohawk  <phonohawk@lycos.co.uk>
+2003-02-17  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Configuration.pm:
 		・@includeで他のファイルをインクルード可能に。
@@ -1029,7 +1038,7 @@
 
 	* Auto/Utils.pm: $get_ch_nameでparam(0)が無い場合undefを返すようにした。
 
-2003-02-15  phonohawk  <phonohawk@lycos.co.uk>
+2003-02-15  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* RunLoop.pm: Time::HiResがインストールされている環境では
 	  Timerの精度がミリ秒に上がる。入っていなければ秒のまま。
@@ -1075,11 +1084,11 @@
 
 	* System/Pong.pm: xchat対策に、pingの代わりにpongを消滅させるようにした。
 
-2003-02-13  phonohawk  <phonohawk@lycos.co.uk>
+2003-02-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Multicast.pm: nick_pでのnicklen制限をやめた。
 
-2003-02-12  phonohawk  <phonohawk@lycos.co.uk>
+2003-02-12  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* RunLoop.pm: $(network)/userでgeneral/userをオーバーライド可能に。
 
@@ -1087,7 +1096,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.124 2004/01/22 19:13:45 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2004/01/22 19:13:45 $
-# Revision: $Revision: 1.124 $
+#       Id: $Id: ChangeLog,v 1.126 2004/01/27 14:25:29 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2004/01/27 14:25:29 $
+# Revision: $Revision: 1.126 $

@@ -1,4 +1,9 @@
-2004-01-23  phonohawk  <phonohawk@lycos.co.uk>
+2004-01-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* 行の終わりにCRLFでなくLFを付けるようなクライアントでも
+	正しく動作するようになりました。
+
+2004-01-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra: 起動時オプション --make-password 追加。
 	make-passwordの機能をtiarra本体に移した。
@@ -29,7 +34,7 @@
 	single-server-mode を使う予定が無い場合は再起動は不要です。
 	single-server-mode を使っている方は、アップデートして再起動して下さい。
 
-2003-10-16  phonohawk  <phonohawk@lycos.co.uk>
+2003-10-16  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* System::Raw
 	追加。Tiarraに改変されない生のメッセージをサーバーに送るためのモジュール。
@@ -39,7 +44,7 @@
 	* single-server-mode の bugfix です。
 	single-server-mode を使う予定が無い場合は再起動は不要です。
 
-2003-09-28  phonohawk  <phonohawk@lycos.co.uk>
+2003-09-28  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.el:
 	mmm-modeがインストールされていて、(require 'mmm-mode)または
@@ -55,7 +60,7 @@
 	モジュールのアンロードをすると原因不明のエラーが起こるバグがあります。
 	また、アップグレードの際には再起動が必要です。
 
-2003-08-12  phonohawk  <phonohawk@lycos.co.uk>
+2003-08-12  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* シングルサーバーモードを実装。
 	networks/multi-server-modeを0に設定すると、シングルサーバーモードになります。
@@ -74,27 +79,27 @@
 	  - Auto::Response
 	です。変更よろしくお願いします。(^^;;
 
-2003-07-10  phonohawk  <phonohawk@lycos.co.uk>
+2003-07-10  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Channel::Freeze
 	追加。特定のチャンネルのNOTICEやPRIVMSGの中継を
 	一時的に中断するためのモジュール。
 	発言を見たくないがPARTはしたくない、といった場合に有効。
 
-003-07-03  phonohawk  <phonohawk@lycos.co.uk>
+003-07-03  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Auto::Oper
 	複数の応答が定義されていれば、ランダムに一つ選んで発言する。省略も可能。
 
-2003-06-06  phonohawk  <phonohawk@lycos.co.uk>
+2003-06-06  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* general/nickを、それぞれのネットワーク設定ブロックのnickでオーバーライド可能に。
 
-2003-05-27  phonohawk  <phonohawk@lycos.co.uk>
+2003-05-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Tiarra本体の誤動作によりCPU時間を食い潰している可能性を検出して警告する。
 
-2003-05-24  phonohawk  <phonohawk@lycos.co.uk>
+2003-05-24  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* IPv6対応
 	general/tiarra-ip-versionに'v6'を指定する事で、IPv6でのリスニングを行なう。
@@ -109,23 +114,23 @@
 	* Auto/Alias.pm: キーを指定しての値削除、削除した個数の表示が可能になったため、
 	  サンプルの removed-format が変更されています。好みに合わせて変更してください。
 
-2003-05-21  phonohawk  <phonohawk@lycos.co.uk>
+2003-05-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.l: 追加。
 	  Noboruhiさんによるxyzzy用tiarra.conf編集モード。
 	  インストール方法はtiarra-conf.l内に記述されています。
 
-2003-04-29  phonohawk  <phonohawk@lycos.co.uk>
+2003-04-29  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Channel/Join/Kicked.pm: 追加。チャンネルから蹴られた時に、自動JOINするモジュール。
 
-2003-04-13  phonohawk  <phonohawk@lycos.co.uk>
+2003-04-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* User/Vanish.pm: 追加
 	  特定のチャンネルでの特定の人物の存在をクライアントに隠すモジュール。
 	  JOINやPART、QUIT等を消去する。
 
-2003-04-05  phonohawk  <phonohawk@lycos.co.uk>
+2003-04-05  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* モジュール Auto::Joined 追加。
 	  特定のチャンネルに誰かがJOINする度に特定の発言を行なうモジュール。
@@ -136,7 +141,7 @@
 	* sample.conf (Auto/Random.pm): 設定に mask プロパティが抜けていました。
 	  Auto/Random.pm を使っていた方は、 sample.conf にしたがって適当なところに追加してください。
 
-2003-03-23  phonohawk <phonohawk@lycos.co.uk>
+2003-03-23  phonohawk <phonohawk@ps.sakura.ne.jp>
 
 	* User/Filter.pm: 新規追加。 特定の人物の発言にフィルタをかける。
 
