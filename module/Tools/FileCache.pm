@@ -28,7 +28,8 @@ sub _new {
 }
 
 sub find_file {
-    my ($this, $fpath, $mode, $charset) = @_;
+    my ($class_or_this, $fpath, $mode, $charset) = @_;
+    my $this = $class_or_this->_this;
 
     my $file = $this->{files}->{$fpath};
     if (defined($file)) {
@@ -48,7 +49,8 @@ sub find_file {
 }
 
 sub register {
-    my ($this, $fpath, $mode, $charset) = @_;
+    my ($class_or_this, $fpath, $mode, $charset) = @_;
+    my $this = $class_or_this->_this;
 
     my $file = $this->find_file($fpath, $mode, $charset);
     if (defined $file) {
@@ -63,7 +65,8 @@ sub register {
 }
 
 sub unregister {
-    my ($this, $fpath) = @_;
+    my ($class_or_this, $fpath) = @_;
+    my $this = $class_or_this->_this;
 
     my $file = $this->{files}->{$fpath};
     if (defined($file)) {
@@ -75,7 +78,8 @@ sub unregister {
 }
 
 sub _register_inner {
-    my ($this, $fpath, $mode, $charset) = @_;
+    my ($class_or_this, $fpath, $mode, $charset) = @_;
+    my $this = $class_or_this->_this;
 
     my $obj = Tools::FileCache::EachFile->new($this, $fpath, $mode, $charset);
     if (defined $obj) {
@@ -114,7 +118,7 @@ sub main_loop {
 }
 
 sub destruct {
-    my $this = shared();
+    my $this = shared;
 
     # expire all
     foreach my $key (keys(%{$this->{files}})) {
