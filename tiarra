@@ -78,6 +78,7 @@ BEGIN {
 }
 
 use Configuration;
+use Tiarra::Resolver; # early initialization
 use RunLoop;
 use ModuleManager;
 use ReloadTrigger;
@@ -126,14 +127,14 @@ sub check_changelog {
 	    $version .= '(' . $date . ')' if defined $date;
 
 	    my $svnversion;
-	    if (-e File::Spec->catdir($dir, '.svn')) {
-		(my $svndir = $dir) =~ s/'/'\''/;
-		$svnversion = `svnversion -n '$svndir'`;
-	    } elsif (-e File::Spec->catfile($dir, '.svnversion')) {
+	    if (-e File::Spec->catfile($dir, '.svnversion')) {
 		my $path = File::Spec->catfile($dir, '.svnversion');
 		my $fh = IO::File->new($path, 'r');
 		$svnversion = <$fh>;
 		chomp $svnversion;
+	    } elsif (-e File::Spec->catdir($dir, '.svn')) {
+		(my $svndir = $dir) =~ s/'/'\''/;
+		$svnversion = `svnversion -n '$svndir'`;
 	    }
 	    $version .= '+svn-' . $svnversion if defined $svnversion && length $svnversion;
 	    return;
