@@ -16,7 +16,7 @@
 #   @if 'DEBUG' == '1'
 #     debug: a
 #   @endif
-#   例外は@undef文。この文に対しては置換が行なわれない。
+#   例外は@undef, @ifdef, @ifndef文。これらの文に対しては置換が行なわれない。
 #
 # ・@undef 文字列A
 #   @defineで定義した置換を、次の行からキャンセルする。
