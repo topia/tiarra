@@ -26,23 +26,28 @@ utils->define_attr_enum_accessor('domain', 'eq',
 #       host => [hostname],
 #       port => [port],
 #       callback => sub {
-#           my ($genre, $connector, $msg_or_sock) = @_;
+#           my ($genre, $connector, $msg_or_sock, $errno) = @_;
 #           if ($genre eq 'warn') {
 #               # $msg_or_sock: msg
+#               # maybe don't have $errno
 #               warn $msg_or_sock;
 #           } elsif ($genre eq 'error') {
 #               # $msg_or_sock: msg
+#               # maybe has $errno
 #               die $msg_or_sock;
 #           } elsif ($genre eq 'sock') {
 #               # $msg_or_sock: sock
+#               # maybe don't have $errno
 #               attach($connector->current_addr, $connector->current_port,
 #                      $msg_or_sock);
 #           # optional genre
 #           } elsif ($genre eq 'interrupt') {
 #               # $msg_or_sock: undef
+#               # maybe don't have $errno
 #               die 'interrupted';
 #           } elsif ($genre eq 'timeout') {
 #               # $msg_or_sock: undef
+#               # maybe don't have $errno
 #               die 'timeout';
 #           }
 #       },
@@ -179,7 +184,10 @@ sub _try_connect_ipv6 {
 sub _try_connect_tcp {
     my ($this, $package, $addr, %additional) = @_;
 
-    eval "require $package";
+    if (!eval("require $package")) {
+	$this->_connect_error("Couldn\'t require socket package: $package");
+	return;
+    }
     my $sock = $package->new(
 	%additional,
 	(defined $this->{bind_addr} ?
@@ -187,7 +195,9 @@ sub _try_connect_tcp {
 	Timeout => undef,
 	Proto => 'tcp');
     if (!defined $sock) {
-	$this->_connect_error($this->sock_errno_to_msg($!, 'Couldn\'t prepare socket'));
+	$this->_connect_error(
+	    $this->sock_errno_to_msg($!, 'Couldn\'t prepare socket'),
+	    $!);
 	return;
     }
     if (!defined $sock->blocking(0)) {
@@ -201,11 +211,11 @@ sub _try_connect_tcp {
 	    my $retval = $sock->ioctl($FIONBIO, $temp);
 	    if (!$retval) {
 		$this->_warn($this->sock_errno_to_msg(
-		    $!, 'Couldn\'t set non-blocking mode (winsock2)'));
+		    $!, 'Couldn\'t set non-blocking mode (winsock2)'), $!);
 	    }
 	} else {
 	    $this->_warn($this->sock_errno_to_msg(
-		$!, 'Couldn\'t set non-blocking mode (general)'));
+		$!, 'Couldn\'t set non-blocking mode (general)'), $!);
 	}
     }
     my $saddr = Tiarra::Resolver->resolve(
@@ -250,7 +260,7 @@ sub _try_connect_unix {
 sub _connect_warn_try_next {
     my ($this, $errno, $msg) = @_;
 
-    $this->_connect_warn($this->sock_errno_to_msg($errno, $msg));
+    $this->_connect_warn($this->sock_errno_to_msg($errno, $msg), $errno);
     $this->_connect_try_next;
 }
 
@@ -261,13 +271,14 @@ sub _connect_warn_or_error {
     my $this = shift;
     my $method = '_'.shift;
     my $str = shift;
+    my $errno = shift; # but optional
     if (defined $str) {
 	$str = ': ' . $str;
     } else {
 	$str = '';
     }
 
-    $this->$method("Couldn't connect to ".$this->destination.$str);
+    $this->$method("Couldn't connect to ".$this->destination.$str, $errno, @_);
 }
 
 sub destination {
@@ -304,16 +315,16 @@ sub current_type {
 
 sub _error {
     # connection error; and finish ->connect chain
-    my ($this, $msg) = @_;
+    my ($this, $msg, $errno) = @_;
 
-    $this->callback->('error', $this, $msg);
+    $this->callback->('error', $this, $msg, $errno);
 }
 
 sub _warn {
     # connection warning; but continue trying
-    my ($this, $msg) = @_;
+    my ($this, $msg, $errno) = @_;
 
-    $this->callback->('warn', $this, $msg);
+    $this->callback->('warn', $this, $msg, $errno);
 }
 
 sub _call {
@@ -370,7 +381,8 @@ sub proc_sock {
 	    $this->cleanup;
 	    $this->_call;
 	} else {
-	    $this->_warn($this->sock_errno_to_msg($!, 'connection try error'));
+	    $this->_warn(
+		$this->sock_errno_to_msg($!, 'connection try error'), $!);
 	    $this->_handle_sock_error;
 	}
     } else {
