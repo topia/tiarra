@@ -852,7 +852,7 @@ sub run {
 		$network->send_message(
 		    IRCMessage->new(
 			Command => 'PING',
-			Param => $network->host));
+			Param => $network->server_hostname));
 
 		my $cntr = $network->remark('pong-drop-counter');
 		if (defined $cntr) {
