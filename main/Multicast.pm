@@ -196,7 +196,6 @@ sub _NJOIN_from_server {
 sub _WHOIS_from_client {
     my ($message,$sender) = @_;
     my $to;
-
     ($message->params->[0],$to) = detatch($message->params->[0]);
 
     my $network = $runloop->networks->{$to};

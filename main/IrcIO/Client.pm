@@ -238,7 +238,6 @@ sub _receive_while_logging_in {
 
 	    map {
 		# ローカルnickとグローバルnickが食い違っていたらその旨を伝える。
-		# 接続しているネットワーク名を全部表示する
 		my $network_name = $_->network_name;
 		my $global_nick = $_->current_nick;
 		if ($global_nick ne $current_nick) {
