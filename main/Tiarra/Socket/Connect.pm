@@ -218,13 +218,31 @@ sub destination {
 
     $this->repr_destination(
 	host => $this->host,
-	addr => utils->get_first_defined(
-	    $this->{connecting}->{addr},
-	    $this->addr),
-	port => utils->get_first_defined(
-	    $this->{connecting}->{port},
-	    $this->port),
-	type => $this->{connecting}->{type});
+	addr => $this->current_addr,
+	port => $this->current_port,
+	type => $this->current_type);
+}
+
+sub current_addr {
+    my $this = shift;
+
+    utils->get_first_defined(
+	$this->{connecting}->{addr},
+	$this->addr);
+}
+
+sub current_port {
+    my $this = shift;
+
+    utils->get_first_defined(
+	$this->{connecting}->{port},
+	$this->port);
+}
+
+sub current_type {
+    my $this = shift;
+
+    $this->{connecting}->{type};
 }
 
 sub _error {
