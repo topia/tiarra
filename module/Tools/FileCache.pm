@@ -12,7 +12,7 @@ our $_shared;
 
 sub shared {
     if (!defined $_shared) {
-	$_shared = Tools::FileCache->_new;
+	$_shared = __PACKAGE__->_new;
     }
 
     return $_shared;
