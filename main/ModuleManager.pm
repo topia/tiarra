@@ -25,16 +25,65 @@ sub _new {
     my $class = shift;
     my $obj = {
 	modules => [], # 現在使用されている全てのモジュール
+	using_modules_cache => undef, # ブラックリストを除いた全てのモジュールのキャッシュ。
 	mod_configs => {}, # 現在使用されている全モジュールのConfiguration::Block
 	mod_timestamps => {}, # 現在使用されている全モジュールおよびサブモジュールの初めてuseされた時刻
+	mod_blacklist => {}, # 過去に正常動作しなかったモジュール。
 	updated_once => 0, # 過去にupdate_modulesが実行された事があるか。
     };
     bless $obj,$class;
 }
 
+sub add_to_blacklist {
+    my ($this,$modname) = @_;
+    $this->_set_blacklist($modname, 1);
+}
+
+sub remove_from_blacklist {
+    my ($this,$modname) = @_;
+    $this->_set_blacklist($modname, 0);
+}
+
+sub check_blacklist {
+    my ($this,$modname) = @_;
+
+    exists $this->{mod_blacklist}->{$modname};
+}
+
+sub _set_blacklist {
+    my ($this,$modname,$add_or_remove) = @_;
+
+    if ($add_or_remove) {
+	# modname の存在テストはしない: && defined $this->get($modname)
+	$this->{mod_blacklist}->{$modname} = 1;
+    } elsif (!$add_or_remove && exists $this->{mod_blacklist}->{$modname}) {
+	delete $this->{mod_blacklist}->{$modname};
+    } else {
+	return undef;
+    }
+    $this->_clear_module_cache;
+    return 1;
+}
+
+sub _clear_module_cache {
+    shift->{using_modules_cache} = undef;
+}
+
 sub get_modules {
+    # @options(省略可能):
+    #   'even-if-blacklisted': ブラックリスト入りのものを含める。
     # モジュールの配列への参照を返すが、これを変更してはならない！
-    shift->{modules};
+    my ($this,@options) = @_;
+    if (defined $options[0] && $options[0] eq 'even-if-blacklisted') {
+	return $this->{modules};
+    } else {
+	if (!defined $this->{using_modules_cache}) {
+	    $this->{using_modules_cache} = [grep {
+		!$this->check_blacklist(ref($_));
+	    } @{$this->{modules}}];
+	}
+	return $this->{using_modules_cache};
+    }
 }
 
 sub get {
@@ -56,6 +105,7 @@ sub terminate {
 	}
     }
     @{$this->{modules}} = ();
+    $this->_clear_module_cache;
     %{$this->{mod_configs}} = ();
 }
 
@@ -65,6 +115,24 @@ sub timestamp {
 	$this->{mod_timestamps}->{$module} = $timestamp;
     }
     $this->{mod_timestamps}->{$module};
+}
+
+sub check_timestamp_update {
+    my ($this,$module,$timestamp) = @_;
+
+    $timestamp = $this->{mod_timestamps}->{$module} if !defined $timestamp;
+    if (defined $timestamp) {
+	(my $mod_filename = $module) =~ s|::|/|g;
+	my $mod_fpath = $INC{$mod_filename.'.pm'};
+	return if (!defined($mod_fpath) || !-f $mod_fpath);
+	if ((stat($mod_fpath))[9] > $timestamp) {
+	    return 1;
+	} else {
+	    return 0;
+	}
+    } else {
+	return undef;
+    }
 }
 
 sub update_modules {
@@ -100,7 +168,8 @@ sub update_modules {
     # モジュール名 => Moduleの形式でテーブルにする。
     my %new_mods = map {
 	# 新たに追加されたモジュール。
-	$show_msg->("Module ".$_->block_name." will be loaded newly.");	
+	$show_msg->("Module ".$_->block_name." will be loaded newly.");
+	$this->remove_from_blacklist($_->block_name);
 	$_->block_name => $this->_load($_);
     } @$new;
     my %rebuilt_mods = map {
@@ -108,12 +177,22 @@ sub update_modules {
 	# %loaded_modsに古い物が入っているので、破棄する。
 	$show_msg->("Configuration of the module ".$_->block_name." has been changed. It will be restarted.");
 	$loaded_mods{$_->block_name}->destruct;
+	$this->remove_from_blacklist($_->block_name);
 	$_->block_name => $this->_load($_);
     } @$changed;
     my %not_changed_mods = map {
 	# 設定変更されなかったモジュール。
 	# %loaded_modsに実物が入っている。
-	$_->block_name => $loaded_mods{$_->block_name};
+	my $modname = $_->block_name;
+	if (!defined $loaded_mods{$modname} &&
+		$this->check_timestamp_update($modname)) {
+	    # ロードできてなくて、なおかつアップデートされていたらロードしてみる。
+	    $show_msg->("$modname has been modified. It will be reloaded.");
+	    $this->remove_from_blacklist($modname);
+	    $modname => $this->_load($_);
+	} else {
+	    $modname => $loaded_mods{$modname};
+	}
     } @$not_changed;
 
     # $mod_configsに書かれた順序に従い、$this->{modules}を再構成。
@@ -146,6 +225,8 @@ sub update_modules {
 	    $this->gc;
 	}
     }
+
+    $this->_clear_module_cache;
 
     $this->{updated_once} = 1;
     $this;
@@ -210,10 +291,7 @@ sub reload_modules_if_modified {
 	# 既に更新されたものとしてマークされていれば抜ける。
 	return if $mods_to_be_reloaded->{$modname};
 
-	(my $mod_filename = $modname) =~ s|::|/|g;
-	my $mod_fpath = $INC{$mod_filename.'.pm'};
-	return if (!defined($mod_fpath) || !-f $mod_fpath);
-	if ((stat($mod_fpath))[9] > $timestamp) {
+	if ($this->check_timestamp_update($modname, $timestamp)) {
 	    # 更新されている。少なくともこのモジュールはリロードされる。
 	    $mods_to_be_reloaded->{$modname} = 1;
 	    $show_msg->("$modname has been modified. It will be reloaded.");
@@ -262,10 +340,12 @@ sub reload_modules_if_modified {
 
 		my $conf_block = $this->{mod_configs}->{$modname};
 		# message_io_hook が定義されているモジュールが死ぬと怖いので
-		# とりあえず undef を入れて無視させる
-		$this->{modules}->[$idx] = undef;
+		# とりあえずブラックリストに入れて無視させる。
+		$this->add_to_blacklist($modname);
 		$this->_unload($conf_block);
 		$this->{modules}->[$idx] = $this->_load($conf_block); # 失敗するとundefが入る。
+		# _unload でブラックリストから消えるから大丈夫だと思うが、一応。
+		$this->remove_from_blacklist($modname);
 	    }
 	    else {
 		# アンロード後、use。
@@ -378,6 +458,9 @@ sub _unload {
 
     # このモジュールのuse時刻を消去
     delete $this->{mod_timestamps}->{$modname};
+
+    # このモジュールのブラックリストを消去。
+    $this->remove_from_blacklist($modname);
 
     # このモジュールのファイル名を求めておく。
     (my $mod_filename = $modname) =~ s|::|/|g;
