@@ -16,6 +16,8 @@ utils->define_attr_getter(0, qw(sock installed));
 utils->define_attr_accessor(0, qw(name),
 			    map { ["_$_", $_] }
 				qw(sock installed));
+use Config;
+our $is_winsock = $Config{archname} =~ /^MSWin32/;
 
 sub new {
     my ($class, %opts) = @_;
@@ -119,6 +121,7 @@ sub _should_define {
 sub want_to_write { shift->_should_define }
 sub write { shift->_should_define }
 sub read { shift->_should_define }
+sub exception { shift->_should_define }
 
 # class method
 
@@ -193,6 +196,27 @@ sub probe_type_by_addr {
 	return 'unix';
     }
 
+}
+
+sub sock_errno_to_msg {
+    my ($this, $errno) = @_;
+
+    local $! = $errno;
+    $errno = ($!+0);
+    my $errstr = "$!";
+    if ($! eq 'Unknown error' && $this->_is_winsock) {
+	# try probe (for my ActivePerl v5.8.4 build 810)
+	require Tiarra::Socket::Win32Errno;
+	my $new_errstr = Tiarra::Socket::Win32Errno->fetch_description($errno);
+	if (defined $new_errstr) {
+	    $errstr = $new_errstr;
+	}
+    }
+    return "$errno: $errstr";
+}
+
+sub _is_winsock {
+    return $is_winsock;
 }
 
 sub _increment_caller {

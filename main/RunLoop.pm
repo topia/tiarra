@@ -886,8 +886,8 @@ sub run {
 
 	# select実行
 	my $time_before_select = CORE::time;
-	my ($readable_socks,$writable_socks) =
-	    IO::Select->select($this->{receive_selector},$this->{send_selector},undef,$timeout);
+	my ($readable_socks,$writable_socks,$has_exception_socks) =
+	    IO::Select->select($this->{receive_selector},$this->{send_selector},$this->{receive_selector},$timeout);
 	$zerotime_warn->(CORE::time - $time_before_select);
 	# select後フックを呼ぶ
 	$this->call_hooks('after-select');
@@ -1028,6 +1028,20 @@ sub run {
 		# cleanup socket; ignore
 	    } else {
 		$this->notify_error('unknown writable socket: '.$sock);
+	    }
+	}
+
+	foreach my $sock ($this->{receive_selector}->has_exception(0)) {
+	    if (my $socket = $this->find_socket_with_sock($sock)) {
+		eval {
+		    $socket->exception;
+		}; if ($@) {
+		    $this->notify_error($@);
+		}
+	    } elsif (grep { $sock == $_ } @{$this->{socks_to_cleanup}}) {
+		# cleanup socket; ignore
+	    } else {
+		$this->notify_error('unknown has-exception socket: '.$sock);
 	    }
 	}
 

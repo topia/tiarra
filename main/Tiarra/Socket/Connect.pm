@@ -155,41 +155,36 @@ sub _try_connect_tcp {
     }
     if (!defined $sock->blocking(0)) {
 	# effect only on connecting; comment out
-	#$this->_warn('cannot blocking') if ::debug_mode();
+	#$this->_warn('cannot non-blocking') if ::debug_mode();
+
+	if ($this->_is_winsock) {
+	    # winsock FIONBIO
+	    my $FIONBIO = 0x8004667e; # from Winsock2.h
+	    my $temp = chr(1);
+	    my $retval = $sock->ioctl($FIONBIO, $temp);
+	    if (!$retval) {
+		$this->_warn('cannot non-blocking (winsock2): '.
+				 $this->sock_errno_to_msg($!));
+	    }
+	}
     }
     my $saddr = Tiarra::Resolver->resolve(
 	'saddr', [$this->current_addr, $this->current_port],
 	sub {}, 0);
     $this->{connecting}->{saddr} = $saddr->answer_data;
-    if ($sock->connect($this->{connecting}->{saddr})) {
+    if ($sock->connect($this->{connecting}->{saddr}) ||
+	    $!{EINPROGRESS} || $!{EWOULDBLOCK}) {
 	my $error = $!;
 	$this->attach($sock);
 	$! = $error;
-	if ($!{EINPROGRESS}) {
+	if ($!{EINPROGRESS} || $!{EWOULDBLOCK}) {
 	    $this->install;
 	} else {
 	    $this->_call;
 	}
     } else {
-	$this->_connect_error_try_next($this->_errno_to_msg($!));
+	$this->_connect_error_try_next('connect error: '.$this->sock_errno_to_msg($!));
     }
-}
-
-sub _errno_to_msg {
-    my ($this, $errno) = @_;
-
-    $! = $errno;
-    $errno = ($!+0);
-    my $errstr = "$!";
-    if ($! eq 'Unknown error') {
-	# try probe (for my ActivePerl v5.8.4 build 810)
-	if ($!{ETIMEDOUT}) {
-	    $errstr = 'Connection timed out';
-	} elsif ($!{ECONNREFUSED}) {
-	    $errstr = 'Connection refused';
-	}
-    }
-    return "$errno: $errstr";
 }
 
 sub _try_connect_unix {
@@ -208,7 +203,7 @@ sub _try_connect_unix {
 	$this->attach($sock);
 	$this->_call;
     } else {
-	$this->_connect_error_try_next($this->_errno_to_msg($!));
+	$this->_connect_error_try_next($this->sock_errno_to_msg($!));
     }
 }
 
@@ -313,6 +308,7 @@ sub want_to_write {
 
 sub write { shift->proc_sock }
 sub read { shift->proc_sock }
+sub exception { shift->_handle_sock_error }
 
 sub proc_sock {
     my $this = shift;
@@ -322,16 +318,26 @@ sub proc_sock {
 	my $error = $this->sock->sockopt(SO_ERROR);
 	$this->cleanup;
 	$this->close;
-	$this->_connect_error_try_next($this->_errno_to_msg($error));
-    } elsif ($this->sock->connect($this->{connecting}->{saddr}) || $!{EISCONN}) {
+	$this->_connect_error_try_next('cant write: '.$this->sock_errno_to_msg($error));
+    } elsif (!$this->sock->connect($this->{connecting}->{saddr}) &&
+		 ($!{EISCONN} ||
+		      ($this->_is_winsock && (($! == 10022) || $!{EWOULDBLOCK} ||
+					   $!{EALREADY})))) {
 	$this->cleanup;
 	$this->_call;
     } else {
-	my $error = $this->sock->sockopt(SO_ERROR);
-	$this->cleanup;
-	$this->close;
-	$this->_connect_error_try_next($this->_errno_to_msg($error));
+	warn 'connection try error: '.$this->sock_errno_to_msg($!);
+	$this->_handle_sock_error;
     }
+}
+
+sub _handle_sock_error {
+    my $this = shift;
+
+    my $error = $this->sock->sockopt(SO_ERROR);
+    $this->cleanup;
+    $this->close;
+    $this->_connect_error_try_next($this->sock_errno_to_msg($error));
 }
 
 1;
