@@ -40,7 +40,7 @@ use Tiarra::OptionalModules;
 use Tiarra::Utils;
 use Tiarra::DefineEnumMixin (qw(PREFIX COMMAND PARAMS),
 			     qw(NICK NAME HOST),
-			     qw(REMARKS TIME));
+			     qw(REMARKS TIME RAW_PARAMS));
 
 
 # constants
@@ -74,6 +74,8 @@ sub new {
 
     $obj->[TIME] = Tiarra::OptionalModules->time_hires ?
 	Time::HiRes::time() : CORE::time();
+
+    $obj->[RAW_PARAMS] = undef;
 
     if (exists $args{'Line'}) {
 	$args{'Line'} =~ s/\x0d\x0a$//s; # 行末のcrlfは消去。
@@ -143,6 +145,7 @@ sub _parse {
     delete $this->[PREFIX];
     delete $this->[COMMAND];
     delete $this->[PARAMS];
+    delete $this->[RAW_PARAMS];
 
     my $pos = 0;
     # prefix
@@ -153,33 +156,15 @@ sub _parse {
 	$pos = $pos_space + 1; # スペースの次から解釈再開
     }
     # command & params
-    my @encodings = split(/\s*,\s*/, $encoding);
-    my $unicode = new Unicode::Japanese;
     my $add_command_or_param = sub {
 	my $value_raw = shift;
-	my $use_encoding = $encodings[0];
-	if (scalar(@encodings) != 1) {
-	  my $auto_charset = $unicode->getcode($value_raw);
-	  # getcodeで検出された文字コードでencodingsに指定されているものがあれば採用。
-	  # 無ければencodingsの一番最初を採用する。 (UTF-8をSJISと認識したりするため。)
-	  $use_encoding = ((map {$auto_charset eq $_ ? $_ : ()} @encodings), @encodings)[0];
-	}
-	my $value = do {
-	    if (length ($value_raw) == 0) {
-		'';
-	    }
-	    else {
-		$unicode->set($value_raw,$use_encoding)->utf8;
-	    }
-	};
-
 	if ($this->command) {
 	    # commandはもう設定済み。次はパラメータだ。
-	    $this->push($value);
+	    $this->_raw_push($value_raw);
 	}
 	else {
 	    # まだコマンドが設定されていない。
-	    $this->command($value);
+	    $this->command($value_raw);
 	}
     };
     while (1) {
@@ -213,6 +198,8 @@ sub _parse {
 	    $pos = $pos_space + 1; # スペースの次から解釈再開
 	}
     }
+
+    $this->encoding_params($encoding);
 
     # 解釈結果の正当性をチェック。
     # commandが無かったらdie。
@@ -281,8 +268,8 @@ sub serialize {
 	my $unicode = new Unicode::Japanese;
 	my $n_params = $this->n_params;
 	if ($n_params > MAX_PARAMS) {
-	    # 表現不能なので croak
-	    croak 'this message exceeded maximum param numbers!';
+	    # 表現不能なので croak (危険なので carp で……)
+	    carp 'this message exceeded maximum param numbers!';
 	}
 	for (my $i = 0;$i < $n_params;$i++) {
 	    if ($i == $n_params - 1) {
@@ -315,7 +302,7 @@ sub serialize {
 
 sub length {
     my ($this) = shift;
-    length($this->serialize(@_));
+    CORE::length($this->serialize(@_));
 }
 
 sub params {
@@ -347,6 +334,21 @@ sub pop {
     CORE::pop(@{shift->params});
 }
 
+sub _raw_params {
+    my $this = shift;
+    $this->[RAW_PARAMS] = [] if !defined $this->[RAW_PARAMS];
+    $this->[RAW_PARAMS];
+}
+
+sub _raw_push {
+    my $this = shift;
+    CORE::push(@{$this->_raw_params}, @_);
+}
+
+sub _raw_pop {
+    CORE::pop(@{shift->_raw_params});
+}
+
 sub remark {
     my ($this,$key,$value) = @_;
     # remark() -> HASH*
@@ -366,6 +368,43 @@ sub remark {
 	}
 	defined $this->[REMARKS] ?
 	    $this->[REMARKS]->{$key} : undef;
+    }
+}
+
+sub purge_raw_params {
+    my $this = shift;
+    $this->_raw_params(undef);
+}
+
+sub encoding_params {
+    my ($this, $encoding) = @_;
+
+    croak "raw_params already purged; can't re encoding"
+	unless defined $this->_raw_params;
+
+    my @encodings = split(/\s*,\s*/, $encoding);
+    my $unicode = Unicode::Japanese->new;
+
+    # clear
+    @{$this->params} = ();
+
+    foreach my $value_raw (@{$this->_raw_params}) {
+	my $use_encoding = $encodings[0];
+	if (scalar(@encodings) != 1) {
+	  my $auto_charset = $unicode->getcode($value_raw);
+	  # getcodeで検出された文字コードでencodingsに指定されているものがあれば採用。
+	  # 無ければencodingsの一番最初を採用する。 (UTF-8をSJISと認識したりするため。)
+	  $use_encoding = ((grep {$auto_charset eq $_} @encodings), @encodings)[0];
+	}
+	my $value = do {
+	    if (CORE::length ($value_raw) == 0) {
+		'';
+	    }
+	    else {
+		$unicode->set($value_raw,$use_encoding)->utf8;
+	    }
+	};
+	$this->push($value);
     }
 }
 
