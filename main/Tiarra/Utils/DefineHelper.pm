@@ -49,68 +49,53 @@ sub _parse_attr_define {
     }
 }
 
-sub _generate_attr_closure {
+sub _define_attr_common {
     my $pkg = shift;
-    my $class_method_p = shift;
     my $type = shift;
-    my $attr = shift;
-    # outside parentheses for context
-    my $str = join('',
-		   '(sub',
-		   ({
-		       accessor => ' : lvalue',
-		       getter   => '',
-		   }->{$type}),
-		   ' {',
-		   ' die "too many args" if $#_ >= ',
-		   ({
-		       accessor => '2',
-		       getter   => '1',
-		   }->{$type}),
-		   ';',
-		   ({
-		       accessor => ' my $this = shift',
-		       getter   => ' shift',
-		   }->{$type}),
-		   ($class_method_p ? '->_this' : ''),
-		   ({
-		       accessor => "; \$this->$attr = shift if \$#_ >= 0; \$this",
-		       getter   => '',
-		   }->{$type}),
-		   "->$attr;",
-		   ' })');
-    no strict 'refs';
-    no warnings;
-    eval $str;
-}
-
-sub define_attr_accessor {
-    my $pkg = shift;
     my $class_method_p = shift;
-    my $call_pkg = $pkg->get_package;
+    my $call_pkg = $pkg->get_package(1);
     foreach (@_) {
 	my ($funcname, $valname) = @{$pkg->_parse_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    $pkg->_generate_attr_closure($class_method_p, 'accessor',
-					 "{$valname}"),
+	    $pkg->_generate_attr_closure($class_method_p, $type,
+					 "{$valname}", $funcname),
 	    $funcname);
     }
     undef;
 }
 
+sub define_attr_accessor {
+    shift->_define_attr_common('accessor', @_);
+}
+
 sub define_attr_getter {
+    shift->_define_attr_common('getter', @_);
+}
+
+sub _define_attr_hook_common {
     my $pkg = shift;
+    my $type = shift;
     my $class_method_p = shift;
-    my $call_pkg = $pkg->get_package;
+    my $hook = shift;
+    my $call_pkg = $pkg->get_package(1);
     foreach (@_) {
 	my ($funcname, $valname) = @{$pkg->_parse_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    $pkg->_generate_attr_closure($class_method_p, 'getter',
-					 "{$valname}"),
+	    $pkg->_generate_attr_hooked_closure($class_method_p, $type,
+						"{$valname}", $hook, $funcname),
 	    $funcname);
     }
+    undef;
+}
+
+sub _define_attr_translate_accessor {
+    shift->_define_attr_hook_common('translate', @_);
+}
+
+sub _define_attr_notify_accessor {
+    shift->_define_attr_hook_common('notify', @_);
 }
 
 sub _parse_array_attr_define {
@@ -128,35 +113,55 @@ sub _parse_array_attr_define {
     }
 }
 
-sub define_array_attr_accessor {
+sub _define_array_attr_common {
     my $pkg = shift;
+    my $type = shift;
     my $class_method_p = shift;
-    my $call_pkg = $pkg->get_package;
+    my $call_pkg = $pkg->get_package(1);
     foreach (@_) {
 	my ($funcname, $index) =
 	    @{$pkg->_parse_array_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    $pkg->_generate_attr_closure($class_method_p, 'accessor',
-					 "[$index]"),
+	    $pkg->_generate_attr_closure($class_method_p, $type,
+					 "[$index]", $funcname),
 	    $funcname);
     }
     undef;
 }
 
+sub define_array_attr_accessor {
+    shift->_define_array_attr_common('accessor', @_);
+}
+
 sub define_array_attr_getter {
+    shift->_define_array_attr_common('getter', @_);
+}
+
+sub _define_array_attr_hook_common {
     my $pkg = shift;
+    my $type = shift;
     my $class_method_p = shift;
-    my $call_pkg = $pkg->get_package;
+    my $hook = shift;
+    my $call_pkg = $pkg->get_package(1);
     foreach (@_) {
 	my ($funcname, $index) =
 	    @{$pkg->_parse_array_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    $pkg->_generate_attr_closure($class_method_p, 'getter',
-					 "[$index]"),
+	    $pkg->_generate_attr_hooked_closure($class_method_p, $type,
+						"[$index]", $hook, $funcname),
 	    $funcname);
     }
+    undef;
+}
+
+sub define_array_attr_translate_accessor {
+    shift->_define_array_attr_hook_common('translate', @_);
+}
+
+sub define_array_attr_notify_accessor {
+    shift->_define_array_attr_hook_common('notify', @_);
 }
 
 sub define_attr_enum_accessor {
@@ -174,11 +179,11 @@ sub define_attr_enum_accessor {
 	}
 	$pkg->define_function(
 	    $pkg->get_package,
-	    eval 'sub {
+	    eval '(sub {
 		 my $this = shift;
 		 $this->$attr_name($value) if defined shift;
 		 $this->$attr_name '.$match_type.' $value;
-	     }',
+	     })',
 	    $funcname);
     }
 }
@@ -227,7 +232,7 @@ sub define_enum {
 sub get_package {
     my $pkg = shift;
     my $caller_level = shift || 0;
-    (caller($caller_level + 1 + $ExportLevel))[0];
+    ($pkg->get_caller($caller_level + 1))[0];
 }
 
 sub get_caller {
@@ -244,5 +249,81 @@ sub do_with_define_exportlevel {
     $ExportLevel += 3 + $level;
     shift->(@_);
 }
+
+
+# generator
+sub _generate_attr_closure {
+    my $pkg = shift;
+    my $class_method_p = shift;
+    my $type = shift;
+    my $attr = shift;
+    my $funcname = shift;
+    # outside parentheses for context
+    my $str = join('',
+		   "\n# line 1 \"",
+		   (defined $funcname ? "->$funcname\: " : ''),
+		   "attr $type\"\n",
+		   '(sub',
+		   ({
+		       accessor => ' : lvalue',
+		       getter   => '',
+		   }->{$type}),
+		   ' {',
+		   ' die "too many args" if $#_ >= ',
+		   ({
+		       accessor => '2',
+		       getter   => '1',
+		   }->{$type}),
+		   ';',
+		   ({
+		       accessor => ' my $this = shift',
+		       getter   => ' shift',
+		   }->{$type}),
+		   ($class_method_p ? '->_this' : ''),
+		   ({
+		       accessor => "; \$this->$attr = shift if \$#_ >= 0; \$this",
+		       getter   => '',
+		   }->{$type}),
+		   "->$attr;",
+		   ' })');
+    no strict 'refs';
+    no warnings;
+    eval $str ||
+	(print STDERR __PACKAGE__."/generator error: \n$str\n$@", undef);
+}
+
+sub _generate_attr_hooked_closure {
+    my $pkg = shift;
+    my $class_method_p = shift;
+    my $type = shift;
+    my $attr = shift;
+    my $update_hook = shift;
+    my $funcname = shift;
+    # outside parentheses for context
+    my $str = join('',
+		   "\n# line 1 \"",
+		   (defined $funcname ? "->$funcname\: " : ''),
+		   "attr $type\"\n",
+		   '(sub {',
+		   ' die "too many args" if $#_ >= 2;',
+		   ' my $this = shift',
+		   ($class_method_p ? '->_this' : ''),
+		   ';',
+		   ' if ($#_ >=0) {',
+		   "  \$this->$attr =",
+		   ({
+		       translate => '',
+		       notify => ' shift;',
+		   }->{$type}),
+		   " $update_hook;",
+		   ' }',
+		   " \$this->$attr;",
+		   ' })');
+    no strict 'refs';
+    no warnings;
+    eval $str ||
+	(print STDERR __PACKAGE__."/generator error: \n$str\n$@", undef);
+}
+
 
 1;
