@@ -36,6 +36,7 @@ sub message_io_hook {
 		    my ($command, $text) = split(/ /, $ctcp, 2);
 		    if ($command eq 'VERSION') {
 			$io->remark('client-version', $text);
+			$io->remark(__PACKAGE__.'/fetching-version-expire', undef, 'delete');
 			return undef;
 		    }
 		}
