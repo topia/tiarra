@@ -328,7 +328,8 @@ AUTOLOAD
     $sub = 'use bytes;'.$sub;
   }
 
-  CORE::eval($sub);
+  $sub =~ /\A(.*)\z/s;
+  CORE::eval($1);
   if ($@)
     {
       CORE::die $@;
@@ -411,7 +412,8 @@ sub _init_table {
       $HEADLEN = unpack('N', $HEADLEN);
       read($FH, $TABLE, $HEADLEN)
 	or die "Can't seek table. [$!]\n";
-      $TABLE = eval $TABLE;
+      $TABLE =~ /\A(.*)\z/s;
+      $TABLE = eval $1;
       if($@)
 	{
 	  die "Internal Error. [$@]\n";
