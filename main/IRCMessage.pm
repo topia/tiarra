@@ -143,6 +143,8 @@ sub clone {
 	    Data::Dumper->new([$this])->Terse(1)->Deepcopy(1)->Purity(1)->Dump;
     } else {
 	my @new = @$this;
+	$new[PARAMS] = [@{$this->[PARAMS]}] if defined $this->[PARAMS];
+	$new[REMARKS] = {%{$this->[REMARKS]}} if defined $this->[REMARKS];
 	bless \@new => ref($this);
     }
 }
