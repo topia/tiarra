@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 all:
 	find . -name \*\~ -print0 | xargs -0 rm -f
-	gtags
+#	gtags
 
 update:
 	cvs -z 5 -q up -dP
