@@ -261,7 +261,7 @@ sub compile {
     my $regex = quotemeta($mask);
     $regex =~ s/\\\?/./g;
     $regex =~ s/\\\*/.*/g;
-    $regex =~ s/\\\#/\\d*/g;
+    #$regex =~ s/\\\#/\\d*/g;
     $regex = "^$regex\$";
     if ($consider_case) {
 	qr/$regex/;
