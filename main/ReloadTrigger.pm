@@ -9,6 +9,7 @@ use warnings;
 use RunLoop;
 use Configuration;
 use ModuleManager;
+use Timer;
 
 sub reload_conf_if_updated {
     # confファイルが更新されていたらリロードし、
@@ -24,6 +25,17 @@ sub reload_conf_if_updated {
 
 sub reload_mods_if_updated {
     ModuleManager->shared_manager->reload_modules_if_modified;
+}
+
+sub _install_reload_timer {
+    Timer->new(
+	Name => __PACKAGE__.'/reload',
+	After => 0,
+	Code => sub {
+	    reload_conf_if_updated;
+	    reload_mods_if_updated;
+	}
+       )->install;
 }
 
 1;
