@@ -11,7 +11,7 @@ use Tools::DateConvert;
 use Mask;
 use Multicast;
 
-sub notification_of_message_io {
+sub message_io_hook {
     my ($this,$message,$io,$type) = @_;
 
     my $prefix = 'RAWLOG: ';
@@ -31,7 +31,7 @@ sub notification_of_message_io {
 	if ($io->server_p()) {
 	    'SERVER(' . $io->network_name() . ') ';
 	} elsif ($io->client_p()) {
-	    'CLIENT ';
+	    'CLIENT(' . ($io->option('logname') || $io->fullname()) . ') ';
 	} else {
 	    '------ ';
 	}
@@ -50,6 +50,8 @@ sub notification_of_message_io {
     if ($this->config->get($conf_entry) != 0) {
 	::printmsg($prefix . $message->serialize());
     }
+
+    return $message;
 }
 
 1;
