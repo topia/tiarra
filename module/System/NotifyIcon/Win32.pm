@@ -43,12 +43,14 @@ sub new {
     $this->{console_window} = Win32::GUI::GetPerlWindow();
 
     # タスクトレイ登録
-    $this->{icon} = new Win32::GUI::Icon('GUIPERL.ICO');
+    if (defined $this->config->iconfile) {
+	$this->{icon} = new Win32::GUI::Icon($this->config->iconfile);
+    }
     $this->event_handler_register('NotifyIcon_Click');
     $this->event_handler_register('NotifyIcon_RightClick');
     $this->{notify_icon} = $this->{main_window}->AddNotifyIcon(
 	-name => __PACKAGE__ . '::NotifyIcon',
-	-icon => $this->{icon},
+	(defined $this->{icon} ? (-icon => $this->{icon}) : ()),
 	-tip => 'Tiarra(irc proxy) #' . ::version());
 
     return $this;
@@ -218,4 +220,8 @@ default: off
 
 # Win32 イベントループを処理する最大間隔を指定します。
 -interval: 2
+
+# 通知領域に表示するアイコンを指定します。
+# Win32::GUI の制限でちゃんとしたアイコンファイルしか指定できません。
+iconfile: guiperl.ico
 =cut
