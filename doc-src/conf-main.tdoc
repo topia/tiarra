@@ -1,5 +1,5 @@
 -*- outline -*-
-$Id: conf-main.tdoc,v 1.1 2003/08/04 09:29:21 admin Exp $
+$Id: conf-main.tdoc,v 1.2 2004/02/14 11:48:18 topia Exp $
 
 perlのソースに使うpodパーサを流用しているので、package文と=pod〜=cutで書く必要があります。
 ヘッダのinfo-is-ommitedとno-switchはどちらも値を真に定義しなければなりません。

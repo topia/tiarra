@@ -1,3 +1,108 @@
+2004-02-14  Topia  <topia@clovery.jp>
+
+	* 全般:
+	  (a) NumericReply を使うようにした。
+	  (b) general/sysmsg-prefix を使うようにした。
+
+	* doc-src/conf-main.tdoc, sample.conf:
+	  - sysmsg-prefix を追加。
+
+	* sample.conf:
+	  - Client::Eval と Client::Cache を追加。
+
+	* main/ChannelInfo.pm:
+	  - mode_string method を追加。
+
+	* main/Configuration.pm:
+	  - general/sysmsg-prefix のデフォルト値を追加。
+
+	* main/IRCMessage.pm:
+	  - clone(deep => 1) を追加。
+	  - s/unvalid/invalid/; fix typo.
+	  - $this->[PARAMS] がそもそも未定義なときは、
+	    n_params は中身なし配列の長さ(=0)を返すようにした。
+
+	* main/ModuleManager.pm:
+	  - module の reload の時に、一時的に $this->{modules} の
+	    該当箇所に undef を入れて実行されないようにした。
+	    (main/RunLoop.pm の変更とセットです。)
+
+	* main/Multicast.pm: (b)
+	  - シングルサーバモードで、どこのネットワークにも
+	    繋がっていないときは、デフォルトネットワークに
+	    $networks->default を使うようにした。
+
+	* main/NumericReply.pm:
+	  - irc2.10.3p5+hemp2 に合わせた。
+	    ISUPPORT は使用する設定。
+	  - fetch_number(名前から番号), fetch_name(番号から名前)
+	    のそれぞれを得る関数を追加した。
+
+	* main/PersonInChannel.pm:
+	  - priv_symbol method (privilege symbol) を追加。
+	    has_[ov] の状態によって、 @, +, 空文字列のどれかを返す。
+
+	* main/PersonalInfo.pm:
+	  - AWAY を追加。できるだけ更新しますが、
+	    性質上情報の正確さは保証できません。
+
+	* main/RunLoop.pm: (b)
+	  - single-server-mode 時に、切断・接続のアナウンスの
+	    送信先チャンネル名からネットワーク名をはずすようにした。
+	  - サーバへの接続処理時に、 couldn't connect to 以外の
+	    エラーメッセージ表示には notify_error を使うようにした。
+	  - クライアントからの接続処理時は、エラーメッセージ表示に
+	    notify_msg を使うようにした。
+	  - apply_filters で、 modules_list の中に undef が出てきたら、
+	    それを無視するようにした。
+	    (main/ModuleManager.pm の変更も参照。)
+
+	* main/IrcIO/Client.pm: (a)(b)
+	  - credit を RPL_YOURHOST でなく MOTD として表示するようにした。
+	  - RPL_YOURHOST では、 Tiarra のバージョンを表示する。
+
+	* main/IrcIO/Server.pm: (a)
+	  - _RPL_* の処理を NumericReply::fetch_name を使ってまとめた。
+	  - _START_WHOIS_REPLY, _RPL_ENDOFWHOIS, _RPL_AWAY を追加。
+	  - _RPL_WHOREPLY
+	    + 空白を含む realname に関するバグを修正。
+	    + away 情報を記憶するようにした。
+	    + server hop 情報を network の 'server-hops' remark に保存。
+	  - _RPL_CHANNELMODEIS で、 switches と parameters の情報は
+	    この reply で得られると決めつけて、クリア処理を行う。
+
+	* module/Channel/Freeze.pm: (b)
+
+	* module/Channel/Rejoin.pm: (a)
+	  - ChannelInfo->mode_string を使用するようにした。
+
+	* module/Channel/Join/Connect.pm:
+	  - コンマの直後にスペースがあった場合、削除する処理が、
+	    最初の一つに対してしか実行されていなかったのを修正…(^^;;;
+
+	* module/Client/Cache.pm:
+	  - 追加。いまのところ MODE キャッシュと、 WHO キャッシュを実装。
+
+	* module/Client/Eval.pm:
+	  - 追加。クライアントからのコマンドしか受け付けないが、
+	    その代わりすべてのコマンドを実行できる。
+	    事実上 IRC パスワードがわかれば Tiarra が動いているホスト上で
+	    動作しているアカウントの権限で何でもできる、
+	    ということに注意すること。
+
+	* module/Log/Recent.pm: (b)
+	  - network name が不正な場合は、 notify_warn で警告して、
+	    エラーなしに抜けるようにした。
+
+	* module/System/Pong.pm:
+	  - prefix がついているのは不自然だったので、削った。
+
+	* module/System/Raw.pm: (b)
+
+	* module/Tools/LinedDB.pm:
+	  - ファイルが存在しない場合に、
+	    更新チェック部分でエラーが発生していたのを修正。
+
 2004-02-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO.pm, main/IrcIO/*.pm, main/Module.pm:
@@ -1111,7 +1216,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.127 2004/02/04 12:08:54 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2004/02/04 12:08:54 $
-# Revision: $Revision: 1.127 $
+#       Id: $Id: ChangeLog,v 1.128 2004/02/14 11:48:17 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2004/02/14 11:48:17 $
+# Revision: $Revision: 1.128 $

@@ -1,0 +1,46 @@
+-*- text -*-
+$Id: AUTHORS,v 1.1 2004/02/14 08:44:24 admin Exp $
+プログラム: Tiarra
+メインの開発者: phonohawk <phonohawk@ps.sakura.ne.jp>
+
+Authors (敬称略)
+===============
+
+* tiarra, main/*
+
+phonohawk: 設計, 殆どのクラスの実装
+Topia: 幾つかのクラスの設計と実装, 多数の改良とバグ修正
+
+* module/下、Auto関連
+
+Topia: ほぼ全て
+phonohawk: (初期バージョンのみ)設計と実装
+
+* module/下、Auto以外
+
+phonohawk: ほぼ全て
+Topia: 幾つかのクラスの設計と実装, 多数の改良とバグ修正
+
+* tiarra-conf.el
+
+phonohawk
+
+* tiarra-conf.l
+
+Noboruhi: tiarra-conf.elからの移植
+
+* doc/*
+
+phonohawk: ほぼ全て
+
+* アーカイブの作成と配布
+
+Topia (2004年2月現在)
+
+===============
+その他、多数の方々よりバグ報告や改良案等を頂き、Tiarraは改善されております。
+この場を借りて感謝の意を申し上げます。
+
+- phonohawk -                     http://ccm.sherry.jp/
+OpenPGP public key: 1024D/1A86EF72
+Fpr: 5F3E 5B5F 535C CE27 8254  4D1A 14E7 9CA7 1A86 EF72
