@@ -258,6 +258,9 @@ sub reload_modules_if_modified {
 		}
 
 		my $conf_block = $this->{mod_configs}->{$modname};
+		# message_io_hook が定義されているモジュールが死ぬと怖いので
+		# とりあえず undef を入れて無視させる
+		$this->{modules}->[$idx] = undef;
 		$this->_unload($conf_block);
 		$this->{modules}->[$idx] = $this->_load($conf_block); # 失敗するとundefが入る。
 	    }
