@@ -1,7 +1,6 @@
 # -----------------------------------------------------------------------------
 # $Id: Utils.pm,v 1.10 2003/07/31 07:34:14 topia Exp $
 # -----------------------------------------------------------------------------
-# $Clovery: tiarra/module/Auto/Utils.pm,v 1.16 2003/07/27 07:02:47 topia Exp $
 package Auto::Utils;
 use strict;
 use warnings;
@@ -9,6 +8,7 @@ use Module::Use qw(Auto::AliasDB);
 use Auto::AliasDB;
 use Multicast;
 use IRCMessage;
+use RunLoop;
 
 # get_ch_name は get_raw_ch_name のエイリアス(過去互換のため)
 *get_ch_name = \&get_raw_ch_name;
@@ -43,9 +43,12 @@ sub sendto_channel_closure {
     # $msg	: message_arrivedに渡ってきた$msg。エイリアス置換に使用されます。よって、
     #               後述する $use_alias が false なら指定する必要はありません。
     #               その場合は undef でも渡しておきましょう。
-    # $sender	: message_arrivedに渡ってきた$sender。送信に使います。必須。
+    # $sender	: message_arrivedに渡ってきた$sender。送信に使います。ない場合は
+    #               $result とともに undef を指定してください。
     # $result	: message_arrivedの返り値にする配列の参照。詳細は例を見ましょう。
-    # $use_alias	: エイリアス置き換えを行うかどうか。省略可、省略した場合は行う。
+    # $use_alias	: エイリアス置き換えを行うかどうか。省略可で省略した場合は
+    #                       行うが、 $msg, $sender のどちらかが undef ならエイリアス
+    #                       置き換えを呼び出せないので行わない。
     # $extra_callbacks
     # 		: 追加のエイリアス置換コールバック。省略可。
     #
@@ -70,7 +73,7 @@ sub sendto_channel_closure {
 
     my ($sendto, $command, $msg, $sender, $result, $use_alias, $extra_callbacks) = @_;
 
-    $use_alias = 1 unless defined $use_alias;
+    $use_alias = 1 if (!defined $use_alias && defined $msg && defined $sender);
     $extra_callbacks = [] unless defined $extra_callbacks;
 
     return sub {
@@ -87,16 +90,43 @@ sub sendto_channel_closure {
 			   $sender,
 			   %extra_replaces)
 			    : $str)]);
-	if ($sender->isa('IrcIO::Server')) {
+	my ($rawname, $network_name, $specified_network) = Multicast::detach($sendto);
+	my $get_network_name = sub {
+	    $specified_network ? $network_name :
+		Configuration->shared_conf->networks->default;
+	};
+	my $sendto_client = sub {
+	    if (RunLoop->shared_loop->multi_server_mode_p) {
+		$sendto;
+	    } else {
+		$rawname;
+	    }
+	};
+	if (!defined $sender) {
 	    # 鯖にはチャンネル名にネットワーク名を付けない。
 	    my $for_server = $msg_to_send->clone;
-	    $for_server->param(0, scalar(Multicast::detach($sendto)));
+	    $sender = RunLoop->shared_loop->network($get_network_name->());
+	    if (defined $sender) {
+		$for_server->param(0, $rawname);
+		$sender->send_message($for_server);
+	    }
+
+	    # クライアントにはチャンネル名にネットワーク名を付ける。
+	    # また、クライアントに送られる時にはPrefixがそのユーザーに設定されるよう註釈を付ける。
+	    my $for_client = $msg_to_send->clone;
+	    $for_client->param(0, $sendto_client->());
+	    $for_client->remark('fill-prefix-when-sending-to-client',1);
+	    RunLoop->shared_loop->broadcast_to_clients($for_client);
+	} elsif ($sender->isa('IrcIO::Server')) {
+	    # 鯖にはチャンネル名にネットワーク名を付けない。
+	    my $for_server = $msg_to_send->clone;
+	    $for_server->param(0, $rawname);
 	    $sender->send_message($for_server);
 
 	    # クライアントにはチャンネル名にネットワーク名を付ける。
 	    # また、クライアントに送られる時にはPrefixがそのユーザーに設定されるよう註釈を付ける。
 	    my $for_client = $msg_to_send->clone;
-	    $for_client->param(0, $sendto);
+	    $for_client->param(0, $sendto_client->());
 	    $for_client->remark('fill-prefix-when-sending-to-client',1);
 	    push @$result,$for_client;
 	} elsif ($sender->isa('IrcIO::Client')) {
@@ -107,7 +137,7 @@ sub sendto_channel_closure {
 
 	    my $for_client = $msg_to_send->clone;
 	    $for_client->prefix($sender->fullname);
-	    $for_client->param(0, $sendto);
+	    $for_client->param(0, $sendto_client->());
 	    $sender->send_message($for_client);
 	}
     };
@@ -143,7 +173,7 @@ sub generate_reply_closures {
     #           my ($this,$msg,$sender) = @_;
     #           my @result = ($msg);
     #           my ($get_ch_name, $reply, $reply_as_priv, $reply_anywhere) = 
-    #               sendto_channel_closure($msg, $sender, \@result);
+    #               generate_reply_closures($msg, $sender, \@result);
     #           $reply_anywhere->('message', 'hoge' => 'moge');
     #           return @result;
     #       }
