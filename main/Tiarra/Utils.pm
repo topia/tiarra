@@ -69,15 +69,15 @@ sub define_attr_accessor {
 	my ($funcname, $valname) = @{$pkg->_parse_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    ($class_method_p ? sub {
+	    ($class_method_p ? sub : lvalue {
 		 my ($class_or_this, $value) = @_;
 		 my $this = $class_or_this->_this;
 		 $this->{$valname} = $value if $#_ >= 1;
-		 return $this->{$valname};
-	     } : sub {
+		 $this->{$valname};
+	     } : sub : lvalue {
 		 my ($this, $value) = @_;
 		 $this->{$valname} = $value if $#_ >= 1;
-		 return $this->{$valname};
+		 $this->{$valname};
 	     }),
 	    $funcname);
     }
@@ -142,15 +142,15 @@ sub define_array_attr_accessor {
 	    @{$pkg->_parse_array_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    ($class_method_p ? sub {
+	    ($class_method_p ? sub : lvalue {
 		 my ($class_or_this, $value) = @_;
 		 my $this = $class_or_this->_this;
 		 $this->[$index] = $value if $#_ >= 1;
-		 return $this->[$index];
-	     } : sub {
+		 $this->[$index];
+	     } : sub : lvalue {
 		 my ($this, $value) = @_;
 		 $this->[$index] = $value if $#_ >= 1;
-		 return $this->[$index];
+		 $this->[$index];
 	     }),
 	    $funcname);
     }
