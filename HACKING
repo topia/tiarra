@@ -20,22 +20,25 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
     だと思います。
 
   - Multicast(main/Multicast.pm)
-    + detach($str)	文字列 $str からネットワーク名を外す。
-      戻り値: (セパレータ前の文字列,ネットワーク名,ネットワーク名が明示されたかどうか)
-      ただしスカラーコンテクストではセパレータ前の文字列のみを返す。
-    + attach($str, $network_name)	$str にネットワーク名を付ける。
-      $strはChannelInfoのオブジェクトでも良い。
-      $network_nameは省略可能。IrcIO::Serverのオブジェクトでも良い。
-    + nick_p($str)	文字列 $str が nick name として許される形式なら 1 を返す。
-      ネットワーク名は付けたままでも構わない。処理前に detach される。
-    + channel_p($str)	文字列 $str が channel name として許される形式なら 1 を返す。
-      ネットワーク名は付けたままでも構わない。処理前に detach される。
+    + detach($str)		文字列 $str からネットワーク名を外す。
+				戻り値: (セパレータ前の文字列,ネットワーク名,ネットワーク名が明示されたかどうか)
+				ただしスカラーコンテクストではセパレータ前の文字列のみを返す。
+    + attach($str, $network_name)
+				$str にネットワーク名を付ける。
+				$strはChannelInfoのオブジェクトでも良い。
+				$network_nameは省略可能。IrcIO::Serverのオブジェクトでも良い。
+    + nick_p($str)		文字列 $str が nick name として許される形式なら 1 を返す。
+				ネットワーク名は付けたままでも構わない。処理前に detach される。
+    + channel_p($str)		文字列 $str が channel name として許される形式なら 1 を返す。
+				ネットワーク名は付けたままでも構わない。処理前に detach される。
 
   - RunLoop(main/RunLoop.pm)
     ここで紹介する関数は、全て RunLoop->shared_loop->function(...) と呼んで下さい。
-    + channel($str)	チャンネルを探す。
-      ネットワーク名付きのチャンネル名が引数です。無ければ undef を返します。
-    + broadcast_to_clients(@messages)	 メッセージを全てのクライアントに送信する。
+    + channel($str)		チャンネルを探す。
+				ネットワーク名付きのチャンネル名が引数です。
+				無ければ undef を返します。
+    + broadcast_to_clients(@messages)
+				メッセージを全てのクライアントに送信する。
     + notify_msg($str)		全てのクライアントと、 STDOUT にメッセージを通知します。
     + notify_error($str)	notify_msg を使ってエラーを通知します。
     + notify_warn($str)		notify_msg を使って警告を通知します。
@@ -49,15 +52,17 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
   - BulletinBoard(main/BulletinBoard.pm)
     ここで紹介する関数は、全て BulletinBoard->shared->function(...) と呼んで下さい。
     + set($key, $value)		掲示板に $key という名前で値 $value をセットします。
-    				$key を __PACKAGE__."/key" という名前にすれば
+				$key を __PACKAGE__."/key" という名前にすれば
 				被りにくいと思います。
     + get($key)			$key でセットした値を得ます。
     + keys			BulletinBoard が保持しているテーブルを返します。
-    				この内容を変更すると、当然 BulletinBoard の内容も変わります。
+				この内容を変更すると、当然 BulletinBoard の内容も変わります。
 
   - Auto::Utils(module/Auto/Utils.pm)
-    + generate_reply_closures(...)	一般的な自動反応をするのに有用なクロージャを生成する。
-    + sendto_channel_closure(...)	チャンネル等に PRIVMSG / NOTICE を送るクロージャを生成する。
+    + generate_reply_closures(...)
+				一般的な自動反応をするのに有用なクロージャを生成する。
+    + sendto_channel_closure(...)
+				チャンネル等に PRIVMSG / NOTICE を送るクロージャを生成する。
       一般的な使い方は Skelton.pm に書いておきました。
 
 * remark のあるオブジェクト
