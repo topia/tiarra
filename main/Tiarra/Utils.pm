@@ -7,6 +7,10 @@
 package Tiarra::Utils;
 use strict;
 use warnings;
+our $ExportLevel = 0;
+
+# please do { local $Tiarra::Utils::ExportLevel; ++$Tiarra::Utils::ExportLevel; }
+# in define_*s' wrapper function.
 
 # can't use; because this module referred by SharedMixin.
 #use Tiarra::SharedMixin;
@@ -233,7 +237,7 @@ sub define_enum {
 sub get_package {
     my $pkg = shift;
     my $caller_level = shift || 0;
-    (caller($caller_level + 1))[0];
+    (caller($caller_level + 1 + $ExportLevel))[0];
 }
 
 # utilities
