@@ -100,8 +100,10 @@ sub match_array {
     if ($use_re && substr($work, 0, 3) eq 're:') {
       # Àµµ¬É½¸½
       $work = substr($work,3);
+      # untaint
+      $work =~ /\A(.*)\z/s;
       $work = eval {
-	qr/$work/;
+	qr/$1/;
       }; if ($@) {
 	$work = '';
 	carp "error in regex: $@";
