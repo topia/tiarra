@@ -50,7 +50,10 @@ use constant MAX_PARAMS => MAX_MIDDLES + 1;
 
 utils->define_array_attr_accessor(0, qw(time));
 utils->define_array_attr_translate_accessor(
-    0, '(my $temp = shift) =~ tr/a-z/A-Z/', qw(command));
+    0, sub {
+	my ($from, $to) = @_;
+	"($to = $from) =~ tr/a-z/A-Z/";
+    }, qw(command));
 utils->define_array_attr_notify_accessor(
     0, '$this->_update_prefix', qw(nick name host));
 utils->define_array_attr_notify_accessor(
@@ -170,7 +173,7 @@ sub _parse {
 	    }
 	};
 
-	if ($this->[COMMAND]) {
+	if ($this->command) {
 	    # commandはもう設定済み。次はパラメータだ。
 	    $this->push($value);
 	}
@@ -213,7 +216,7 @@ sub _parse {
 
     # 解釈結果の正当性をチェック。
     # commandが無かったらdie。
-    unless ($this->[COMMAND]) {
+    unless ($this->COMMAND) {
 	croak "IRCMessage parsed invalid one, which doesn't have command.\n  $line\n";
     }
 }
@@ -272,7 +275,7 @@ sub serialize {
 	$result .= ':'.$this->[PREFIX].' ';
     }
 
-    $result .= $this->[COMMAND].' ';
+    $result .= $this->command.' ';
 
     if ($this->[PARAMS]) {
 	my $unicode = new Unicode::Japanese;
