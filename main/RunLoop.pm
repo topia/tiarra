@@ -15,7 +15,6 @@ use Carp;
 use IO::Socket::INET;
 use IO::Select;
 use Configuration;
-use IrcIO;
 use IrcIO::Server;
 use IrcIO::Client;
 use Unicode::Japanese;
@@ -30,7 +29,6 @@ use Tiarra::OptionalModules;
 use Tiarra::ShorthandConfMixin;
 use Tiarra::SharedMixin qw(shared shared_loop);
 use Tiarra::Utils;
-use Tiarra::Resolver;
 use Tiarra::TerminateManager;
 our $_shared_instance;
 
@@ -290,7 +288,7 @@ sub _multi_server_mode_changed {
 
 sub _update_send_selector {
     my $this = shift;
-    # 送信する必要のあるIrcIOだけを抜き出し、そのソケットを送信セレクタに登録する。
+    # 送信する必要のあるTiarra::Socketだけを抜き出し、そのソケットを送信セレクタに登録する。
 
     my $sel = $this->{send_selector} = IO::Select->new;
     foreach my $socket (@{$this->{sockets}}) {
