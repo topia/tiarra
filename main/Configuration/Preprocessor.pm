@@ -68,6 +68,11 @@ sub new {
     bless $this,$class;
 }
 
+sub included_files {
+    my ($this) = shift;
+    return keys(%{$this->{included}});
+}
+
 sub initial_define {
     my ($key, $value) = @_;
     $initial_definition{$key} = $value;

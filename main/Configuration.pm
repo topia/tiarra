@@ -38,6 +38,7 @@ sub _new {
 	time_on_load => 0, # 最後にloadが実行された時刻。
 	blocks => {}, # 汎用ブロック名 -> Configuration::Block ここにモジュール設定は入らない。
 	modules => [], # +で指定されたモジュールのConfiguration::Block
+	included_files => [], # include されたすべてのファイル(面倒なので conf_file を含む)
     };
     bless $obj,$class;
     $obj;
@@ -79,7 +80,11 @@ sub check_if_updated {
     }
     else {
 	if (defined $this->{conf_file}) {
-	    $this->{time_on_load} < (stat $this->{conf_file})[9];
+	    #$this->{time_on_load} < (stat $this->{conf_file})[9];
+	    foreach (@{$this->{included_files}}) {
+		return 1 if ($this->{time_on_load} < (stat $_)[9]);
+	    }
+	    0;
 	}
 	else {
 	    0;
@@ -117,7 +122,8 @@ sub load {
     $this->{time_on_load} = time;
 
     # プリプロセスしてからパース
-    my $body = Configuration::Preprocessor::preprocess($conf_file);
+    my $preprocessor = Configuration::Preprocessor->new;
+    my $body = $preprocessor->execute($conf_file);
     my $parser = Configuration::Parser->new($body);
     my $parsed = $parser->parsed;
 
@@ -169,6 +175,8 @@ sub load {
     # $thisに登録する事で確定する。
     $this->{blocks} = $blocks;
     $this->{modules} = $modules;
+    $this->{included_files} = [$preprocessor->included_files]
+	if (defined $this->{conf_file}); # リロード可能な場合は include_files を登録する。
 
     # リロードした場合はフックを呼ぶ。
     if ($this_is_reload) {
