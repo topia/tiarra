@@ -52,7 +52,8 @@ sub connecting { defined shift->{connecting}; }
 
 sub _connect_interrupted {
     my $this = shift;
-    $this->state_terminating || $this->state_finalizing;
+    $this->state_terminating || $this->state_finalizing ||
+	$this->state_terminated || $this->state_finalized;
 }
 
 sub _gen_msg {
@@ -369,20 +370,23 @@ sub _try_connect_socket {
 sub _attach {
     my ($this, $connector) = @_;
 
-    $this->{connecting} = undef;
-    $this->{sock} = $connector->sock;
-    $this->{sock}->autoflush(1);
-    $this->{server_addr} = $connector->addr;
-    $this->{proto} = $connector->type_name;
-    $this->{connected} = 1;
-    $this->state_connected(1);
+    if (defined $this->{connector}) {
+	$this->{connecting} = undef;
+	$this->{sock} = $connector->sock;
+	$this->{sock}->autoflush(1);
+	$this->{server_addr} = $connector->addr;
+	$this->{proto} = $connector->type_name;
+	$this->{connected} = 1;
+	$this->state_connected(1);
 
-    $this->_send_connection_messages;
+	$this->_send_connection_messages;
 
-    $this->{connector} = undef;
-    $this->printmsg("Opened connection to ". $this->destination .".");
-    $this->_runloop->register_receive_socket($this->{sock});
-
+	$this->{connector} = undef;
+	$this->printmsg("Opened connection to ". $this->destination .".");
+	$this->_runloop->register_receive_socket($this->{sock});
+    } else {
+	$this->die('connecter not defined.');
+    }
     $this;
 }
 
