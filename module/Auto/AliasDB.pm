@@ -144,52 +144,19 @@ sub check_readonly {
 
 sub dup_struct {
     my ($alias) = @_;
-    my ($new_alias) = {};
 
     return undef unless defined($alias);
-
-    map {
-	$new_alias->{$_} = $alias->{$_};
-    } keys(%$alias);
-
-    return $new_alias;
+    return $alias->clone;
 }
 
 sub concat_string_to_key {
     return Tools::GroupDB::concat_string_to_key(@_);
 }
 
-sub get_value_random {
-    return Tools::GroupDB::get_value_random(@_);
-}
-
-sub get_value {
-    my ($alias, $key) = @_;
-
-    my $values = get_array($alias, $key);
-    if ($values) {
-	# 発見.
-	return $values->[0];
-    }
-    return undef;
-}
-
-sub get_array {
-    my ($alias, $key) = @_;
-
-    my $value = $alias->{$key};
-    if (defined $value) {
-	# 発見
-	if (ref($value) eq 'ARRAY') {
-	    return $value;
-	}
-	else {
-	    return [$value];
-	}
-	last;
-    }
-    return ();
-}
+# first param should be Tool::Hash.
+sub get_value_random { shift->get_value_random(@_); }
+sub get_value { shift->get_value(@_) }
+sub get_array { shift->get_array(@_) }
 
 # replace support functions
 sub replace {
