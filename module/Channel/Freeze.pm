@@ -71,14 +71,7 @@ sub notify_list_of_frost_channels {
 	# Êó¹ð
 	RunLoop->shared->broadcast_to_clients(
 	    IRCMessage->new(
-		do {
-		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-			();
-		    }
-		    else {
-			(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
-		    }
-		},
+		Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [
 		    RunLoop->shared->current_nick,
@@ -97,14 +90,7 @@ sub message_arrived {
 	    my $notice = shift;
 	    RunLoop->shared->broadcast_to_clients(
 		IRCMessage->new(
-		    do {
-			if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-			    ();
-			}
-			else {
-			    (Prefix => Configuration->shared_conf->general->sysmsg_prefix);
-			}
-		    },
+		    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 		    Command => 'NOTICE',
 		    Params => [
 			RunLoop->shared->current_nick,

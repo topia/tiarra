@@ -19,6 +19,7 @@ use IrcIO;
 use IrcIO::Server;
 use IrcIO::Client;
 use Unicode::Japanese;
+use Mask;
 use ModuleManager;
 use Multicast;
 use Timer;
@@ -189,6 +190,24 @@ sub find_io_with_socket {
 	return $io if $io->sock == $sock;
     }
     undef;
+}
+
+sub sysmsg_prefix {
+    my ($this,$purpose,$category) = @_;
+    $category = (caller)[0] . (defined $category ? "::$category" : '');
+    # $purpose は、この関数で得た prefix を何に使うかを示す。
+    #     いまのところ system(NumericReply など)/priv/channel
+    # $category は、大まかなカテゴリ。
+    #     いまのところ log/system/notify があるが、
+    #     どうしようか決めかねている…。
+
+    if (Mask::match_array([
+	Configuration->shared_conf->general->
+	    sysmsg_prefix_use_masks('block')->get($purpose, 'all')], $category)) {
+	Configuration->shared->general->sysmsg_prefix;
+    } else {
+	undef
+    }
 }
 
 sub _multi_server_mode_changed {
@@ -363,14 +382,7 @@ sub _action_one_message {
 	$this->_rejoin_all_channels($network);
 	$this->broadcast_to_clients(
 	    IRCMessage->new(
-		do {
-		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-			();
-		    }
-		    else {
-			(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
-		    }
-		},
+		Prefix => $this->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [$this->current_nick,
 			   '*** The connection has been revived between '.$network->network_name.'.']));
@@ -378,14 +390,7 @@ sub _action_one_message {
     elsif ($event eq 'disconnected') {
 	$this->broadcast_to_clients(
 	    IRCMessage->new(
-		do {
-		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-			();
-		    }
-		    else {
-			(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
-		    }
-		},
+		Prefix => $this->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [$this->current_nick,
 			   '*** The connection has been broken between '.$network->network_name.'.']));
@@ -398,7 +403,7 @@ sub _action_message_for_each {
 	$this->_rejoin_all_channels($network);
 
 	my $msg = IRCMessage->new(
-	    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+	    Prefix => $this->sysmsg_prefix(qw(channel system)),
 	    Command => 'NOTICE',
 	    Params => ['', # チャンネル名は後で設定。
 		       '*** The connection has been revived between '.$network->network_name.'.']);
@@ -413,7 +418,7 @@ sub _action_message_for_each {
     }
     elsif ($event eq 'disconnected') {
 	my $msg = IRCMessage->new(
-	    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+	    Prefix => $this->sysmsg_prefix(qw(channel system)),
 	    Command => 'NOTICE',
 	    Params => ['', # チャンネル名は後で設定。
 		       '*** The connection has been broken between '.$network->network_name.'.']);
@@ -1261,14 +1266,7 @@ sub notify_msg {
 	    $this->broadcast_to_clients(
 		map {
 		    IRCMessage->new(
-			do {
-			    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-				();
-			    }
-			    else {
-				(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
-			    }
-			},
+			Prefix => $this->sysmsg_prefix(qw(priv notify)),
 			Command => 'NOTICE',
 			Params => [$this->current_nick,
 				   "*** $_"]);

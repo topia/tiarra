@@ -6,6 +6,7 @@ use strict;
 use warnings;
 use base qw(Module);
 use Mask;
+use NumericReply;
 use Configuration;
 
 sub message_arrived {
@@ -16,19 +17,11 @@ sub message_arrived {
 	if ($msg->n_params < 2) {
 	    $sender->send_message(
 		IRCMessage->new(
-		    do {
-			if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-			    ();
-			}
-			else {
-			    (Prefix => Configuration->shared_conf->general->sysmsg_prefix);
-			}
-		    },
-		    Prefix => Configuration->shared->general->sysmsg_prefix,
-		    Command => 'NOTICE',
+		    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(system)),
+		    Command => ERR_NEEDMOREPARAMS,
 		    Params => [
 			RunLoop->shared->current_nick,
-			"*** command `".$msg->command."' requires 2 or more parameters",
+			"command `".$msg->command."' requires 2 or more parameters",
 		       ]));
 	}
 	else {
@@ -52,14 +45,7 @@ sub message_arrived {
 	    if (!$sent) {
 		$sender->send_message(
 		    IRCMessage->new(
-			do {
-			    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-				();
-			    }
-			    else {
-				(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
-			    }
-			},
+			Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 			Command => 'NOTICE',
 			Params => [
 			   RunLoop->shared->current_nick, 

@@ -47,14 +47,7 @@ sub client_attached {
     foreach my $elem (@{$this->{priv_log}}) {
 	$client->send_message(
 	    IRCMessage->new(
-		do {
-		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-			();
-		    }
-		    else {
-			(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
-		    }
-		},
+		Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv log)),
 		Command => 'NOTICE',
 		Params => [$local_nick,$elem->[1]])); # $elem->[0]¤Ï¾ï¤Ë'priv'
     }
@@ -71,7 +64,7 @@ sub client_attached {
 			    $elem->[0] : $ch->name;
 		    $client->send_message(
 			IRCMessage->new(
-			    Prefix => Configuration->shared->general->sysmsg_prefix,
+			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(channel log)),
 			    Command => 'NOTICE',
 			    Params => [$ch_name,$elem->[1]]));
 		}

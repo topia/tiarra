@@ -182,7 +182,7 @@ sub _receive_while_logging_in {
     if ($this->{nick} ne '' && $this->{username} ne '') {
 	# general/tiarra-passwordを取得
 	my $valid_password = Configuration->shared_conf->general->tiarra_password;
-	my $prefix = Configuration->shared->general->sysmsg_prefix;
+	my $prefix = RunLoop->shared_loop->sysmsg_prefix('system');
 	if (defined $valid_password && $valid_password ne '' &&
 	    ! Crypt::check($this->{pass_received},$valid_password)) {
 	    # パスワードが正しくない。
@@ -243,14 +243,7 @@ sub _receive_while_logging_in {
 		    #$send_message->('NOTICE', "*** Your global nick in $network_name is currently '$global_nick'.");
 		    $this->send_message(
 			new IRCMessage(
-			    do {
-				if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-				    ();
-				}
-				else {
-				    (Prefix => $prefix);
-				}
-			    },
+			    Prefix => Runloop->shared_loop->sysmsg_prefix(qw(priv system)),
 			    Command => 'NOTICE',
 			    Params => [$current_nick,
 				       "*** Your global nick in $network_name is currently '$global_nick'."]));
@@ -308,7 +301,7 @@ sub _receive_after_logged_in {
 	    } else {
 		$this->send_message(
 		    new IRCMessage(
-			Prefix => Configuration->shared->general->sysmsg_prefix,
+			Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
 			Command => ERR_ERRONEOUSNICKNAME,
 			Params => [RunLoop->shared_loop->current_nick,
 				   $msg->params->[0],
@@ -319,7 +312,7 @@ sub _receive_after_logged_in {
 	} else {
 	    $this->send_message(
 		new IRCMessage(
-		    Prefix => Configuration->shared->general->sysmsg_prefix,
+		    Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
 		    Command => ERR_NONICKNAMEGIVEN,
 		    Params => [RunLoop->shared_loop->current_nick,
 			       'No nickname given']));

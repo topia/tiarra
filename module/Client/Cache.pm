@@ -90,7 +90,7 @@ sub message_arrived {
 		if (!exists $remark->{$chan_long}) {
 		    $sender->send_message(
 			IRCMessage->new(
-			    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+			    Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
 			    Command => RPL_CHANNELMODEIS,
 			    Params => [
 				RunLoop->shared_loop->current_nick,
@@ -133,7 +133,7 @@ sub message_arrived {
 		# cache がそろっているかわからないため、
 		# とりあえず作ってみて、足りなかったらあきらめる。
 		my $message_tmpl = IRCMessage->new(
-		    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+		    Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
 		    Command => RPL_WHOREPLY,
 		    Params => [
 			RunLoop->shared_loop->current_nick,

@@ -17,7 +17,7 @@ sub message_arrived {
 	    if ($sender->isa('IrcIO::Server')) {
 		undef;
 	    } else {
-		Configuration->shared->general->sysmsg_prefix;
+		RunLoop->shared_loop->sysmsg_prefix(qw(system));
 	    }
 	};
 	my ($nick) = do {
@@ -31,7 +31,7 @@ sub message_arrived {
 	    # これを送りつけてきたサーバー/クライアントにエラーを返す。
 	    $sender->send_message(
 		new IRCMessage(
-		    (defined $prefix ? (Prefix => $prefix) : ()),
+		    Prefix => $prefix,
 		    Command => ERR_NOORIGIN,
 		    Params => [
 			$nick,
@@ -43,12 +43,12 @@ sub message_arrived {
 		$nick = undef;
 		$target = $sender->server_hostname;
 	    } else {
-		$target = Configuration->shared->general->sysmsg_prefix;
+		$target = RunLoop->shared_loop->sysmsg_prefix(qw(system));
 	    }
 	    # これを送りつけてきたサーバー/クライアントにPONGを送り返す。
 	    $sender->send_message(
 		new IRCMessage(
-		    ((defined $prefix) ? (Prefix => $prefix) : ()),
+		    Prefix => $prefix,
 		    Command => 'PONG',
 		    Params => [
 			$target,

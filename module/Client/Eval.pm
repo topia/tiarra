@@ -28,7 +28,7 @@ sub message_arrived {
 	    };
 
 	    my $message = IRCMessage->new(
-		Prefix => Configuration->shared->general->sysmsg_prefix,
+		Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [RunLoop->shared_loop->current_nick,
 			   ''],

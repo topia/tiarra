@@ -201,7 +201,7 @@ sub _WHOIS_from_client {
     # ローカルnickにWHOISしたら、全ネットワークのnickを表示する
     if (($message->command eq 'WHOIS' || $message->command eq 'WHO') &&
 	$message->param(0) eq $local_nick) {
-	my $prefix = Configuration->shared->general->sysmsg_prefix;
+	my $prefix = $runloop->sysmsg_prefix(qw(priv system));
 	$sender->send_message(
 	    new IRCMessage(Prefix => $prefix,
 			   Command => 'NOTICE',
@@ -241,14 +241,7 @@ sub _WHOIS_from_client {
 	$local_nick ne $global_nick) {
 	$sender->send_message(
 	    new IRCMessage(
-		do {
-		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
-			();
-		    }
-		    else {
-			(Prefix => Configuration->shared->general->sysmsg_prefix);
-		    }
-		},
+		Prefix => $runloop->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [$local_nick,
 			   "*** Your global nick in $to is currently '$global_nick'."]));
