@@ -72,6 +72,7 @@ sub decode($$;$)
 sub encode($$;$)
 {
     my ($obj, $utf8, $chk) = @_;
+    $utf8 =~ s/\x{301c}/\x{ff5e}/g; # reverse soldius
     my $str = Encode::encode('cp932', $utf8, FB_PERLQQ) ;
     my $ret = '';
     Encode::_utf8_off($ret);
