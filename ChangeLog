@@ -1,3 +1,33 @@
+2004-04-07  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* main/IrcIO/Server.pm (new):
+	$this->{channels}のキーを、小文字に変換しておく。
+	
+	大文字小文字に一貫性の無いチャンネル名をクライアントに送る、
+	EFnetやFreenet(IRC)のようなircdに接続していると、しばしば
+	Tiarraは混乱する。この問題を回避するため、チャンネル名同士の
+	比較は一旦小文字に変換した上で行うようにする。
+
+	(channel):
+	大文字小文字を無視してチャンネルを探索するように変更。
+	$server->channel($name)のようにしてChannelInfoを得ている
+	場合には、何ら変更は必要無い。
+	
+	チャンネル名 => ChannelInfoのハッシュを返す、$server->channels
+	を使っている場合は、そのキーが小文字に変換されている事に注意しなければ
+	ならない。
+
+	* main/Multicast.pm (lc, uc): 追加
+	IRC方式で大文字と小文字の変換を行う。IRC方式とは、[]\がそれぞれ{}|の
+	大文字であると定義されている方式である。
+	
+	* main/Mask.pm (compile): 追加
+	マスクからコンパイル済み正規表現を生成する部分を、独立した関数にした。
+	大量のマッチングを高速に行う場合は、Mask::の関数を何度も呼ぶ代わりに
+	マスクを一度だけコンパイルする事を考えた方が良い。
+	Mask.pm内でコンパイル済みマスクはキャッシュしているが、それでも速度は違う。
+
+
 2004-04-01  Topia  <topia@clovery.jp>
 
 	* module/Client/Cache.pm:
@@ -1537,7 +1567,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.143 2004/04/01 09:44:41 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2004/04/01 09:44:41 $
-# Revision: $Revision: 1.143 $
+#       Id: $Id: ChangeLog,v 1.144 2004/04/07 11:49:58 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2004/04/07 11:49:58 $
+# Revision: $Revision: 1.144 $

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Mask.pm,v 1.14 2004/03/07 10:34:19 topia Exp $
+# $Id: Mask.pm,v 1.15 2004/04/07 11:49:58 admin Exp $
 # -----------------------------------------------------------------------------
 # $Clovery: tiarra/main/Mask.pm,v 1.10 2003/07/24 03:08:26 topia Exp $
 package Mask;
@@ -242,17 +242,33 @@ sub make_regex {
 	    delete $cache_table{$to_delete};
 	}
 
-	my $regex = $str;
-	$regex =~ s/(\W)/\\$1/g;
-	$regex =~ s/\\\?/\./g;
-	$regex =~ s/\\\*/\.\*/g;
-	$regex = "^$regex\$";
-	
-	my $compiled = qr/$regex/i;
+	my $compiled = compile($str);
 	push @cache_keys, $str;
 	$cache_table{$str} = $compiled;
 	
 	$compiled;
+    }
+}
+
+sub compile {
+    # $mask: マスク文字列
+    # $consider_case: 真なら、大文字小文字を区別する。
+    my ($mask, $consider_case) = @_;
+
+    if (!defined $mask) {
+	return qr/(?!)/; # マッチしない正規表現
+    }
+
+    my $regex = $mask;
+    $regex =~ s/(\W)/\\$1/g;
+    $regex =~ s/\\\?/\./g;
+    $regex =~ s/\\\*/\.\*/g;
+    $regex = "^$regex\$";
+    if ($consider_case) {
+	qr/$regex/;
+    }
+    else {
+	qr/$regex/i;
     }
 }
 

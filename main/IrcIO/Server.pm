@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Server.pm,v 1.54 2004/03/07 10:34:19 topia Exp $
+# $Id: Server.pm,v 1.55 2004/04/07 11:49:57 admin Exp $
 # -----------------------------------------------------------------------------
 # IrcIO::ServerはIRCサーバーに接続し、IRCメッセージをやり取りするクラスです。
 # このクラスはサーバーからメッセージを受け取ってチャンネル情報や現在のnickなどを保持しますが、
@@ -35,7 +35,7 @@ sub new {
     $obj->{receiving_exceptlist} = {}; # 同上。RPL_EXCEPTLIST
     $obj->{receiving_invitelist} = {}; # 同上、RPL_INVITELIST
 
-    $obj->{channels} = {}; # チャンネル名 => ChannelInfo
+    $obj->{channels} = {}; # 小文字チャンネル名 => ChannelInfo
     $obj->{people} = {}; # nick => PersonalInfo
 
     $obj->connect;
@@ -54,6 +54,7 @@ sub server_hostname {
 }
 
 sub channels {
+    # {小文字チャンネル名 => ChannelInfo}のハッシュリファを返す。
     # @options(省略可能):
     #   'even-if-kicked-out': 既に自分が蹴り出されてゐるチャンネルも返す。この動作は高速である。
     my ($this, @options) = @_;
@@ -62,11 +63,12 @@ sub channels {
     }
     else {
 	# kicked-outフラグが立つてゐないチャンネルのみ返す。
-	my %result = map {
-	    ($_, $this->{channels}{$_});
-	} grep {
-	    !$this->{channels}{$_}->remarks('kicked-out');
-	} keys %{$this->{channels}};
+	my %result;
+	while (my ($name, $ch) = each %{$this->{channels}}) {
+	    if (!$ch->remark('kicked-out')) {
+		$result{$name} = $ch;
+	    }
+	}
 	\%result;
     }
 }
@@ -154,7 +156,8 @@ sub person {
 }
 
 sub channel {
-    my ($this,$channel_name) = @_;
+    my $this = $_[0];
+    my $channel_name = Multicast::lc($_[1]);
     $this->{channels}->{$channel_name};
 }
 
@@ -415,7 +418,7 @@ sub _receive_while_logging_in {
 
 sub _receive_after_logged_in {
     my ($this,$msg) = @_;
-
+      
     $this->person($msg->nick,$msg->name,$msg->host); # nameとhostを覚えておく。
 
     if ($msg->command eq 'NICK') {
@@ -533,7 +536,7 @@ sub _KICK {
 	# チャンネル名とnickが1対1で対応
 	map {
 	    my ($ch_name,$nick) = ($ch_names[$_],$nicks[$_]);
-	    my $ch = $this->{channels}->{$ch_name};
+	    my $ch = $this->channel($ch_name);
 	    if (defined $ch) {
 		#$ch->names($nick,undef,'delete');
 		$kick->($ch,$nick);
@@ -542,7 +545,7 @@ sub _KICK {
     }
     elsif (@ch_names == 1) {
 	# 一つのチャンネルから1人以上をkick
-	my $ch = $this->{channels}->{$ch_names[0]};
+	my $ch = $this->channel($ch_names[0]);
 	if (defined $ch) {
 	    map {
 		#$ch->names($_,undef,'delete');
@@ -559,7 +562,7 @@ sub _MODE {
 	return;
     }
 
-    my $ch = $this->{channels}->{$msg->param(0)};
+    my $ch = $this->channel($msg->param(0));
     if (defined $ch) {
 	my $n_params = @{$msg->params};
 
@@ -624,14 +627,15 @@ sub _JOIN {
 	m/^([^\x07]+)(?:\x07(.*))?/;
 	my ($ch_name,$mode) = ($1,(defined $2 ? $2 : ''));
 
-	my $ch = $this->{channels}->{$ch_name};
+	my $ch = $this->channel($ch_name);
 	if (defined $ch) {
 	    # 知っているチャンネル。もしkickedフラグが立っていたらクリア。
 	    $ch->remarks('kicked-out',undef,'delete');
 	}
 	else {
 	    # 知らないチャンネル。
-	    $ch = $this->{channels}->{$ch_name} = ChannelInfo->new($ch_name,$this->{network_name});
+	    $ch = ChannelInfo->new($ch_name,$this->{network_name});
+	    $this->{channels}{Multicast::lc($ch_name)} = $ch;
 	}
 	$ch->names($msg->nick,
 		   new PersonInChannel(
@@ -644,10 +648,11 @@ sub _JOIN {
 sub _NJOIN {
     my ($this,$msg) = @_;
     my $ch_name = $msg->param(0);
-    my $ch = $this->{channels}->{$ch_name};
+    my $ch = $this->channel($ch_name);
     unless (defined $ch) {
 		# 知らないチャンネル。
-	$ch = $this->{channels}->{$ch_name} = ChannelInfo->new($ch_name,$this->{network_name});
+	$ch = ChannelInfo->new($ch_name,$this->{network_name});
+	$this->{channels}{Multicast::lc($ch_name)} = $ch;
     }
     map {
 	m/^([@+]*)(.+)$/;
@@ -665,11 +670,11 @@ sub _PART {
     my ($this,$msg) = @_;
     map {
 	my $ch_name = $_;
-	my $ch = $this->{channels}->{$ch_name};
+	my $ch = $this->channel($ch_name);
 	if (defined $ch) {
 	    if ($msg->nick eq $this->{current_nick}) {
 		# PARTしたのが自分だった
-		delete $this->{channels}->{$ch_name};
+		delete $this->{channels}->{Multicast::lc($ch_name)};
 	    }
 	    else {
 		$ch->names($msg->nick,undef,'delete');
@@ -738,7 +743,7 @@ sub _QUIT {
 
 sub _TOPIC {
     my ($this,$msg) = @_;
-    my $ch = $this->{channels}->{$msg->param(0)};
+    my $ch = $this->channel($msg->param(0));
     if (defined $ch) {
 	# 古いトピックを"old-topic"として註釈を付ける。
 	$msg->remark('old-topic', $ch->topic);
@@ -752,7 +757,7 @@ sub _TOPIC {
 
 sub _RPL_NAMREPLY {
     my ($this,$msg) = @_;
-    my $ch = $this->{channels}->{$msg->param(2)};
+    my $ch = $this->channel($msg->param(2));
     return unless defined $ch;
 
     my $receiving_namreply = $this->{receiving_namreply}->{$msg->param(2)};
@@ -844,7 +849,7 @@ sub _RPL_WHOISSERVER {
 
 sub _RPL_NOTOPIC {
     my ($this,$msg) = @_;
-    my $ch = $this->{channels}->{$msg->param(1)};
+    my $ch = $this->channel($msg->param(1));
     if (defined $ch) {
 	$ch->topic('');
     }
@@ -852,7 +857,7 @@ sub _RPL_NOTOPIC {
 
 sub _RPL_TOPIC {
     my ($this,$msg) = @_;
-    my $ch = $this->{channels}->{$msg->param(1)};
+    my $ch = $this->channel($msg->param(1));
     if (defined $ch) {
 	$ch->topic($msg->param(2));
     }
@@ -860,7 +865,7 @@ sub _RPL_TOPIC {
 
 sub _RPL_TOPICWHOTIME {
     my ($this,$msg) = @_;
-    my $ch = $this->{channels}->{$msg->param(1)};
+    my $ch = $this->channel($msg->param(1));
     if (defined $ch) {
 	$ch->topic_who($msg->param(2));
 	$ch->topic_time($msg->param(3));
@@ -869,7 +874,7 @@ sub _RPL_TOPICWHOTIME {
 
 sub _RPL_INVITELIST {
     my ($this,$msg) = @_;
-    my $ch = $this->{channels}->{$msg->param(1)};
+    my $ch = $this->channel($msg->param(1));
 
     my $receiving_invitelist = $this->{receiving_invitelist}->{$msg->param(1)};
     if (defined $receiving_invitelist &&
@@ -894,7 +899,7 @@ sub _RPL_ENDOFINVITELIST {
 
 sub _RPL_EXCEPTLIST {
     my ($this,$msg) = @_;
-    my $ch = $this->{channels}->{$msg->param(1)};
+    my $ch = $this->channel($msg->param(1));
 
     my $receiving_exceptlist = $this->{receiving_exceptlist}->{$msg->param(1)};
     if (defined $receiving_exceptlist &&
@@ -919,7 +924,7 @@ sub _RPL_ENDOFEXCEPTLIST {
 
 sub _RPL_BANLIST {
     my ($this,$msg) = @_;
-    my $ch = $this->{channels}->{$msg->param(1)};
+    my $ch = $this->channel($msg->param(1));
 
     my $receiving_banlist = $this->{receiving_banlist}->{$msg->param(1)};
     if (defined $receiving_banlist &&
@@ -973,7 +978,7 @@ sub _RPL_CHANNELMODEIS {
     my ($this,$msg) = @_;
     # 既知のチャンネルなら、そのチャンネルに
     # switches-are-known => 1という備考を付ける。
-    my $ch = $this->{channels}->{$msg->param(1)};
+    my $ch = $this->channel($msg->param(1));
     if (defined $ch) {
 	$ch->remarks('switches-are-known',1);
 
