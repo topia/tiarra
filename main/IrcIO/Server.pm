@@ -58,6 +58,13 @@ sub isupport {
     shift->{isupport};
 }
 
+sub state {
+    my ($this, $state) = @_;
+
+    $this->{state} = $state if defined $state;
+    $this->{state};
+}
+
 sub nick_p {
     my ($this, $nick) = @_;
 
@@ -183,6 +190,7 @@ sub connect {
     return if $this->connected;
 
     # 初期化すべきフィールドを初期化
+    $this->{state} = undef;
     $this->{nick_retry} = 0;
     $this->{logged_in} = undef;
 
@@ -265,6 +273,7 @@ sub connect {
 	    }
 	};
 	::printmsg("Opened connection to $this->{destination} ($ip_version)");
+	RunLoop->shared_loop->register_receive_socket($sock);
     }
     else {
 	die "Couldn't connect to $this->{destination}\n";
@@ -313,6 +322,14 @@ sub disconnect {
 
     $this->SUPER::disconnect;
     ::printmsg("Disconnected from $this->{destination}.");
+}
+
+sub quit {
+    my ($this, $msg) = @_;
+    return $this->send_message(
+	IRCMessage->new(
+	    Command => 'QUIT',
+	    Param => $msg));
 }
 
 sub send_message {

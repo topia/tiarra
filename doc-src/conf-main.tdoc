@@ -123,6 +123,18 @@ sysmsg-prefix-use-masks {
   # -*::log を指定しておくといいかもしれません。
   channel: *
 }
+
+messages {
+  # Tiarra が使用する、いくつかのメッセージを指定する。
+
+  quit {
+    # ネットワーク設定が変更され、再接続する場合の切断メッセージ
+    netconf-changed-reconnect: Server Configuration changed; reconnect
+
+    # ネットワーク設定が変更され、切断する場合の切断メッセージ
+    netconf-changed-disconnect: Server Configuration changed; disconnect
+  }
+}
 =cut
 
 * networks

@@ -48,6 +48,7 @@ sub new {
 	}
     }
     ::printmsg("One client at ".$obj->{client_host}." connected to me.");
+    RunLoop->shared_loop->register_receive_socket($sock);
     $obj;
 }
 

@@ -42,6 +42,7 @@ sub disconnect {
     my $this = shift;
     $this->{sock}->shutdown(2);
     $this->{connected} = undef;
+    RunLoop->shared_loop->unregister_receive_socket($this->{sock});
 }
 
 sub sock {

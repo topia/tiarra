@@ -200,6 +200,14 @@ my $defaults = {
 	    'priv' => '',
 	    'channel' => '*',
 	},
+	'messages' => {
+	    'quit' => {
+		'netconf-changed-reconnect' =>
+		    'Server Configuration changed; reconnect',
+		'netconf-changed-disconnect' =>
+		    'Server Configuration changed; disconnect',
+	    }
+	},
     },
     networks => {
 	'name' => 'main',
