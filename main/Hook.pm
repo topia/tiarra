@@ -55,7 +55,7 @@ sub new {
     }
     if (ref($name) eq 'CODE' && !defined($code)) {
 	$code = $name;
-	$name = Tiarra::Utils->simple_caller_formatter('hook registered');
+	$name = $utils->simple_caller_formatter($class.' registered');
     }
 
     my $this = {
@@ -75,7 +75,7 @@ sub new {
 	no strict;
 	no warnings;
 
-	local *symtable = eval "\*${class}::";
+	local %symtable = %{$class.'::'};
 	if (defined ${$symtable{HOOK_TARGET_NAME}}) {
 	    $this->{target_package_name} = ${$symtable{HOOK_TARGET_NAME}};
 	}
@@ -229,7 +229,14 @@ sub call_hooks {
 	eval {
 	    $hook->call(@args);
 	}; if ($@) {
-	    RunLoop->notify_error(ref($this)."->call_hooks, exception occured:\n$@");
+	    my $msg = ref($this)."->call_hooks, exception occured:\n".
+		"  Hook: ".$hook->name."\n".
+		    "$@";
+	    if (require RunLoop) {
+		RunLoop->notify_error($msg);
+	    } else {
+		die $msg;
+	    }
 	}
     }
 }
