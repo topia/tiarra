@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: RunLoop.pm,v 1.56 2004/03/13 07:17:34 admin Exp $
+# $Id: RunLoop.pm,v 1.57 2004/03/27 10:41:17 admin Exp $
 # -----------------------------------------------------------------------------
 # このクラスはTiarraのメインループを実装します。
 # select()を実行し、サーバーやクライアントとのI/Oを行うのはこのクラスです。
@@ -862,6 +862,12 @@ sub run {
 	# (普段は何かしら登録されていると思うが)タイマーが一つも登録されていなければ、タイムアウトはundefである。すなわちタイムアウトしない。
 	# タイマーが一つでも登録されていた場合は、全てのタイマーの中で最も発動時間が早いものを調べ、
 	# それが発動するまでの時間をselectのタイムアウト時間とする。
+	
+	# select前フックを呼ぶ
+	$this->call_hooks('before-select');
+
+	# フック内でタイマーをinstall/発動時刻変更をした場合に備え、
+	# タイムアウトの計算はbefore-selectフックの実行後にする。
 	my $timeout = undef;
 	my $eariest_timer = $this->get_earliest_timer;
 	if (defined $eariest_timer) {
@@ -871,9 +877,9 @@ sub run {
 	    $timeout = 0;
 	}
 
-	$this->_update_send_selector; # 書き込むべきデータがあるソケットだけをsend_selectorに登録する。そうでないソケットは除外。
-	# select前フックを呼ぶ
-	$this->call_hooks('before-select');
+	# 書き込むべきデータがあるソケットだけをsend_selectorに登録する。そうでないソケットは除外。
+	$this->_update_send_selector;
+	
 	# select実行
 	my $time_before_select = CORE::time;
 	my ($readable_socks,$writable_socks) =

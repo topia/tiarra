@@ -1,5 +1,5 @@
 # -*- cperl -*-
-# $Id: LinedINETSocket.pm,v 1.7 2004/03/19 13:21:06 topia Exp $
+# $Id: LinedINETSocket.pm,v 1.8 2004/03/27 10:41:17 admin Exp $
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 # this module based IrcIO.pm, thanks phonohawk!
 package LinedINETSocket;
@@ -222,6 +222,10 @@ sub pop_queue {
   } else {
     return splice @{$this->{recv_queue}},0,1;
   }
+}
+
+sub recvbuf {
+    shift->{recvbuf};
 }
 
 1;

@@ -1,3 +1,26 @@
+2004-03-27  Topia  <topia@clovery.jp>
+
+	* tiarra:
+	  - quiet モード時に STDIN を閉じないと握りっぱなしになって
+	    (sshd が落ちないなどの)不具合が発生するようなので閉じる。
+	  - STDERR を何かにリダイレクトするのは、とりあえずは保留。
+
+2004-03-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* main/LinedINETSocket.pm (recvbuf):
+	追加。通信終了後に改行が付かなかった行の内容を取り出すために使う。
+
+	* main/RunLoop.pm (run):
+	select前フックは、タイマーの次回発動時刻を計算する前に呼ぶ。
+	フック内でタイマーの状態を変更しても問題を起こさないため。
+
+	* main/Timer.pm (time_to_fire):
+	引数を指定した場合、タイマーの発動時刻を変更できるように。
+
+	* module/Tools/HTTPClient.pm:
+	追加。
+	HTTP/1.0専用のhttpクライアント。手抜き。
+
 2004-03-19  Topia  <topia@clovery.jp>
 
 	* main/IrcIO.pm, main/LinedINETSocket.pm:
@@ -1502,7 +1525,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.139 2004/03/19 13:21:06 topia Exp $
+#       Id: $Id: ChangeLog,v 1.141 2004/03/27 10:42:51 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2004/03/19 13:21:06 $
-# Revision: $Revision: 1.139 $
+#     Date: $Date: 2004/03/27 10:42:51 $
+# Revision: $Revision: 1.141 $
