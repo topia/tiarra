@@ -284,6 +284,11 @@ sub serialize {
     return $result;
 }
 
+sub length {
+    my ($this) = shift;
+    length($this->serialize(@_));
+}
+
 sub prefix {
     my ($this,$new_val) = @_;
     $this->[PREFIX] = $new_val if defined($new_val);
