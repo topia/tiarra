@@ -95,13 +95,7 @@ sub sendto_channel_closure {
 	    $specified_network ? $network_name :
 		Configuration->shared_conf->networks->default;
 	};
-	my $sendto_client = sub {
-	    if (RunLoop->shared_loop->multi_server_mode_p) {
-		$sendto;
-	    } else {
-		$rawname;
-	    }
-	};
+	my $sendto_client = Multicast::attach_for_client($rawname, $network_name);
 	if (!defined $sender) {
 	    # 鯖にはチャンネル名にネットワーク名を付けない。
 	    my $for_server = $msg_to_send->clone;
@@ -114,7 +108,7 @@ sub sendto_channel_closure {
 	    # クライアントにはチャンネル名にネットワーク名を付ける。
 	    # また、クライアントに送られる時にはPrefixがそのユーザーに設定されるよう註釈を付ける。
 	    my $for_client = $msg_to_send->clone;
-	    $for_client->param(0, $sendto_client->());
+	    $for_client->param(0, $sendto_client);
 	    $for_client->remark('fill-prefix-when-sending-to-client',1);
 	    RunLoop->shared_loop->broadcast_to_clients($for_client);
 	} elsif ($sender->isa('IrcIO::Server')) {
@@ -126,7 +120,7 @@ sub sendto_channel_closure {
 	    # クライアントにはチャンネル名にネットワーク名を付ける。
 	    # また、クライアントに送られる時にはPrefixがそのユーザーに設定されるよう註釈を付ける。
 	    my $for_client = $msg_to_send->clone;
-	    $for_client->param(0, $sendto_client->());
+	    $for_client->param(0, $sendto_client);
 	    $for_client->remark('fill-prefix-when-sending-to-client',1);
 	    push @$result,$for_client;
 	} elsif ($sender->isa('IrcIO::Client')) {
@@ -137,7 +131,7 @@ sub sendto_channel_closure {
 
 	    my $for_client = $msg_to_send->clone;
 	    $for_client->prefix($sender->fullname);
-	    $for_client->param(0, $sendto_client->());
+	    $for_client->param(0, $sendto_client);
 	    $sender->send_message($for_client);
 	}
     };
