@@ -19,6 +19,19 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
       Mask::match_deep([$this->config->keyword('all')], $keyword)
     だと思います。
 
+  - ModuleManager(main/ModuleManager.pm)
+    ここで紹介する関数は、全て ModuleManager->shared_manager->function(...) と呼んで下さい。
+    + add_to_blacklist($modname)
+				$modname で指定されたモジュールをブラックリストに入れる。
+				ブラックリストに入れられたモジュールは、リロードするか削除される
+				まで呼び出されない。成功したら正を返す。
+    + remove_from_blacklist($modname)
+				$modname で指定されたモジュールをブラックリストから削除する。
+				成功したら正を返す。
+    + check_blacklist($modname)	$modname で指定されたモジュールがブラックリストに入っていれば
+				正を返す。
+
+
   - Multicast(main/Multicast.pm)
     + detach($str)		文字列 $str からネットワーク名を外す。
 				戻り値: (セパレータ前の文字列,ネットワーク名,ネットワーク名が明示されたかどうか)
@@ -27,6 +40,8 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
 				$str にネットワーク名を付ける。
 				$strはChannelInfoのオブジェクトでも良い。
 				$network_nameは省略可能。IrcIO::Serverのオブジェクトでも良い。
+    + attach_for_client($str, $network_name)
+				クライアント向けに、 multi-server-mode でなければ attach しない。
     + nick_p($str)		文字列 $str が nick name として許される形式なら 1 を返す。
 				ネットワーク名は付けたままでも構わない。処理前に detach される。
     + channel_p($str)		文字列 $str が channel name として許される形式なら 1 を返す。
@@ -42,6 +57,7 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
     + notify_msg($str)		全てのクライアントと、 STDOUT にメッセージを通知します。
     + notify_error($str)	notify_msg を使ってエラーを通知します。
     + notify_warn($str)		notify_msg を使って警告を通知します。
+    + terminate($message)	サーバとクライアントを切断して終了します。
 
   - main(tiarra)
     + ::printmsg()		STDOUT にのみメッセージを通知します。
@@ -101,6 +117,25 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
       * creation-time		RPL_CREATIONTIME が返した値。
   - PersonInChannel
   - PersonalInfo
+
+* Hook
+  - 基本的な使い方:
+	use SomePackage::Hook;
+	my $hook = SomePackage::Hook->new(sub{
+	    my $hook = shift;
+	    # do something
+	})->install('someplace');
+  - Hook のあるパッケージ、 Hook 名と簡単な説明
+    + RunLoop
+      * before-select		select 前
+      * after-select		select 後
+      * set-current-nick	set_current_nick が呼ばれたとき
+    + Configuration
+      * reloaded		conf が再読込されたとき
+    + IrcIO::Client
+      * channel-info($client, $ch_name, $network, $ch)
+				接続時に Join しているチャンネルごとに呼ばれる。
+				チャンネル情報とともに recent log を送ったりする場合に使える。
 
 Local variables:
 mode: text
