@@ -308,6 +308,51 @@ sub find_groups {
 	});
 }
 
+sub find_group_with_hash {
+    my ($this, $hash) = @_;
+
+    return $this->find_groups_with_hash($hash, 1);
+}
+
+sub find_groups_with_hash {
+    # on not found return 'undef'
+    # $keys is hashref(key => scalar, key => [scalar, scalar, ...]).
+    # $count is num of max found group, optional.
+    my ($this, $hash, $count) = @_;
+    my (@ret);
+
+    my ($return) = sub {
+	if (wantarray) {
+	    return @ret;
+	} else {
+	    return $ret[0] || undef;
+	}
+    };
+
+    $this->with_session(
+	sub {
+	group_loop:
+	    foreach my $group (@{$this->{database}}) {
+		foreach my $key (keys %$hash) {
+		    my $values = $hash->{$key};
+		    $values = [$values]
+			unless defined ref($values) && ref($values) eq 'ARRAY';
+		    foreach my $value (@$values) {
+			next group_loop
+			    unless $this->_match($group->get_array($key),
+						 $value);
+		    }
+		}
+		# ok all match!
+		push(@ret, $group);
+		if (defined($count) && ($count <= scalar(@ret))) {
+		    return $return->();
+		}
+	    }
+	    return $return->();
+	});
+}
+
 sub new_group {
     my $this = shift;
     my (@primary_key_values) = @_;
