@@ -229,7 +229,7 @@ sub _queue_retry {
     $this->_cleanup if defined $this->{timer};
     $this->{timer} = Timer->new(
 	Name => $this->_gen_msg('retry timer'),
-	After => 30,
+	After => 15,
 	Code => sub {
 	    $this->{timer} = undef;
 	    $this->{connecting} = undef;
