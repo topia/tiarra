@@ -5,7 +5,7 @@
 # This is free software; you can redistribute it and/or modify it
 #   under the same terms as Perl itself.
 # -----------------------------------------------------------------------------
-# $Id: tiarra,v 1.26 2003/09/26 12:07:12 topia Exp $
+# $Id: tiarra,v 1.27 2003/11/09 07:32:12 admin Exp $
 # -----------------------------------------------------------------------------
 require 5.006;
 use strict;
@@ -65,7 +65,7 @@ sub help {
     print "  --help           print this message\n";
     print "  --version        print version infomation\n";
     print "  --config=<file>  tiarra configuration file; default is 'tiarra.conf'\n";
-    print "  --quiet          don't output any messages to stdout and stdin\n";
+    print "  --quiet          don't output any messages to stdout and stderr\n";
     print "  --no-fork        don't move to background when started in quiet mode\n";
     print "  --debug          show debug infomation\n";
     print "   -D<symbol>[=<string>]\n";
