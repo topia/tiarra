@@ -8,7 +8,6 @@ use base qw(Module);
 use Mask;
 use Multicast;
 use NumericReply;
-use Configuration;
 
 sub _yesno {
     my ($this, $value, $default) = @_;

@@ -7,7 +7,6 @@ use warnings;
 use base qw(Module);
 use Mask;
 use NumericReply;
-use Configuration;
 
 sub message_arrived {
     my ($this, $msg, $sender) = @_;

@@ -11,7 +11,6 @@ use Tools::DateConvert;
 use Log::Logger;
 use IRCMessage;
 use Mask;
-use Configuration;
 
 sub new {
     my $class = shift;

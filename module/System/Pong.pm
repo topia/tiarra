@@ -5,7 +5,6 @@
 package System::Pong;
 use strict;
 use warnings;
-use Configuration;
 use NumericReply;
 use base qw(Module);
 

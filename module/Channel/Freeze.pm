@@ -12,7 +12,6 @@ use Multicast;
 use Timer;
 use BulletinBoard;
 use Mask;
-use Configuration;
 
 sub new {
     my $class = shift;
