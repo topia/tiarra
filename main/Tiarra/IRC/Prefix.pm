@@ -34,6 +34,19 @@ sub new {
     $obj;
 }
 
+sub clone {
+    my ($this, %args) = @_;
+    if ($args{deep}) {
+	# inhibits generator deep clone.
+	require Data::Dumper;
+	eval(Data::Dumper->new([$this])->Terse(1)
+		->Deepcopy(1)->Purity(1)->Dump);
+    } else {
+	my @new = @$this;
+	bless \@new => ref($this);
+    }
+}
+
 sub _parse_prefix {
     my $this = shift;
     delete $this->[NICK];
