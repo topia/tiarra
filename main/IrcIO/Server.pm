@@ -9,7 +9,6 @@
 package IrcIO::Server;
 use strict;
 use warnings;
-use IrcIO;
 use base qw(IrcIO);
 use Carp;
 use ChannelInfo;
@@ -1270,7 +1269,7 @@ sub _RPL_YOURID {
 }
 
 sub _handle_fix_nick {
-    my ($this, $type, $msg) = @_;
+    my ($this, $msg) = @_;
     # 接続時以外のnick重複を処理します。
     my $mode = $this->config_local_or_general('nick-fix-mode');
 
