@@ -40,6 +40,8 @@ sub message_arrived {
 
 sub client_attached {
     my ($this,$client) = @_;
+    # no-recent-logs オプションが指定されていれば何もしない
+    return if defined $client->option('no-recent-logs');
     # まずはpriv
     my $local_nick = RunLoop->shared->current_nick;
     foreach my $elem (@{$this->{priv_log}}) {
