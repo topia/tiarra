@@ -196,10 +196,13 @@ sub main {
 	&help;
 	return 0;
     } elsif (&find_option('version')) {
-	print join("\n",get_credit()) . "\n";
+	map { print "$_\n" } get_credit();
 	return 0;
     } elsif (&find_option('dumpversion')) {
 	print $version . "\n";
+	return 0;
+    } elsif (&find_option('show-env')) {
+	map { print "$_\n" } get_env();
 	return 0;
     } elsif (&find_option('make-password')) {
 	&make_password;
@@ -270,6 +273,8 @@ sub main {
 	    RunLoop->shared_loop->run;
 	}; if ($@) {
 	    die "Tiarra aborted: $@\n";
+	} else {
+	    print "Tiarra successfully finished.\n";
 	}
     };
 
@@ -338,6 +343,33 @@ sub get_credit {
 	    "Copyright (c) 2002-2004 phonohawk. All rights reserved.",
 	    "This is free software; you can redistribute it and/or modify it",
 	    "  under the same terms as Perl itself.");
+}
+
+sub get_env {
+    use Config;
+    my @lines;
+    if (!$based_version) {
+	push @lines, "- T i a r r a - :::version #${version}:::";
+    } else {
+	push @lines, "- T i a r r a - :::version ${version}:::";
+	push @lines, "                    based #${based_version}";
+    }
+    push @lines, "Environment Information:";
+    push @lines, "  - Perl $Config{version} built for $Config{archname}";
+    push @lines, "Optional Modules:";
+    push @lines, map "  $_", Tiarra::OptionalModules->repr_modules;
+    push @lines, "Bundle Modules:";
+    foreach my $mod (qw(Unicode::Japanese IO::Socket::INET6)) {
+	my $modfile = $mod . '.pm';
+	$modfile =~ s|::|/|g;
+	eval "require $mod;";
+	push @lines, "  - $mod " .
+	    ($INC{$modfile} ?
+		 ($mod->VERSION . " (" .
+		      ($INC{$modfile} =~ m|bundle/| ? "bundle" : "system") . ")") :
+			  "(unknown; not loaded)");
+    }
+    @lines;
 }
 
 sub install_signal_handlers {
