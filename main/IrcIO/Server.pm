@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Server.pm,v 1.49 2003/10/24 15:52:29 admin Exp $
+# $Id: Server.pm,v 1.50 2004/02/04 12:08:54 admin Exp $
 # -----------------------------------------------------------------------------
 # IrcIO::ServerはIRCサーバーに接続し、IRCメッセージをやり取りするクラスです。
 # このクラスはサーバーからメッセージを受け取ってチャンネル情報や現在のnickなどを保持しますが、
@@ -303,7 +303,7 @@ sub send_message {
     }
 
     # 各モジュールへ通知
-    RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'out');
+    #RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'out');
 
     $this->SUPER::send_message(
 	$msg,
@@ -313,7 +313,7 @@ sub send_message {
 
 sub receive {
     my $this = shift;
-    my @receipts = $this->SUPER::receive(
+    $this->SUPER::receive(
 	Configuration->shared->get($this->{network_name})->in_encoding ||
 	Configuration->shared->general->server_in_encoding);
 
@@ -333,7 +333,7 @@ sub pop_queue {
     # 接続を切ってからdieします。
     if (defined $msg) {
 	# 各モジュールに通知
-	RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'in');
+	#RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'in');
 
 	# ログイン作業中か？
 	if ($this->{logged_in}) {

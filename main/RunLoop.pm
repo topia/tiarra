@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: RunLoop.pm,v 1.49 2003/11/09 08:24:54 topia Exp $
+# $Id: RunLoop.pm,v 1.50 2004/02/04 12:08:54 admin Exp $
 # -----------------------------------------------------------------------------
 # このクラスはTiarraのメインループを実装します。
 # select()を実行し、サーバーやクライアントとのI/Oを行うのはこのクラスです。
@@ -1114,9 +1114,63 @@ sub notify_modules {
     }
 }
 
+sub apply_filters {
+    # @extra_args: モジュールに送られる第二引数以降。第一引数は常にIRCMessage。
+    my ($this, $src_messages, $method, @extra_args) = @_;
+    my $mods = ModuleManager->shared_manager->get_modules;
+
+    my $source = $src_messages;
+    my $filtered = [];
+    foreach my $mod (@$mods) {
+	# sourceが空だったらここで終わり。
+	if (scalar(@$source) == 0) {
+	    return $source;
+	}
+	
+	foreach my $src (@$source) {
+	    my @reply = ();
+	    # 実行
+	    eval {
+		@reply = $mod->$method($src, @extra_args);
+	    }; if ($@) {
+		$this->notify_error(
+		    "Exception in ".ref($mod).".\n".
+		      "The message was '".$src->serialize."'.\n".
+			"   $@");
+	    }
+	    
+	    if (defined $reply[0]) {
+		# 値が一つ以上返ってきた。
+		# 全てIRCMessageのオブジェクトなら良いが、そうでなければエラー。
+		foreach my $msg_reply (@reply) {
+		    unless (UNIVERSAL::isa($msg_reply,'IRCMessage')) {
+			$this->notify_error(
+			    "Reply of ".ref($mod)."::${method} contains illegal value.\n".
+			      "It is ".ref($msg_reply).".");
+			return $source;
+		    }
+		}
+		
+		# これをfilteredに追加。
+		push @$filtered,@reply;
+	    }	    
+	}
+
+	# 次のsourceはfilteredに。filteredは空の配列に。
+	$source = $filtered;
+	$filtered = [];
+    }
+    return $source;
+}
+
 sub _apply_filters {
     # src_messagesは変更しない。
-    my ($this,$src_messages,$sender) = @_;
+    my ($this, $src_messages, $sender) = @_;
+    $this->apply_filters(
+	$src_messages, 'message_arrived', $sender);
+
+=pod
+    
     my $mods = ModuleManager->shared_manager->get_modules;
 
     my $source = $src_messages;
@@ -1160,6 +1214,9 @@ sub _apply_filters {
 	$filtered = [];
     }
     return $source;
+
+=cut
+
 }
 
 sub notify_error {

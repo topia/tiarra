@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Client.pm,v 1.21 2003/09/26 12:07:13 topia Exp $
+# $Id: Client.pm,v 1.22 2004/02/04 12:08:54 admin Exp $
 # -----------------------------------------------------------------------------
 # IrcIO::Clientはクライアントからの接続を受け、
 # IRCメッセージをやり取りするクラスです。
@@ -111,7 +111,7 @@ sub send_message {
     my ($this,$msg) = @_;
 
     # 各モジュールに通知
-    RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'out');
+    #RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'out');
 
     $this->SUPER::send_message(
 	$msg,
@@ -136,7 +136,7 @@ sub pop_queue {
     # クライアントがログイン中なら、ログインを受け付ける。
     if (defined $msg) {
 	# 各モジュールに通知
-	RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'in');
+	#RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'in');
 
 	# ログイン作業中か？
 	if ($this->{logging_in}) {

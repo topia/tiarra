@@ -1,3 +1,18 @@
+2004-02-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* main/IrcIO.pm, main/IrcIO/*.pm, main/Module.pm:
+	notification_of_message_ioを削除。
+
+	* main/Module.pm (message_io_hook):
+	追加。これはnotification_of_message_ioの代わりに呼ばれる。
+	このメソッドはメッセージを改変する事が出来る。詳しくはコメントに。
+
+	* main/IrcIO.pm (send_message, receive):
+	各モジュールのmessage_io_hookを呼ぶ。
+
+	* main/RunLoop.pm (apply_filters):
+	追加。モジュールによるメッセージフィルタリングの一般形。
+
 2004-01-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/NumericReply.pm: 追加
@@ -1096,7 +1111,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.126 2004/01/27 14:25:29 admin Exp $
+#       Id: $Id: ChangeLog,v 1.127 2004/02/04 12:08:54 admin Exp $
 #   Author: $Author: admin $
-#     Date: $Date: 2004/01/27 14:25:29 $
-# Revision: $Revision: 1.126 $
+#     Date: $Date: 2004/02/04 12:08:54 $
+# Revision: $Revision: 1.127 $

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: IrcIO.pm,v 1.20 2004/01/27 14:25:29 admin Exp $
+# $Id: IrcIO.pm,v 1.21 2004/02/04 12:08:54 admin Exp $
 # -----------------------------------------------------------------------------
 # IrcIOはIRCサーバー又はクライアントと接続し、IRCメッセージをやり取りする抽象クラスです。
 # -----------------------------------------------------------------------------
@@ -82,10 +82,18 @@ sub send_message {
     # また、生の文字列については文字コードの変換が行なわれない。
     my $data_to_send = '';
     if (ref($msg) eq '') {
+	# deprecated.
+	# FIXME: warnすべきだろうか。
 	$data_to_send = "$msg\x0d\x0a";
     }
     elsif ($msg->isa('IRCMessage')) {
-	$data_to_send = $msg->serialize($encoding)."\x0d\x0a";
+	# message_io_hook
+	my $filtered = RunLoop->shared->apply_filters(
+	    [$msg], 'message_io_hook', $this, 'out');
+	foreach (@$filtered) {
+	    $data_to_send .= $_->serialize($encoding)."\x0d\x0a";
+	}
+	#$data_to_send = $msg->serialize($encoding)."\x0d\x0a";
     }
     else {
 	die "IrcIO::send_message : parameter msg was invalid; $msg\n";
@@ -156,8 +164,17 @@ sub receive {
 	# CRLFだった場合、末尾にCRが付いているので取る。
 	$current_line =~ s/\x0d$//;
 
-	push @{$this->{recv_queue}},IRCMessage->new(
+	# message_io_hook
+	my $msg = IRCMessage->new(
 	    Line => $current_line, Encoding => $encoding);
+	my $filtered = RunLoop->shared->apply_filters(
+	    [$msg], 'message_io_hook', $this, 'in');
+	
+	foreach (@$filtered) {
+	    push @{$this->{recv_queue}}, $_;
+	}
+	#push @{$this->{recv_queue}},IRCMessage->new(
+	#    Line => $current_line, Encoding => $encoding);
     }
 }
 
