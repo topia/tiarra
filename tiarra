@@ -391,16 +391,20 @@ sub handle_reload {
 sub shutdown {
     my $msg = shift;
     $msg = 'Tiarra '.::version.': shutting down...' if !defined $msg;
-    if ($terminated) {
+    ++$terminated;
+    if ($terminated == 1) {
+	printmsg("Shutting down... [$msg]");
+	RunLoop->shared_loop->terminate($msg);
+    } elsif ($terminated == 2) {
 	printmsg("Second Terminate Request; Force Exit! [$msg]");
 	# force
 	ModuleManager->shared_manager->terminate;
 	Tiarra::TerminateManager->terminate('main');
 	exit;
     } else {
-	$terminated = 1;
-	printmsg("Shutting down... [$msg]");
-	RunLoop->shared_loop->terminate($msg);
+	printmsg("Third Terminate Request; Fatal Exit! [$msg]");
+	# fatal
+	exit;
     }
 }
 
