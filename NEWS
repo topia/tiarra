@@ -1,3 +1,8 @@
+2003-10-16  phonohawk  <phonohawk@lycos.co.uk>
+
+	* System::Raw
+	追加。Tiarraに改変されない生のメッセージをサーバーに送るためのモジュール。
+
 2003-10-14  Topia  <topia@clovery.jp>
 
 	* single-server-mode の bugfix です。

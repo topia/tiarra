@@ -1,3 +1,12 @@
+2003-10-16  phonohawk  <phonohawk@lycos.co.uk>
+
+	* module/System/Raw.pm:
+	追加。Tiarraに改変されない生のメッセージをサーバーに送るためのモジュール。
+
+	* main/RunLoop.pm (update_networks):
+	confからサーバー名を削除する事でサーバーから切断した時に、
+	そのサーバーで入っていた全てのチャンネルに対するPARTを全クライアントへ送る。
+
 2003-10-14  Topia  <topia@clovery.jp>
 
 	* main/Multicast.pm (distribute_to_servers):
@@ -962,7 +971,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.107 2003/10/14 04:47:59 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2003/10/14 04:47:59 $
-# Revision: $Revision: 1.107 $
+#       Id: $Id: ChangeLog,v 1.108 2003/10/15 16:23:43 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2003/10/15 16:23:43 $
+# Revision: $Revision: 1.108 $

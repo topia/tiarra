@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: RunLoop.pm,v 1.46 2003/10/14 04:47:59 topia Exp $
+# $Id: RunLoop.pm,v 1.47 2003/10/15 16:23:42 admin Exp $
 # -----------------------------------------------------------------------------
 # このクラスはTiarraのメインループを実装します。
 # select()を実行し、サーバーやクライアントとのI/Oを行うのはこのクラスです。
@@ -337,6 +337,7 @@ sub _cleanup_closed_link {
 
 sub _action_part_and_join {
     # $event: 'connected' 若しくは 'disconnected'
+    # 今のところ、このメソッドはconfからの削除による切断時にも流用されている。
     my ($this,$network,$event) = @_;
     my $network_name = $network->network_name;
     if ($event eq 'connected') {
@@ -557,6 +558,8 @@ sub update_networks {
     foreach my $net_name (@nets_to_disconnect) {
 	my $server = $this->{networks}->{$net_name};
 	$this->disconnect_server($server);
+	# 手動で全チャンネルへのPARTを送信
+	$this->_action_part_and_join($server, 'disconnected');
     }
     # disconnected_networksから不要なネットワークを削除
     while (my ($net_name,$server) = each %{$this->{disconnected_networks}}) {
@@ -572,6 +575,7 @@ sub update_networks {
 
 sub disconnect_server {
     # 指定されたサーバーとの接続を切る。
+    # fdの監視をやめてしまうので、この後IrcIO::Serverのreceiveはもう呼ばれない事に注意。
     # $server: IrcIO::Server
     my ($this,$server) = @_;
     $this->{receive_selector}->remove($server->sock);
