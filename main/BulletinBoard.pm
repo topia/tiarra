@@ -8,14 +8,8 @@ package BulletinBoard;
 use strict;
 use warnings;
 our $AUTOLOAD;
+use Tiarra::SharedMixin;
 our $_shared_instance;
-
-sub shared {
-    if (!defined $_shared_instance) {
-	$_shared_instance = BulletinBoard->_new;
-    }
-    $_shared_instance;
-}
 
 sub _new {
     my $class = shift;

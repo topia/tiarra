@@ -10,16 +10,10 @@ use warnings;
 use UNIVERSAL;
 use Configuration;
 use RunLoop;
+use Tiarra::SharedMixin;
 our $_shared_instance;
 
-*shared = \&shared_manager;
-sub shared_manager {
-    unless (defined $_shared_instance) {
-	$_shared_instance = _new ModuleManager;
-	$_shared_instance->update_modules;
-    }
-    $_shared_instance;
-}
+*shared_manager = \&shared;
 
 sub _new {
     my $class = shift;
@@ -32,6 +26,11 @@ sub _new {
 	updated_once => 0, # 過去にupdate_modulesが実行された事があるか。
     };
     bless $obj,$class;
+}
+
+sub _initialize {
+    my $this = shift;
+    $this->update_modules;
 }
 
 sub add_to_blacklist {
