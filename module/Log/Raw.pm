@@ -93,7 +93,13 @@ sub message_io_hook {
 		}
 	    };
 
-	    my $charset = $this->config->charset;
+	    my $charset = do {
+		if ($io->can('out_encoding')) {
+		    $io->out_encoding;
+		} else {
+		    $this->config->charset;
+		}
+	    };
 	    if ($msg->have_raw_params) {
 		$msg->encoding_params('binary');
 		$charset = 'binary';
@@ -256,6 +262,10 @@ mode: 600
 
 # ログディレクトリのモード(8進数)。省略されたら700
 dir-mode: 700
+
+# 使っている文字コードがよくわからなかったときの文字コード。省略されたらutf8。
+# たぶんこの指定が生きることはないと思いますが……。
+charset: jis
 
 # NumericReply の名前を解決して表示する(ちゃんとした dump では無くなります)
 resolve-numeric: 1
