@@ -1,3 +1,8 @@
+2003-10-12  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/IRCMessage.pm (serialize):
+	最後のパラメータがコロンを含んでいる時に、間違った文字列化をする問題を解決。
+
 2003-09-28  phonohawk  <phonohawk@lycos.co.uk>
 
 	* tiarra-conf.el:
@@ -942,7 +947,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.105 2003/09/28 05:15:22 admin Exp $
+#       Id: $Id: ChangeLog,v 1.106 2003/10/12 12:08:57 admin Exp $
 #   Author: $Author: admin $
-#     Date: $Date: 2003/09/28 05:15:22 $
-# Revision: $Revision: 1.105 $
+#     Date: $Date: 2003/10/12 12:08:57 $
+# Revision: $Revision: 1.106 $
