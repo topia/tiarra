@@ -10,30 +10,13 @@ use Timer;
 use Carp;
 use File::Spec;
 use DirHandle;
+use Tiarra::SharedMixin;
 our $_shared_instance;
 
 # todo:
 #  - accept uri(maybe: ssh, syslog, ...)
 
-*shared = \&shared_writer;
-sub shared_writer {
-    if (!defined $_shared_instance) {
-	$_shared_instance = __PACKAGE__->_new;
-	$_shared_instance->load_all_protocols;
-    }
-    $_shared_instance;
-}
-
-sub _this {
-    my $class_or_this = shift;
-
-    if (!ref($class_or_this)) {
-	# fetch shared_writer
-	$class_or_this = $class_or_this->shared_writer;
-    }
-
-    $class_or_this;
-}
+*shared_writer = \&shared;
 
 sub _new {
     my $class = shift;
@@ -47,6 +30,11 @@ sub _new {
     bless $this, $class;
 
     return $this;
+}
+
+sub _initialize {
+    my $this = shift;
+    $this->load_all_protocols;
 }
 
 sub find_object {
