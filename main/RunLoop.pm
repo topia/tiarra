@@ -1001,6 +1001,11 @@ sub run {
 						# まだ作ってなかった
 						$new_msg = $msg->clone;
 						$new_msg->prefix($io->fullname);
+						# シングルサーバーモードなら、ネットワーク名を取り外す。
+						if (!$this->{multi_server_mode}) {
+						    Multicast::detach_network_name($new_msg,$this->networks_list);
+						}
+
 					    }
 					    $client->send_message($new_msg);
 					}
