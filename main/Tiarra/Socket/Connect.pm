@@ -144,7 +144,7 @@ sub _try_connect_ipv6 {
 
     if (!Tiarra::OptionalModules->ipv6) {
 	$this->_error(
-	    die qq{Host $this->{host} seems to be an IPv6 address, }.
+	    qq{Host $this->{host} seems to be an IPv6 address, }.
 		qq{but IPv6 support is not enabled. }.
 		    qq{Use IPv4 or install Socket6 or IO::Socket::INET6 if possible.\n});
     }
@@ -167,7 +167,7 @@ sub _try_connect_unix {
 
     if (!Tiarra::OptionalModules->unix_dom) {
 	$this->_error(
-	    die qq{Host $this->{host} seems to be an Unix Domain Socket address, }.
+	    qq{Host $this->{host} seems to be an Unix Domain Socket address, }.
 		qq{but Unix Domain Socket support is not enabled. }.
 		    qq{Use other protocol if possible.\n});
     }
