@@ -17,6 +17,7 @@ our %modules = (
     'time_hires' => [qw(Time::HiRes)],
     'unix_dom' => [qw(IO::Socket::UNIX)],
     'encode' => [qw(Encode)],
+    'base64' => [qw(MIME::Base64)],
    );
 
 sub _new {
