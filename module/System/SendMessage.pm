@@ -12,6 +12,7 @@ use Mask;
 use Multicast;
 use ControlPort;
 use Auto::Utils;
+use Tiarra::Utils;
 
 sub control_requested {
     my ($this,$request) = @_;
@@ -29,10 +30,12 @@ sub control_requested {
 
     # >> TIARRACONTROL/1.0 200 OK
 
-    my $mask = $request->table->{"Channel"};
-    my $text = $request->table->{"Text"};
+    my $mask = $request->table->{Channel};
+    my $text = $request->table->{Text};
+    my $command = utils->cond_yesno($request->table->{Notice}, 1) ?
+	'NOTICE' : 'PRIVMSG';
     unless ($mask) {
-	return new ControlPort::Reply(403, "Mask is not set");
+	return new ControlPort::Reply(403, "Channel is not set");
     }
     unless ($text) {
 	return new ControlPort::Reply(403, "Doesn't have remark");
@@ -51,7 +54,7 @@ sub control_requested {
 	if (Mask::match_array([$channel_mask], $chinfo->name)) {
 	    $matched = 1;
 	    Auto::Utils::sendto_channel_closure(
-		$chinfo->fullname, 'NOTICE', undef, undef, undef, 0
+		$chinfo->fullname, $command, undef, undef, undef, 0
 	       )->($text);
 	}
     }
