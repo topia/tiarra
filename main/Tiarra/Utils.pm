@@ -318,29 +318,8 @@ sub call_with_wantarray {
 sub do_with_ensure {
     my $pkg = shift;
     my ($closure, $ensure, @args) = @_;
-    my $retval;
-    my $type = $pkg->_wantarray_to_type(wantarray);
-
-    do {
-	my $die = $pkg->sighandler_or_default('die');
-	local $SIG{__DIE__} = sub {
-	    local $SIG{__DIE__} = $die;
-	    if (!$^S) {
-		# outside eval (FIXME, but without false-positive die)
-		$pkg->do_with_errmsg('ensure/die',
-				     $ensure, undef, @_);
-	    }
-	    die(@_);
-	};
-	$retval = [$closure->(@args)];
-    };
-    $pkg->do_with_errmsg('ensure',
-			 $ensure, $retval);
-    if ($type eq 'scalar') {
-	return $retval->[0];
-    } else {
-	return @$retval;
-    }
+    my $cleaner = Tiarra::Utils::EnsureCleaner->new($ensure);
+    $closure->(@args);
 }
 
 sub sighandler_or_default {
@@ -385,7 +364,7 @@ sub do_with_errmsg {
 	local ($SIG{__WARN__}, $SIG{__DIE__}) =
 	    (map {
 		my $signame = "__\U$_\E__";
-		my $handler = $pkg->sighandler_or_default($_, 'DEFAULT');
+		my $handler = $pkg->sighandler_or_default($_);
 		sub {
 		    $handler->($pkg->_add_lf(@_).$str);
 		};
@@ -394,6 +373,21 @@ sub do_with_errmsg {
 	$closure->(@args);
     };
 
+}
+
+package Tiarra::Utils::EnsureCleaner;
+use strict;
+use warnings;
+use base qw(Tiarra::Utils);
+
+sub new {
+    my ($class, $closure) = @_;
+    bless $closure, $class;
+}
+
+sub DESTROY {
+    my $this = shift;
+    $this->do_with_errmsg('ensure', $this);
 }
 
 1;
