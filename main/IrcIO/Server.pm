@@ -625,7 +625,7 @@ sub _receive_while_logging_in {
 	    $this->die("Server replied $reply.\n".$first_msg->serialize."\n");
 	}
 	else {
-	    $this->warn("Server replied $reply.\n".$first_msg->serialize."\n");
+	    $this->printmsg("Server replied $reply, ignored.\n".$first_msg->serialize."\n");
 	    return;
 	}
     }
