@@ -37,7 +37,7 @@ use Unicode::Japanese;
 # $block->get('foo_bar','all');
 # パラメータ"foo_bar"の値を返す。
 #
-# 以上の事から、Configuration::Blockはnew,block_name,set,get,
+# 以上の事から、Configuration::Blockはnew,block_name,table,set,get,
 # reinterpret-encoding,AUTOLOADといった属性はget()でしか読めない。
 # また、属性名にアンダースコアを持つ属性もget()でしか読めない。
 
@@ -58,6 +58,14 @@ sub block_name {
 	$this->[BLOCK_NAME] = $newvalue;
     }
     $this->[BLOCK_NAME];
+}
+
+sub table {
+    my ($this,$newvalue) = @_;
+    if (defined $newvalue) {
+	$this->[TABLE] = $newvalue;
+    }
+    $this->[TABLE];
 }
 
 sub equals {
@@ -128,7 +136,7 @@ sub eval_code {
 	if ($@) {
 	    die "\%CODE{ }EDOC\% interpretation error.\n".
 		"block: ".$this->[BLOCK_NAME]."\n".
-		"origianl: $str\n".
+		"original: $str\n".
 		"$@\n";
 	}
 	$result;
