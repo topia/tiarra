@@ -147,12 +147,12 @@ sub _MODE_from_server {
     my ($message,$sender) = @_;
     $message->nick(global_to_local($message->nick,$sender));
     @{$message->params} = map( global_to_local($_,$sender) ,@{$message->params});
-    
+
     my $target = $message->params->[0];
     unless (nick_p($target)) {
 	# nick(つまり自分)の場合はそのままクライアントに配布。
 	# この場合はチャンネルなので、ネットワーク名を付加。
-	$message->params->[0] = attach($target,$sender->network_name);	
+	$message->params->[0] = attach($target,$sender->network_name);
     }
     return $message;
 }
@@ -163,7 +163,7 @@ sub _MODE_from_client {
 
     my $network = $runloop->networks->{$to};
     @{$message->params} = map( local_to_global($_,$network) ,@{$message->params});
-    
+
     forward_to_server($message,$to);
 }
 
@@ -174,8 +174,8 @@ sub _NICK_from_client {
     my $to;
     my $specified;
     ($message->params->[0],$to,$specified) = detatch($message->params->[0]);
-    
-    if ($specified) {	
+
+    if ($specified) {
 	forward_to_server($message,$to);
     }
     else {
@@ -196,10 +196,10 @@ sub _WHOIS_from_client {
     my ($message,$sender) = @_;
     my $to;
     ($message->params->[0],$to) = detatch($message->params->[0]);
-    
+
     my $network = $runloop->networks->{$to};
     $message->params->[0] = local_to_global($message->params->[0],$runloop->networks->{$to});
-    
+
     # ローカルnickと送信先のグローバルnickが異なっていたら、その旨をクライアントに報告する。
     # ただしWHOISの対象が自分だった場合のみ。
     my $local_nick = $runloop->current_nick;
@@ -212,7 +212,7 @@ sub _WHOIS_from_client {
 			   Params => [$local_nick,
 				      "*** Your global nick in $to is currently '$global_nick'."]));
     }
-    
+
     forward_to_server($message,$to);
 }
 
@@ -260,7 +260,7 @@ sub _RPL_NAMREPLY {
 my $g2l_cache = {};
 sub _gen_g2l_translator {
     my $index = shift;
-    
+
     unless (exists $g2l_cache->{$index}) {
 	$g2l_cache->{$index} = sub {
 	    my ($message,$sender) = @_;
