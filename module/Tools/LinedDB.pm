@@ -94,7 +94,7 @@ sub checkupdate {
   if (defined $this->{fpath} && $this->{fpath} ne '') {
     my $stat = stat($this->{fpath});
 
-    if ($stat->mtime > $this->{time}) {
+    if (defined($stat) && ($stat->mtime > $this->{time})) {
       $this->_load();
     }
   }
