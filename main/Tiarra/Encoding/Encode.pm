@@ -77,7 +77,7 @@ sub getcode {
     if (ref($enc)) {
 	return wantarray ? ($enc->name, $enc) : $enc->name;
     } else {
-	if ($enc =~ /Encodings too ambiguous/i) {
+	if (defined $enc && $enc =~ /Encodings too ambiguous/i) {
 	    my @probed = split / or /, shift(@other);
 	    $enc = [];
 	    foreach my $try_enc (@encodings) {
