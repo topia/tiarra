@@ -60,7 +60,7 @@ sub decode($$;$)
 		$ret .= Encode::decode('cp932', $chunk);
 	    }
 	} elsif ($str =~ s/\A(\e?[^\e]+)//s) {
-	    $ret .= Encode::decode('iso-8859-1', $1);
+	    $ret .= Encode::decode('cp932', $1);
 	}
     }
     return $ret;
