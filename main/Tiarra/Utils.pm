@@ -26,7 +26,7 @@ Tiarra::Utils - Tiarra misc Utility Functions
 
 =head1 DESCRIPTION
 
-misc helper functions.
+miscellaneous helper functions.
 
 this class inherited some classes'(L<Tiarra::Utils::Core>,
 L<Tiarra::Utils::DefineHelper>, L<Tiarra::Utils::CallWrapper>) methods.
