@@ -49,7 +49,7 @@ sub message_arrived {
 		    local $SIG{__WARN__} = sub { };
 		    # die handler
 		    local $SIG{__DIE__} = sub { $err = $_[0] };
-		    no strict 'all';
+		    no strict;
 		    $ret = $this->{safe}->reval($method);
 		};
 
