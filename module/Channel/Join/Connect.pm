@@ -22,7 +22,7 @@ sub new {
 sub _init {
     my $this = shift;
     foreach ($this->config->channel('all')) {
-	s/(,)\s+/$1/; # コンマの直後にスペースがあった場合、削除する
+	s/(,)\s+/$1/g; # コンマの直後にスペースがあった場合、削除する
 	my ($fullname, $key) = split(/\s+/, $_, 2);
 	my @fullnames = split(/\,/, $fullname);
 	my @keys = split(/,/, $key || '');
