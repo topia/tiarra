@@ -7,6 +7,7 @@
 package Tiarra::Utils;
 use strict;
 use warnings;
+use Carp;
 our $ExportLevel = 0;
 
 # please do { local $Tiarra::Utils::ExportLevel; ++$Tiarra::Utils::ExportLevel; }
@@ -300,7 +301,7 @@ sub do_with_ensure {
     my $error = $@;
     $ensure->($retval, $error);
     if ($error) {
-	die $error;
+	croak $error;
     } else {
 	return @$retval;
     }
