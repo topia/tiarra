@@ -172,7 +172,7 @@ sub send_message {
 sub read {
     my ($this) = shift;
     $this->SUPER::read(
-	$this->option_or_default_multiple('encoding', ['in-', ''], 'client'));
+	$this->option_or_default_multiple('encoding', ['in-', ''], 'client-'));
 
     # 接続が切れたら、各モジュールへ通知
     if (!$this->connected) {
