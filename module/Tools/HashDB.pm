@@ -120,7 +120,7 @@ sub _checkupdate {
     if (defined $this->fpath && $this->fpath ne '') {
 	my $stat = stat($this->fpath);
 
-	if (defined $stat && defined $this->time
+	if (defined $stat && defined $this->time &&
 		$stat->mtime > $this->time) {
 	    $this->_load();
 	    return 1;
