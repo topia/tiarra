@@ -129,6 +129,33 @@ sub message_io_hook {
     return $message;
 }
 
+sub message_encoding_hook {
+    my ($this,$message,$io,$type,$encoding) = @_;
+    # サーバーから受け取ったメッセージ、サーバーに送ったメッセージ、
+    # クライアントから受け取ったメッセージ、クライアントに送ったメッセージは
+    # このメソッドで各モジュールに通知される。メッセージの変更も可能で、
+    # 戻り値のルールはmessage_arrivedと同じ。このメソッドでメッセージの
+    # エンコーディングを制御することを意図している。 message_io_hook よりも I/O
+    # よりで呼び出される。送信時なら ->remark/encoding を、受信時は
+    # ->encoding_params を呼び出すことにより制御してください。
+    #
+    # 通常のモジュールはこのメソッドを実装する必要は無い。
+    #
+    # $message :
+    #    内容: Tiarra::IRC::Messageオブジェクト
+    #         送受信されたメッセージ
+    # $io :
+    #    内容: IrcIO::Server又はIrcIO::Clientオブジェクト
+    #         送受信が行なわれたIrcIO
+    # $type :
+    #    内容: 文字列
+    #         'in'なら受信、'out'なら送信。知らないタイプがきたら無視しなければならない。
+    # $encoding :
+    #    内容: 文字列
+    #         送信を予定しているエンコーディング。
+    return $message;
+}
+
 sub control_requested {
     my ($this,$request) = @_;
     # 外部コントロールプログラムからのメッセージが来た。

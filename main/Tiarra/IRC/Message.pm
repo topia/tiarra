@@ -34,25 +34,146 @@ package Tiarra::IRC::Message;
 use strict;
 use warnings;
 use Carp;
-use overload;
 use Tiarra::OptionalModules;
 use Tiarra::Utils;
 use Tiarra::IRC::Prefix;
 use Tiarra::Encoding;
 use enum qw(PREFIX COMMAND PARAMS REMARKS TIME RAW_PARAMS GENERATOR);
 
+=head1 NAME
+
+Tiarra::IRC::Message - Tiarra IRC Message class
+
+=head1 SYNOPSIS
+
+  use Tiarra::IRC::Message;
+  my $msg = Tiarra::IRC::Message->new(
+      Line => ':foo!bar@baz PRIVMSG qux :some text',
+      Encoding => 'UTF-8');
+  $msg = Tiarra::IRC::Message->new(
+      Prefix => 'foo!bar@baz',
+      Command => 'PRIVMSG',
+      Params => ['qux', 'some text']);
+  $msg->serialize('jis');
+
+  package SomePackage;
+  use base qw(Tiarra::Mixin::NewIRCMessage);
+  my $msg = __PACKAGE__->construct_irc_message(
+      Server => 'irc.foo.example.com',
+      Command => 'ERROR',
+      Params => ['bar', 'Closing Link: [foo_user!foo@baz.example.org] (Bad Password)'],
+      Remarks => {
+          'foo-remark' => 'bar',
+      });
+  $msg->serialize('remark', 'jis');
+
+=head1 DESCRIPTION
+
+Tiarra IRC Message class.
+
+=head1 CONSTANT METHODS
+
+=over 4
+
+=cut
+
+=item MAX_MIDDLES
+
+max middles count.
+
+=item MAX_PARAMS
+
+max params count.
+
+=back
+
+=cut
+
 # constants
 use constant MAX_MIDDLES => 14;
 use constant MAX_PARAMS => MAX_MIDDLES + 1;
 # max params = (middles[14] + trailing[1]) = 15
 
-utils->define_array_attr_accessor(0, qw(time generator));
-utils->define_array_attr_translate_accessor(
-    0, sub {
-	my ($from, $to) = @_;
-	"($to = $from) =~ tr/a-z/A-Z/";
-    }, qw(command));
-utils->define_proxy('prefix', 0, qw(nick name host));
+=head1 CONSTRUCTOR
+
+=over 4
+
+=cut
+
+=item new
+
+  # parse
+  my $msg = Tiarra::IRC::Message->new(
+      Line => ':foo BAR baz :qux quux', # required
+      Encoding => 'jis');
+  # construct
+  $msg = Tiarra::IRC::Message->new(
+      Server => 'foo',
+      Command => 'BAR',
+      Params => ['baz', 'qux quux']);
+
+Construct IRC Message from line or parts.
+
+=over 4
+
+=item * parse mode
+
+=over 4
+
+=item * Line
+
+line to parse.
+
+=item * Encoding
+
+encoding of line. if omitted, use 'auto' (autodetect).
+
+=back
+
+=item * parts mode
+
+=over 4
+
+=item * Prefix or Server
+
+prefix (on IRC), parsed by Tiarra::IRC::Prefix. optional.
+
+=item * Nick, User, Host
+
+nick, user, host. passed to Tiarra::IRC::Prefix. optional.
+
+=item * Command
+
+command. required.
+
+=item * Params
+
+if arrayref, copy and store as params. otherwise, store as single param. optional.
+
+=item * Param
+
+store as single param. optional.
+
+=back
+
+=item * common
+
+=over 4
+
+=item * Remarks
+
+remarks. only permit hashref, copy and store.
+
+=item * Generator
+
+Some package name or instance. please be able to call UNIVERSAL method,
+such as ->isa, ->can.
+
+=back
+
+=back
+
+=cut
 
 sub new {
     my ($class,%args) = @_;
@@ -102,11 +223,10 @@ sub new {
 	    # Paramsがあった。型はスカラーもしくは配列リファ
 	    my $params = $args{'Params'};
 	    my $type = ref($params);
-	    if ($type eq '') {
-		$obj->[PARAMS] = [$params];
-	    }
-	    elsif ($type eq 'ARRAY') {
+	    if (defined $type && $type eq 'ARRAY') {
 		$obj->[PARAMS] = [@$params]; # コピーを格納
+	    } else {
+		$obj->[PARAMS] = [$params];
 	    }
 	}
 	elsif (exists $args{'Param'}) {
@@ -122,6 +242,66 @@ sub new {
     }
     $obj;
 }
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item time
+
+accessor for message generate time.
+
+=item generate
+
+accessor for message generator.
+
+=item command
+
+accessor for message command.
+
+=item nick
+
+=item name
+
+=item host
+
+accessor for nick, name, host. passed to Tiarra::IRC::Prefix
+
+=cut
+
+utils->define_array_attr_accessor(0, qw(time generator));
+utils->define_array_attr_translate_accessor(
+    0, sub {
+	my ($from, $to) = @_;
+	"($to = $from) =~ tr/a-z/A-Z/";
+    }, qw(command));
+utils->define_proxy('prefix', 0, qw(nick name host));
+
+=item clone
+
+  $msg->remark('a', 'foo');
+  $msg->remark('b', {
+      bar => 'baz',
+  });
+
+  # deep clone
+  $deep_clone = $msg->clone(deep => 1);
+  $deep_clone->remark('a', 'qux');         # still $msg->remark('a') is 'foo'
+  $deep_clone->remark('b')->{bar} = 'qux'; # still $msg->remark('b')->{bar} is 'baz'
+  # shallow clone
+  $shallow_clone = $msg->clone;
+  $shallow_clone->remark('a', 'qux');          # still $msg->remark('a') is 'foo'
+  $shallow_clone->remark('b')->{bar} = 'quux'; # now $msg->remark('b')->{bar} is 'quux'
+
+clone message.
+
+generator will NOT copy.
+
+even if shallow copy mode, prefix, params, remarks will clone themeselves.
+
+=cut
 
 sub clone {
     my ($this, %args) = @_;
@@ -219,23 +399,44 @@ sub _parse {
     }
 }
 
+=item serialize
+
+  $msg->serialize('jis');
+  # remark
+  $msg->remark('encoding', 'utf8');
+  $msg->serialize('remark,jis'); # serialize and encode to utf8
+
+serialize with specified encoding.
+probe encoding flow:
+
+ specified 'remark' or 'remark,[some-fallback]'
+  - use remark/encoding.
+  - use [some-fallback] if specified.
+  - utf8
+
+ specified some encoding
+  - use this
+
+ otherwise(not specified)
+  - use utf8
+
+=cut
+
 sub serialize {
     # encodingを省略するとutf8になる。
+    # encodingをremarkで始めた場合は remark による設定を優先
     my ($this,$encoding) = @_;
-    $encoding = 'utf8' unless defined $encoding;
+
+    if (defined $encoding && $encoding =~ /^remark(?:,(.*))$/) {
+	local $_ = $this->remark('encoding');
+	$encoding = (defined && length) ? $_ : $1;
+    }
+    $encoding = 'utf8' unless defined $encoding && length $encoding;
+
     my $result = '';
 
     if ($this->prefix) {
 	$result .= ':'.$this->prefix.' ';
-    }
-
-    if ($encoding eq 'remark') {
-	if (defined $this->remark('encoding')) {
-	    $encoding = $this->remark('encoding');
-	} else {
-	    carp 'encoding specified as "remark", but encoding remark not found! use utf8.';
-	    $encoding = 'utf8';
-	}
     }
 
     $result .= $this->command.' ';
@@ -278,10 +479,26 @@ sub serialize {
     return $result;
 }
 
+=item length
+
+  $msg->length('jis');
+
+return serialized message length.
+
+=cut
+
 sub length {
     my ($this) = shift;
     CORE::length($this->serialize(@_));
 }
+
+=item params
+
+  $msg->params->[0] = ...;
+
+access to params with hashref form. not recommended.
+
+=cut
 
 sub params {
     croak "Parameter specified to params(). You must mistaked with param().\n" if (@_ > 1);
@@ -290,9 +507,28 @@ sub params {
     $this->[PARAMS];
 }
 
+=item n_params
+
+  my $param_count = $msg->n_params;
+
+return message counts (1 origin).
+
+=cut
+
 sub n_params {
     scalar @{shift->params};
 }
+
+=item param
+
+  # get
+  my $param = $msg->param($idx);
+  # set
+  $msg->param($idx, $param);
+
+access to param item (index is 0 origin).
+
+=cut
 
 sub param {
     my ($this,$index,$new_value) = @_;
@@ -303,10 +539,26 @@ sub param {
     $this->[PARAMS]->[$index];
 }
 
+=item push
+
+  $msg->push($fooval);
+
+append value to tail of params.
+
+=cut
+
 sub push {
     my $this = shift;
     CORE::push(@{$this->params}, @_);
 }
+
+=item pop
+
+  $msg->pop;
+
+fetch and delete last params.
+
+=cut
 
 sub pop {
     CORE::pop(@{shift->params});
@@ -317,6 +569,14 @@ sub _raw_params {
     $this->[RAW_PARAMS] = [] unless defined $this->[RAW_PARAMS];
     $this->[RAW_PARAMS];
 }
+
+=item purge_raw_params
+
+  $this->purge_raw_params;
+
+drop raw params from parsed line.
+
+=cut
 
 sub purge_raw_params {
     shift->[RAW_PARAMS] = [];
@@ -335,31 +595,82 @@ sub _n_raw_params {
     scalar @{shift->_raw_params};
 }
 
+=item have_raw_params
+
+  if ($msg->have_raw_params) {
+      # maybe we can call ->encoding_params.
+  }
+
+we have raw params, return true. otherwise false.
+
+=cut
+
 sub have_raw_params {
     shift->_n_raw_params > 0;
 }
 
+=item remark
+
+  # return remarks hash
+  my $remarks = $msg->remark;
+  # return remark item
+  my $foo_remark = $msg->remark('foo');
+  # set remark item
+  $msg->remark('foo', $foo_remark);
+
+handle remark.
+
+=over 4
+
+=item * no argument
+
+return remarks hashref.
+
+=item * one argument ($key)
+
+return hash item of $key.
+
+=item * two argument ($key, $value)
+
+set hash item of $key to $value.
+
+=item * three argument ($key, undef, 'delete')
+
+delete hash item.
+
+=back
+
+=cut
+
 sub remark {
-    my ($this,$key,$value) = @_;
+    my $this = shift;
     # remark() -> HASH*
     # remark('key') -> SCALAR
     # remark('key','value') -> 'value'
-    if (!defined($key)) {
-	$this->[REMARKS] || {};
-    }
-    else {
-	if (defined $value) {
-	    if (defined $this->[REMARKS]) {
-		$this->[REMARKS]->{$key} = $value;
-	    }
-	    else {
-		$this->[REMARKS] = {$key => $value};
-	    }
+    $this->[REMARKS] = {} unless defined $this->[REMARKS];
+    if (@_ <= 0) {
+	$this->[REMARKS];
+    } else {
+	my $key = shift;
+	if (@_ > 2) {
+	    # have 3rd argument 'delete'
+	    delete $this->[REMARKS]->{$key};
+	} elsif (@_ > 1) {
+	    # have value
+	    $this->[REMARKS]->{$key} = shift;
+	} else {
+	    $this->[REMARKS]->{$key};
 	}
-	defined $this->[REMARKS] ?
-	    $this->[REMARKS]->{$key} : undef;
     }
 }
+
+=item encoding_params
+
+  $msg->encoding_params('utf8');
+
+re-interpret encoding of params.
+
+=cut
 
 sub encoding_params {
     my ($this, $encoding) = @_;
@@ -390,6 +701,12 @@ sub encoding_params {
     }
 }
 
+=item prefix
+
+accessor of prefix.
+
+=cut
+
 sub prefix {
     my $this = shift;
     $this->[PREFIX] ||= Tiarra::IRC::Prefix->new;
@@ -398,3 +715,29 @@ sub prefix {
 }
 
 1;
+
+__END__
+=back
+
+=head1 SEE ALSO
+
+L<Tiarra::IRC::Prefix>,
+L<Tiarra::Mixin::NewIRCMessage>
+
+=head1 AUTHOR
+
+originally developed by phonohawk E<lt>phonohawk@ps.sakura.ne.jpE<gt>.
+
+now maintained by Topia E<lt>topia@clovery.jpE<gt>.
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2002-2004 by phonohawk.
+
+Copyright (C) 2005 by Topia.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.6 or,
+at your option, any later version of Perl 5 you may have available.
+
+=cut

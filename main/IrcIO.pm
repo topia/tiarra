@@ -65,19 +65,23 @@ sub send_message {
 	$data_to_send = "$msg\x0d\x0a";
     }
     elsif ($msg->isa($this->irc_message_class)) {
-	$msg->remark(encoding => $encoding);
-
 	# message_io_hook
 	my $filtered = $this->_runloop->apply_filters(
 	    [$msg], 'message_io_hook', $this, 'out');
+
+	# message_encoding_hook
+	$filtered = $this->_runloop->apply_filters(
+	    $filtered, 'message_encoding_hook', $this, 'out', $encoding);
+
 	foreach (@$filtered) {
-	    $data_to_send .= $_->serialize('remark')."\x0d\x0a";
+	    $data_to_send .= $_->serialize("remark,$encoding")."\x0d\x0a";
 	}
+
     }
     else {
 	die "IrcIO::send_message : parameter msg was invalid; $msg\n";
     }
-    
+
     if ($this->connected) {
 	$this->append($data_to_send);
     }
@@ -115,12 +119,17 @@ sub read {
 	    next;
 	}
 
-	# message_io_hook
 	my $msg = $this->construct_irc_message(
 	    Line => $current_line,
 	    Encoding => $encoding);
+
+	# message_encoding_hook
 	my $filtered = $this->_runloop->apply_filters(
-	    [$msg], 'message_io_hook', $this, 'in');
+	    [$msg], 'message_encoding_hook', $this, 'out', $encoding);
+
+	# message_io_hook
+	$filtered = $this->_runloop->apply_filters(
+	    $filtered, 'message_io_hook', $this, 'in');
 
 	foreach (@$filtered) {
 	    $_->purge_raw_params;
