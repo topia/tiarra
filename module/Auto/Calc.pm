@@ -26,12 +26,9 @@ sub new {
     my $this = $class->SUPER::new;
     $this->{safe} = Safe->new(__PACKAGE__.'::Root');
     $this->{safe}->erase;
-    $this->{safe}->permit_only(qw(:base_core :base_math),
+    $this->{safe}->permit_only(qw(:base_core :base_math :base_orig),
 			       qw(pack unpack),
 			       qw(atan2 sin cos exp log sqrt),
-			       qw(gvsv gv gelem),
-			       qw(padsv padav padhv padany),
-			       qw(rv2gv ref),
 			      );
     if (!$this->config->permit_sub) {
 	$this->{safe}->deny(qw(leavesub));
