@@ -25,7 +25,7 @@ use Multicast;
 use Timer;
 use ControlPort;
 use Hook;
-our @ISA = 'HookTarget';
+use base qw(HookTarget);
 use Tiarra::ShorthandConfMixin;
 use Tiarra::SharedMixin qw(shared shared_loop);
 use Tiarra::Utils;
@@ -198,20 +198,6 @@ sub change_nick {
     }
 }
 
-sub find_io_with_socket {
-    my ($class_or_this,$sock) = @_;
-    my $this = $class_or_this->_this;
-    # networksとclientsの中から指定されたソケットを持つIrcIOを探します。
-    # 見付からなければundefを返します。
-    foreach my $io ($this->networks_list('even-if-not-connected')) {
-	return $io if defined $io->sock && $io->sock == $sock;
-    }
-    foreach my $io (@{$this->{clients}}) {
-	return $io if defined $io->sock && $io->sock == $sock;
-    }
-    undef;
-}
-
 sub _runloop { shift->_this; }
 
 sub sysmsg_prefix {
@@ -306,34 +292,10 @@ sub _update_send_selector {
     my $this = shift;
     # 送信する必要のあるIrcIOだけを抜き出し、そのソケットを送信セレクタに登録する。
 
-    #my $add_or_remove = sub {
-    #	my $io = shift;
-    #	my $action = ($io->need_to_send ? 'add' : 'remove');
-    #	$this->{send_selector}->$action($io->sock);
-    #};
-
-    #foreach my $io (values %{$this->{networks}}) {
-    #	$add_or_remove->($io);
-    #}
-    #foreach my $io (@{$this->{clients}}) {
-    #	$add_or_remove->($io);
-    #}
-
-    # どうもこの動作が怪しい。無理に再利用しなくても良いような気がする。
     my $sel = $this->{send_selector} = IO::Select->new;
-    foreach my $io ($this->networks_list('even-if-not-connected')) {
-	if ($io->need_to_send) {
-	    $sel->add($io->sock);
-	}
-    }
-    foreach my $io (@{$this->{clients}}) {
-	if ($io->need_to_send) {
-	    $sel->add($io->sock);
-	}
-    }
-    foreach my $esock (@{$this->{sockets}}) {
-	if ($esock->want_to_write) {
-	    $sel->add($esock->sock);
+    foreach my $socket (@{$this->{sockets}}) {
+	if ($socket->want_to_write) {
+	    $sel->add($socket->sock);
 	}
     }
 }
@@ -656,26 +618,26 @@ sub disconnected_server {
 }
 
 sub install_socket {
-    my ($this,$esock) = @_;
-    if (!defined $esock) {
+    my ($this,$socket) = @_;
+    if (!defined $socket) {
 	croak "RunLoop->install_socket, Arg[1] was undef.\n";
     }
 
-    push @{$this->{sockets}},$esock;
-    $this->register_receive_socket($esock->sock); # 受信セレクタに登録
+    push @{$this->{sockets}},$socket;
+    $this->register_receive_socket($socket->sock); # 受信セレクタに登録
     undef;
 }
 
 sub uninstall_socket {
-    my ($this,$esock) = @_;
-    if (!defined $esock) {
+    my ($this,$socket) = @_;
+    if (!defined $socket) {
 	croak "RunLoop->uninstall_socket, Arg[1] was undef.\n";
     }
 
     for (my $i = 0; $i < @{$this->{sockets}}; $i++) {
-	if ($this->{sockets}->[$i] == $esock) {
+	if ($this->{sockets}->[$i] == $socket) {
 	    splice @{$this->{sockets}},$i,1;
-	    $this->unregister_receive_socket($esock->sock); # 受信セレクタから登録解除
+	    $this->unregister_receive_socket($socket->sock); # 受信セレクタから登録解除
 	    $i--;
 	}
     }
@@ -683,20 +645,22 @@ sub uninstall_socket {
 }
 
 sub register_receive_socket {
-    # 内部 API です。外部から使うときは ExternalSocket を使用してください。
+    # 内部 API です。外部から使うときは Tiarra::Socket または ExternalSocket を使用してください。
     shift->{receive_selector}->add(@_);
 }
 
 sub unregister_receive_socket {
-    # 内部 API です。外部から使うときは ExternalSocket を使用してください。
+    # 内部 API です。外部から使うときは Tiarra::Socket または ExternalSocket を使用してください。
     shift->{receive_selector}->remove(@_);
 }
 
-sub find_esock_with_socket {
+sub find_socket_with_sock {
     my ($this,$sock) = @_;
-    foreach my $esock (@{$this->{sockets}}) {
-	if ($esock->sock == $sock) {
-	    return $esock;
+    foreach my $socket (@{$this->{sockets}}) {
+	if (!defined $socket->sock) {
+	    warn 'Socket '.$socket->name.': uninitialized sock!';
+	} elsif ($socket->sock == $sock) {
+	    return $socket;
 	}
     }
     undef;
@@ -945,92 +909,95 @@ sub run {
 		    }
 		}
 	    }
-	    elsif (my $io = $this->find_io_with_socket($sock)) {
+	    elsif (my $socket = $this->find_socket_with_sock($sock, 'for read')) {
 		eval {
-		    $io->receive;
+		    $socket->read;
 
-		    while (1) {
-			my $msg = eval {
-			    $io->pop_queue;
-			}; if ($@) {
-			    if (ref($@) && UNIVERSAL::isa($@,'QueueIsEmptyException')) {
-				last;
-			    }
-			    else {
-				::printmsg($@);
-				last;
-			    }
-			}
-
-			if (!defined $msg) {
-			    next;
-			}
-
-			if ($io->isa("IrcIO::Server")) {
-			    # このメッセージがPONGであればpong-drop-counterを見る。
-			    if ($msg->command eq 'PONG') {
-				my $cntr = $io->remark('pong-drop-counter');
-				if (defined $cntr && $cntr > 0) {
-				    # このPONGは捨てる。
-				    $cntr--;
-				    $io->remark('pong-drop-counter',$cntr);
-				    next;
+		    if (UNIVERSAL::isa($socket, 'IrcIO')) {
+			while (1) {
+			    my $msg = eval {
+				$socket->pop_queue;
+			    }; if ($@) {
+				if (ref($@) &&
+					UNIVERSAL::isa($@,'QueueIsEmptyException')) {
+				    last;
+				}
+				else {
+				    ::printmsg($@);
+				    last;
 				}
 			    }
 
-			    # メッセージをMulticastのフィルタに通す。
-			    my @received_messages =
-				Multicast::from_server_to_client($msg,$io);
-			    # モジュールを通す。
-			    my $filtered_messages = $this->_apply_filters(\@received_messages,$io);
-			    # シングルサーバーモードなら、ネットワーク名を取り外す。
-			    if (!$this->{multi_server_mode}) {
-				@$filtered_messages = map {
-				    Multicast::detach_network_name($_, $io);
-				} @$filtered_messages;
+			    if (!defined $msg) {
+				next;
 			    }
-			    # 註釈do-not-send-to-clients => 1が付いていないメッセージを各クライアントに送る。
-			    $this->broadcast_to_clients(
-				grep {
-				    !($_->remark('do-not-send-to-clients'));
-				} @$filtered_messages);
-			}
-			else {
-			    # シングルサーバーモードなら、メッセージをMulticastのフィルタに通す。
-			    my @received_messages =
-				(!$this->{multi_server_mode}) ? Multicast::from_server_to_client($msg,$this->networks_list) : $msg;
 
-			    # モジュールを通す。
-			    my $filtered_messages = $this->_apply_filters(\@received_messages,$io);
-			    # 対象となる鯖に送る。
-			    # NOTICE及びPRIVMSGは返答が返ってこないので、同時にこれ以外のクライアントに転送する。
-			    # 註釈do-not-send-to-servers => 1が付いているメッセージはここで破棄する。
-			    foreach my $msg (@$filtered_messages) {
-				if ($msg->remark('do-not-send-to-servers')) {
-				    next;
-				}
-
-				my $cmd = $msg->command;
-				if ($cmd eq 'PRIVMSG' || $cmd eq 'NOTICE') {
-				    my $new_msg = undef; # 本当に必要になったら作る。
-				    foreach my $client (@{$this->{clients}}) {
-					if ($client != $io) {
-					    unless (defined $new_msg) {
-						# まだ作ってなかった
-						$new_msg = $msg->clone;
-						$new_msg->prefix($io->fullname);
-						# シングルサーバーモードなら、ネットワーク名を取り外す。
-						if (!$this->{multi_server_mode}) {
-						    Multicast::detach_network_name($new_msg,$this->networks_list);
-						}
-
-					    }
-					    $client->send_message($new_msg);
-					}
+			    if ($socket->isa("IrcIO::Server")) {
+				# このメッセージがPONGであればpong-drop-counterを見る。
+				if ($msg->command eq 'PONG') {
+				    my $cntr = $socket->remark('pong-drop-counter');
+				    if (defined $cntr && $cntr > 0) {
+					# このPONGは捨てる。
+					$cntr--;
+					$socket->remark('pong-drop-counter',$cntr);
+					next;
 				    }
 				}
 
-				Multicast::from_client_to_server($msg,$io);
+				# メッセージをMulticastのフィルタに通す。
+				my @received_messages =
+				    Multicast::from_server_to_client($msg,$socket);
+				# モジュールを通す。
+				my $filtered_messages = $this->_apply_filters(\@received_messages,$socket);
+				# シングルサーバーモードなら、ネットワーク名を取り外す。
+				if (!$this->{multi_server_mode}) {
+				    @$filtered_messages = map {
+					Multicast::detach_network_name($_, $socket);
+				    } @$filtered_messages;
+				}
+				# 註釈do-not-send-to-clients => 1が付いていないメッセージを各クライアントに送る。
+				$this->broadcast_to_clients(
+				    grep {
+					!($_->remark('do-not-send-to-clients'));
+				    } @$filtered_messages);
+			    }
+			    else {
+				# シングルサーバーモードなら、メッセージをMulticastのフィルタに通す。
+				my @received_messages =
+				    (!$this->{multi_server_mode}) ? Multicast::from_server_to_client($msg,$this->networks_list) : $msg;
+
+				# モジュールを通す。
+				my $filtered_messages = $this->_apply_filters(\@received_messages,$socket);
+				# 対象となる鯖に送る。
+				# NOTICE及びPRIVMSGは返答が返ってこないので、同時にこれ以外のクライアントに転送する。
+				# 註釈do-not-send-to-servers => 1が付いているメッセージはここで破棄する。
+				foreach my $msg (@$filtered_messages) {
+				    if ($msg->remark('do-not-send-to-servers')) {
+					next;
+				    }
+
+				    my $cmd = $msg->command;
+				    if ($cmd eq 'PRIVMSG' || $cmd eq 'NOTICE') {
+					my $new_msg = undef; # 本当に必要になったら作る。
+					foreach my $client (@{$this->{clients}}) {
+					    if ($client != $socket) {
+						unless (defined $new_msg) {
+						    # まだ作ってなかった
+						    $new_msg = $msg->clone;
+						    $new_msg->prefix($socket->fullname);
+						    # シングルサーバーモードなら、ネットワーク名を取り外す。
+						    if (!$this->{multi_server_mode}) {
+							Multicast::detach_network_name($new_msg,$this->networks_list);
+						    }
+
+						}
+						$client->send_message($new_msg);
+					    }
+					}
+				    }
+
+				    Multicast::from_client_to_server($msg,$socket);
+				}
 			    }
 			}
 		    }
@@ -1038,30 +1005,14 @@ sub run {
 		    $this->notify_error($@);
 		}
 	    }
-	    elsif (my $esock = $this->find_esock_with_socket($sock)) {
-		eval {
-		    $esock->read;
-		}; if ($@) {
-		    $this->notify_error($@);
-		}
-	    }
 	}
 
 	foreach my $sock ($this->{send_selector}->can_write(0)) {
-	    if (my $io = $this->find_io_with_socket($sock)) {
-		next unless $io->need_to_send;
+	    if (my $socket = $this->find_socket_with_sock($sock)) {
+		next unless $socket->want_to_write;
 
 		eval {
-		    $io->send;
-		}; if ($@) {
-		    $this->notify_error($@);
-		}
-	    }
-	    elsif (my $esock = $this->find_esock_with_socket($sock)) {
-		next unless $esock->want_to_write;
-
-		eval {
-		    $esock->write;
+		    $socket->write;
 		}; if ($@) {
 		    $this->notify_error($@);
 		}
@@ -1090,8 +1041,9 @@ sub run {
 			    "(".$this->{terminating}." count(s))\n".
 				"maybe something is wrong; exit force...");
 		    $this->notify_error(
-			map {$_->network_name.": ".$_->state."\n" }
-			    $this->networks_list('even-if-not-connected'));
+			join ("\n",
+			      map {$_->network_name.": ".$_->state }
+				  $this->networks_list('even-if-not-connected')));
 		    last;
 		}
 	    }
@@ -1101,10 +1053,9 @@ sub run {
     # 終了処理
     if (defined $this->{tiarra_server_socket}) {
 	$this->{tiarra_server_socket}->close;
-	$this->unregister_receive_socket($this->{tiarra_server_socket});
+	$this->unregister_receive_socket($this->{tiarra_server_socket}); # 受信セレクタから登録解除
     }
     $this->_mod_manager->terminate;
-    Tiarra::TerminateManager->terminate('main');
 }
 
 sub terminate {

@@ -31,33 +31,33 @@ use warnings;
 use UNIVERSAL;
 use Carp;
 use Tiarra::Utils;
-Tiarra::Utils->define_attr_getter(0, qw(creator sock));
+use Tiarra::Socket;
+use base qw(Tiarra::Socket);
+use base qw(Tiarra::Utils);
+__PACKAGE__->define_attr_getter(0, qw(name));
 *socket = \&sock;
 
 use SelfLoader;
+SelfLoader->load_stubs;
 1;
 __DATA__
 
 sub new {
-    my ($class,%args) = @_;
-    
-    my $this = bless {
-	sock => undef,
-	read => undef,
-	write => undef,
-	wanttowrite => undef,
-	runloop => undef,
-	creator => (caller)[0],
-    },$class;
+    my ($class,%opts) = @_;
 
-    if (defined $args{Socket}) {
-	if (ref $args{Socket} &&
-	    UNIVERSAL::isa($args{Socket},'IO::Socket')) {
+    $class->_increment_caller('external-socket', \%opts);
+    my $this = $class->SUPER::new(%opts);
+    $this->{read} = undef;
+    $this->{write} = undef;
+    $this->{wanttowrite} = undef;
 
-	    $this->{sock} = $args{Socket};
+    if (defined $opts{Socket}) {
+	if (ref $opts{Socket} &&
+		UNIVERSAL::isa($opts{Socket},'IO::Socket')) {
+	    $this->attach($opts{Socket});
 	}
 	else {
-	    croak "ExternalSocket->new, Arg{Socket} was illegal reference: ".ref($args{Socket})."\n";
+	    croak "ExternalSocket->new, Arg{Socket} was illegal object: ".ref($opts{Socket})."\n";
 	}
     }
     else {
@@ -78,6 +78,10 @@ sub new {
 	}
     }
 
+    if (defined $opts{Name}) {
+	$this->name($opts{Name});
+    }
+
     $this;
 }
 
@@ -86,29 +90,25 @@ sub install {
     # 引数を省略した場合はデフォルトのRunLoopにインストールする。
     my ($this,$runloop) = @_;
 
-    if (defined $this->{runloop}) {
+    if ($this->installed) {
 	croak "This ExternalSocket has been already installed to RunLoop\n";
     }
 
     $runloop = RunLoop->shared unless defined $runloop;
-    $runloop->install_socket($this);
-
     $this->{runloop} = $runloop;
-    $this;
+    $this->SUPER::install;
 }
 
 sub uninstall {
     # インストールしたRunLoopから、このソケットをアンインストールする。
     my $this = shift;
 
-    if (!defined $this->{runloop}) {
+    if (!$this->installed) {
 	# インストールされていない。
 	croak "This ExternalSocket hasn't been installed yet\n";
     }
 
-    $this->{runloop}->uninstall_socket($this);
-    $this->{runloop} = undef;
-    $this;
+    $this->SUPER::uninstall;
 }
 
 sub read {

@@ -18,8 +18,6 @@ use NumericReply;
 use Tiarra::Resolver;
 use Tiarra::Socket;
 use Tiarra::Utils;
-# shorthand
-my $utils = Tiarra::Utils->shared;
 
 # 複数のパッケージを混在させてるとSelfLoaderが使えない…？
 #use SelfLoader;
@@ -30,8 +28,7 @@ my $utils = Tiarra::Utils->shared;
 sub new {
     my ($class,$runloop,$sock) = @_;
     my $this = $class->SUPER::new($runloop);
-    $this->{sock} = $sock;
-    $this->{connected} = 1;
+    $this->attach($sock);
     $this->{pass_received} = ''; # クライアントから受け取ったパスワード
     $this->{nick} = ''; # ログイン時にクライアントから受け取ったnick。変更されない。
     $this->{username} = ''; # 同username
@@ -63,12 +60,12 @@ sub accept {
 	}
     }
     ::printmsg("One client at ".$this->{client_host_repr}." connected to me.");
-    $this->_runloop->register_receive_socket($this->sock);
+    $this->install;
     $this;
 }
 
-$utils->define_attr_getter(0, qw(logging_in username),
-			   qw(client_host client_addr client_host_repr));
+__PACKAGE__->define_attr_getter(0, qw(logging_in username),
+				qw(client_host client_addr client_host_repr));
 
 sub fullname {
     # このクライアントをtiarraから見たnick!username@userhostの形式で表現する。
@@ -129,22 +126,22 @@ sub option_or_default {
     my ($this, $base, $config_prefix, $option_prefix, $default) = @_;
     my $value;
 
-    $utils->get_first_defined(
-	$this->option($utils->to_str($option_prefix).$base),
-	$this->_conf_general->get($utils->to_str($option_prefix).$base),
+    $this->get_first_defined(
+	$this->option($this->to_str($option_prefix).$base),
+	$this->_conf_general->get($this->to_str($option_prefix).$base),
 	$default);
 }
 
 sub option_or_default_multiple {
     my ($this, $base, $types, $config_prefix) = @_;
 
-    return $utils->get_first_defined(
+    return $this->get_first_defined(
 	(map {
-	    $this->option(join('',$utils->to_str($_, $base)));
+	    $this->option(join('',$this->to_str($_, $base)));
 	} @$types),
 	(map {
 	    $this->_conf_general->get(
-		join('',$utils->to_str($config_prefix, $_, $base)));
+		join('',$this->to_str($config_prefix, $_, $base)));
 	} @$types));
 }
 
@@ -159,9 +156,9 @@ sub send_message {
 	$this->option_or_default_multiple('encoding', ['out-', ''], 'client-'));
 }
 
-sub receive {
+sub read {
     my ($this) = shift;
-    $this->SUPER::receive(
+    $this->SUPER::read(
 	$this->option_or_default_multiple('encoding', ['in-', ''], 'client'));
 
     # 接続が切れたら、各モジュールへ通知
@@ -595,14 +592,10 @@ FunctionalVariable::tie(
 package IrcIO::Client::HookTarget;
 use Hook;
 our @ISA = 'HookTarget';
-our $_shared;
+use Tiarra::SharedMixin;
 
-sub shared {
-    my $class = shift;
-    if (!defined $_shared) {
-	$_shared = bless {} => $class; # 繼承するなら問題になるが…
-    }
-    $_shared;
+sub _new {
+    return bless {} => shift;
 }
 
 sub call {

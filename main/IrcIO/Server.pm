@@ -19,13 +19,25 @@ use UNIVERSAL;
 use Multicast;
 use NumericReply;
 use Tiarra::Utils;
-use Tiarra::Socket;
+use Tiarra::Socket::Connect;
 use Tiarra::Resolver;
 use base qw(Tiarra::Utils);
+__PACKAGE__->define_attr_getter(0,
+				qw(network_name current_nick logged_in),
+				qw(server_hostname isupport config),
+				[qw(host server_host)]);
+__PACKAGE__->define_attr_accessor(0, qw(state finalizing));
+__PACKAGE__->define_attr_enum_accessor('state', 'eq',
+				       qw(connecting finalizing terminating),
+				       qw(terminated finalized connected),
+				       qw(reconnecting));
+
 
 sub new {
     my ($class,$runloop,$network_name) = @_;
-    my $this = $class->SUPER::new($runloop);
+    my $this = $class->SUPER::new(
+	$runloop,
+	name => "network/$network_name");
     $this->{network_name} = $network_name;
     $this->{current_nick} = ''; # 現在使用中のnick。ログインしていなければ空。
     $this->{server_hostname} = ''; # サーバが主張している hostname。こちらもログインしてなければ空。
@@ -43,6 +55,7 @@ sub new {
     $this->{isupport} = {}; # isupport
 
     $this->{connecting} = undef;
+    $this->{finalizing} = undef;
     $this->state('initializing');
 
     $this->reconnect;
@@ -59,7 +72,7 @@ sub _connect_interrupted {
 sub _gen_msg {
     my ($this, $msg) = @_;
 
-    'network/'.$this->network_name.': '.$msg;
+    $this->name.': '.$msg;
 }
 
 sub die {
@@ -84,16 +97,6 @@ sub printmsg {
 #    $this->{last_msg} = [$msg, time];
     ::printmsg($this->_gen_msg($msg));
 }
-
-Tiarra::Utils->define_attr_getter(0,
-				  qw(network_name current_nick logged_in),
-				  qw(server_hostname isupport config),
-				  [qw(host server_host)]);
-Tiarra::Utils->define_attr_accessor(0, qw(state));
-Tiarra::Utils->define_attr_enum_accessor('state', 'eq',
-					 qw(connecting finalizing terminating),
-					 qw(terminated finalized connected),
-					 qw(reconnecting));
 
 sub nick_p {
     my ($this, $nick) = @_;
@@ -224,7 +227,6 @@ sub channel {
 sub _queue_retry {
     my $this = shift;
 
-    return if $this->_connect_interrupted;
     $this->state_reconnecting(1);
 
     $this->_cleanup if defined $this->{timer};
@@ -234,8 +236,8 @@ sub _queue_retry {
 	Code => sub {
 	    $this->{timer} = undef;
 	    $this->{connecting} = undef;
-	    return if $this->_connect_interrupted;
-	    $this->connect;
+	    return if $this->finalizing;
+	    $this->reconnect;
 	})->install;
 }
 
@@ -250,6 +252,7 @@ sub connect {
     #return if $this->connected;
     croak 'connected!' if $this->connected;
     croak 'connecting!' if $this->connecting;
+    $this->finalizing(undef);
 
     # 初期化すべきフィールドを初期化
     $this->{nick_retry} = 0;
@@ -272,7 +275,7 @@ sub _connect_stage_1 {
     my %addrs_by_types;
     my $server_port = $this->{server_port};
 
-    return if $this->_connect_interrupted;
+    return if $this->finalizing;
 
     if ($entry->answer_status eq $entry->ANSWER_OK) {
 	foreach my $addr (@{$entry->answer_data}) {
@@ -308,6 +311,7 @@ sub _connect_stage_1 {
 sub _connect_try_next {
     my $this = shift;
 
+    return if $this->finalizing;
     my $trying =
 	$this->{connecting} = shift @{$this->{connection_queue}};
     if (defined $trying) {
@@ -356,7 +360,7 @@ sub _try_connect_socket {
 	    my ($subject, $socket, $obj) = @_;
 
 	    if ($subject eq 'sock') {
-		$this->_attach($socket);
+		$this->attach($socket);
 	    } elsif ($subject eq 'error') {
 		$this->_connect_error($obj);
 	    } elsif ($subject eq 'warn') {
@@ -367,23 +371,21 @@ sub _try_connect_socket {
     $this;
 }
 
-sub _attach {
+sub attach {
     my ($this, $connector) = @_;
 
     if (defined $this->{connector}) {
+	$this->SUPER::attach($connector->sock);
 	$this->{connecting} = undef;
-	$this->{sock} = $connector->sock;
-	$this->{sock}->autoflush(1);
 	$this->{server_addr} = $connector->addr;
 	$this->{proto} = $connector->type_name;
-	$this->{connected} = 1;
 	$this->state_connected(1);
 
 	$this->_send_connection_messages;
 
 	$this->{connector} = undef;
 	$this->printmsg("Opened connection to ". $this->destination .".");
-	$this->_runloop->register_receive_socket($this->{sock});
+	$this->install;
     } else {
 	$this->die('connecter not defined.');
     }
@@ -452,6 +454,7 @@ sub finalize {
     my ($this, $msg) = @_;
 
     $this->_interrupt($msg, 'finalizing');
+    $this->finalizing(1);
 }
 
 sub _interrupt {
@@ -534,9 +537,9 @@ sub send_message {
 	$this->config_or_default('out-encoding', 'server-'));
 }
 
-sub receive {
+sub read {
     my $this = shift;
-    $this->SUPER::receive($this->config_or_default('in-encoding', 'server-'));
+    $this->SUPER::read($this->config_or_default('in-encoding', 'server-'));
 
     # 接続が切れたら、各モジュールとRunLoopへ通知
     if (!$this->connected) {
