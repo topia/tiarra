@@ -1,5 +1,5 @@
 # -*- cperl -*-
-# $Clovery: tiarra/module/Tools/GroupDB.pm,v 1.5 2003/05/23 11:25:45 topia Exp $
+# $Id: GroupDB.pm,v 1.6 2003/09/25 13:16:00 topia Exp $
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 
 # エイリアスのように、HashをレコードとしたDBを管理する。

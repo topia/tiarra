@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Connect.pm,v 1.2 2003/01/26 10:42:41 admin Exp $
+# $Id: Connect.pm,v 1.3 2003/09/25 13:15:59 topia Exp $
 # -----------------------------------------------------------------------------
 # copyright (C) 2002 Topia <topia@clovery.jp>. all rights reserved.
 package Channel::Join::Connect;
