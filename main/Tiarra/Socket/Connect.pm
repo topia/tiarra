@@ -170,7 +170,7 @@ sub _try_connect_tcp {
 	    $this->_call;
 	}
     } else {
-	$this->_connect_error_try_next(($!+0).': '.$!);
+	$this->_connect_error_try_next(($!+0).': '.$!.': '.$@);
     }
 }
 
@@ -190,7 +190,7 @@ sub _try_connect_unix {
 	$this->{sock} = $sock;
 	$this->_call;
     } else {
-	$this->_connect_error_try_next($!);
+	$this->_connect_error_try_next(($!+0).': '.$!.': '.$@);
     }
 }
 
@@ -304,7 +304,7 @@ sub proc_sock {
 	my $error = $!;
 	$this->cleanup;
 	$this->close;
-	$this->_connect_error_try_next(($!+0).': '.$!);
+	$this->_connect_error_try_next(($!+0).': '.$!.': '.$@);
     } elsif ($this->sock->connect($this->{connecting}->{saddr}) || $!{EISCONN}) {
 	$this->cleanup;
 	$this->_call;
@@ -313,7 +313,7 @@ sub proc_sock {
 	$this->cleanup;
 	$this->close;
 	$! = $error;
-	$this->_connect_error_try_next(($!+0).': '.$!);
+	$this->_connect_error_try_next(($!+0).': '.$!.': '.$@);
     }
 }
 
