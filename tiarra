@@ -247,8 +247,8 @@ my $boot = sub  {
     $start_runloop->();
 };
 
-# quietモードならSTDOUTとSTDERRを閉じる。
-# STDIN の close と config の read の関連で boot の寸前に。
+# quietモードならSTDIN, STDOUT, STDERRを閉じる。
+# config の read の関連(STDIN)で boot の寸前に。
 if ($quiet) {
     close STDIN;
     close STDOUT;
