@@ -37,6 +37,7 @@ sub new {
 
     $obj->{channels} = {}; # 小文字チャンネル名 => ChannelInfo
     $obj->{people} = {}; # nick => PersonalInfo
+    $obj->{isupport} = {}; # isupport
 
     $obj->connect;
 }
@@ -51,6 +52,22 @@ sub current_nick {
 
 sub server_hostname {
     shift->{server_hostname};
+}
+
+sub isupport {
+    shift->{isupport};
+}
+
+sub nick_p {
+    my ($this, $nick) = @_;
+
+    Multicast::nick_p($nick, $this->isupport->{NICKLEN});
+}
+
+sub channel_p {
+    my ($this, $name) = @_;
+
+    Multicast::channel_p($name, $this->isupport->{CHANTYPES});
 }
 
 sub channels {
@@ -1016,22 +1033,20 @@ sub _RPL_ISUPPORT {
     my ($this,$msg) = @_;
     if ($msg->n_params >= 2 && # nick + [params] + 'are supported by this server'
 	    $msg->param($msg->n_params - 1) =~ /supported/i) {
-	my $isupport = $this->remark('isupport');
 	foreach my $param ((@{$msg->params})[1...($msg->n_params - 2)]) {
 	    my ($negate, $key, $value) = $param =~ /^(-)?([[:alnum:]]+)(?:=(.+))?$/;
 	    if (!defined $negate) {
 		# empty value
 		$value = '' unless defined $value;
-		$isupport->{$key} = $value;
+		$this->{isupport}->{$key} = $value;
 	    } elsif (!defined $value) {
 		# negate a previously specified parameter
-		delete $isupport->{$key};
+		delete $this->{isupport}->{$key};
 	    } else {
 		# inconsistency param
 		carp("inconsistency RPL_ISUPPORT param: $param");
 	    }
 	}
-	$this->remark('isupport', $isupport);
     }
 }
 
@@ -1044,15 +1059,7 @@ sub _RPL_YOURID {
 sub _set_to_next_nick {
     my ($this,$failed_nick) = @_;
     # failed_nickの次のnickを試します。nick重複でログインに失敗した時に使います。
-    my $nicklen = do {
-	if (defined $this->remark('isupport') &&
-		defined $this->remark('isupport')->{NICKLEN}) {
-	    $this->remark('isupport')->{NICKLEN};
-	} else {
-	    9;
-	}
-    };
-    my $next_nick = modify_nick($failed_nick, $nicklen);
+    my $next_nick = modify_nick($failed_nick, $this->isupport->{NICKLEN});
 
     my $msg_for_user = "Nick $failed_nick was already in use in the ".$this->network_name.". Trying ".$next_nick."...";
     $this->send_message(

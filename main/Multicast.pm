@@ -670,7 +670,9 @@ sub distribute_to_servers {
 sub nick_p {
     # 文字列がnickとして許される形式であるかどうかを真偽値で返す。
     my $str = detach(shift);
-    return undef unless length($str);
+    my $nicklen = shift;
+    return undef unless length($str) &&
+	(!defined $nicklen || (length($str) <= $nicklen));
 
     my $first_char = '[a-zA-Z_\[\]\\\`\^\{\}\|]';
     my $remaining_char = '[0-9a-zA-Z_\-\[\]\\\`\^\{\}\|]';
@@ -681,8 +683,9 @@ sub channel_p {
     # 文字列がchannelとして許される形式であるかどうかを真偽値で返す。
     my $str = detach(shift);
     return undef unless length($str);
+    my $chantypes = shift || '#&!';
 
-    my $first_char = '[\#\&\+\!]';
+    my $first_char = "[\Q$chantypes\E]";
     my $suffix_spec = '(?::[a-z*.]+)?';
     return $str =~ /^${first_char}.*${suffix_spec}$/
 }
