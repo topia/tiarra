@@ -268,7 +268,7 @@ sub get_first_defined {
     foreach (@_) {
 	return $_ if defined $_;
     }
-    return undef;
+    return ();
 }
 
 sub _wantarrays_to_types {
