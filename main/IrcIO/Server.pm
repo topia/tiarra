@@ -355,7 +355,7 @@ sub _try_connect_socket {
 	    my ($subject, $socket, $obj) = @_;
 
 	    if ($subject eq 'sock') {
-		$this->_attach($obj);
+		$this->_attach($socket);
 	    } elsif ($subject eq 'error') {
 		$this->_connect_error($obj);
 	    } elsif ($subject eq 'warn') {
