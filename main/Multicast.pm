@@ -44,8 +44,8 @@ sub _INVITE_from_client {
     my ($message,$sender) = @_;
     # nickはパースするだけで捨てる。チャンネルのパース結果を見る。
     my $to = '';
-    ($message->params->[0]) = detatch($message->params->[0]);
-    ($message->params->[1],$to) = detatch($message->params->[1]);
+    ($message->params->[0]) = detach($message->params->[0]);
+    ($message->params->[1],$to) = detach($message->params->[1]);
     $message->params->[0] = local_to_global($message->params->[0],$to); # 自分をINVITEする事など無いので必要は無いが…
     forward_to_server($message,$to);
 }
@@ -102,8 +102,8 @@ sub _KICK_from_client {
 	# チャンネルとnickが一対一で対応する。
 	# チャンネルのネットワーク名を使用し、nickのネットワーク名は捨てる。
 	for (my $i = 0; $i < @channels; $i++) {
-	    my ($raw_channel,$to) = detatch($channels[$i]);
-	    my ($raw_nick) = detatch($nicks[$i]);
+	    my ($raw_channel,$to) = detach($channels[$i]);
+	    my ($raw_nick) = detach($nicks[$i]);
 
 	    $message->params->[0] = $raw_channel;
 	    $message->params->[1] = local_to_global($raw_nick,$runloop->networks->{$to});
@@ -113,12 +113,12 @@ sub _KICK_from_client {
     elsif (@channels == 1) {
 	# 一つのチャンネルから複数のnickを蹴り出す。
 	# チャンネルのネットワーク名を使用し、nickのネットワーク名は捨てる。
-	my ($raw_channel,$to) = detatch($channels[0]);
+	my ($raw_channel,$to) = detach($channels[0]);
 	my $network = $runloop->networks->{$to};
 	$message->params->[0] = $raw_channel;
 
 	foreach my $nick (@nicks) {
-	    my ($raw_nick) = detatch($nick);
+	    my ($raw_nick) = detach($nick);
 	    $message->params->[1] = local_to_global($raw_nick,$network);
 
 	    forward_to_server($message,$to);
@@ -160,7 +160,7 @@ sub _MODE_from_server {
 sub _MODE_from_client {
     my ($message,$sender) = @_;
     my $to;
-    ($message->params->[0],$to) = detatch($message->params->[0]);
+    ($message->params->[0],$to) = detach($message->params->[0]);
 
     my $network = $runloop->networks->{$to};
     @{$message->params} = map( local_to_global($_,$network) ,@{$message->params});
@@ -174,7 +174,7 @@ sub _NICK_from_client {
     my ($message,$sender) = @_;
     my $to;
     my $specified;
-    ($message->params->[0],$to,$specified) = detatch($message->params->[0]);
+    ($message->params->[0],$to,$specified) = detach($message->params->[0]);
 
     if ($specified) {
 	forward_to_server($message,$to);
@@ -209,7 +209,7 @@ sub _NOTICE_from_server {
 sub _WHOIS_from_client {
     my ($message,$sender) = @_;
     my $to;
-    ($message->params->[0],$to) = detatch($message->params->[0]);
+    ($message->params->[0],$to) = detach($message->params->[0]);
 
     my $network = $runloop->networks->{$to};
     $message->params->[0] = local_to_global($message->params->[0],$runloop->networks->{$to});
@@ -612,7 +612,7 @@ sub classify {
     my $array = shift;
     my $networks = {};
     foreach my $target (@$array) {
-	my ($str,$network_name) = detatch($target);
+	my ($str,$network_name) = detach($target);
 	if (defined $networks->{$network_name}) {
 	    push @{$networks->{$network_name}},$str;
 	}
