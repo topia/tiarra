@@ -501,7 +501,7 @@ sub _receive_after_logged_in {
 	    foreach (
 		map("RPL_$_",
 		    qw(CHANNELMODEIS NOTOPIC TOPIC TOPICWHOTIME
-		       WHOREPLY NAMREPLY ENDOFNAMES
+		       CREATIONTIME WHOREPLY NAMREPLY ENDOFNAMES
 		       WHOISUSER WHOISSERVER AWAY ENDOFWHOIS),
 		    map({("${_}LIST", "ENDOF${_}LIST");}
 			    qw(INVITE EXCEPT BAN)),
@@ -869,6 +869,14 @@ sub _RPL_TOPICWHOTIME {
     if (defined $ch) {
 	$ch->topic_who($msg->param(2));
 	$ch->topic_time($msg->param(3));
+    }
+}
+
+sub _RPL_CREATIONTIME {
+    my ($this,$msg) = @_;
+    my $ch = $this->channel($msg->param(1));
+    if (defined $ch) {
+	$ch->remark('creation_time', $msg->param(2));
     }
 }
 

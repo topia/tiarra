@@ -255,6 +255,22 @@ sub _send_mode_cache {
 	    },
 	   )
        );
+    if (defined $ch->remark('creation_time')) {
+	$sendto->send_message(
+	    IRCMessage->new(
+		Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
+		Command => RPL_CREATIONTIME,
+		Params => [
+		    RunLoop->shared_loop->current_nick,
+		    $ch_name,
+		    $ch->remark('creation_time'),
+		   ],
+		Remarks => {
+		    'fill-prefix-when-sending-to-client' => 1,
+		},
+	       )
+	   );
+    }
 }
 
 1;
