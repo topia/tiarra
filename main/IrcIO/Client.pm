@@ -366,22 +366,19 @@ sub _receive_after_logged_in {
 	if (defined $msg->params) {
 	    # 形式が正しい限りNICKには常に成功して、RunLoopのカレントnickが変更になる。
 	    # ただしネットワーク名が明示されていた場合はカレントを変更しない。
-	    my ($nick,undef,$specified) = Multicast::detach($msg->params->[0]);
+	    my $rawnick = $msg->params->[0];
+	    my ($nick,undef,$specified) = Multicast::detach($rawnick);
 	    if (Multicast::nick_p($nick)) {
 		unless ($specified) {
-		    #$this->send_message(
-		    #    new IRCMessage(
-		    #	Prefix => $this->fullname,
-		    #	Command => 'NICK',
-		    #	Param => $msg->params->[0]));
-		    if ($this->_runloop->multi_server_mode_p) {
+		    if ($this->_runloop->multi_server_mode_p &&
+			    $this->_runloop->current_nick ne $rawnick) {
 			$this->_runloop->broadcast_to_clients(
 			    IRCMessage->new(
 				Command => 'NICK',
-				Param => $msg->param(0),
+				Param => $rawnick,
 				Remarks => {'fill-prefix-when-sending-to-client' => 1}));
 
-			$this->_runloop->set_current_nick($msg->params->[0]);
+			$this->_runloop->set_current_nick($rawnick);
 		    }
 		}
 	    } else {
@@ -390,7 +387,7 @@ sub _receive_after_logged_in {
 			Prefix => $this->_runloop->sysmsg_prefix('system'),
 			Command => ERR_ERRONEOUSNICKNAME,
 			Params => [$this->_runloop->current_nick,
-				   $msg->params->[0],
+				   $rawnick,
 				   'Erroneous nickname']));
 		# これは鯖に送らない。
 		$msg = undef;
@@ -600,7 +597,7 @@ FunctionalVariable::tie(
     FETCH => sub {
 	IrcIO::Client::HookTarget->shared;
     },
-   );
+   ) unless defined $HOOK_TARGET_DEFAULT;
 
 # -----------------------------------------------------------------------------
 package IrcIO::Client::HookTarget;
