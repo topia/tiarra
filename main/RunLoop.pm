@@ -264,7 +264,7 @@ sub _update_send_selector {
     # 送信する必要のあるIrcIOだけを抜き出し、そのソケットを送信セレクタに登録する。
 
     #my $add_or_remove = sub {
-    #	my $io = shift;	
+    #	my $io = shift;
     #	my $action = ($io->need_to_send ? 'add' : 'remove');
     #	$this->{send_selector}->$action($io->sock);
     #};
@@ -980,7 +980,7 @@ sub run {
 			else {
 			    # シングルサーバーモードなら、メッセージをMulticastのフィルタに通す。
 			    my @received_messages =
-				(!$this->{multi_server_mode}) ? Multicast::from_server_to_client($msg,$io) : $msg;
+				(!$this->{multi_server_mode}) ? Multicast::from_server_to_client($msg,$this->networks_list) : $msg;
 
 			    # モジュールを通す。
 			    my $filtered_messages = $this->_apply_filters(\@received_messages,$io);
