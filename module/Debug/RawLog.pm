@@ -70,27 +70,27 @@ sub message_io_hook {
 1;
 
 =pod
-info: $BI8=`=PNO$K%/%i%$%"%s%H$d%5!<%P$H$NDL?.$r%@%s%W$9$k!#(B
+info: É¸½à½ÐÎÏ¤Ë¥¯¥é¥¤¥¢¥ó¥È¤ä¥µ¡¼¥Ð¤È¤ÎÄÌ¿®¤ò¥À¥ó¥×¤¹¤ë¡£
 default: off
 
-# 0 $B$^$?$O>JN,$GI=<($7$J$$!#(B 1 $B$GI=<($9$k!#(B
-# $B%/%i%$%"%s%H%*%W%7%g%s$N(B logname $B$K$h$C$F!"%@%s%W$K;H$&L>A0$r;XDj$G$-$^$9!#(B
+# 0 ¤Þ¤¿¤Ï¾ÊÎ¬¤ÇÉ½¼¨¤·¤Ê¤¤¡£ 1 ¤ÇÉ½¼¨¤¹¤ë¡£
+# ¥¯¥é¥¤¥¢¥ó¥È¥ª¥×¥·¥ç¥ó¤Î logname ¤Ë¤è¤Ã¤Æ¡¢¥À¥ó¥×¤Ë»È¤¦Ì¾Á°¤ò»ØÄê¤Ç¤­¤Þ¤¹¡£
 
-# $B%5!<%P$+$i$NF~NO(B
+# ¥µ¡¼¥Ð¤«¤é¤ÎÆþÎÏ
 enable-server-in: 1
 
-# $B%5!<%P$X$N=PNO(B
+# ¥µ¡¼¥Ð¤Ø¤Î½ÐÎÏ
 enable-server-out: 1
 
-# $B%/%i%$%"%s%H$+$i$NF~NO(B
+# ¥¯¥é¥¤¥¢¥ó¥È¤«¤é¤ÎÆþÎÏ
 enable-client-in: 0
 
-# $B%/%i%$%"%s%H$X$N=PNO(B
+# ¥¯¥é¥¤¥¢¥ó¥È¤Ø¤Î½ÐÎÏ
 enable-client-out: 0
 
-# PING/PONG $B$rL5;k$9$k(B
+# PING/PONG ¤òÌµ»ë¤¹¤ë
 ignore-ping: 1
 
-# NumericReply $B$NL>A0$r2r7h$7$FI=<($9$k(B($B$A$c$s$H$7$?(B dump $B$G$OL5$/$J$j$^$9(B)
+# NumericReply ¤ÎÌ¾Á°¤ò²ò·è¤·¤ÆÉ½¼¨¤¹¤ë(¤Á¤ã¤ó¤È¤·¤¿ dump ¤Ç¤ÏÌµ¤¯¤Ê¤ê¤Þ¤¹)
 resolve-numeric: 1
 =cut
