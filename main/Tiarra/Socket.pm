@@ -12,11 +12,11 @@ use warnings;
 use Carp;
 use Tiarra::Utils;
 use RunLoop;
+our $is_winsock = $^O =~ /^MSWin32/;
 utils->define_attr_getter(0, qw(sock installed));
 utils->define_attr_accessor(0, qw(name),
 			    map { ["_$_", $_] }
 				qw(sock installed));
-our $is_winsock = $^O =~ /^MSWin32/;
 
 sub new {
     my ($class, %opts) = @_;
@@ -230,3 +230,205 @@ sub _increment_caller {
 }
 
 1;
+
+=pod
+
+=head1 NAME
+
+Tiarra::Socket - Tiarra RunLoop based Socket Handler Base Class
+
+=head1 SYNOPSIS
+
+=over
+
+=item use L<Tiarra::Socket>
+
+ use Tiarra::Socket;
+ $socket = Tiarra::Socket->new(name => 'sample socket');
+ $socket->attach($sock);
+ $socket->install;
+ $socket->uninstall;
+ $socket->shutdown(2);
+ $socket->detach;
+ $socket->close;
+ $type = Tiarra::Socket->probe_type_by_class($sock);
+ $type = Tiarra::Socket->probe_type_by_addr($addr);
+ Tiarra::Socket->repr_type( $type );
+ Tiarra::Socket->repr_destination( [datas] );
+ $is_winsock = Tiarra::Socket->_is_winsock;
+ Tiarra::Socket->sock_errno_to_msg($errno[, $additional_msg]);
+
+=item make subclass of L<Tiarra::Socket>
+
+ package Tiarra::SomeSocket;
+ use Tiarra::Socket;
+ use base qw(Tiarra::Socket);
+
+ sub new {
+   my ($class, %opts) = @_;
+
+   $class->_increment_caller('some-socket', \%opts);
+   my $this = $class->SUPER::new(%opts);
+   $this;
+ }
+ # some overrides and implements...
+
+=back
+
+=head1 DESCRIPTION
+
+L<Tiarra::Socket> provides RunLoop based event driven Socket I/O interface.
+
+=head1 CONSTRUCTOR
+
+=over
+
+=item C<< $socket = new( [OPTS] ) >>
+
+opts is options hash.
+parametors:
+
+ runloop  Tiarra RunLoop
+ name     Socket name for pretty-print
+
+=back
+
+=head1 METHODS
+
+=over
+
+=item C<< ->runloop >>
+
+return default runloop or specified runloop
+
+=item C<< ->attach >>
+
+attach sock to socket
+
+=item C<< ->detach >>
+
+detach sock from socket
+
+=item C<< ->close >>
+
+shutdown and detach socket
+
+=item C<< ->shutdown( HOW ) >>
+
+call shutdown for this socket.
+
+=item C<< ->install >>
+
+install socket to runloop
+
+=item C<< ->uninstall >>
+
+uninstall socket from runloop
+
+=item C<< ->sock >>
+
+return sock attached to socket
+
+=item C<< ->installed >>
+
+return true if socket installed to runloop
+
+=back
+
+=head1 CLASS METHODS
+
+=over
+
+=item C<< ->repr_destination( [DATAS] ) >>
+
+representation destination with DATAS hash.
+currently supported hash key:
+
+=over
+
+=item host
+
+hostname(maybe FQDN).
+
+=item addr
+
+Address(IPv[46] Address).
+
+=item port
+
+Port or UNIX Domain Socket path.
+
+=item type
+
+Socket type. try repr inside, you haven't necessary call C<< ->repr_type >>.
+
+=back
+
+=item C<< ->repr_type( TYPE ) >>
+
+Simple Pretty-printing type. such as:
+
+ ipv4 -> IPv4
+ ipv6 -> IPv6
+ unix -> Unix
+
+=item C<< ->probe_type_by_class( CLASS_OR_OBJECT ) >>
+
+Probe type by class or object.
+
+=item C<< ->probe_type_by_addr( ADDRESS ) >>
+
+Probe type by address.
+
+=item C<< ->sock_errno_to_msg( ERRNO[, MESSAGE] ) >>
+
+representation sock errno and message.
+
+=back
+
+=head1 METHODS OF PLEASE OVERRIDE BY SUBCLASS
+
+=over
+
+=item C<< ->want_to_write >>
+
+return true(1) on want to write(write buffer has data)
+
+=item C<< ->write >>
+
+called when select notified this socket is writable.
+
+=item C<< ->read >>
+
+called when select notified this socket is readable.
+
+=item C<< ->exception >>
+
+called when select notified this socket has exception.
+
+=back
+
+=head1 SEE ALSO
+
+L<Tiarra::Socket::Connect>: socket connector.
+
+L<Tiarra::Socket::Buffered>, L<Tiarra::Socket::Lined>: reader/writer.
+
+L<Tiarra::Socket::Win32Errno>: Win32 errno database.
+
+=head1 COPYRIGHT AND DISCLAIMERS
+
+Copyright (c) 2004 Topia. All rights reserved.
+
+This library is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=head1 AUTHOR
+
+Topia, and originally developed by phonohawk.
+
+=cut
