@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# Tiarra::
-# -----------------------------------------------------------------------------
 # copyright (C) 2005 Topia <topia@clovery.jp>. all rights reserved.
 package Tiarra::IRC::Prefix;
 use strict;
@@ -17,6 +15,8 @@ utils->define_array_attr_notify_accessor(
 utils->define_array_attr_notify_accessor(
     0, '$this->_parse_prefix', qw(prefix));
 
+*user = \&name;
+
 sub new {
     my ($class,%args) = @_;
     my $obj = bless [] => $class;
@@ -25,7 +25,7 @@ sub new {
     $obj->[NAME] = undef;
     $obj->[HOST] = undef;
 
-    foreach (qw(Prefix Nick User Host)) {
+    foreach (qw(Prefix Nick User Name Host)) {
 	if (exists $args{$_}) {
 	    my $method = lc($_);
 	    $obj->$method($args{$_});
