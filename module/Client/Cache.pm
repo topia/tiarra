@@ -8,6 +8,7 @@ use base qw(Module);
 use Mask;
 use Multicast;
 use NumericReply;
+use Configuration;
 
 sub _yesno {
     my ($this, $value, $default) = @_;
@@ -49,6 +50,7 @@ sub message_arrived {
 	    if (!exists $remark->{$chan_long}) {
 		$sender->send_message(
 		    IRCMessage->new(
+			Prefix => Configuration->shared_conf->general->sysmsg_prefix,
 			Command => RPL_CHANNELMODEIS,
 			Params => [
 			    RunLoop->shared_loop->current_nick,
@@ -84,6 +86,7 @@ sub message_arrived {
 		# cache がそろっているかわからないため、
 		# とりあえず作ってみて、足りなかったらあきらめる。
 		my $message_tmpl = IRCMessage->new(
+		    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
 		    Command => RPL_WHOREPLY,
 		    Params => [
 			RunLoop->shared_loop->current_nick,
