@@ -107,9 +107,21 @@ chanmask-mode: tiarra
 # デフォルトは tiarra です。普通変える必要はありません。
 -sysmsg-prefix: tiarra
 
-# 上記sysmsg-prefixが必要無い時、すなわちメッセージがチャンネルに対しての
-# ものでない時は、prefixを省略するかどうか。デフォルトは1です。
--omit-sysmsg-prefix-when-possible: 1
+sysmsg-prefix-use-masks {
+  # sysmsg-prefix を使用する場所を指定する。
+
+  # システムメッセージ(NumericReply など)。デフォルトは * です。
+  # ふつうこれを変更する必要はありません。
+  system: *
+
+  # 個人宛メッセージ(Notice,Privmsg の中で)。デフォルトはなし。
+  -priv:
+
+  # チャンネル宛メッセージ(Notice,Privmsg の中で)。デフォルトは * です。
+  # Ziciz などのクライアントを接続する場合は、
+  # -*::log を指定しておくといいかもしれません。
+  channel: *
+}
 =cut
 
 * networks
