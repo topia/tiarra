@@ -13,14 +13,8 @@
 package Auto::CacheManager;
 use strict;
 use warnings;
-our $_shared;
-
-sub shared {
-    if (!defined $_shared) {
-	$_shared = Auto::CacheManager->_new;
-    }
-    $_shared;
-}
+use Tiarra::SharedMixin;
+our $_shared_instance;
 
 sub _new {
     my ($class) = @_;

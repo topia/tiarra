@@ -8,14 +8,8 @@ use strict;
 use warnings;
 use Carp;
 
-our $_shared;
-
-sub shared {
-  if (!defined $_shared) {
-    $_shared = System::Inflate->_new;
-  }
-  return $_shared;
-}
+use Tiarra::SharedMixin;
+our $_shared_instance;
 
 sub _new {
   my ($class) = @_;

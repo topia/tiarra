@@ -18,14 +18,8 @@ use Tools::GroupDB;
 use Mask;
 use Configuration;
 use Configuration::Block;
-our $_shared;
-
-sub shared {
-    if (!defined $_shared) {
-	$_shared = Auto::AliasDB->_new;
-    }
-    $_shared;
-}
+use Tiarra::SharedMixin;
+our $_shared_instance;
 
 sub setfile {
     # クラスメソッド。

@@ -10,15 +10,8 @@ use warnings;
 use Carp;
 use RunLoop;
 use Multicast;
-
-our $_shared;
-
-sub shared {
-    if (!defined $_shared) {
-	$_shared = Auto::AliasDB::CallbackUtils->_new;
-    }
-    $_shared;
-}
+use Tiarra::SharedMixin;
+our $_shared_instance;
 
 sub _new {
     my ($class) = @_;

@@ -10,17 +10,10 @@ use strict;
 use warnings;
 use RunLoop;
 use Carp;
+use Tiarra::SharedMixin;
 use Module::Use qw(Tools::FileCache::EachFile);
 use Tools::FileCache::EachFile;
-our $_shared;
-
-sub shared {
-    if (!defined $_shared) {
-	$_shared = __PACKAGE__->_new;
-    }
-
-    return $_shared;
-}
+our $_shared_instance;
 
 sub _new {
     my $class = shift;
