@@ -133,9 +133,11 @@ sub message_arrived {
 	    }
 
 	    # match
-	    my $key = (_search($block, $msg->param(1), 1, $block->{rate}))[0];
-	    if (defined $key) {
-		$reply_anywhere->($block->{database}->get_value_random($key));
+	    if (Mask::match_deep_chan($block->{mask}, $msg->prefix, $get_full_ch_name->())) {
+		my $key = (_search($block, $msg->param(1), 1, $block->{rate}))[0];
+		if (defined $key) {
+		    $reply_anywhere->($block->{database}->get_value_random($key));
+		}
 	    }
 	}
     }
@@ -170,3 +172,71 @@ sub _search {
 }
 
 1;
+
+=pod
+info: 特定の発言に反応して発言をします。
+default: off
+
+# Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。
+
+# 使用するブロックの定義。
+blocks: std
+
+std {
+  # データファイルと文字コードを指定します。
+  # ファイルの中では一行に一つの"反応:メッセージ"を書いて下さい。
+  file: reply.txt
+  file-encoding: euc
+
+  # 反応チェックを行うキーワードを指定します。
+  # 実際の指定方法は、「<requestで指定したキーワード> <チェックしたい発言>」です。
+  request: 反応チェック
+
+  # request に反応するときのフォーマットを指定します。
+  # #(key) がキーワード、 #(message) が発言に置換されます。
+  reply-format: 「#(key)」という発言に「#(message)」と反応します。
+
+  # request に反応する最大個数を指定します。
+  # あまり大きな値を指定すると、アタックが可能になったり、ログが流れて邪魔なので注意してください。
+  max-reply: 5
+
+  # メッセージの登録数を返答するキーワードを指定します。
+  count-query: 反応登録数
+
+  # メッセージの登録数を返答するときの反応を指定します。
+  # formatで指定できるものと同じです。#(count)は登録数になります。
+  count-format: 反応は#(count)件登録されています。
+
+  # 反応する人のマスク。
+  mask: * *!*@*
+  # plum: mask: *!*@*
+
+  # 反応が追加されたときの反応を指定します。
+  # formatで指定できるものと同じです。#(message)は追加されたメッセージになります。
+  added-format: #(name|nick.now): #(key) に対する反応 #(message) を追加しました。
+
+  # メッセージが削除されたときの反応を指定します。
+  # formatで指定できるものと同じです。#(message)は削除されたメッセージになります。
+  removed-format: #(name|nick.now): #(key) #(message;に対する反応 %s|;) を #(count) 件削除しました。
+
+  # 発言に反応する確率を指定します。百分率です。省略された場合は100と見做されます。
+  rate: 100
+
+  # メッセージを追加するキーワードを指定します。
+  # ここで指定したキーワードを発言すると、新しいメッセージを追加します。
+  # 実際の追加方法は「<addで指定したキーワード> <追加するメッセージ>」です。
+  add: 反応追加
+
+  # メッセージを削除するキーワードを指定します。
+  # 実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。
+  # メッセージを削除するキーワードを指定します。
+  # 実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。
+  remove: 反応削除
+
+  # addとremoveを許可する人。省略された場合は「*!*@*」と見做します。
+  modifier: *!*@*
+
+  # 正規表現拡張を許可するか。省略された場合は許可します。
+  use-re: 1
+}
+=cut
