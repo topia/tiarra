@@ -40,6 +40,8 @@ sub import {
     my @funcnames = @_;
 
     no strict 'refs';
+    # fastest call
+    no warnings;
 
     $pkg->define_function(
 	$call_pkg,
@@ -56,7 +58,8 @@ sub import {
 	    };
 	    ${$instance_name};
 	},
-	@funcnames);
+	@funcnames,
+	'_shared_init');
 
     $pkg->define_function(
 	$call_pkg,
