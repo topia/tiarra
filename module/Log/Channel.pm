@@ -8,9 +8,10 @@ use IO::File;
 use File::Spec;
 use Unicode::Japanese;
 use base qw(Module);
-use Module::Use qw(Tools::DateConvert Log::Logger);
+use Module::Use qw(Tools::DateConvert Log::Logger Log::Writer);
 use Tools::DateConvert;
 use Log::Logger;
+use Log::Writer;
 use ControlPort;
 use Mask;
 use Multicast;
@@ -20,7 +21,7 @@ sub new {
     my $this = $class->SUPER::new;
     $this->{channels} = []; # 要素は[ディレクトリ名,マスク]
     $this->{matching_cache} = {}; # <チャンネル名,ファイル名>
-    $this->{filehandle_cache} = {}; # <チャンネル名,[ファイルパス,IO::File]>
+    $this->{writer_cache} = {}; # <チャンネル名,Log::Writer>
     $this->{sync_command} = do {
 	my $sync = $this->config->sync;
 	if (defined $sync) {
@@ -212,118 +213,93 @@ sub _write {
     my $header = Tools::DateConvert::replace(
 	$this->config->header || '%H:%M'
     );
-    my $mode = do {
-	my $mode_conf = $this->config->mode;
-	if (defined $mode_conf) {
-	    oct('0'.$mode_conf);
-	}
-	else {
-	    0600;
+    my $always_flush = do {
+	if ($this->config->keep_file_open) {
+	    if ($this->config->always_flush) {
+		1;
+	    } else {
+		0;
+	    }
+	} else {
+	    1;
 	}
     };
-    # ディレクトリが無ければ作る。
-    $this->mkdirs($concrete_fpath);
     # ファイルに追記
-    my $make_path_fh_set = sub {
-	[$concrete_fpath,
-	 IO::File->new($concrete_fpath,O_CREAT | O_APPEND | O_WRONLY,$mode)];
+    my $make_writer = sub {
+	Log::Writer->shared_writer->find_object(
+	    $concrete_fpath,
+	    always_flush => $always_flush,
+	    file_mode_oct => $this->config->mode,
+	    dir_mode_oct => $this->config->dir_mode,
+	   );
     };
-    my $fh = sub {
+    my $writer = sub {
 	# キャッシュは有効か？
 	if ($this->config->keep_file_open) {
 	    # このチャンネルはキャッシュされているか？
-	    my $cached_elem = $this->{filehandle_cache}->{$channel};
+	    my $cached_elem = $this->{writer_cache}->{$channel};
 	    if (defined $cached_elem) {
 		# キャッシュされたファイルパスは今回のファイルと一致するか？
-		if ($cached_elem->[0] eq $concrete_fpath) {
+		if ($cached_elem->uri eq $concrete_fpath) {
 		    # このファイルハンドルを再利用して良い。
 		    #print "$concrete_fpath: RECYCLED\n";
-		    return $cached_elem->[1];
+		    return $cached_elem;
 		}
 		else {
 		    # ファイル名が違う。日付が変わった等の場合。
 		    # 古いファイルハンドルを閉じる。
 		    #print "$concrete_fpath: recached\n";
 		    eval {
-			$cached_elem->[1]->flush;
-			$cached_elem->[1]->close;
+			$cached_elem->flush;
+			$cached_elem->unregister;
 		    };
 		    # 新たなファイルハンドルを生成。
-		    @$cached_elem = @{$make_path_fh_set->()};
-		    return $cached_elem->[1];
+		    $cached_elem = $make_writer->();
+		    $cached_elem->register;
+		    return $cached_elem;
 		}
 	    }
 	    else {
 		# キャッシュされていないので、ファイルハンドルを作ってキャッシュ。
 		#print "$concrete_fpath: *cached*\n";
 		my $cached_elem =
-		    $this->{filehandle_cache}->{$channel} =
-			$make_path_fh_set->();
-		return $cached_elem->[1];
+		    $this->{writer_cache}->{$channel} =
+			$make_writer->();
+		$cached_elem->register;
+		return $cached_elem;
 	    }
 	}
 	else {
 	    # キャッシュ無効。
-	    return $make_path_fh_set->()->[1];
+	    return $make_writer->();
 	}
     }->();
-    if (defined $fh) {
-	$fh->print(
+    if (defined $writer) {
+	$writer->reserve(
 	    Unicode::Japanese->new("$header $line\n",'utf8')->conv(
 		$this->config->charset || 'jis'));
     }
 }
 
-sub mkdirs {
-    my ($this,$file) = @_;
-    my (undef,$directories,undef) = File::Spec->splitpath($file);
-    my $dir_mode = undef;
-
-    # 直接の親が存在するか
-    if ($directories eq '' || -d $directories) {
-	# これ以上辿れないか、存在するので終了。
-	return;
-    }
-    else {
-	# 存在しないので作成
-	my @dirs = File::Spec->splitdir($directories);
-	foreach (0 .. (scalar @dirs - 2)) {
-	    my $dir = File::Spec->catdir(@dirs[0 .. $_]);
-	    unless (-d $dir) {
-		$dir_mode ||= do {
-		    my $mode_conf = $this->config->dir_mode;
-		    if (defined $mode_conf) {
-			oct('0'.$mode_conf);
-		    }
-		    else {
-			0700;
-		    }
-		};
-		mkdir $dir, $dir_mode;
-	    }
-	}
-    }
-}
-
 sub flush_all_file_handles {
     my $this = shift;
-    foreach my $cached_elem (values %{$this->{filehandle_cache}}) {
+    foreach my $cached_elem (values %{$this->{writer_cache}}) {
 	eval {
-	    $cached_elem->[1]->flush;
+	    $cached_elem->flush;
 	};
     }
 }
 
 sub destruct {
     my $this = shift;
-    # 開いている全てのファイルハンドルを閉じて、キャッシュを空にする。
-    foreach my $cached_elem (values %{$this->{filehandle_cache}}) {
+    # 開いている全てのLog::Writerを閉じて、キャッシュを空にする。
+    foreach my $cached_elem (values %{$this->{writer_cache}}) {
 	eval {
-	    $cached_elem->[1]->flush;
-	    $cached_elem->[1]->close;
+	    $cached_elem->flush;
+	    $cached_elem->unregister;
 	};
     }
-    %{$this->{filehandle_cache}} = ();
+    %{$this->{writer_cache}} = ();
 }
 
 1;
@@ -369,7 +345,15 @@ distinguish-myself: 1
 # このオプションは多くの場合、ディスクアクセスを抑えて効率良くログを保存しますが
 # ログを記録すべき全てのファイルを開いたままにするので、50や100のチャンネルを
 # 別々のファイルにログを取るような場合には使うべきではありません。
+# 万一 fd があふれた場合、クライアントから(またはサーバへ)接続できない・
+# 新たなモジュールをロードできない・ログが全然できないなどの症状が起こる可能性が
+# あります。limit の詳細については OS 等のドキュメントを参照してください。
 -keep-file-open: 1
+
+# keep-file-open 時に各行ごとに flush するかどうか。
+# open/close の負荷は気になるが、ログは失いたくない人向け。
+# keep-file-open が有効でないなら無視され(1になり)ます。
+-always-flush: 0
 
 # keep-file-openを有効にした場合、発言の度にログファイルに追記するのではなく
 # 一定の分量が溜まってから書き込まれる。そのため、ファイルを開いても
