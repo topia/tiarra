@@ -232,6 +232,27 @@ sub _write {
     }
 }
 
+sub flush_all_file_handles {
+    my $this = shift;
+    foreach my $cached_elem (values %{$this->{writer_cache}}) {
+	eval {
+	    $cached_elem->flush;
+	};
+    }
+}
+
+sub destruct {
+    my $this = shift;
+    # 開いている全てのLog::Writerを閉じて、キャッシュを空にする。
+    foreach my $cached_elem (values %{$this->{writer_cache}}) {
+	eval {
+	    $cached_elem->flush;
+	    $cached_elem->unregister;
+	};
+    }
+    %{$this->{writer_cache}} = ();
+}
+
 1;
 
 =pod
