@@ -53,6 +53,7 @@ utils->define_array_attr_translate_accessor(
 	my ($from, $to) = @_;
 	"($to = $from) =~ tr/a-z/A-Z/";
     }, qw(command));
+utils->define_proxy('prefix', 0, qw(nick name host));
 
 sub new {
     my ($class,%args) = @_;
@@ -224,16 +225,16 @@ sub serialize {
 	    carp 'this message exceeded maximum param numbers!';
 	}
 	for (my $i = 0;$i < $n_params;$i++) {
+	    my $arg = $this->[PARAMS]->[$i];
+	    if (ref($arg) && !overload::Method($arg,'""')) {
+		croak "Param [$i] neither scalar nor stringifiable.";
+	    }
 	    if ($i == $n_params - 1) {
 		# 最後のパラメタなら頭にコロンを付けて後にはスペースを置かない。
 		# 但し半角スペースが一つも無く、且つコロンで始まっていなければコロンを付けない。
 		# パラメタが空文字列であった場合は例外としてコロンを付ける。
 		# また、 remark/always-use-colon-on-last-param が付いていた場合も
 		# コロンを付ける。
-		my $arg = $this->[PARAMS]->[$i];
-		if (ref($arg) && !overload::Method($arg,'""')) {
-		    croak "Param [$i] neither scalar nor stringifiable.";
-		}
 		# do stringify force to avoid bug on unijp
 		$arg = $unicode->set("$arg")->conv($encoding);
 		if (length($arg) > 0 and
@@ -249,7 +250,8 @@ sub serialize {
 	    }
 	    else {
 		# 最後のパラメタでなければ後にスペースを置く。
-		$result .= $unicode->set($this->[PARAMS]->[$i])->conv($encoding).' ';
+		# do stringify force to avoid bug on unijp
+		$result .= $unicode->set("$arg")->conv($encoding).' ';
 	    }
 	}
     }
@@ -363,14 +365,6 @@ sub encoding_params {
 	};
 	$this->push($value);
     }
-}
-
-foreach (qw(nick name host)) {
-    eval "
-    sub $_ \{
-	my \$this = shift;
-	\$this->prefix->$_(\@_);
-    \}";
 }
 
 sub prefix {
