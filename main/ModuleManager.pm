@@ -256,7 +256,7 @@ sub reload_modules_if_modified {
 		eval {
 		    $this->{modules}->[$idx]->destruct;
 		}; if ($@) {
-		    $show_msg->($@);
+		    RunLoop->shared_loop->notify_error->($@);
 		}
 
 		my $conf_block = $this->{mod_configs}->{$modname};
@@ -274,7 +274,7 @@ sub reload_modules_if_modified {
 		eval qq{
 		    use $modname;
 		}; if ($@) {
-		    $show_msg->($@);
+		    RunLoop->shared_loop->notify_error->($@);
 		}
 		eval qq{
                     \%${modname}::USED = \%USED;
