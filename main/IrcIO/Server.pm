@@ -419,9 +419,15 @@ sub _receive_while_logging_in {
 	$this->_set_to_next_nick($first_msg->param(1));
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
     }
-    elsif ($reply eq RPL_HELLO) {
-	# RPL_HELLO (irc2.11.x)
+    elsif (grep { $_ eq $reply } (RPL_WELCOME, qw(NOTICE PRIVMSG))) {
+	# RPL_HELLO (irc2.11.x) / NOTICE / PRIVMSG
 	return; # 何もしない
+    }
+    elsif ($reply eq 'PING') {
+	$this->send_message(
+	    new IRCMessage(
+		Command => 'PONG',
+		Param => $first_msg->param(0)));
     }
     else {
 	# それ以外。手の打ちようがないのでconnectionごと切断してしまう。
@@ -431,6 +437,7 @@ sub _receive_while_logging_in {
 	    die "Server replied $reply.\n".$first_msg->serialize."\n";
 	}
 	else {
+	    warn "Server replied $reply.\n".$first_msg->serialize."\n";
 	    return;
 	}
     }
