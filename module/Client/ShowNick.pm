@@ -67,6 +67,6 @@ sub client_attached {
 
 1;
 =pod
-info: shownick
+info: show network
 default: off
 =cut
