@@ -1,3 +1,21 @@
+2004-02-15  Topia  <topia@clovery.jp>
+
+	* module/Client/Cache.pm:
+	  - message_io_hook を追加。サーバとの通信を監視して、
+	    MODE や WHO を発行(して返答をもらっている)途中かどうかを
+	    記憶しておくように。
+	  - message_io_hook で記憶した情報を使って、
+	    (ほかのクライアントなどによって)サーバに情報を問い合わせている
+	    途中の時も、メッセージを破棄するようにした。
+	    2つ以上のクライアントが同時につながったときに効果が出るはず。
+	    テストには LimeChat を 3 つ同時に接続させたが、
+	    サーバへの問い合わせは各チャンネルにつき1回までに抑えられていた。
+	  - クライアントに伝達される必要のあるメッセージではないので、
+	    RunLoop->shared_loop->notify_warn() if ::debug_mode; から
+	    ::debug_printmsg(); に変更。
+	  - WHO キャッシュにおいて、
+	    データ不足であきらめたときのメッセージ表示をやめた。
+
 2004-02-14  Topia  <topia@clovery.jp>
 
 	* 全般:
@@ -1216,7 +1234,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.128 2004/02/14 11:48:17 topia Exp $
+#       Id: $Id: ChangeLog,v 1.129 2004/02/15 00:19:31 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2004/02/14 11:48:17 $
-# Revision: $Revision: 1.128 $
+#     Date: $Date: 2004/02/15 00:19:31 $
+# Revision: $Revision: 1.129 $

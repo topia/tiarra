@@ -1,3 +1,13 @@
+2004-02-15  Topia  <topia@clovery.jp>
+
+	* Client::Cache
+	  - 昨日の分だけでは Excess Flood/Max SendQ Exceeded 対策として
+	    不十分だったので、アップデートを推奨します。
+	  - 2つ以上のクライアントが同時に同じ動作をする場合に、
+	    今回の変更で効果が出ます。
+	    長すぎず短すぎずの絶妙な差で同じ動作をされた場合には
+	    効きませんが、滅多にそんなことはない(と思いたい)です。
+
 2004-02-14  Topia  <topia@clovery.jp>
 
 	* Log::Recent, System::Raw, Channel::Freeze, Channel::Rejoin
