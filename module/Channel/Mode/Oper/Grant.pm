@@ -57,8 +57,12 @@ sub message_arrived {
 
 sub push_to_queue {
     my ($this,$server,$ch_short,$nick) = @_;
+    my $wait = $this->config->wait || 0;
+    if ($wait =~ /^\s*(\d+)\s*-\s*(\d+)\s*$/) {
+	$wait = int(rand($2 - $1 + 1)) + $1;
+    }
     Timer->new(
-	After => $this->config->wait || 0,
+	After => $wait,
 	Code => sub {
 	    # 対象の人が既に+oされていたら中止。
 	    my $ch = $server->channel($ch_short);
@@ -66,7 +70,7 @@ sub push_to_queue {
 	    my $target = $ch->names($nick);
 	    return if !defined $target;
 	    return if $target->has_o;
-	    
+
 	    my $queue = $this->{queue}->{$server->network_name};
 	    if (!defined $queue) {
 		$queue = $this->{queue}->{$server->network_name} = [];
@@ -86,7 +90,7 @@ sub prepare_timer {
 	    Code => sub {
 		my ($timer) = @_;
 		$timer->interval(1);
-		
+
 		# 鯖毎に3つずつ消化する。
 		# チャンネル毎に最大３つずつ纏める。
 		my $queue_has_elem;
@@ -135,7 +139,8 @@ default: off
 
 # 対象の人間がjoinしてから実際に+oするまで何秒待つか。
 # 省略されたら待ちません。
-wait: 0
+# 5-10 のように指定されると、その値の中でランダムに待ちます。
+wait: 2-5
 
 # チャンネルと人間のマスクを定義。Auto::Operと同様。
 -mask: * example!~example@*.example.ne.jp
