@@ -7,14 +7,15 @@ use strict;
 use warnings;
 use RunLoop;
 use SelfLoader;
+use Tiarra::SharedMixin;
 
 # shorthand
 our $re_ver = qr/[\d.][\d.a-zA-Z-+]+/;
 our $re_tok = qr/[^\s]+/;
 
-sub shared {
+sub _new {
     # don't need instance present
-    return __PACKAGE__;
+    return shift;
 }
 
 sub destruct {
@@ -24,7 +25,8 @@ sub destruct {
 }
 
 sub is_target {
-    my ($this, $type, $client) = @_;
+    my ($class_or_this, $type, $client) = @_;
+    my $this = $class_or_this->_this;
 
     my $guess = $this->guess($client)->{type};
     if (defined $guess) {
@@ -35,7 +37,8 @@ sub is_target {
 }
 
 sub guess {
-    my ($this, $client, $rehash) = @_;
+    my ($class_or_this, $client, $rehash) = @_;
+    my $this = $class_or_this->_this;
     my $struct = $client->remark('client-guess-cache');
 
     if (!$rehash && defined $struct && $struct->{completed}) {
@@ -63,7 +66,8 @@ sub guess {
 }
 
 sub guess_ctcp_version {
-    my ($this, $struct, $str) = @_;
+    my ($class_or_this, $struct, $str) = @_;
+    my $this = $class_or_this->_this;
 
     my $struct_set = sub {
 	my %stor;
