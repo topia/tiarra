@@ -1,5 +1,9 @@
 2004-02-23  Topia  <topia@clovery.jp>
 
+	* module/Debug/RawLog.pm:
+	  - 追加。生の IRC メッセージ(のようなもの?)を ::printmsg を使って
+	    表示する。
+
 	* main/IrcIO/Client.pm:
 	  - RunLoop を Runloop と typo していたのを修正。
 
@@ -1412,7 +1416,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.132 2004/02/23 06:24:20 topia Exp $
+#       Id: $Id: ChangeLog,v 1.133 2004/02/23 08:27:11 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2004/02/23 06:24:20 $
-# Revision: $Revision: 1.132 $
+#     Date: $Date: 2004/02/23 08:27:11 $
+# Revision: $Revision: 1.133 $

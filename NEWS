@@ -1,5 +1,9 @@
 2004-02-23  Topia  <topia@clovery.jp>
 
+	* Debug::RawLog.pm
+	  - 追加。生の IRC メッセージ(のようなもの?)を ::printmsg を使って
+	    表示する。
+
 	* sample.conf
 	  - 順序が変わっています。注意してください。
 	  - general/omit-sysmsg-prefix-when-possible 削除。
