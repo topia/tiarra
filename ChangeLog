@@ -1,3 +1,35 @@
+2004-07-08  Topia  <topia@clovery.jp>
+
+	* main/Configuration.pm:
+	  - include されたファイルの更新も感知するようにした。
+
+	* main/Mask.pm:
+	(_split):
+	  - $mask が未定義の時に warning がでるのを防止した。
+
+	* main/ModuleManager.pm:
+	(reload_modules_if_modified):
+	  - エラー通知に notify_error を使うようにした。
+
+	* main/ReloadTrigger.pm:
+	  - Configuration::Hook/reloaded について追記。
+
+	* main/Timer.pm:
+	  - notify_error の発行対象にしているパッケージの間違いを修正。
+
+	* main/Configuration/Preprocessor.pm:
+	  - ->included_files を追加。
+
+	* main/IrcIO/Client.pm:
+	(_receive_while_logging_in):
+	  - $network が未定義(未接続)の時にエラーがでていたので修正。
+	(inform_joinning_channels):
+	  - 固定チャンネルの mask は一致した分を全部飲み込むように変更。
+	    #*@ircnet,#*@ircnet:* のようなことが出来るようになるはず。
+
+	* module/System/Reload.pm:
+	  - conf-reloaded-notify を追加。
+
 2004-06-19  Topia  <topia@clovery.jp>
 
 	* doc-src/conf-main.tdoc:
@@ -1720,7 +1752,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.154 2004/06/19 09:33:41 topia Exp $
+#       Id: $Id: ChangeLog,v 1.155 2004/07/08 15:13:12 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2004/06/19 09:33:41 $
-# Revision: $Revision: 1.154 $
+#     Date: $Date: 2004/07/08 15:13:12 $
+# Revision: $Revision: 1.155 $

@@ -1,3 +1,9 @@
+2004-07-09  Topia  <topia@clovery.jp>
+
+	* System::Reload
+	  - conf-reloaded-notify を追加。(デフォルトで有効)
+	    conf ファイルが再読込された場合に通知します。
+
 2004-06-19  Topia  <topia@clovery.jp>
 
 	* Client::Cotton
