@@ -7,6 +7,29 @@ use warnings;
 use base qw(Module);
 use ReloadTrigger;
 use Timer;
+use Configuration;
+
+sub new {
+    my $class = shift;
+    my $this = $class->SUPER::new(@_);
+
+    if (!defined $this->config->conf_reloaded_notify ||
+	    $this->config->conf_reloaded_notify) {
+	$this->{conf_hook} = Configuration::Hook->new(
+	    sub {
+		my ($hook) = shift;
+		RunLoop->shared_loop->notify_msg("Reloaded configuration file.");
+	    })->install('reloaded');
+    }
+    return $this;
+}
+
+sub destruct {
+    my $this = shift;
+
+    $this->{conf_hook}->uninstall if defined $this->{conf_hook};
+    $this->{conf_hook} = undef;
+}
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
@@ -38,4 +61,9 @@ default: on
 # この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された
 # コマンド名を設定すべきではありません。
 command: load
+
+# confファイルをリロードしたときに通知します。
+# モジュールの設定が変更されていた場合は、ここでの設定にかかわらず、
+# モジュールごとに表示されます。1または省略された場合は通知します。
+conf-reloaded-notify: 1
 =cut
