@@ -40,3 +40,14 @@ sub message_arrived {
 }
 
 1;
+
+=pod
+info: CTCP USERINFOに応答する。
+default: off
+
+# CTCP::Versionのintervalと同じ。
+interval: 3
+
+# USERINFOとして返すメッセージ。
+message: テスト
+=cut

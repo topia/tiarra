@@ -33,3 +33,11 @@ sub message_arrived {
 }
 
 1;
+
+=pod
+info: 特定のチャンネルからkickされた時に、自動で入りなおす。
+default: off
+  
+# 対象となるチャンネル名のマスク
+channel: *
+=cut

@@ -234,3 +234,24 @@ sub defrost {
 }
 
 1;
+
+=pod
+info: 特定のチャンネルの発言を、一時的に受信するのをやめる。
+default: off
+
+# ログを取っているなら、ログには記録される。
+
+# チャンネルの凍結に用いるコマンド名。
+# 省略時は freeze であり、/freeze #channel@network のように使う。
+# チャンネル名を省略すると、現在フリーズされているチャンネルのリストを表示する。
+freeze-command: freeze
+
+# 凍結解除に用いるコマンド名。
+# 省略時は defrost であり、/defrost #channel@network のように使う。
+defrost-command: defrost
+
+# 凍結しているチャンネルが存在する時、一定時間毎にその旨を報告する事も可能。
+# この機能は凍結した事を忘れないようにする為にある。
+# 単位は分、デフォルトはゼロ(報告しない)。
+reminder-interval: 30
+=cut

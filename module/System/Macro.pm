@@ -54,3 +54,15 @@ sub message_arrived {
 }
 
 1;
+
+=pod
+info: 新規にコマンドを追加し、そのコマンドが使われた時に特定の動作をまとめて実行します。
+default: off
+
+# 書式: <コマンド> <動作>
+# コマンド"switch"を追加して、それが使われると
+# #a@ircnet,#b@ircnet,#c@ircnetにjoinして、
+# #d@ircnet,#e@ircnet,#f@ircnetからpartする例。
+-macro: switch join #a@ircnet,#b@ircnet,#c@ircnet
+-macro: switch part #d@ircnet,#e@ircnet,#f@ircnet
+=cut

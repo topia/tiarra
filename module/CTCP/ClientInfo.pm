@@ -50,3 +50,11 @@ sub message_arrived {
 }
 
 1;
+
+=pod
+info: CTCP CLIENTINFOに応答する。
+default: off
+
+# CTCP::Versionのintervalと同じ。
+interval: 3
+=cut

@@ -33,3 +33,14 @@ sub connected_to_server {
 }
 
 1;
+
+=pod
+info: 特定のネットワークに接続した時、OPERコマンドを発行してします。
+default: off
+
+# 書式: <ネットワーク名> <オペレータ名> <オペレータパスワード>
+#
+# ネットワーク"local"に接続した時、オペレータ名oper、
+# オペレータパスワードoper-passでOPERコマンドを発行する例。
+-oper: local oper oper-pass
+=cut

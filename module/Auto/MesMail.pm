@@ -259,3 +259,108 @@ sub _reply_ok {
 }
 
 1;
+
+=pod
+info: 伝言をメールとして送信する。
+default: off
+
+# メールアドレスはエイリアスの mail を参照します。
+
+# Fromアドレス。[default: OSのユーザ名]
+from: example1@example.jp
+
+# 送信用のキーワード [default: mesmail_send]
+send: 速達伝言
+
+# 使用を許可する人&チャンネルのマスク。
+# 例はTiarraモード時。 [default: なし]
+mask: * +*!*@*
+# [plum-mode] mask: +*!*@*
+
+# maskで拒否されたときのメッセージ [default: なし]
+deny: 伝言したくない。
+
+# 一度に送れる宛先の量 [default: 無制限]
+max-send-address: 5
+
+# 宛先を探すエイリアスエントリ [default: なし]
+alias-key: name
+alias-key: nick
+
+# 宛先の人を判別出来なかったときのメッセージ [default: なし]
+unknown: #(who)さんと言うのは誰ですか?
+
+# メールの日付形式
+date: %H:%M:%S
+
+# エイリアスは見付かったけれどメールアドレスが登録されていなかったときのメッセージ。 [default: なし]
+-none-address: #(who)さんはアドレスを登録していません。
+
+# SMTPのホスト [default: localhost]
+-smtphost: localhost
+
+# SMTPのポート [default: smtp(25)]
+-smtpport: 25
+
+# SMTPで自ホストのFQDN [default: localhost]
+-smtpfqdn: localhost
+
+# 送信するメールの既定件名(エイリアス使用不可) [default: Message from IRC]
+-subject: Message from IRC
+
+# 送信するメールの本文 [default: #(date) << #(from.name|from.nick|from.nick.now) >> #(message)]
+-format: #(date)に#(from.name|from.nick|from.nick.now)さんから#(message)という伝言です。
+
+# 送信したときのメッセージ。 [default: なし]
+accept: #(who)さんに#(message)と伝言しておきました。
+
+# ---- POP before SMTP の指定 ----
+# POP before SMTPを使う。 [default: no]
+-use-pop3: yes
+
+# POP before SMTPのタイムアウト時間(分)。分からない場合は指定しなくて良い。 [default: 0]
+-pop3-expire: 4
+
+# POPのホスト。 [default: localhost]
+-pop3host: localhost
+
+# POPのポート。 [default: pop(110)]
+-pop3port: 110
+
+# POPのユーザ [default: OSのユーザ名]
+-pop3user: example1
+
+# POPのパスワード [default: 空パスワード('')]
+-pop3pass: test-password
+
+# ---- エラーメッセージの設定 ----
+
+# 一般エラー。
+# error-[state] と言う形式で詳細エラーメッセージを指定できる。
+# [state]は、
+#    * mailfrom(メールの送信者を指定しようとしてエラー)
+#    * rcptto(メールの送信先を指定しようとしてエラー)
+#    * norcptto(メールの送信先が全部無くなった)
+#    * data(メールの中身を送信しようとしてエラー)
+#    * finish(メールの中身を送信したらエラー)
+# がある。特に欲しくなければerror-[state]は指定しなくても構わない。
+# メッセージを出したくないなら中身の無いエントリを指定すれば良い。
+# error-[state]が指定されてない場合は代わりに error を使う。 [default: 未定義]
+
+-error-rcptto:
+-error-norcptto: #(who)さんには送れませんでした。送信できるメールアドレスがありません。
+-error-data: メールが送信できません。DATAコマンドに失敗しました。#(line;サーバ応答:%s|;)
+-error: メール送信エラーです。#(line;サーバ応答:%s|;)#(state; on %s|;)
+
+# 致命的なエラー。メールに個別なエラーではないので送信者(のprefix)毎に1メッセージ送られる。
+# fatalerror-[state]
+# [state]:
+#    * first(接続エラー)
+#    * helo(SMTPセッションを開始出来ない)
+# がある。特に欲しくなければfatalerror-[state]は指定しなくても構わない。
+# メッセージを出したくないなら中身の無いエントリを指定すれば良い。
+# fatalerror-[state]が指定されてない場合は代わりに fatalerror を使う。 [default: 未定義]
+
+-fatalerror-first: SMTPサーバに接続できません。
+-fatalerror: SMTPセッションで致命的なエラーがありました。#(line; サーバ応答:%s|;)#(state; on %s|;)
+=cut

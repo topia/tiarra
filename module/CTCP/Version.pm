@@ -44,3 +44,18 @@ sub message_arrived {
 }
 
 1;
+
+=pod
+info: CTCP VERSIONに応答する。
+default: on
+
+# 連続したCTCPリクエストに対する応答の間隔。単位は秒。
+# 例えば3秒に設定した場合、一度応答してから3秒間は
+# CTCPに一切応答しなくなる。デフォルトは3。
+#
+# なお、CTCP受信時刻の記録は、全てのCTCPモジュールで共有される。
+# 例えばCTCP VERSIONを送った直後にCTCP CLIENTINFOを送ったとしても、
+# CTCP::ClientInfoのintervalで設定された時間を過ぎていなければ
+# 後者は応答しない。
+interval: 3
+=cut

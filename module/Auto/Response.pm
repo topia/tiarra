@@ -55,3 +55,35 @@ sub message_arrived {
 }
 
 1;
+
+=pod
+info: データファイルの指定にしたがって反応する。
+default: off
+
+# 大量の反応データを定義するのに向いています。
+
+# データファイルのフォーマット
+# | pattern: re:^(こん(に)?ちは)
+# | rate: 90
+# | mask: * *!*@*
+# | #plum: mask: *!*@*
+# | response: こんにちは。
+# | response: いらっしゃいませ。
+# |
+# | pattern: おやすみ
+# | rate: 20
+# | response: おやすみなさい。
+# patternは一行しか書けません。(手抜き
+# maskもrateも省略できます。省略した場合はmaskは全員、rateは100となります。
+# responseは複数書いておけばランダムに選択されます。
+
+# データファイル
+file: response.txt
+
+# 文字コード
+charset: euc
+
+# 使用を許可する人&チャンネルのマスク。
+mask: * *!*@*
+# plum: mask: +*!*@*
+=cut

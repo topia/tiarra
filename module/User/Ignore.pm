@@ -38,5 +38,5 @@ default: off
 command: privmsg,notice
 
 # maskは複数定義可能。定義された順番でマッチングが行なわれます。
-mask: sample!*@*.sample.net
+mask: example!*@*.example.net
 =cut

@@ -12,7 +12,7 @@ use Template;
 use TiarraDoc;
 my $unijp_init = Unicode::Japanese->new;
 
-my $conf_output = 'sample.conf.tmp';
+my $conf_output = 'sample.conf';
 
 my $stdout_charset = 'euc';
 my $conf_charset = 'euc';

@@ -68,3 +68,15 @@ sub set_modes {
 }
 
 1;
+
+=pod
+info: チャンネルを作成した時に自動的にモードを設定するモジュール。
+default: off
+
+# 書式は<チャンネル名にマッチするマスク> <設定するモード>[,<設定するモード>,...]です。
+# #IRC談話室@ircnetなら+t+nを、それ以外なら+nを設定する例。
+-channel: #IRC談話室@ircnet +t
+-channel: *                +n
+# LimeChat 標準設定を模倣する設定例。
+-channel: * +sn
+=cut

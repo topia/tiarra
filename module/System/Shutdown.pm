@@ -43,3 +43,24 @@ sub message_arrived {
 }
 
 1;
+
+=pod
+info: Tiarraを終了させる。
+default: off
+
+# クライアントから特定のコマンドが実行された時や、
+# 誰かから個人的に(privで)特定の発言が送られた時に
+# Tiarra を終了させます。
+
+# 追加するコマンド。省略された場合はコマンドでのシャットダウンは無効になります。
+-command: shutdown
+
+# Tiarraをシャットダウンさせるprivの発言。
+# 省略された場合はprivでのシャットダウンは無効になります。
+-message: shutdown
+
+# privでのシャットダウンを許可する人。
+# 省略された場合はprivでのシャットダウンは無効になります。
+# 複数のマスクを指定した場合は、一つでもマッチするものがあればシャットダウンします。
+-mask: example!example@*.example.jp
+=cut

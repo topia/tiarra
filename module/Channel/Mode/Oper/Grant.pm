@@ -125,3 +125,18 @@ sub prepare_timer {
 }
 
 1;
+
+=pod
+info: 特定のチャンネルに特定の人間がjoinした時に、自分がチャンネルオペレータ権限を持っていれば+oする。
+default: off
+
+# splitからの復帰などで+o対象の人が一度に大量に入って来ても+oは少しずつ実行します。
+# Excess Floodにはならない筈ですが、本格的な防衛BOTに使える程の物ではありません。
+
+# 対象の人間がjoinしてから実際に+oするまで何秒待つか。
+# 省略されたら待ちません。
+wait: 0
+
+# チャンネルと人間のマスクを定義。Auto::Operと同様。
+-mask: * example!~example@*.example.ne.jp
+=cut

@@ -167,3 +167,22 @@ sub log {
 }
 
 1;
+
+=pod
+info: クライアントを接続した時に、保存しておいた最近のメッセージを送る。
+default: off
+
+# クライアントオプションの no-recent-logs が指定されていれば送信しません。
+
+# 各行のヘッダのフォーマット。省略されたら'%H:%M'。
+header: %H:%M:%S
+
+# ログをチャンネル毎に何行まで保存するか。省略されたら10。
+line: 15
+
+# PRIVMSGとNOTICEを記録する際に、自分の発言と他人の発言でフォーマットを変えるかどうか。1/0。デフォルトで1。
+distinguish-myself: 1
+
+# どのメッセージを保存するか。省略されたら保存可能な全てのメッセージを保存する。
+command: privmsg,notice,topic,join,part,quit,kill
+=cut

@@ -28,3 +28,13 @@ sub message_arrived {
 }
 
 1;
+
+=pod
+info: 指定された人物からのPRIVMSGやNOTICEを書き換える。
+default: off
+
+# 人物のマスクと、置換パターンを定義。
+# 置換パターン中の#(message)は、発言内容に置換されます。
+# 人物が複数のマスクに一致する場合は、最初に一致したものが使われます。
+pattern: *!*@* #(message)
+=cut

@@ -29,3 +29,19 @@ sub message_arrived {
 }
 
 1;
+
+=pod
+info: 特定の発言が送られてきたとき、それに反応してIRCコマンドを実行します。
+default: off
+
+# 実行を許可する人間を表すマスク。
+-mask: *!*example@example.net
+
+# 構文: + <nick> <IRC Message>
+# <nick>は反応するbotのnickを表すマスク。
+# <IRCMessage>はサーバーに向けて発行するIRCメッセージ。
+#
+# 例:
+# + hoge NICK [hoge]
+# hogeというBOTが[hoge]にnickを変更する。
+=cut

@@ -24,6 +24,12 @@ package Client;
 description: クライアントとの入出力
 =cut
 
+* CTCP
+package CTCP;
+=pod
+description: CTCP 関連
+=cut
+
 * Debug
 package Debug;
 =pod

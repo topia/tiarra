@@ -299,3 +299,36 @@ sub target_of_vanish_p {
 }
 
 1;
+
+=pod
+info: 指定された人物の存在を、様々なメッセージから消去する。
+default: off
+
+# 対象となった人物の発行したJOIN、PART、INVITE、QUIT、NICKは消去され、NAMESの返すネームリストからも消える。
+# また、対象となった人物のNJOINも消去される。
+
+# Vanish対象が発行したMODEを消去するかどうか。デフォルトで0。
+# 消去するとは云え、本当にMODEそのものを消してしまうのではなく、
+# そのユーザーの代わりに"HIDDEN!HIDDEN@HIDDEN.BY.USER.VANISH"がMODEを実行した事にする。
+drop-mode-by-target: 1
+
+# Vanish対象を対象とするMODE +o/-o/+v/-vを消去するかどうか。デフォルトで1。
+drop-mode-switch-for-target: 1
+
+# Vanish対象が発行したKICKを消去するかどうか。デフォルトで0。
+# 本当に消すのではなく、"HIDDEN!HIDDEN@HIDDEN"がKICKを実行した事にする。
+drop-kick-by-target: 1
+
+# Vanish対象を対象とするKICKを消去するかどうか。デフォルトで0。
+drop-kick-for-target: 0
+
+# Vanish対象が発行したTOPICを消去するかどうか。デフォルトで0。
+# 本当に消すのでは無いが、他の設定と同じ。
+drop-topic-by-target: 1
+
+# チャンネルとVanish対象の定義。
+# 特定のチャンネルでのみ対象とする、といった事が可能。
+# また、privの場合は「#___priv___@ネットワーク名」という文字列をチャンネル名の代わりとしてマッチングを行なう。
+# 書式: mask: <チャンネルのマスク> <ユーザーのマスク>
+mask: #example@example  example!exapmle@example.com
+=cut
