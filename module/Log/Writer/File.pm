@@ -25,6 +25,17 @@ sub new {
     $this;
 }
 
+sub capability {
+    my ($class, $type, @args) = @_;
+
+    my $supported = $class->SUPER::capability($type, @args);
+    return 1 if $supported;
+    if ($type eq 'fallback') {
+	return 1;
+    }
+    return 0;
+}
+
 sub _file {
     my $this = shift;
 
@@ -109,9 +120,5 @@ sub mkdirs {
 	}
     }
 }
-
-# should last
-Log::Writer->register_as_protocol;
-Log::Writer->register_as_fallback;
 
 1;

@@ -38,6 +38,13 @@ sub new {
     $this;
 }
 
+sub capability {
+    my ($class, $type, @args) = @_;
+
+    # $type:
+    #   - fallback: protocol support fallback
+    return 0;
+}
 
 sub scheme {
     my $class_or_this = shift;
@@ -218,9 +225,5 @@ sub _notify_prefix {
     $this->name.'/'.(caller(1 + $stack_level))[3].'('
 	.$this->uri.'): ';
 }
-
-# should last
-#Log::Writer->register_as_protocol;
-#Log::Writer->register_as_fallback;
 
 1;

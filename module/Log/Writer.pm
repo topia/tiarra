@@ -28,7 +28,7 @@ sub _new {
     my ($this) = {
 	objects => {},
 	schemes => {},
-	protocols => [],
+	protocols => {},
 	fallbacks => [],
     };
     bless $this, $class;
@@ -114,12 +114,13 @@ sub run {
     foreach my $key (keys %{$this->{objects}}) {
 	my $object = $this->{objects}->{$key};
 	$object->flush;
-	$object->destruct(1) if ($destruct);
+	$object->destruct(1) if $destruct;
     }
 }
 
 sub destruct {
     shared_writer->run(1);
+    shared_writer->{mainloop} = undef;
 }
 
 sub object_release {
@@ -127,31 +128,13 @@ sub object_release {
 
     delete $this->{objects}->{$path};
 
-    if (scalar(keys(%{$this->{objects}})) == 0) {
+    if (!(%{$this->{objects}})) {
 	$this->_mainloop_uninstall;
     }
 }
 
 
 # protocol
-sub register_as_protocol {
-    my $class_or_this = shift;
-    my $pkg = (caller)[0];
-    my $this = $class_or_this->_this;
-
-    foreach my $scheme ($pkg->supported_schemes) {
-	push(@{$this->{schemes}->{$scheme}}, $pkg);
-    }
-}
-
-sub register_as_fallback {
-    my $class_or_this = shift;
-    my $pkg = (caller)[0];
-    my $this = $class_or_this->_this;
-
-    push(@{$this->{fallbacks}}, $pkg);
-}
-
 sub load_all_protocols {
     my $class_or_this = shift;
     my $this = $class_or_this->_this;
@@ -166,38 +149,51 @@ sub load_all_protocols {
 		$path = File::Spec->catdir($dir, $file);
 		next if !-r $path || -d $path;
 		next if $file !~ /^(.+)\.pm$/;
-		$this->load_protocol($1);
+		$this->load_protocol(ref($this).'::'.$1);
 	    }
 	}
     }
 }
 
 sub load_protocol {
-    my ($class_or_this, $protocol) = @_;
+    my ($class_or_this, $pkg) = @_;
     my $this = $class_or_this->_this;
 
-    my $pkg = ref($this) . '::' . $protocol;
+    return 1 if $this->{protocols}->{$pkg};
     eval 'use ' . $pkg;
     if ($@) {
-	$this->notify_error("load protocol($protocol) error: $@");
+	$this->notify_error("load protocol($pkg) error: $@");
 	return undef;
     }
     eval 'use Module::Use ($pkg);';
     if ($@) {
-	$this->notify_error("regist using protocol($protocol) error: $@");
+	$this->notify_error("regist using protocol($pkg) error: $@");
 	return undef;
     }
-    push(@{$this->{protocols}}, $protocol);
+
+    foreach my $scheme ($pkg->supported_schemes) {
+	push(@{$this->{schemes}->{$scheme}}, $pkg);
+    }
+    if ($pkg->capability('fallback')) {
+	push(@{$this->{fallbacks}}, $pkg);
+    }
+    $this->{protocols}->{$pkg} = 1;
     return 1;
 }
 
 sub unload_protocol {
-    my ($class_or_this, $protocol) = shift;
+    my ($class_or_this, $pkg) = @_;
     my $this = $class_or_this->_this;
 
-    @{$this->{protocols}} = grep {
-	$_ ne $protocol;
-    } @{$this->{protocols}};
+    return 0 if !$this->{protocols}->{$pkg};
+    if ($pkg->capability('fallback')) {
+	@{$this->{fallbacks}} = grep $_ ne $pkg, @{$this->{fallbacks}};
+    }
+    foreach my $scheme ($pkg->supported_schemes) {
+	@{$this->{schemes}->{$scheme}} = grep $_ ne $pkg,
+	    @{$this->{schemes}->{$scheme}};
+    }
+    delete $this->{protocols}->{$pkg};
     return 1;
 }
 
