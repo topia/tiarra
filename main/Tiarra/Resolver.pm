@@ -175,7 +175,12 @@ sub _paranoid_stage1 {
     my ($this, $data, $closure, $my_use_threads, $entry) = @_;
 
     if ($entry->answer_status eq $entry->ANSWER_OK) {
-	$this->resolve('addr', $entry->answer_data, sub {
+	my $host = $entry->answer_data;
+	if (ref($host) eq 'ARRAY') {
+	    # FIXME: support multiple hostname resolved
+	    $host = $host->[0];
+	}
+	$this->resolve('addr', $host, sub {
 			   $this->_paranoid_stage2($data, $closure, $my_use_threads, shift);
 		       }, $my_use_threads);
     } else {
@@ -214,15 +219,14 @@ sub _resolve {
 
     if ($entry->query_type eq QUERY_ADDR) {
 	if ($use_ipv6 && !$resolved) {
-	    my @res = getaddrinfo($entry->query_data, undef, AF_UNSPEC, SOCK_STREAM);
-	    my ($saddr, $addr);
-	    my (@addrs, %addrs);
+	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
+	    my ($saddr, $addr, @addrs, %addrs);
 	    threads::shared::share(@addrs) if $use_threads;
 	    while (scalar(@res) >= 5) {
 		# check proto,... etc
 		(undef, undef, undef, $saddr, undef, @res) = @res;
 		$addr = getnameinfo($saddr, NI_NUMERICHOST);
-		if (!$addrs{$addr}) {
+		if (defined $addr && !$addrs{$addr}) {
 		    $addrs{$addr} = 1;
 		    push(@addrs, $addr);
 		}
@@ -247,13 +251,25 @@ sub _resolve {
 	}
     } elsif ($entry->query_type eq QUERY_HOST) {
 	if ($use_ipv6 && !$resolved) {
-	    my @res = getaddrinfo($entry->query_data, undef, AF_UNSPEC, SOCK_STREAM);
-	    if (scalar(@res) >= 5) {
-		my $addr = getnameinfo($res[3]);
-		if ($addr ne $entry->query_data) {
-		    $entry->answer_data($addr);
-		    $resolved = 1;
+	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
+	    my ($saddr, $host, @hosts, %hosts);
+	    threads::shared::share(@hosts) if $use_threads;
+	    while (scalar(@res) >= 5) {
+		# check proto,... etc
+		(undef, undef, undef, $saddr, undef, @res) = @res;
+		$host = getnameinfo($saddr, NI_NAMEREQD);
+		if (defined $host && !$hosts{$host}) {
+		    $hosts{$host} = 1;
+		    push(@hosts, $host);
 		}
+	    }
+	    if (@hosts) {
+		if (@hosts == 1) {
+		    $entry->answer_data($hosts[0]);
+		} else {
+		    $entry->answer_data(\@hosts);
+		}
+		$resolved = 1;
 	    }
 	}
 	if (!$resolved) {
