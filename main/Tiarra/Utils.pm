@@ -72,11 +72,11 @@ sub define_attr_accessor {
 	    ($class_method_p ? sub {
 		 my ($class_or_this, $value) = @_;
 		 my $this = $class_or_this->_this;
-		 $this->{$valname} = $value if defined $value;
+		 $this->{$valname} = $value if $#_ >= 1;
 		 return $this->{$valname};
 	     } : sub {
 		 my ($this, $value) = @_;
-		 $this->{$valname} = $value if defined $value;
+		 $this->{$valname} = $value if $#_ >= 1;
 		 return $this->{$valname};
 	     }),
 	    $funcname);
@@ -145,11 +145,11 @@ sub define_array_attr_accessor {
 	    ($class_method_p ? sub {
 		 my ($class_or_this, $value) = @_;
 		 my $this = $class_or_this->_this;
-		 $this->[$index] = $value if defined $value;
+		 $this->[$index] = $value if $#_ >= 1;
 		 return $this->[$index];
 	     } : sub {
 		 my ($this, $value) = @_;
-		 $this->[$index] = $value if defined $value;
+		 $this->[$index] = $value if $#_ >= 1;
 		 return $this->[$index];
 	     }),
 	    $funcname);
