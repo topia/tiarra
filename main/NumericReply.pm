@@ -21,12 +21,18 @@ BEGIN {
 	 RPL_CREATED          003
 	 RPL_MYINFO           004
 	 RPL_ISUPPORT         005
+
+	 # irc2.11.x or +hemp
 	 RPL_BOUNCE           010
+	 RPL_REDIR            010
+
 	 RPL_MAP              015
 	 RPL_MAPMORE          016
 	 RPL_MAPEND           017
 	 RPL_MAPSTART         018
 
+	 # irc2.11.x
+	 RPL_HELLO            020
 
 	 RPL_NONE             300
 	 RPL_AWAY             301
