@@ -90,6 +90,8 @@ sub _new {
 	external_sockets => [], # インストールされている全てのExternalSocket
 
 	conf_reloaded_hook => undef, # この下でインストールするフック
+
+	do_terminate => 0,
     };
     bless $this, $class;
 
@@ -331,8 +333,10 @@ sub _cleanup_closed_link {
 	$this->{send_selector}->remove($io->sock);
 	# networksからは削除して、代わりにdisconnected_networksに入れる。
 	delete $this->{networks}->{$network_name};
-	$this->{disconnected_networks}->{$network_name} = $io;
-	$do_update_networks = 1;
+	if (!$this->{do_terminate}) {
+	    $this->{disconnected_networks}->{$network_name} = $io;
+	    $do_update_networks = 1;
+	}
     }
     if ($do_update_networks) {
 	Timer->new(
@@ -607,6 +611,28 @@ sub disconnect_server {
     $this->{send_selector}->remove($server->sock);
     $server->disconnect;
     delete $this->{networks}->{$server->network_name};
+}
+
+sub exit_server {
+    # 指定したサーバから exit する。これだけでは再接続しだすことに注意。
+    # $server: IrcIO::Server
+    my ($this, $server, $message) = @_;
+    $server->send_message(
+	IRCMessage->new(
+	    Command => 'QUIT',
+	    Param => $message));
+}
+
+sub exit_client {
+    # 指定したクライアントから exit する。
+    # $client: IrcIO::Client
+    my ($this, $client, $message) = @_;
+    $client->send_message(
+	IRCMessage->new(
+	    Command => 'ERROR',
+	    Param => 'Closing Link: ['.$client->fullname_from_client.
+		'] ('.$message.')'));
+    $client->disconnect_after_writing;
 }
 
 sub reconnected_server {
@@ -888,12 +914,16 @@ sub run {
 		# クライアントからの新規の接続
 		my $new_sock = $sock->accept;
 		if (defined $new_sock) {
-		    eval {
-			my $client = new IrcIO::Client($new_sock);
-			push @{$this->{clients}},$client;
-			$this->{receive_selector}->add($new_sock);
-		    }; if ($@) {
-			$this->notify_msg($@);
+		    if (!$this->{do_terminate}) {
+			eval {
+			    my $client = new IrcIO::Client($new_sock);
+			    push @{$this->{clients}},$client;
+			    $this->{receive_selector}->add($new_sock);
+			}; if ($@) {
+			    $this->notify_msg($@);
+			}
+		    } else {
+			$new_sock->close;
 		    }
 		}
 	    }
@@ -1025,7 +1055,32 @@ sub run {
 	
 	# 発動すべき全てのタイマーを発動させる
 	$this->_execute_all_timers_to_fire;
+
+	# 終了処理中でサーバもクライアントもいなくなればループ終了。
+	if ($this->{do_terminate} &&
+		(scalar $this->networks_list <= 0) &&
+		    (scalar $this->clients_list <= 0)
+		   ) {
+	    last;
+	}
     }
+
+    # 終了処理
+    if (defined $this->{tiarra_server_socket}) {
+	$this->{tiarra_server_socket}->close;
+	$this->{receive_selector}->remove($this->{tiarra_server_socket});
+    }
+    ModuleManager->shared_manager->terminate;
+}
+
+sub terminate {
+    my ($this, $message) = @_;
+
+    $this->{do_terminate} = 1;
+    map { $this->exit_server($_, $message) } $this->networks_list;
+    map { $this->exit_client($_, $message) } $this->clients_list;
+    # なぜかこの位置でサーバソケットを閉じるとおかしくなる。
+    # accept で処理することにする。
 }
 
 sub broadcast_to_clients {

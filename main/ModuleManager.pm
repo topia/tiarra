@@ -103,10 +103,18 @@ sub terminate {
 	}; if ($@) {
 	    print "$@\n";
 	}
+	$this->_unload(ref($_));
+    }
+    foreach (keys %{$this->{mod_timestamps}}) {
+	eval {
+	    $_->destruct;
+	};
+	$this->_unload($_);
     }
     @{$this->{modules}} = ();
     $this->_clear_module_cache;
     %{$this->{mod_configs}} = ();
+    %{$this->{mod_timestamps}} = ();
 }
 
 sub timestamp {

@@ -34,7 +34,7 @@ sub message_arrived {
 		    # どうせクライアントには送られないがメッセージ表示
 		    RunLoop->shared->notify_msg(
 			"System::Shutdown received shutdown command from ".$msg->prefix.".");
-		    &::shutdown;
+		    ::shutdown(join(' ', @{$msg->params}));
 		}
 	    }
 	}
@@ -57,6 +57,7 @@ default: off
 
 # Tiarraをシャットダウンさせるprivの発言。
 # 省略された場合はprivでのシャットダウンは無効になります。
+# パラメータとして shutdown メッセージを指定できます。
 -message: shutdown
 
 # privでのシャットダウンを許可する人。
