@@ -6,7 +6,6 @@ package Log::Writer;
 use strict;
 use warnings;
 use RunLoop;
-use Timer;
 use Carp;
 use File::Spec;
 use DirHandle;
