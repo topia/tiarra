@@ -127,7 +127,8 @@ sub clone {
     } else {
 	my @new = @$this;
 	# do not clone raw_params. this behavior is by design.
-	# (we want to handle _raw_params by outside. please re-construct!)
+	# (we want to handle _raw_params by outside.
+	#  if you want, please re-constract or use deep => 1.)
 	$new[PARAMS] = [@{$this->[PARAMS]}] if defined $this->[PARAMS];
 	$new[REMARKS] = {%{$this->[REMARKS]}} if defined $this->[REMARKS];
 	bless \@new => ref($this);
@@ -298,7 +299,7 @@ sub _raw_params {
 }
 
 sub purge_raw_params {
-    shift->_raw_params(undef);
+    shift->[RAW_PARAMS] = [];
 }
 
 sub _raw_push {
