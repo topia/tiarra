@@ -429,13 +429,15 @@ sub _receive_after_logged_in {
 		if (Configuration->shared->networks->always_notify_new_nick ||
 		    $this->{current_nick} ne $local_nick) {
 
+		    my $old_nick = $msg->nick;
 		    RunLoop->shared_loop->broadcast_to_clients(
 			IRCMessage->new(
 			    Command => 'NOTICE',
 			    Params => [$local_nick,
 				       "*** Your global nick in ".
-					   $this->{network_name}.
-					       " is currently '".$this->{current_nick}."'."]));
+					   $this->{network_name}." changed ".
+					       "$old_nick -> ".
+						   $this->{current_nick}."."]));
 		}
 	    } else {
 		RunLoop->shared_loop->set_current_nick($msg->param(0));
