@@ -48,7 +48,7 @@ default export function for shorthand use of Tiarra::Utils functions.
 =cut
 
 sub utils {
-    __PACKAGE__->shared;
+    __PACKAGE__->_this;
 }
 
 =item simple_caller_formatter
