@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Server.pm,v 1.47 2003/10/14 04:47:59 topia Exp $
+# $Id: Server.pm,v 1.48 2003/10/19 10:41:16 admin Exp $
 # -----------------------------------------------------------------------------
 # IrcIO::ServerはIRCサーバーに接続し、IRCメッセージをやり取りするクラスです。
 # このクラスはサーバーからメッセージを受け取ってチャンネル情報や現在のnickなどを保持しますが、
@@ -118,6 +118,11 @@ sub reload_config {
     $this->{user_realname} = $def->($conf->name,$general->name);
 }
 
+sub person_if_exists {
+    my ($this, $nick) = @_;
+    $this->{people}{$nick};
+}
+    
 sub person {
     # nick以外は全て省略可能。
     # 未知のnickが指定された場合は新規に追加する。
@@ -932,7 +937,7 @@ sub _RPL_WHOREPLY {
     if (defined $p) {
 	$p->username($msg->param(2));
 	$p->userhost($msg->param(3));
-	$p->server($msg->param(5));
+	$p->server($msg->param(4));
 	$p->realname((split / /,$msg->param(7))[1]);
     }
 

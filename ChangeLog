@@ -1,3 +1,11 @@
+2003-10-19  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/IrcIO/Server.pm
+	(person_if_exists):
+	追加。指定されたnickを持つ人物が居れば、そのPersonalInfoを返す。
+	(_RPL_WHOREPLY):
+	サーバー名とnickの位置を間違えていたので修正。
+
 2003-10-16  phonohawk  <phonohawk@lycos.co.uk>
 
 	* module/System/Raw.pm:
@@ -971,7 +979,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.108 2003/10/15 16:23:43 admin Exp $
+#       Id: $Id: ChangeLog,v 1.109 2003/10/19 10:41:17 admin Exp $
 #   Author: $Author: admin $
-#     Date: $Date: 2003/10/15 16:23:43 $
-# Revision: $Revision: 1.108 $
+#     Date: $Date: 2003/10/19 10:41:17 $
+# Revision: $Revision: 1.109 $
