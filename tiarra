@@ -283,21 +283,17 @@ sub main {
 	}
     };
 
-    my $start_runloop = sub {
-	eval {
-	    RunLoop->shared_loop->run;
-	}; if ($@) {
-	    die "Tiarra aborted: $@\n";
-	}
-    };
-
     my $boot = sub  {
 	foreach my $line (get_credit()) {
 	    print $line,"\n";
 	}
 	print "\n";
 	$load_config->();
-	$start_runloop->();
+	eval {
+	    RunLoop->shared_loop->run;
+	}; if ($@) {
+	    die "Tiarra aborted: $@\n";
+	}
     };
 
     # quietモードならSTDIN, STDOUT, STDERRを閉じる。
