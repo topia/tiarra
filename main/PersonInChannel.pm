@@ -47,6 +47,14 @@ sub has_v {
     $this->[HAS_V];
 }
 
+sub priv_symbol {
+    my $this = shift;
+
+    return '@' if ($this->has_o);
+    return '+' if ($this->has_v);
+    return '';
+}
+
 *remarks = \&remark;
 sub remark {
     my ($this,$key,$value) = @_;
