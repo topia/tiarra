@@ -507,7 +507,7 @@ sub _receive_after_logged_in {
 		    qw(CHANNELMODEIS NOTOPIC TOPIC TOPICWHOTIME
 		       CREATIONTIME WHOREPLY NAMREPLY ENDOFNAMES
 		       WHOISUSER WHOISSERVER AWAY ENDOFWHOIS
-		       ISUPPORT),
+		       ISUPPORT YOURID),
 		    map({("${_}LIST", "ENDOF${_}LIST");}
 			    qw(INVITE EXCEPT BAN)),
 		   )) {
@@ -1033,6 +1033,12 @@ sub _RPL_ISUPPORT {
 	}
 	$this->remark('isupport', $isupport);
     }
+}
+
+sub _RPL_YOURID {
+    my ($this,$msg) = @_;
+
+    $this->remark('uid', $msg->param(1));
 }
 
 sub _set_to_next_nick {
