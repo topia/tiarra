@@ -205,17 +205,15 @@ sub _try_connect_io_socket {
     #    a. IPv6が利用可能ならIPv6での接続を試みた後、駄目ならIPv4にフォールバック
     #    b. IPv6が利用可能でなければ、最初からIPv4での接続を試みる。
     my @new_socket_args = (
-	#PeerAddr => $this->{connecting}->{addr},
-	#PeerPort => $this->{connecting}->{port},
+	PeerAddr => $this->{connecting}->{addr},
+	PeerPort => $this->{connecting}->{port},
 	Timeout => undef,
 	%additional,
     );
 
     my $sock = $package->new(@new_socket_args);
-    my $error;
-    if (defined $sock->connect($this->{connecting}->{addr},
-			       $this->{connecting}->{port})) {
-	$error = $!;
+    my $error = $!;
+    if (defined $sock) {
 	$this->{sock} = $sock;
 	$! = $error;
 	if ($!{EINPROGRESS}) {
@@ -224,12 +222,6 @@ sub _try_connect_io_socket {
 	    $this->_call;
 	}
     } else {
-	$error = $!;
-	$! = $error;
-	# win32 activeperl bug? (on active perl 5.8.4)
-	#if ($!{EHOSTUNREACH}) {
-	#    $error = 'No route to host';
-	#}
 	$this->_connect_error_try_next($error);
     }
 }
