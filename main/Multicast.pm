@@ -157,6 +157,7 @@ sub _MODE_from_server {
     }
     return $message;
 }
+
 sub _MODE_from_client {
     my ($message,$sender) = @_;
     my $to;
@@ -191,6 +192,19 @@ sub _NJOIN_from_server {
 		    join(',',
 			 map{ s/^([\@+]*)(.+)$/$1.global_to_local($2,$sender)/e; $_; } split(/,/,$message->param(1))));
     $message;
+}
+
+sub _NOTICE_from_server {
+    my ($message,$sender) = @_;
+    $message->nick(global_to_local($message->nick,$sender));
+
+    my $target = $message->params->[0];
+    unless (nick_p($target)) {
+	# nick(つまり自分)の場合はそのままクライアントに配布。
+	# この場合はチャンネルなので、ネットワーク名を付加。
+	$message->params->[0] = attach($target,$sender->network_name);
+    }
+    return $message;
 }
 
 sub _WHOIS_from_client {
@@ -331,10 +345,10 @@ my $server_sent = {
     'KICK' => \&_KICK_from_server,
     'MODE' => \&_MODE_from_server,
     'NICK' => undef, # 本体は鯖からのNICKを弄らない。これを見て情報を更新するのはIrcIO::Serverである。
-    'NOTICE' => \&_MODE_from_server, # MODEと同じ処理で良い。Prefixを弄るとすれば、それはモジュールの役目。
+    'NOTICE' => \&_NOTICE_from_server, # Prefixを弄るとすれば、それはモジュールの役目。
     'PART' => \&_JOIN_from_server, # JOINと同じ処理で良い。
     'PING' => undef,
-    'PRIVMSG' => \&_MODE_from_server, # NOTICEと同じ処理で良い。
+    'PRIVMSG' => \&_NOTICE_from_server, # NOTICEと同じ処理で良い。
     'QUIT' => undef, # QUITしたのが自分だったら捨てる、といった処理はIrcIO::Serverが行なう。
     'SQUERY' => \&_MODE_from_server, # 多分これは鯖からも来るだろうが、良く分からない。
     'TOPIC' => \&_MODE_from_server,
