@@ -18,11 +18,14 @@ sub new {
     $this->{hook} = IrcIO::Client::Hook->new(
 	sub {
 	    my ($hook, $client, $ch_name, $network, $ch) = @_;
-	    if ($ch->remark('switches-are-known')) {
+	    if ($ch->remark('switches-are-known') &&
+		    $this->_yesno($this->config->use_mode_cache)) {
 		# 送信できる場合は強制的に送信してみる
 		my $remark = $client->remark('mode-cache-state') || {};
 		_send_mode_cache($client,$ch_name,$ch);
-		$remark->{$ch_name}->[MODE_CACHE_FORCE_SENDED] = 1;
+		$remark->{
+		    Multicast::attach($ch->name, $network)
+		       }->[MODE_CACHE_FORCE_SENDED] = 1;
 		$client->remark('mode-cache-state', $remark);
 	    }
 	})->install('channel-info');
@@ -105,34 +108,47 @@ sub message_arrived {
 	# 動作は許可されているか?
 	last unless ((!defined $sender->option('no-cache')) ||
 			 !$this->_yesno($sender->option('no-cache')));
+	my $fetch_channel_info = sub {
+	    my %ret;
+	    $ret{chan_long} = shift;
+	    ($ret{chan_short}, $ret{network_name}) =
+		Multicast::detach($ret{chan_long});
+	    $ret{network} = RunLoop->shared_loop->network($ret{network_name});
+	    unless (defined $ret{network}) {
+	    } else {
+		$ret{ch} = $ret{network}->channel($ret{chan_short});
+		$ret{chan_send} = RunLoop->shared_loop->multi_server_mode_p ?
+		    $ret{chan_long} : $ret{chan_short};
+	    }
+	    return %ret;
+	};
 	if ($msg->command eq 'MODE' &&
 		$this->_yesno($this->config->use_mode_cache) &&
 		    Multicast::channel_p($msg->param(0)) &&
 			    !defined $msg->param(1)) {
-	    my $chan_long = $msg->param(0);
-	    my ($chan_short, $network_name) = Multicast::detach($chan_long);
-	    my $network = RunLoop->shared_loop->network($network_name);
-	    unless (defined $network) {
+	    my %info = $fetch_channel_info->($msg->param(0));
+	    unless (defined $info{network}){
 		::debug_printmsg(
-		    __PACKAGE__.': "'.$network_name.
+		    __PACKAGE__.': "'.$info{network_name}.
 			'" network is not found in tiarra.'
 		       );
 		last;
 	    }
-	    my $ch = $network->channel($chan_short);
-	    last if !defined $ch;
-	    if ($ch->remark('switches-are-known')) {
+	    last if !defined $info{ch};
+	    if ($info{ch}->remark('switches-are-known')) {
 		my $remark = $sender->remark('mode-cache-state') || {};
-		if (!$remark->{$chan_long}->[MODE_CACHE_SENDED]) {
-		    _send_mode_cache($sender,$chan_long,$ch)
-			if (!$remark->{$chan_long}
-				->[MODE_CACHE_FORCE_SENDED]);
-		    $remark->{$chan_long}->[MODE_CACHE_SENDED] = 1;
+		my $ch_remark = $remark->{$info{chan_long}};
+		if (!$ch_remark->[MODE_CACHE_SENDED]) {
+		    _send_mode_cache($sender,
+				     $info{chan_send},
+				     $info{ch})
+			if (!$ch_remark->[MODE_CACHE_FORCE_SENDED]);
+		    $ch_remark->[MODE_CACHE_SENDED] = 1;
 		    $sender->remark('mode-cache-state', $remark);
 		    return undef;
 		}
 	    } else {
-		if ($ch->remark("__PACKAGE__/fetching-switches")) {
+		if ($info{ch}->remark("__PACKAGE__/fetching-switches")) {
 		    # 取得しているクライアントがいるなら、今回は消す。
 		    return undef;
 		}
@@ -141,20 +157,17 @@ sub message_arrived {
 	} elsif ($msg->command eq 'WHO' &&
 		     $this->_yesno($this->config->use_who_cache) &&
 			 Multicast::channel_p($msg->param(0))) {
-	    my $chan_long = $msg->param(0);
-	    my ($chan_short, $network_name) = Multicast::detach($chan_long);
-	    my $network = RunLoop->shared_loop->network($network_name);
-	    unless (defined $network) {
+	    my %info = $fetch_channel_info->($msg->param(0));
+	    unless (defined $info{network}){
 		::debug_printmsg(
-		    __PACKAGE__.': "'.$network_name.
+		    __PACKAGE__.': "'.$info{network_name}.
 			'" network is not found in tiarra.'
 		       );
 		last;
 	    }
-	    my $ch = $network->channel($chan_short);
-	    last unless (defined $ch);
+	    last if !defined $info{ch};
 	    my $remark = $sender->remark('who-cache-used') || {};
-	    if (!exists $remark->{$chan_long}) {
+	    if (!exists $remark->{$info{chan_long}}) {
 		# cache がそろっているかわからないため、
 		# とりあえず作ってみて、足りなかったらあきらめる。
 		my $message_tmpl = IRCMessage->new(
@@ -162,12 +175,12 @@ sub message_arrived {
 		    Command => RPL_WHOREPLY,
 		    Params => [
 			RunLoop->shared_loop->current_nick,
-			$chan_long,
+			$info{chan_send},
 		       ],
 		   );
 		my @messages;
 		eval {
-		    foreach (values %{$ch->names}) {
+		    foreach (values %{$info{ch}->names}) {
 			my $p_ch = $_;
 			my $p = $p_ch->person;
 
@@ -186,12 +199,12 @@ sub message_arrived {
 			$message->param(4, $p->server);
 			$message->param(5,
 					Multicast::global_to_local($p->nick,
-								   $network));
+								   $info{network}));
 			$message->param(6,
 					(length($p->away) ? 'G' : 'H') .
 					    $p_ch->priv_symbol);
 			$message->param(7,
-					$network->remark('server-hops')
+					$info{network}->remark('server-hops')
 					    ->{$p->server}.' '.
 						$p->realname);
 			push(@messages, $message);
@@ -205,11 +218,11 @@ sub message_arrived {
 		    map {
 			$sender->send_message($_);
 		    } @messages;
-		    $remark->{$chan_long} = 1;
+		    $remark->{$info{chan_long}} = 1;
 		    $sender->remark('who-cache-used', $remark);
 		    return undef;
 		} else {
-		    if ($ch->remark("__PACKAGE__/fetching-who")) {
+		    if ($info{ch}->remark("__PACKAGE__/fetching-who")) {
 			# 取得しているクライアントがいるなら、今回は消して便乗。
 			return undef;
 		    }
