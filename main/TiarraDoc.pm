@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------
 use strict;
 use warnings;
-use Unicode::Japanese;
+use Tiarra::Encoding;
 use IO::File;
 
 package DocParser;
@@ -188,13 +188,13 @@ sub _get_content {
 	die "Couldn't determine the charset of $this->{fpath}.\n";
     }
 
-    Unicode::Japanese->new($content,$code)->utf8;
+    Tiarra::Encoding->new($content,$code)->utf8;
 }
 
 sub _getcode {
     # 文字コードを判別する。
     my ($this,$content) = @_;
-    my $unijp = Unicode::Japanese->new;
+    my $unijp = Tiarra::Encoding->new;
 
     if ((my $code = $unijp->getcode($content)) ne 'unknown') {
 	# 判別できたら、これを返す。
@@ -209,9 +209,13 @@ sub _getcode {
 	    }
 	}
 
-	my @rank = sort {
-	    $b <=> $a;
-	} values %$total_for_each;
+	my @rank = map {
+	    $_->[0];
+	} sort {
+	    $b->[1] <=> $a->[1];
+	} map {
+	    [$_, $total_for_each->{$_}];
+	} keys %$total_for_each;
 	if (@rank == 0) {
 	    # 全部unknownだった!
 	    # 仕方無いのでunknownを返す。

@@ -55,6 +55,7 @@ use Tiarra::OptionalModules;
 sub ipv6_enabled { Tiarra::OptionalModules->ipv6; }
 
 use Tiarra::Resolver; # early initialization
+use Tiarra::Encoding;
 use Configuration;
 use RunLoop;
 use ModuleManager;
@@ -327,7 +328,7 @@ sub printmsg {
     eval {
 	local $SIG{__DIE__} = 'IGNORE';
 	local $SIG{__WARN__} = 'IGNORE';
-	$msg = Unicode::Japanese->new($msg,'utf8')->conv(
+	$msg = Tiarra::Encoding->new($msg,'utf8')->conv(
 	    Configuration->shared_conf->get('general')->stdout_encoding);
     };
 
@@ -370,7 +371,7 @@ sub get_env {
     push @lines, "Optional Modules:";
     push @lines, map "  $_", Tiarra::OptionalModules->repr_modules;
     push @lines, "Bundle Modules:";
-    foreach my $mod (qw(Unicode::Japanese IO::Socket::INET6)) {
+    foreach my $mod (qw(Unicode::Japanese IO::Socket::INET6 enum)) {
 	my $modfile = $mod . '.pm';
 	$modfile =~ s|::|/|g;
 	eval "require $mod;";
@@ -380,6 +381,7 @@ sub get_env {
 		      ($INC{$modfile} =~ m|bundle/| ? "bundle" : "system") . ")") :
 			  "(unknown; not loaded)");
     }
+    push @lines, "Default Encoding Driver:   " . ref(Tiarra::Encoding->new);
     @lines;
 }
 

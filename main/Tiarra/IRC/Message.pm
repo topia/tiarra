@@ -35,11 +35,11 @@ use strict;
 use warnings;
 use Carp;
 use overload;
-use Unicode::Japanese;
 use Data::Dumper;
 use Tiarra::OptionalModules;
 use Tiarra::Utils;
 use Tiarra::IRC::Prefix;
+use Tiarra::Encoding;
 use enum qw(PREFIX COMMAND PARAMS REMARKS TIME RAW_PARAMS);
 
 # constants
@@ -218,7 +218,7 @@ sub serialize {
     $result .= $this->command.' ';
 
     if ($this->[PARAMS]) {
-	my $unicode = new Unicode::Japanese;
+	my $unicode = Tiarra::Encoding->new;
 	my $n_params = $this->n_params;
 	if ($n_params > MAX_PARAMS) {
 	    # 表現不能なので croak (危険なので carp で……)
@@ -226,17 +226,13 @@ sub serialize {
 	}
 	for (my $i = 0;$i < $n_params;$i++) {
 	    my $arg = $this->[PARAMS]->[$i];
-	    if (ref($arg) && !overload::Method($arg,'""')) {
-		croak "Param [$i] neither scalar nor stringifiable.";
-	    }
 	    if ($i == $n_params - 1) {
 		# 最後のパラメタなら頭にコロンを付けて後にはスペースを置かない。
 		# 但し半角スペースが一つも無く、且つコロンで始まっていなければコロンを付けない。
 		# パラメタが空文字列であった場合は例外としてコロンを付ける。
 		# また、 remark/always-use-colon-on-last-param が付いていた場合も
 		# コロンを付ける。
-		# do stringify force to avoid bug on unijp
-		$arg = $unicode->set("$arg")->conv($encoding);
+		$arg = $unicode->set($arg)->conv($encoding);
 		if (length($arg) > 0 and
 		      index($arg, ' ') == -1 and
 			index($arg, ':') != 0 and
@@ -251,7 +247,7 @@ sub serialize {
 	    else {
 		# 最後のパラメタでなければ後にスペースを置く。
 		# do stringify force to avoid bug on unijp
-		$result .= $unicode->set("$arg")->conv($encoding).' ';
+		$result .= $unicode->set($arg)->conv($encoding).' ';
 	    }
 	}
     }
@@ -341,26 +337,18 @@ sub encoding_params {
     croak "raw_params already purged; can't re encoding"
 	unless defined $this->_raw_params;
 
-    my @encodings = split(/\s*,\s*/, $encoding);
-    my $unicode = Unicode::Japanese->new;
+    my $unicode = Tiarra::Encoding->new;
 
     # clear
     @{$this->params} = ();
 
     foreach my $value_raw (@{$this->_raw_params}) {
-	my $use_encoding = $encodings[0];
-	if (scalar(@encodings) != 1) {
-	  my $auto_charset = $unicode->getcode($value_raw);
-	  # getcodeで検出された文字コードでencodingsに指定されているものがあれば採用。
-	  # 無ければencodingsの一番最初を採用する。 (UTF-8をSJISと認識したりするため。)
-	  $use_encoding = ((grep {$auto_charset eq $_} @encodings), @encodings)[0];
-	}
 	my $value = do {
 	    if (CORE::length ($value_raw) == 0) {
 		'';
 	    }
 	    else {
-		$unicode->set($value_raw,$use_encoding)->utf8;
+		$unicode->set($value_raw,$encoding)->utf8;
 	    }
 	};
 	$this->push($value);

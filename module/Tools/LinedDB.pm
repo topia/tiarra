@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use IO::File;
 use File::stat;
-use Unicode::Japanese;
+use Tiarra::Encoding;
 use Mask;
 use Carp;
 
@@ -56,7 +56,7 @@ sub _load {
     $this->{database} = [];
     my $fh = IO::File->new($this->{fpath},'r');
     if (defined $fh) {
-      my $unicode = Unicode::Japanese->new;
+      my $unicode = Tiarra::Encoding->new;
       foreach my $line (<$fh>) {
 	chomp $line;
 	map {
@@ -76,7 +76,7 @@ sub synchronize {
   if (defined $this->{fpath} && $this->{fpath} ne '') {
     my $fh = IO::File->new($this->{fpath},'w');
     if (defined $fh) {
-      my $unicode = Unicode::Japanese->new;
+      my $unicode = Tiarra::Encoding->new;
       foreach my $line (@{$this->{database}}) {
 	map {
 	  $fh->print($unicode->set($_ . "\n")->conv($this->{charset}));

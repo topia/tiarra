@@ -31,7 +31,7 @@ use strict;
 use warnings;
 use IO::File;
 use File::stat;
-use Unicode::Japanese;
+use Tiarra::Encoding;
 use Mask;
 use Carp;
 use Module::Use qw(Tools::Hash Tools::HashTools);
@@ -122,7 +122,7 @@ sub _load {
 		    $current = {};
 		}
 	    };
-	    my $unicode = Unicode::Japanese->new;
+	    my $unicode = Tiarra::Encoding->new;
 	    foreach (<$fh>) {
 		my $line = $unicode->set($_, $this->charset)->get;
 		next if $this->{ignore_proc}->($line);
@@ -207,7 +207,7 @@ sub _synchronize {
 	    ($this->modified || $force)) {
 	my $fh = IO::File->new($this->fpath,'w');
 	if (defined $fh) {
-	    my $unicode = Unicode::Japanese->new;
+	    my $unicode = Tiarra::Encoding->new;
 	    foreach my $person (@{$this->{database}}) {
 		my @keys = keys %{$person->data};
 		if (defined $this->primary_key) {

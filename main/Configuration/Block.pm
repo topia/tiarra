@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use vars qw($AUTOLOAD);
 use UNIVERSAL;
-use Unicode::Japanese;
+use Tiarra::Encoding;
 use Tiarra::DefineEnumMixin qw(BLOCK_NAME TABLE);
 use Tiarra::Utils;
 # 値を取得するにはgetメソッドを用いる他、エントリ名をそのままメソッドとして呼ぶ事も出来ます。
@@ -219,7 +219,7 @@ sub reinterpret_encoding {
     # 再解釈後はUTF-8になる。
     my ($this,$encoding) = @_;
 
-    my $unicode = Unicode::Japanese->new;
+    my $unicode = Tiarra::Encoding->new;
     my $newtable = {};
     while (my ($key,$value) = each %{$this->[TABLE]}) {
 	my $newkey = $unicode->set($key,$encoding)->utf8;

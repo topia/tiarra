@@ -25,7 +25,7 @@ use warnings;
 use Carp;
 use IO::Dir;
 use ExternalSocket;
-use Unicode::Japanese;
+use Tiarra::Encoding;
 use RunLoop;
 
 # 複数のパッケージを混在させてるとSelfLoaderが使えない…？
@@ -201,7 +201,7 @@ sub reply {
 
     $this->append_line("TIARRACONTROL/1.0 $code $str");
     $this->append_line('Sender: Tiarra #'.&::version);
-    my $unijp = Unicode::Japanese->new;
+    my $unijp = Tiarra::Encoding->new;
     if (defined $header) {
 	while (my ($key,$value) = each %$header) {
 	    $this->append_line($unijp->set("$key: $value")->conv($this->charset));
@@ -255,7 +255,7 @@ sub respond {
 
     my $req = ControlPort::Request->new($this->{method},$this->{module});
     my $charset = $this->charset;
-    my $unijp = Unicode::Japanese->new;
+    my $unijp = Tiarra::Encoding->new;
     while (my ($key,$value) = each %{$this->{header}}) {
 	next if $key eq 'Charset';
 	$req->$key($unijp->set($value,$charset)->utf8);

@@ -5,12 +5,12 @@
 use strict;
 use warnings;
 use lib qw(main);
-use Unicode::Japanese;
+use Tiarra::Encoding;
 use IO::File;
 use File::Find;
 use Template;
 use TiarraDoc;
-my $unijp_init = Unicode::Japanese->new;
+my $unijp_init = Tiarra::Encoding->new;
 
 my $conf_outputs = {
     sample => {
@@ -50,7 +50,7 @@ sub makeconf {
 	}
     },'module');
 
-    my $unijp = Unicode::Japanese->new;
+    my $unijp = Tiarra::Encoding->new;
     foreach my $genre (qw(sample all)) {
 	my $output = $conf_outputs->{$genre};
 	my $sections = $output->{sections};
@@ -142,7 +142,7 @@ sub makehtml_mods {
 
     mkdir 'doc/module';
 
-    my $unijp = Unicode::Japanese->new;
+    my $unijp = Tiarra::Encoding->new;
     my $t = Template->new('doc-src/contents.html');
 
     while (my ($groupname,$docpods) = each %$classified) {
@@ -302,7 +302,7 @@ sub makehtml_mods_toc {
 	    warn "group $groupname don't have description.";
 	}
 
-	my $unijp = Unicode::Japanese->new;
+	my $unijp = Tiarra::Encoding->new;
 
 	my $group_path =
 	    join('',

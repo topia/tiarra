@@ -11,7 +11,7 @@ use Mask;
 use NumericReply;
 use RunLoop;
 use IO::File;
-use Unicode::Japanese;
+use Tiarra::Encoding;
 use Tools::DateConvert;
 use Module::Use qw(Tools::DateConvert);
 
@@ -19,7 +19,7 @@ sub new {
   my $class = shift;
   my $this = $class->SUPER::new(@_);
   $this->{networks} = [];
-  $this->{unijp} = Unicode::Japanese->new;
+  $this->{unijp} = Tiarra::Encoding->new;
 
   $this->_init;
 }

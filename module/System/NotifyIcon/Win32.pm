@@ -11,7 +11,7 @@ use base qw(Module);
 use Win32::GUI (); # non-default
 use RunLoop;
 use Timer;
-use Unicode::Japanese;
+use Tiarra::Encoding;
 our $AUTOLOAD;
 my $can_use_win32api;
 BEGIN {
@@ -127,7 +127,7 @@ sub modify_notifyicon_tooltip {
 	$struct->{uID} = $this->{notify_icon}->{-id};
 	$struct->{uFlags} |= $this->{define}->{NIF_TIP};
 	if ($this->{is_unicode}) {
-	    $tooltip = Unicode::Japanese->new($tooltip,'utf8')->utf16;
+	    $tooltip = Tiarra::Encoding->new($tooltip,'utf8')->utf16;
 	    # reverse endian
 	    $tooltip = pack('n*', unpack('v*', $tooltip));
 	}

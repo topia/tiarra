@@ -10,6 +10,7 @@ use Module::Use qw(Tools::DateConvert);
 use Tools::DateConvert;
 use RunLoop;
 use LinedINETSocket;
+use Tiarra::Encoding;
 
 my $E_MAIL_EOL = "\x0d\x0a";
 
@@ -453,7 +454,7 @@ sub _do_smtp {
 	    $sock->send_reserve('To: ' .  $struct->{to});
 	    foreach my $send_line 
 		(&mime_unstructured_header_array(
-		    "Subject: " . Unicode::Japanese->new($struct->{subject})->euc)) {
+		    "Subject: " . Tiarra::Encoding->new($struct->{subject})->euc)) {
 		    $sock->send_reserve($send_line);
 		}
 	    $sock->send_reserve('MIME-Version: 1.0');
@@ -479,7 +480,7 @@ sub _do_smtp {
 		foreach my $send_line (@_) {
 		    $send_line =~ s/[\x0d\x0a]+//;
 		    $send_line = '..=' if $send_line eq '.';
-		    $sock->send_reserve(Unicode::Japanese->new($send_line)->h2zKana->jis);
+		    $sock->send_reserve(Tiarra::Encoding->new($send_line)->h2zKana->jis);
 		}
 		$sock->flush();
 	    };
@@ -590,16 +591,6 @@ sub mime_unstructured_header_array {
 # contrib
 no strict; # i don't want fix these functions.
 
-eval 'use MIME::Base64';
-if ($@) {
-  # can't bootstrap XS implementation, use perl implementation
-  *encode_base64 = \&perl_encode_base64;
-  *decode_base64 = \&perl_decode_base64;
-
-  $OLD_CODE = $@;
-  #warn $@ if $^W;
-}
-
 # $str を encoded-word に変換し $line に追加する
 
 $ascii = '[\x00-\x7F]';
@@ -621,7 +612,7 @@ sub add_encoded_word {
     }
     while (1) {
       my $encoded = '=?ISO-2022-JP?B?' .
-	encode_base64(Unicode::Japanese->new($target, 'euc')->h2zKana->jis, '') . '?=';
+	Tiarra::Encoding->new($target, 'euc')->h2zKana->conv('jis', 'base64') . '?=';
       if (length($encoded) + length($line) > 76) {
 	$target =~ s/($threeBytes|$twoBytes|$ascii)$//o;
 	$str = $1 . $str;
@@ -673,51 +664,5 @@ sub mime_unstructured_header {
   $header =~ s/\n? $//mg;
   $crlf ? "$header\n" : $header;
 }
-
-# Historically this module has been implemented as pure perl code.
-# The XS implementation runs about 20 times faster, but the Perl
-# code might be more portable, so it is still here.
-
-use integer;
-
-sub perl_encode_base64 ($;$)
-  {
-    my $res = "";
-    my $eol = $_[1];
-    $eol = "\n" unless defined $eol;
-    pos($_[0]) = 0;		# ensure start at the beginning
-
-    $res = join '', map( pack('u',$_)=~ /^.(\S*)/, ($_[0]=~/(.{1,45})/gs));
-
-    $res =~ tr|` -_|AA-Za-z0-9+/|; # `# help emacs
-    # fix padding at the end
-    my $padding = (3 - length($_[0]) % 3) % 3;
-    $res =~ s/.{$padding}$/'=' x $padding/e if $padding;
-    # break encoded string into lines of no more than 76 characters each
-    if (length $eol) {
-      $res =~ s/(.{1,76})/$1$eol/g;
-    }
-    return $res;
-  }
-
-
-sub perl_decode_base64 ($)
-  {
-    local($^W) = 0; # unpack("u",...) gives bogus warning in 5.00[123]
-
-    my $str = shift;
-    $str =~ tr|A-Za-z0-9+=/||cd; # remove non-base64 chars
-    if (length($str) % 4) {
-      require Carp;
-      Carp::carp("Length of base64 data not a multiple of 4")
-      }
-    $str =~ s/=+$//;		# remove padding
-    $str =~ tr|A-Za-z0-9+/| -_|; # convert to uuencoded format
-
-    return join'', map( unpack("u", chr(32 + length($_)*3/4) . $_),
-	                $str =~ /(.{1,60})/gs);
-  }
-
-no integer;
 
 1;

@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use IO::File;
 use File::Spec;
-use Unicode::Japanese;
+use Tiarra::Encoding;
 use base qw(Module);
 use Module::Use qw(Tools::DateConvert Log::Logger Log::Writer);
 use Tools::DateConvert;
@@ -280,7 +280,7 @@ sub _write {
     }->();
     if (defined $writer) {
 	$writer->reserve(
-	    Unicode::Japanese->new("$header $line\n",'utf8')->conv(
+	    Tiarra::Encoding->new("$header $line\n",'utf8')->conv(
 		$this->config->charset || 'jis'));
     } else {
 	# XXX: do warn with properly frequency
