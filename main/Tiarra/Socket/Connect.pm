@@ -162,7 +162,7 @@ sub _try_connect_tcp {
     $this->{connecting}->{saddr} = $saddr->answer_data;
     if ($sock->connect($this->{connecting}->{saddr})) {
 	my $error = $!;
-	$this->{sock} = $sock;
+	$this->attach($sock);
 	$! = $error;
 	if ($!{EINPROGRESS}) {
 	    $this->install;
@@ -170,8 +170,25 @@ sub _try_connect_tcp {
 	    $this->_call;
 	}
     } else {
-	$this->_connect_error_try_next(($!+0).': '.$!.': '.$@);
+	$this->_connect_error_try_next($this->_errno_to_msg($!));
     }
+}
+
+sub _errno_to_msg {
+    my ($this, $errno) = @_;
+
+    $! = $errno;
+    $errno = ($!+0);
+    my $errstr = "$!";
+    if ($! eq 'Unknown error') {
+	# try probe (for my ActivePerl v5.8.4 build 810)
+	if ($!{ETIMEDOUT}) {
+	    $errstr = 'Connection timed out';
+	} elsif ($!{ECONNREFUSED}) {
+	    $errstr = 'Connection refused';
+	}
+    }
+    return "$errno: $errstr";
 }
 
 sub _try_connect_unix {
@@ -187,10 +204,10 @@ sub _try_connect_unix {
     Require IO::Socket::UNIX;
     my $sock = IO::Socket::UNIX->new(Peer => $this->{connecting}->{addr});
     if (defined $sock) {
-	$this->{sock} = $sock;
+	$this->attach($sock);
 	$this->_call;
     } else {
-	$this->_connect_error_try_next(($!+0).': '.$!.': '.$@);
+	$this->_connect_error_try_next($this->_errno_to_msg($!));
     }
 }
 
@@ -283,7 +300,7 @@ sub interrupt {
     my $this = shift;
 
     $this->cleanup;
-    if (defined $this->{sock}) {
+    if (defined $this->sock) {
 	$this->close;
     }
     $this->callback->('interrupt', $this);
@@ -304,7 +321,8 @@ sub proc_sock {
 	my $error = $!;
 	$this->cleanup;
 	$this->close;
-	$this->_connect_error_try_next(($!+0).': '.$!.': '.$@);
+	$this->_connect_error_try_next('connect:cant write: '.
+					   $this->_errno_to_msg($!));
     } elsif ($this->sock->connect($this->{connecting}->{saddr}) || $!{EISCONN}) {
 	$this->cleanup;
 	$this->_call;
@@ -313,7 +331,8 @@ sub proc_sock {
 	$this->cleanup;
 	$this->close;
 	$! = $error;
-	$this->_connect_error_try_next(($!+0).': '.$!.': '.$@);
+	$this->_connect_error_try_next('connect:cant re-connect: '.
+					   $this->_errno_to_msg($!));
     }
 }
 
