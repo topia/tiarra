@@ -86,34 +86,31 @@ __PACKAGE__->define_session_wrap(0,
 sub _load {
     my $this = shift;
 
-    $this->with_session(
-	sub {
-	    my $database = Tools::Hash->new;
+    my $database = Tools::Hash->new;
 
-	    if (defined $this->fpath && $this->fpath ne '') {
-		my $fh = IO::File->new($this->fpath,'r');
-		if (defined $fh) {
-		    my $unicode = Unicode::Japanese->new;
-		    foreach (<$fh>) {
-			my $line = $unicode->set($_, $this->charset)->get;
-			next if $this->{ignore_proc}->($line);
-			my ($key,$value) = grep {defined($_)}
-			    ($line =~ /^\s*(?:([^:]+?)\s*|:([^:]+?)):\s*(.+?)\s*$/);
-			if (!defined $key || $key eq '' ||
-				!defined $value || $value eq '') {
-			    # ignore
-			} else {
-			    # can use colon(:) on key, but cannot use space( ).
-			    $key =~ s/ /:/g;
-			    $database->add_value($key, $value);
-			}
-		    }
-		    $this->{database} = $database;
-		    $this->set_time;
-		    $this->clear_modified;
+    if (defined $this->fpath && $this->fpath ne '') {
+	my $fh = IO::File->new($this->fpath,'r');
+	if (defined $fh) {
+	    my $unicode = Unicode::Japanese->new;
+	    foreach (<$fh>) {
+		my $line = $unicode->set($_, $this->charset)->get;
+		next if $this->{ignore_proc}->($line);
+		my ($key,$value) = grep {defined($_)}
+		    ($line =~ /^\s*(?:([^:]+?)\s*|:([^:]+?)):\s*(.+?)\s*$/);
+		if (!defined $key || $key eq '' ||
+			!defined $value || $value eq '') {
+		    # ignore
+		} else {
+		    # can use colon(:) on key, but cannot use space( ).
+		    $key =~ s/ /:/g;
+		    $database->add_value($key, $value);
 		}
 	    }
-	});
+	    $this->{database} = $database;
+	    $this->set_time;
+	    $this->clear_modified;
+	}
+    }
     return $this;
 }
 
