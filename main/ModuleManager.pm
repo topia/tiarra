@@ -126,12 +126,14 @@ sub update_modules {
     my $deleted_any = @$deleted > 0;
     foreach (@$deleted) {
 	# 削除されたモジュール。
-	# %loaded_modsに古い物が入っているので破棄した上、アンロードする。
+	# %loaded_modsに古い物が入っている場合は破棄した上、アンロードする。
 	$show_msg->("Module ".$_->block_name." will be unloaded.");
-	eval {
-	    $loaded_mods{$_->block_name}->destruct;
-	}; if ($@) {
-	    $show_msg->($@);
+	if (defined $loaded_mods{$_->block_name}) {
+	    eval {
+		$loaded_mods{$_->block_name}->destruct;
+	    }; if ($@) {
+		$show_msg->($@);
+	    }
 	}
 	$this->_unload($_);
     }
@@ -390,6 +392,7 @@ sub _unload {
     no strict;
     local(*stab) = eval qq{\*${modname}::};
     my $defined_on;
+    my %showed_modules;
     while (my ($key,$val) = each(%stab)) {
 	local(*entry) = $val;
 	if (defined $entry) {
@@ -409,8 +412,22 @@ sub _unload {
 		::debug_printmsg("unload subroutine: $key");
 		undef &entry;
 	    } else {
-		::debug_printmsg("not-unload subroutine: $key, on " .
-				     ($defined_on || '(undefined)'));
+		if (::debug_mode) {
+		    if (!defined $defined_on) {
+			::printmsg("not-unload subroutine: $key, " .
+				       'defined on (anywhere)');
+		    } else {
+			++$showed_modules{$defined_on};
+			if ($showed_modules{$defined_on} <= 10) {
+			    ::printmsg("not-unload subroutine: $key" .
+					   ", defined on $defined_on");
+			}
+			if ($showed_modules{$defined_on} == 10) {
+			    ::printmsg("not-unload subroutine: omit the rest " .
+					   "of defined on $defined_on...");
+			}
+		    }
+		}
 	    }
 	}
 	if ($key ne "${modname}::" && defined %entry) {
