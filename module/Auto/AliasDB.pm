@@ -53,7 +53,7 @@ sub find_alias_prefix {
     my ($class_or_this, $userinfo, $flag) = @_;
     my $this = $class_or_this->_this;
 
-    return $this->find_alias(['user'], \$userinfo, $flag);
+    return $this->find_alias('user', $userinfo, $flag);
 }
 
 sub find_alias {
