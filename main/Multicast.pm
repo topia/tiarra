@@ -588,9 +588,16 @@ sub forward_to_server {
 }
 
 sub distribute_to_servers {
+    no strict;
     my $msg = shift;
     foreach my $server (values %{$runloop->networks}) {
-	$server->send_message($msg);
+	if (defined $hijack_forward_to_server) {
+	    #::printmsg("forward_to_server HIJACKED");
+	    $hijack_forward_to_server->($msg, $server->network_name);
+	}
+	else {
+	    $server->send_message($msg);
+	}
     }
 }
 
