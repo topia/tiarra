@@ -10,12 +10,12 @@ use warnings;
 use Carp;
 use IrcIO;
 use base qw(IrcIO);
-use Net::hostent;
 use Crypt;
 use Multicast;
 use Mask;
 use LocalChannelManager;
 use NumericReply;
+use Tiarra::Resolver;
 use Tiarra::Utils;
 # shorthand
 my $utils = Tiarra::Utils->shared;
@@ -31,10 +31,17 @@ sub new {
     my $this = $class->SUPER::new($runloop);
     $this->{sock} = $sock;
     $this->{connected} = 1;
+    my $addr = $sock->peerhost;
+    $this->{client_addr} = $addr;
     $this->{client_host} = do {
-	my $hostent = Net::hostent::gethost($sock->peerhost); # 逆引き
-	defined $hostent ? $hostent->name : $sock->peerhost;
+	my ($resolved, $host, $entry);
+	Tiarra::Resolver->paranoid_check($addr, sub {
+					     ($resolved, $host, $entry) = @_; }, 0);
+	$resolved ? $host : $addr;
     };
+    $this->{client_host_repr} = $this->{client_host} .
+	($this->{client_addr} ne $this->{client_host} ?
+	     '('.$this->{client_addr}.')' : '');
     $this->{pass_received} = ''; # クライアントから受け取ったパスワード
     $this->{nick} = ''; # ログイン時にクライアントから受け取ったnick。変更されない。
     $this->{username} = ''; # 同username
@@ -44,17 +51,19 @@ sub new {
     # このホストからの接続は許可されているか？
     my $allowed_host = $this->_conf_general->client_allowed;
     if (defined $allowed_host) {
-	unless (Mask::match($allowed_host,$this->{client_host})) {
+	unless (Mask::match($allowed_host,$this->{client_host}) ||
+		Mask::match($allowed_host,$this->{client_addr})) {
 	    # マッチしないのでdie。
-	    die "One client at ".$this->{client_host}." connected to me, but the host is not allowed.\n";
+	    die "One client at ".$this->{client_host_repr}." connected to me, but the host is not allowed.\n";
 	}
     }
-    ::printmsg("One client at ".$this->{client_host}." connected to me.");
+    ::printmsg("One client at ".$this->{client_host_repr}." connected to me.");
     $this->_runloop->register_receive_socket($sock);
     $this;
 }
 
-$utils->define_attr_getter(0, qw(logging_in username client_host));
+$utils->define_attr_getter(0, qw(logging_in username),
+			   qw(client_host client_addr client_host_repr));
 
 sub fullname {
     # このクライアントをtiarraから見たnick!username@userhostの形式で表現する。
