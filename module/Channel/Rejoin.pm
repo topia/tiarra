@@ -10,6 +10,7 @@ use base qw(Module);
 use BulletinBoard;
 use Multicast;
 use RunLoop;
+use NumericReply;
 
 sub new {
     my $class = shift;
@@ -231,39 +232,33 @@ sub session_work {
 	}
     };
     
-    if ($msg->command eq '324') {
+    if ($msg->command eq RPL_CHANNELMODEIS) {
 	# MODEリプライ
 	$session = $this->{sessions}->{$msg->param(1)};
 	if (defined $session) {
 	    $session->{got_mode} = 1;
 	    my $ch = $session->{ch};
 	    
-	    my $switches = join('',keys %{$ch->switches});
-	    my $params_key = '';
-	    my @params_val;
-	    while (my ($key,$value) = each %{$ch->parameters}) {
-		$params_key .= $key;
-		push @params_val,$value;
-	    }
-	    if (length($switches . $params_key) > 0) {
+	    my ($params, @params) = $ch->mode_string;
+	    if (length($params) > 1) {
 		# 設定すべきモードがある。
 		push @{$session->{cmd_buf}},IRCMessage->new(
 		    Command => 'MODE',
 		    Params => [$session->{ch_shortname},
-			       "+${switches}${params_key}",
-			       @params_val]);
+			       $params,
+			       @params]);
 	    }
 	}
     }
-    elsif ($msg->command eq '368') {
+    elsif ($msg->command eq RPL_ENDOFBANLIST) {
 	# +bリスト終わり
 	$got_reply->('b');
     }
-    elsif ($msg->command eq '349') {
+    elsif ($msg->command eq RPL_ENDOFEXCEPTLIST) {
 	# +eリスト終わり
 	$got_reply->('e');
     }
-    elsif ($msg->command eq '347') {
+    elsif ($msg->command eq RPL_ENDOFINVITELIST) {
 	# +Iリスト終わり
 	$got_reply->('I');
     }
