@@ -32,9 +32,6 @@ sub message_arrived {
 		Command => 'NOTICE',
 		Params => [RunLoop->shared_loop->current_nick,
 			   ''],
-		Remarks => {
-		    'fill-prefix-when-sending-to-client' => 1,
-		},
 	       );
 	    do {
 		local($Data::Dumper::Terse) = 1;
