@@ -99,6 +99,7 @@ sub new {
 
 	timers => [], # インストールされている全てのTimer
 	sockets => [], # インストールされている全てのTiarra::Socket
+	sockets_to_cleanup => [], # クリーンアップ予定のTiarra::Socket
 
 	conf_reloaded_hook => undef, # この下でインストールするフック
 
@@ -636,6 +637,7 @@ sub uninstall_socket {
 	if ($this->{sockets}->[$i] == $socket) {
 	    splice @{$this->{sockets}},$i,1;
 	    $this->unregister_receive_socket($socket->sock); # 受信セレクタから登録解除
+	    push @{$this->{sockets_to_cleanup}},$socket;
 	    $i--;
 	}
     }
@@ -655,8 +657,9 @@ sub unregister_receive_socket {
 }
 
 sub find_socket_with_sock {
-    my ($this,$sock) = @_;
-    foreach my $socket (@{$this->{sockets}}) {
+    my ($this,$sock,$genre) = @_;
+    $genre = 'sockets' unless defined $genre;
+    foreach my $socket (@{$this->{$genre}}) {
 	if (!defined $socket->sock) {
 	    warn 'Socket '.$socket->name.': uninitialized sock!';
 	} elsif ($socket->sock == $sock) {
@@ -1006,8 +1009,10 @@ sub run {
 		}; if ($@) {
 		    $this->notify_error($@);
 		}
+	    } elsif ($this->find_socket_with_sock($sock, 'sockets_to_cleanup')) {
+		# cleanup socket; ignore
 	    } else {
-		$this->notify_error('unknown readable socket: '.$socket);
+		$this->notify_error('unknown readable socket: '.$sock);
 	    }
 	}
 
@@ -1020,8 +1025,10 @@ sub run {
 		}; if ($@) {
 		    $this->notify_error($@);
 		}
+	    } elsif ($this->find_socket_with_sock($sock, 'sockets_to_cleanup')) {
+		# cleanup socket; ignore
 	    } else {
-		$this->notify_error('unknown writable socket: '.$socket);
+		$this->notify_error('unknown writable socket: '.$sock);
 	    }
 	}
 
@@ -1030,6 +1037,9 @@ sub run {
 	
 	# 発動すべき全てのタイマーを発動させる
 	$this->_execute_all_timers_to_fire;
+
+	# Tiarra::Socket のクリーンアップ
+	$this->{sockets_to_cleanup} = [];
 
 	# 終了処理中でサーバもクライアントもいなくなればループ終了。
 	if ($this->{terminating}) {
