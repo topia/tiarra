@@ -6,6 +6,7 @@ use strict;
 use warnings;
 use base qw(Module);
 use Mask;
+use Timer;
 use Data::Dumper;
 
 sub message_arrived {
@@ -56,13 +57,23 @@ sub message_arrived {
 }
 
 # useful functions to call from eval
-sub network {
-    return runloop()->network(shift);
+sub network { return runloop()->network(shift); }
+sub runloop { return RunLoop->shared_loop; }
+sub conf { return Configuration->shared_conf; }
+sub module_manager { return ModuleManager->shared_manager; }
+sub module { return module_manager()->get(shift); }
+sub shutdown { return ::shutdown(); }
+sub reload {
+    Timer->new(
+	After => 0,
+	Code => sub {
+	    ReloadTrigger->reload_conf_if_updated;
+	    ReloadTrigger->reload_mods_if_updated;
+	}
+       )->install;
+    return undef;
 }
 
-sub runloop {
-    return RunLoop->shared_loop;
-}
 1;
 =pod
 info: クライアントから Perl 式を実行できるようにする。
