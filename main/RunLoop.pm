@@ -519,7 +519,11 @@ sub update_networks {
 		$this->{receive_selector}->add($network->sock); # 受信セレクタに登録
 	    }
 	}; if ($@) {
-	    print $@;
+	    if ($@ =~ /^[Cc]ouldn't connect to /i) {
+		::printmsg($@);
+	    } else {
+		$this->notify_error($@);
+	    }
 	    # タイマー作り直し。
 	    $do_update_networks_after = 3;
 	}
@@ -923,7 +927,7 @@ sub run {
 			push @{$this->{clients}},$client;
 			$this->{receive_selector}->add($new_sock);
 		    }; if ($@) {
-			print "$@\n";
+			$this->notify_msg($@);
 		    }
 		}
 	    }
