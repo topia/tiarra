@@ -1,0 +1,12 @@
+#!/bin/sh
+
+WORKDIR=${WORKDIR:-$(dirname $0)}
+[ -f "${WORKDIR}/.tiarrarc" ] && . "${WORKDIR}/.tiarrarc"
+TOPDIR=${TOPDIR:-.}
+TIARRA=${TIARRA:-${TOPDIR}/tiarra}
+CONF=${CONF:-tiarra.conf}
+REDIR_STDOUT=${REDIR_STDOUT:-errlog.stdout}
+REDIR_STDERR=${REDIR_STDERR:-errlog.stderr}
+
+cd "${WORKDIR}"
+${TIARRA} "--config=${CONF}" "$@" >> "${REDIR_STDOUT}" 2>> "${REDIR_STDERR}" <&- &
