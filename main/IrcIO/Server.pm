@@ -26,7 +26,7 @@ sub new {
 
     $obj->{logged_in} = 0; # このサーバーへのログインに成功しているかどうか。
     $obj->{new_connection} = 1;
-    
+
     $obj->{receiving_namreply} = {}; # RPL_NAMREPLYを受け取ると<チャンネル名,1>になり、RPL_ENDOFNAMESを受け取るとそのチャンネルの要素が消える。
     $obj->{receiving_banlist} = {}; # 同上。RPL_BANLIST
     $obj->{receiving_exceptlist} = {}; # 同上。RPL_EXCEPTLIST
@@ -34,7 +34,7 @@ sub new {
 
     $obj->{channels} = {}; # チャンネル名 => ChannelInfo
     $obj->{people} = {}; # nick => PersonalInfo
-    
+
     $obj->connect;
 }
 
@@ -122,7 +122,7 @@ sub person {
     # 未知のnickが指定された場合は新規に追加する。
     my ($this,$nick,$username,$userhost,$realname,$server) = @_;
     return if !defined $nick;
-    
+
     my $info = $this->{people}->{$nick};
     if (!defined($info)) {
 	$info = $this->{people}->{$nick} =
@@ -354,7 +354,7 @@ sub _receive_while_logging_in {
 	$this->person($this->{current_nick},
 		      $this->{user_shortname},
 		      $this->{user_realname});
-	
+
 	::printmsg("Logged-in successfuly into $this->{destination}.");
 
 	# 各モジュールにサーバー追加の通知を行なう。
@@ -367,6 +367,11 @@ sub _receive_while_logging_in {
     }
     elsif ($reply eq '433') {
 	# nick重複。
+	$this->_set_to_next_nick($first_msg->param(1));
+	return; # 何も返さない→クライアントにはこの結果を知らせない。
+    }
+    elsif ($reply eq '437') {
+	# nick is temporarily unavailable
 	$this->_set_to_next_nick($first_msg->param(1));
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
     }
@@ -388,40 +393,44 @@ sub _receive_after_logged_in {
     my ($this,$msg) = @_;
 
     $this->person($msg->nick,$msg->name,$msg->host); # nameとhostを覚えておく。
-    
+
     if ($msg->command eq 'NICK') {
 	# nickを変えたのが自分なら、それをクライアントには伝えない。
 	my $current_nick = $this->{current_nick};
 	if ($msg->nick eq $current_nick) {
 	    $this->{current_nick} = $msg->param(0);
-	    
-	    # ここで消してしまうとプラグインにすらNICKが行かなくなる。
-	    # 消す代わりに"do-not-send-to-clients => 1"という註釈を付ける。
-	    $msg->remark('do-not-send-to-clients',1);
-	    
-	    # ローカルnickと違っていれば、その旨を通知する。
-	    # 但し、networks/always-notify-new-nickが設定されていれば常に通知する。
-	    my $local_nick = RunLoop->shared_loop->current_nick;
-	    if (Configuration->shared->networks->always_notify_new_nick ||
-		$this->{current_nick} ne $local_nick) {
 
-		RunLoop->shared_loop->broadcast_to_clients(
-		    IRCMessage->new(
-			Command => 'NOTICE',
-			Params => [$local_nick,
-				   "*** Your global nick in ".
-				   $this->{network_name}.
-				   " is currently '".$this->{current_nick}."'."]));
+	    if (RunLoop->shared->multi_server_mode_p) {
+		# ここで消してしまうとプラグインにすらNICKが行かなくなる。
+		# 消す代わりに"do-not-send-to-clients => 1"という註釈を付ける。
+		$msg->remark('do-not-send-to-clients',1);
+
+		# ローカルnickと違っていれば、その旨を通知する。
+		# 但し、networks/always-notify-new-nickが設定されていれば常に通知する。
+		my $local_nick = RunLoop->shared_loop->current_nick;
+		if (Configuration->shared->networks->always_notify_new_nick ||
+		    $this->{current_nick} ne $local_nick) {
+
+		    RunLoop->shared_loop->broadcast_to_clients(
+			IRCMessage->new(
+			    Command => 'NOTICE',
+			    Params => [$local_nick,
+				       "*** Your global nick in ".
+					   $this->{network_name}.
+					       " is currently '".$this->{current_nick}."'."]));
+		}
 	    }
 	}
 	$this->_NICK($msg);
     }
     elsif ($msg->command eq '433') {
 	# nickが既に使用中
-	$this->_set_to_next_nick($msg->param(1));
-	
-	# これもクライアントには伝えない。
-	$msg = undef;
+	if (RunLoop->shared->multi_server_mode_p) {
+	    $this->_set_to_next_nick($msg->param(1));
+
+	    # これもクライアントには伝えない。
+	    $msg = undef;
+	}
     }
     elsif ($msg->command eq 'JOIN') {
 	$this->_JOIN($msg);
@@ -459,6 +468,9 @@ sub _receive_after_logged_in {
     }
     elsif ($msg->command eq '332') {
 	$this->_RPL_TOPIC($msg);
+    }
+    elsif ($msg->command eq '333') {
+	$this->_RPL_TOPICWHOTIME($msg);
     }
     elsif ($msg->command eq '346') {
 	$this->_RPL_INVITELIST($msg);
@@ -720,6 +732,10 @@ sub _TOPIC {
 	# 古いトピックを"old-topic"として註釈を付ける。
 	$msg->remark('old-topic', $ch->topic);
 	$ch->topic($msg->param(1));
+
+	# topic_who と topic_time を指定する
+	$ch->topic_who($msg->prefix);
+	$ch->topic_time(time);
     }
 }
 
@@ -793,7 +809,7 @@ sub _RPL_NOTOPIC {
     my ($this,$msg) = @_;
     my $ch = $this->{channels}->{$msg->param(1)};
     if (defined $ch) {
-	$ch->topic('');
+	$ch->topic(undef);
     }
 }
 
@@ -802,6 +818,15 @@ sub _RPL_TOPIC {
     my $ch = $this->{channels}->{$msg->param(1)};
     if (defined $ch) {
 	$ch->topic($msg->param(2));
+    }
+}
+
+sub _RPL_TOPICWHOTIME {
+    my ($this,$msg) = @_;
+    my $ch = $this->{channels}->{$msg->param(1)};
+    if (defined $ch) {
+	$ch->topic_who($msg->param(2));
+	$ch->topic_time($msg->param(3));
     }
 }
 

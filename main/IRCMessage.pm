@@ -29,7 +29,7 @@
 # $msg = new IRCMessage(Command => 'NOTICE',
 #                       Params => ['foo','hugahuga']);
 # print $msg->serialize('jis'); # "NOTICE foo :hugahuga"を表示
-#                       
+#
 package IRCMessage;
 use strict;
 use warnings;
@@ -52,13 +52,13 @@ sub new {
     $obj->[PREFIX] = undef;
     $obj->[COMMAND] = undef;
     $obj->[PARAMS] = undef;
-    
+
     $obj->[NICK] = undef;
     $obj->[NAME] = undef;
     $obj->[HOST] = undef;
 
     $obj->[REMARKS] = undef;
-    
+
     if (exists $args{'Line'}) {
 	$args{'Line'} =~ s/\x0d\x0a$//s; # 行末のcrlfは消去。
 	$obj->_parse($args{'Line'},$args{'Encoding'} || 'auto'); # Encodingが省略されたら自動判別
@@ -87,7 +87,7 @@ sub new {
 	else {
 	    die "You can't make IRCMessage without a COMMAND.\n";
 	}
-	
+
 	if (exists $args{'Params'}) {
 	    # Paramsがあった。型はスカラーもしくは配列リファ
 	    my $params = $args{'Params'};
@@ -124,7 +124,7 @@ sub _parse {
     delete $this->[PREFIX];
     delete $this->[COMMAND];
     delete $this->[PARAMS];
-    
+
     my $pos = 0;
     # prefix
     if (substr($line,0,1) eq ':') {
@@ -134,11 +134,19 @@ sub _parse {
 	$pos = $pos_space + 1; # スペースの次から解釈再開
     }
     # command & params
+    my @encodings = split(/\s*,\s*/, $encoding);
     my $unicode = new Unicode::Japanese;
     my $add_command_or_param = sub {
 	my $value_raw = shift;
-	my $value = $unicode->set($value_raw,$encoding)->utf8;
-	
+	my $use_encoding = $encodings[0];
+	if (scalar(@encodings) != 1) {
+	  my $auto_charset = $unicode->getcode($value_raw);
+	  # getcodeで検出された文字コードでencodingsに指定されているものがあれば採用。
+	  # 無ければencodingsの一番最初を採用する。 (UTF-8をSJISと認識したりするため。)
+	  $use_encoding = ((map {$auto_charset eq $_ ? $_ : ()} @encodings), @encodings)[0];
+	}
+	my $value = $unicode->set($value_raw,$use_encoding)->utf8;
+
 	if ($this->[COMMAND]) {
 	    # commandはもう設定済み。次はパラメータだ。
 	    if ($this->[PARAMS]) {
@@ -231,9 +239,9 @@ sub serialize {
     if ($this->[PREFIX]) {
 	$result .= ':'.$this->[PREFIX].' ';
     }
-    
+
     $result .= $this->[COMMAND].' ';
-    
+
     if ($this->[PARAMS]) {
 	my $unicode = new Unicode::Japanese;
 	my $n_params = scalar @{$this->[PARAMS]};

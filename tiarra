@@ -63,6 +63,7 @@ sub help {
     print "\n";
     print "options:\n";
     print "  --help           print this message\n";
+    print "  --version        print version infomation\n";
     print "  --config=<file>  tiarra configuration file; default is 'tiarra.conf'\n";
     print "  --quiet          don't output any messages to stdout and stdin\n";
     print "  --no-fork        don't move to background when started in quiet mode\n";
@@ -82,8 +83,7 @@ sub find_option {
     foreach my $arg (@ARGV) {
 	if ($arg eq "--$option") {
 	    return 1;
-	}
-	elsif ($arg =~ m/^--$option=(.+)$/) {
+	} elsif ($arg =~ m/^--$option=(.+)$/) {
 	    return $1;
 	}
     }
@@ -114,6 +114,11 @@ if (&find_option('help')) {
     exit;
 }
 
+if (&find_option('version')) {
+    print join("\n",get_credit()) . "\n";
+    exit;
+}
+
 foreach my $pp_define (&find_options(qr/D(.+?)/)) {
     &Configuration::Preprocessor::initial_define(@$pp_define);
 }
@@ -122,11 +127,9 @@ $conf_file = &find_option('config');
 if (!defined $conf_file) {
     if (!-t STDIN) {
 	$conf_file = undef; # STDINから読む場合はundefを入れておく。
-    }
-    elsif (-f 'tiarra.conf') {
+    } elsif (-f 'tiarra.conf') {
 	$conf_file = 'tiarra.conf';
-    }
-    else {
+    } else {
 	&help;
 	exit;
     }
@@ -148,8 +151,7 @@ my $load_config = sub {
 
     if (defined $conf_file) {
 	print "Reading configuration from ${conf_file}... ";
-    }
-    else {
+    } else {
 	$conf_file = IO::Handle->new->fdopen(fileno(STDIN),'r');
 	print "Reading configuration from stdin... ";
     }
@@ -157,9 +159,9 @@ my $load_config = sub {
     eval {
 	Configuration::shared_conf->load($conf_file);
     }; if ($@) {
-        die "ERROR: $@\n";
+	die "ERROR: $@\n";
     } else {
-        print "ok\n";
+	print "ok\n";
     }
 };
 
@@ -167,9 +169,9 @@ my $start_runloop = sub {
     eval {
 	RunLoop::shared_loop->run;
     }; if ($@) {
-        die "Tiarra aborted: $@\n";
+	die "Tiarra aborted: $@\n";
     } else {
-        print "Tiarra stopped.\n";
+	print "Tiarra stopped.\n";
     }
 };
 
@@ -189,12 +191,10 @@ if ($quiet && !$no_fork) {
     if ($child_pid == 0) {
 	# 子プロセス
 	$boot->();
-    }
-    elsif (!defined $child_pid) {
+    } elsif (!defined $child_pid) {
 	print "Tiarra: fork() failed.\n";
     }
-}
-else {
+} else {
     $boot->();
 }
 exit;
@@ -204,6 +204,7 @@ exit;
 sub printmsg {
     # 文字コードはUTF-8でなければならない。
     my $msg = shift;
+    local($|) = 1;
     if (!defined $msg) {
 	$msg = '';
     }
@@ -216,7 +217,8 @@ sub printmsg {
     $year += 1900;
 
     #printf("[%02d/%02d/%04d %02d:%02d:%02d] %s\n",$mon,$day,$year,$hour,$min,$sec,$msg);
-    printf("[%02d/%02d %02d:%02d:%02d] %s\n",$mon,$day,$hour,$min,$sec,$msg);
+    #printf("[%02d/%02d %02d:%02d:%02d] %s\n",$mon,$day,$hour,$min,$sec,$msg);
+    printf("[pid:$$ %04d/%02d/%02d %02d:%02d:%02d] %s\n",$year,$mon,$day,$hour,$min,$sec,$msg);
 }
 
 sub version {

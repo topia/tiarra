@@ -240,7 +240,7 @@ sub _RPL_INVITING {
 }
 
 sub _RPL_WHOREPLY {
-    my ($message,$sender) = @_;
+    my ($message, $sender) = @_;
     $message->param(1,attach($message->param(1),$sender->network_name));
     $message->param(5,global_to_local($message->param(5),$sender));
     $message;
@@ -331,6 +331,7 @@ my $server_sent = {
     '324' => _gen_attach_translator(1), # CHANNELMODEIS
     '331' => _gen_attach_translator(1), # NOTOPIC
     '332' => _gen_attach_translator(1), # TOPIC
+    '333' => _gen_attach_translator(1), # TOPICWHOTIME
     '341' => \&_RPL_INVITING,
     '346' => _gen_attach_translator(1), # INVITELIST
     '347' => _gen_attach_translator(1), # ENDOFINVITELIST
@@ -397,6 +398,7 @@ my $client_sent = {
     '324' => _gen_detach_translator(1), # CHANNELMODEIS
     '331' => _gen_detach_translator(1), # NOTOPIC
     '332' => _gen_detach_translator(1), # TOPIC
+    '333' => _gen_detach_translator(1), # TOPICWHOTIME
     '341' => _gen_detach_translator(1), # INVITING
     '346' => _gen_detach_translator(1), # INVITELIST
     '347' => _gen_detach_translator(1), # ENDOFINVITELIST
@@ -472,7 +474,7 @@ sub detach_network_name {
     local $hijack_local_to_global = 1;
     eval {
 	$client_sent->{$message->command}->($message, $sender);
-    }; if ($@) {
+    }; if ( !defined $result ) {
 	$hijack_forward_to_server->($message, $default_network);
     }
     $result;

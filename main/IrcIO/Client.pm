@@ -269,13 +269,15 @@ sub _receive_after_logged_in {
 		#	Prefix => $this->fullname,
 		#	Command => 'NICK',
 		#	Param => $msg->params->[0]));
-		RunLoop->shared->broadcast_to_clients(
-		    IRCMessage->new(
-			Command => 'NICK',
-			Param => $msg->param(0),
-			Remarks => {'fill-prefix-when-sending-to-client' => 1}));
+		if (RunLoop->shared->multi_server_mode_p) {
+		    RunLoop->shared->broadcast_to_clients(
+			IRCMessage->new(
+			    Command => 'NICK',
+			    Param => $msg->param(0),
+			    Remarks => {'fill-prefix-when-sending-to-client' => 1}));
 
-		RunLoop->shared_loop->set_current_nick($msg->params->[0]);
+		    RunLoop->shared_loop->set_current_nick($msg->params->[0]);
+		}
 	    }
 	}
 	else {
@@ -341,12 +343,20 @@ sub inform_joinning_channels {
 		    Command => 'JOIN',
 		    Param => $ch_name));
 	    # 次にRPL_TOPIC(あれば)
-	    if ($ch->topic ne '') {
+	    if (defined($ch->topic)) {
 		$this->send_message(
 		    IRCMessage->new(
 			Prefix => $this->fullname,
 			Command => '332',
 			Params => [$local_nick,$ch_name,$ch->topic]));
+	    }
+	    # 次にRPL_TOPICWHOTIME(あれば)
+	    if (defined($ch->topic_who)) {
+		$this->send_message(
+		    IRCMessage->new(
+			Prefix => $this->fullname,
+			Command => '333',
+			Params => [$local_nick,$ch_name,$ch->topic_who,$ch->topic_time]));
 	    }
 	    # 次にRPL_NAMREPLY
 	    my $ch_property_char = do {

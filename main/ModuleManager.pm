@@ -95,7 +95,7 @@ sub update_modules {
     my %loaded_mods = map {
 	ref($_) => $_;
     } @{$this->{modules}};
-    
+
     # 新たに追加されたモジュール、作り直されたモジュール、変更されなかったモジュールを
     # モジュール名 => Moduleの形式でテーブルにする。
     my %new_mods = map {
@@ -144,7 +144,7 @@ sub update_modules {
 	    $this->gc;
 	}
     }
-    
+
     $this->{updated_once} = 1;
     $this;
 }
@@ -201,13 +201,13 @@ sub reload_modules_if_modified {
     my $show_msg = sub {
 	RunLoop->shared_loop->notify_msg($_[0]);
     };
-    
+
     my $mods_to_be_reloaded = {}; # モジュール名 => 1
     my $check = sub {
 	my ($modname,$timestamp) = @_;
 	# 既に更新されたものとしてマークされていれば抜ける。
 	return if $mods_to_be_reloaded->{$modname};
-	
+
 	(my $mod_filename = $modname) =~ s|::|/|g;
 	my $mod_fpath = $INC{$mod_filename.'.pm'};
 	return if (!defined($mod_fpath) || !-f $mod_fpath);
@@ -229,11 +229,11 @@ sub reload_modules_if_modified {
 		    }
 		}
 	    };
-	    
+
 	    $trace->($modname);
 	}
     };
-    
+
     while (my ($modname,$timestamp) = each %{$this->{mod_timestamps}}) {
 	$check->($modname,$timestamp);
     }
@@ -256,7 +256,7 @@ sub reload_modules_if_modified {
 		}; if ($@) {
 		    $show_msg->($@);
 		}
-		
+
 		my $conf_block = $this->{mod_configs}->{$modname};
 		$this->_unload($conf_block);
 		$this->{modules}->[$idx] = $this->_load($conf_block); # 失敗するとundefが入る。
@@ -276,7 +276,7 @@ sub reload_modules_if_modified {
                 };
 	    }
 	}
-	
+
 	# 全てのモジュールの%USEDを調べて、その%USEDが指しているモジュールが
 	# 本当にそのモジュールを参照しているのかどうかをチェック。
 	# モジュールの更新で最早参照しなくなっていれば、%USEDから削除する。
@@ -310,7 +310,7 @@ sub _load {
 	    "Couldn't load module $mod_name because of exception.\n$@");
 	return undef;
     }
-    
+
     # モジュール名をファイル名に変換して%INCを検査。
     # module/で始まっていなければエラー。
     #(my $mod_filename = $mod_name) =~ s|::|/|g;
@@ -320,7 +320,7 @@ sub _load {
     #      "Class $mod_name exists outside the module directory.\n$filepath\n");
     #  next;
     #}
-    
+
     # このモジュールは本当にModuleのサブクラスか？
     # 何故かUNIVERSAL::isaは嘘を付く事があるので自力で@ISA内を検索する。
     # 5.6.0 for darwinではモジュールをリロードすると嘘を付く。
@@ -329,6 +329,7 @@ sub _load {
 	my @isa = eval qq{ \@${mod_name}::ISA };
 	foreach (@isa) {
 	    if ($_ eq 'Module') {
+		::printmsg('UNIVERSAL::isa tell a lie...');
 		return 1;
 	    }
 	}
@@ -339,7 +340,7 @@ sub _load {
 	    "Class $mod_name doesn't inherit class Module.");
 	return undef;
     }
-    
+
     # インスタンス生成
     my $mod;
     eval {
@@ -349,7 +350,7 @@ sub _load {
 	    "Couldn't instantiate module $mod_name because of exception.\n$@");
 	return undef;
     }
-    
+
     # このインスタンスは本当に$mod_nameそのものか？
     if (ref($mod) ne $mod_name) {
 	RunLoop->shared_loop->notify_error(
@@ -359,11 +360,10 @@ sub _load {
 
     # timestampに登録
     $this->timestamp($mod_name,time);
-    
+
     return $mod;
 }
 
-no strict;
 sub _unload {
     # 指定されたモジュールを削除する。
     # モジュール名の代わりにConfiguration::Blockを渡しても良い。
@@ -372,35 +372,39 @@ sub _unload {
 
     # このモジュールのuse時刻を消去
     delete $this->{mod_timestamps}->{$modname};
-        
+
     # シンボルテーブルを削除してしまえば変数やサブルーチンにアクセス出来なくなる。
     # 多分これでメモリが開放されるだろう。
-    #eval 'undef %'.$modname.'::;';
-    # NG。v5.6.0 built for darwinでこれをやるとbus errorで落ちる。
-    # 代わりにシンボルテーブル内の全てのシンボルをundefする。
-    # シンボルテーブル一つ分のメモリはリークするが、仕方が無い。
-    local(*stab) = eval qq{\*${modname}::};
-    while (($key,$val) = each(%stab)) {
-	local(*entry) = $val;
-	if (defined $entry) {
-	    undef $entry;
+    if ($] < 5.008) {
+	# NG。v5.6.0 built for darwinでこれをやるとbus errorで落ちる。
+	# 代わりにシンボルテーブル内の全てのシンボルをundefする。
+	# シンボルテーブル一つ分のメモリはリークするが、仕方が無い。
+	no strict;
+	local(*stab) = eval qq{\*${modname}::};
+	while (($key,$val) = each(%stab)) {
+	    local(*entry) = $val;
+	    if (defined $entry) {
+		undef $entry;
+	    }
+	    if (defined @entry) {
+		undef @entry;
+	    }
+	    if (defined &entry) {
+		undef &entry;
+	    }
+	    if ($key ne "${modname}::" && defined %entry) {
+		undef %entry;
+	    }
 	}
-	if (defined @entry) {
-	    undef @entry;
-	}
-	if (defined &entry) {
-	    undef &entry;
-	}
-	if ($key ne "${modname}::" && defined %entry) {
-	    undef %entry;
-	}
+    } else {
+	# v5.8.0 built for i386-netbsd-multi-64intではちゃんとできるようだ。
+	eval 'undef %'.$modname.'::;';
     }
 
     # %INCからも削除
     (my $mod_filename = $modname) =~ s|::|/|g;
     delete $INC{$mod_filename.'.pm'};
 }
-use strict;
 
 sub fix_USED_fields {
     my $this = shift;

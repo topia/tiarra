@@ -22,6 +22,7 @@ sub new {
 sub _init {
     my $this = shift;
     foreach ($this->config->channel('all')) {
+	s/(,)\s+/$1/; # コンマの直後にスペースがあった場合、削除する
 	my ($fullname, $key) = split(/\s+/, $_, 2);
 	my @fullnames = split(/\,/, $fullname);
 	my @keys = split(/,/, $key || '');
@@ -39,7 +40,7 @@ sub _init {
 		};
 	}
     }
-    
+
     $this;
 }
 
@@ -82,3 +83,18 @@ sub connected_to_server {
 }
 
 1;
+=pod
+info: サーバーに初めて接続した時、指定したチャンネルに入るモジュール。
+default: off
+
+# 書式: <チャンネル1>[,<チャンネル2>,...] [<チャンネル1のキー>,...]
+#     コンマの直後のスペースは無視されます。
+#
+# 例:
+#   「#aaaaa@ircnet」に「aaaaa」というキーで入る。
+-channel: #aaaaa@ircnet aaaaa
+#
+#   「#aaaaa@ircnet」、「#bbbbb@ircnet:*.jp」、「#ccccc@ircnet」、「#ddddd@ircnet」の4つのチャンネルに入る。
+-channel: #aaaaa@ircnet,#bbbbb@ircnet:*.jp, #ccccc@ircnet
+-channel: #ddddd@ircnet
+=cut

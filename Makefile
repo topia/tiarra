@@ -9,3 +9,6 @@ all:
 
 update:
 	cvs -z 5 -q up -dP
+
+diff:
+	diff -ruN -I Clovery: -I Id: -x CVS ../../PHO-Tiarra .

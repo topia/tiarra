@@ -18,6 +18,9 @@ sub new {
 	name => $name,
 	network_name => $network_name,
 	topic => '',
+	topic => undef,
+	topic_who => undef,
+	topic_time => undef,
 	names => undef, # hash; nick => PersonInChannel
 	switches => undef, # hash; aやsなどのチャンネルモード。キーがaやsで、値は常に1。
 	parameters => undef, # hash; lやkなどのチャンネルモード。
@@ -49,6 +52,8 @@ sub fullname {
 
 my $types = {
     topic => 'scalar',
+    topic_who => 'scalar',
+    topic_time => 'scalar',
     names => 'hash',
     switches => 'hash',
     parameters => 'hash',
@@ -122,7 +127,7 @@ sub AUTOLOAD {
 		return $hash ? values %$hash : ();
 	    }
 	    else {
-		croak '[array]->([key],[value],'.$args[2].") is invalid\n";
+		croak '[hash]->([key],[value],'.$args[2].") is invalid\n";
 	    }
 	}
 	return ($hash and $args[0]) ? $hash->{$args[0]} : undef;

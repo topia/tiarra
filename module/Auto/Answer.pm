@@ -15,13 +15,13 @@ sub message_arrived {
   my ($this,$msg,$sender) = @_;
   my @result = ($msg);
 
-  my ($get_ch_name,undef,undef,$reply_anywhere)
-    = Auto::Utils::generate_reply_closures($msg,$sender,\@result);
-
   # サーバーからのメッセージか？
   if ($sender->isa('IrcIO::Server')) {
     # PRIVMSGか？
     if ($msg->command eq 'PRIVMSG') {
+      my ($get_ch_name,undef,undef,$reply_anywhere)
+	= Auto::Utils::generate_reply_closures($msg,$sender,\@result);
+
       # replyに設定されたものの中から、一致しているものがあれば発言。
       # 一致にはMask::matchを用いる。
       foreach ($this->config->reply('all')) {
