@@ -399,7 +399,7 @@ sub _connect_error {
 sub _connect_warn {
     my ($this, $msg) = @_;
 
-    $this->printmsg("** $msg\n");
+    $this->printmsg("$msg\n");
 }
 
 sub _send_connection_messages {
