@@ -511,7 +511,6 @@ sub inform_joinning_channels {
 	    if (Mask::match($mask, $ch_name)) {
 		$send_channelinfo->(@{$channels{$ch_name}});
 		delete $channels{$ch_name};
-		last;
 	    }
 	}
     }
