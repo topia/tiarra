@@ -146,6 +146,7 @@ sub _parse {
     delete $this->[COMMAND];
     delete $this->[PARAMS];
     delete $this->[RAW_PARAMS];
+    my $param_count_warned = 0;
 
     my $pos = 0;
     # prefix
@@ -180,7 +181,11 @@ sub _parse {
 	}
 
 	if ($param ne '') {
-	    if (substr($param,0,1) eq ':' || $this->n_params >= MAX_MIDDLES) {
+	    if ($this->n_params > MAX_PARAMS && !$param_count_warned) {
+		$param_count_warned = 1;
+		carp 'max param exceeded; please fix upstream server!';
+	    }
+	    if (substr($param,0,1) eq ':') {
 		$param = substr($line, $pos); # これ以降は全て一つの引数。
 		$param =~ s/^://; # :があった場合は外す。
 		$add_command_or_param->($param);
