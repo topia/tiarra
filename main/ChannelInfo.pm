@@ -49,6 +49,51 @@ sub fullname {
     scalar Multicast::attach($this->name,$this->network_name);
 }
 
+sub mode_string {
+    # RPL_CHANNELMODEIS の形式で返す。
+    my $this = shift;
+
+    my $str = '+';
+    my @param;
+    my ($checker, %hash);
+
+    # switches
+    $checker = sub {
+	my $key = shift;
+	if ($hash{$key}) {
+	    $str .= $key;
+	    delete $hash{$key}
+	}
+    };
+
+    %hash = %{$this->switches};
+    map {
+	$checker->($_);
+    } split //, 'spmtinaqr';
+    map {
+	$checker->($_);
+    } keys %hash;
+
+    # parameters
+    %hash = %{$this->parameters};
+    $checker = sub {
+	my $key = shift;
+	if ($hash{$key}) {
+	    $str .= $key;
+	    push(@param, $hash{$key});
+	    delete $hash{$key}
+	}
+    };
+    map {
+	$checker->($_);
+    } split //, 'lk';
+    map {
+	$checker->($_);
+    } keys %hash;
+
+    return ($str, @param);
+}
+
 my $types = {
     topic => 'scalar',
     topic_who => 'scalar',
