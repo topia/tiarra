@@ -11,6 +11,7 @@ use Carp;
 use Tiarra::Socket;
 use base qw(Tiarra::Socket);
 use Timer;
+use Socket;
 use Tiarra::OptionalModules;
 use Tiarra::Utils;
 utils->define_attr_accessor(0, qw(domain host addr port callback),
@@ -318,21 +319,18 @@ sub proc_sock {
 
     my $select = IO::Select->new($this->sock);
     if (!$select->can_write(0)) {
-	my $error = $!;
+	my $error = $this->sock->sockopt(SO_ERROR);
 	$this->cleanup;
 	$this->close;
-	$this->_connect_error_try_next('connect:cant write: '.
-					   $this->_errno_to_msg($!));
+	$this->_connect_error_try_next($this->_errno_to_msg($error));
     } elsif ($this->sock->connect($this->{connecting}->{saddr}) || $!{EISCONN}) {
 	$this->cleanup;
 	$this->_call;
     } else {
-	my $error = $!;
+	my $error = $this->sock->sockopt(SO_ERROR);
 	$this->cleanup;
 	$this->close;
-	$! = $error;
-	$this->_connect_error_try_next('connect:cant re-connect: '.
-					   $this->_errno_to_msg($!));
+	$this->_connect_error_try_next($this->_errno_to_msg($error));
     }
 }
 
