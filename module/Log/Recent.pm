@@ -28,6 +28,8 @@ sub new {
     $this->{hook} = IrcIO::Client::Hook->new(
 	sub {
 	    my ($hook, $client, $ch_name, $network, $ch) = @_;
+	    # no-recent-logs オプションが指定されていれば何もしない
+	    return if defined $client->option('no-recent-logs');
 	    # ログはあるか？
 	    my $vec = $ch->remarks('recent-log');
 	    if (defined $vec) {
