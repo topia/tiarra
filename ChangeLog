@@ -1,3 +1,43 @@
+2004-06-04  Topia  <topia@clovery.jp>
+
+	* main/IRCMessage.pm:
+	  - MAX_PARAMS(= 14) 定数を追加した。
+	(params):
+	  - 呼び出し時に未定義なら強制的に初期化するようにした。
+	(n_params):
+	  - params を使用するようにした。
+	(_parse):
+	  - $this->push を使用するようにした。
+	(length, push, pop):
+	  - 追加した。
+
+	* main/IrcIO/Client.pm:
+	(_receive_while_logging_in):
+	  - シングルサーバモード時にサーバから RPL_ISUPPORT が提供されていれば、
+	    それを送信するようにした。
+
+	* module/Client/Cache.pm:
+	  - MODE キャッシュ、 WHO キャッシュともに、取得中フラグに有効期限を
+	    つけるようにした。デフォルトで 5 分、 conf では指定できない。
+	  - 念のため RPL_ENDOFWHO もハンドリング。
+
+	* module/Client/Eval.pm:
+	  - メッセージを再構築して、 : をつけなくても良いようにした。
+	    もちろん ::shutdown を実行するには /eval :::shutdown と
+	    しなければならない(笑)。
+	  - $err を初期化して warning が出ないようにした。
+	(network, runloop):
+	  - eval 内部からよく使いそうなものを function 化した。
+
+	* module/System/Raw.pm:
+	  - 配列の最後の要素は (n_params - 1) なので修正して warning が
+	    でないようにした。
+
+2004-06-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* main/Unicode/Japanese.pm:
+	Unicode::Japanese 0.22に更新。
+
 2004-05-26  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Unicode/Japanese.pm:
@@ -1649,7 +1689,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.150 2004/05/26 07:02:37 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2004/05/26 07:02:37 $
-# Revision: $Revision: 1.150 $
+#       Id: $Id: ChangeLog,v 1.152 2004/06/04 12:57:30 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2004/06/04 12:57:30 $
+# Revision: $Revision: 1.152 $

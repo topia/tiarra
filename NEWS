@@ -1,3 +1,12 @@
+2004-06-04  Topia  <topia@clovery.jp>
+
+	* 全般
+	  - 今回の変更は RPL_ISUPPORT のクライアントへの送信が必要なければ、
+	    再起動する必要はありません。
+	    再起動せずにリロードしてもエラーが起こることはないと思います。
+	  - 書き忘れていましたが Unicode::Japanes 0.21 (の PurePerl) にて
+	    SI/SO な jis への対応が行われています。(2004-05-26 の update)
+
 2004-03-07  Topia  <topia@clovery.jp>
 
 	* 全般
