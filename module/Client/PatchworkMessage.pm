@@ -50,10 +50,14 @@ sub is_target {
 1;
 =pod
 info: IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する
-default: on
+default: off
 
 # 特に注意書きがない場合はデフォルトで有効です。
 # また、 Client::GetVersion も同時に入れておくと便利です。
+# とりあえず obsolete です。このモジュールで実装されていた機能は
+# Client::Conservative によって実現できます。
+# Client::Conservative で実装してはいけないようなものがあった場合のみ
+# このモジュールで対処します。
 
 # WoolChat:
 #  対応しているメッセージ:
