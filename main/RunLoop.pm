@@ -221,6 +221,7 @@ sub _multi_server_mode_changed {
 	q{It looks as if you would part all channels, but it's just an illusion.}) {
 	$this->broadcast_to_clients(
 	    IRCMessage->new(
+		Prefix => $this->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [$this->current_nick, $string]));
     }
