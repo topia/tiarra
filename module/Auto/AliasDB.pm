@@ -39,16 +39,15 @@ sub _new {
 }
 
 sub config {
-    my ($this) = @_;
-
-    return $this->{config};
+    return shift->_this->{config};
 }
 
 sub find_alias_prefix {
     # userinfoはnick!user@hostの形式。
     # 見付からなければundefを返す。
     # flagに付いてはfind_alias参照。
-    my ($this, $userinfo, $flag) = @_;
+    my ($class_or_this, $userinfo, $flag) = @_;
+    my $this = $class_or_this->_this;
 
     return $this->find_alias(['user'], \$userinfo, $flag);
 }
@@ -58,7 +57,8 @@ sub find_alias {
     # $keys is ref[array or scalar]
     # $values is ref[array or scalar]
     # $flag is public_alias flag. true is 'public', default false.
-    my ($this, $keys, $values, $flag) = @_;
+    my ($class_or_this, $keys, $values, $flag) = @_;
+    my $this = $class_or_this->_this;
 
     $flag = 0 unless defined($flag);
 
@@ -78,38 +78,44 @@ sub find_alias {
 }
 
 sub add_alias {
-    my ($this,$alias) = @_;
+    my ($class_or_this,$alias) = @_;
+    my $this = $class_or_this->_this;
 
     return $this->{database}->add_group($alias);
 }
 
 sub add_value {
-    my ($this, $alias, $key, $value) = @_;
+    my ($class_or_this, $alias, $key, $value) = @_;
+    my $this = $class_or_this->_this;
 
     return $this->{database}->add_value($alias, $key, $value);
 }
 
 sub add_value_with_prefix {
-    my ($this, $prefix, $key, $value) = @_;
+    my ($class_or_this, $prefix, $key, $value) = @_;
+    my $this = $class_or_this->_this;
 
     return $this->{database}->add_value_with_primary($prefix, $key, $value);
 }
 
 sub del_value {
-    my ($this, $alias, $key, $value) = @_;
+    my ($class_or_this, $alias, $key, $value) = @_;
+    my $this = $class_or_this->_this;
 
     return $this->{database}->del_value($alias, $key, $value);
 }
 
 sub del_value_with_prefix {
-    my ($this, $prefix, $key, $value) = @_;
+    my ($class_or_this, $prefix, $key, $value) = @_;
+    my $this = $class_or_this->_this;
 
     return $this->{database}->del_value_with_primary($prefix, $key, $value);
 }
 
 # alias misc functions
 sub find_alias_with_stdreplace {
-    my ($this, $nick, $name, $host, $prefix, $flag) = @_;
+    my ($class_or_this, $nick, $name, $host, $prefix, $flag) = @_;
+    my $this = $class_or_this->_this;
 
     return add_stdreplace(dup_struct($this->find_alias_prefix($prefix, $flag)),
 			  $nick, $name, $host, $prefix);
@@ -129,7 +135,8 @@ sub add_stdreplace {
 }
 
 sub remove_private {
-    my ($this, $alias, $prefix, $suffix) = @_;
+    my ($class_or_this, $alias, $prefix, $suffix) = @_;
+    my $this = $class_or_this->_this;
 
     $prefix = '' unless defined($prefix);
     $suffix = '' unless defined($suffix);
@@ -142,7 +149,8 @@ sub remove_private {
 }
 
 sub check_readonly {
-    my ($this, $keys) = @_;
+    my ($class_or_this, $keys) = @_;
+    my $this = $class_or_this->_this;
 
     foreach my $check_key ($this->config->readonly('all')) {
 	@$keys = grep {
@@ -207,19 +215,22 @@ sub replace {
     # エイリアスマクロの置換を行なう。%optionalは置換に追加するキーと値の組みで、省略可。
     # optionalの値はSCALARでもARRAY<SCALAR>でも良い。
     # userinfoはnick!user@hostの形式。
-    my ($this,$userinfo,$str,%optional) = @_;
+    my ($class_or_this,$userinfo,$str,%optional) = @_;
+    my $this = $class_or_this->_this;
     $this->replace_with_callbacks($userinfo,$str,undef,%optional);
 }
 
 sub stdreplace {
-    my ($this, $userinfo, $str, $msg, $sender, %optional) = @_;
+    my ($class_or_this, $userinfo, $str, $msg, $sender, %optional) = @_;
+    my $this = $class_or_this->_this;
     my (@callbacks);
 
     return $this->stdreplace_add($userinfo, $str, \@callbacks, $msg, $sender, %optional);
 }
 
 sub stdreplace_add {
-    my ($this, $userinfo, $str, $callbacks, $msg, $sender, %optional) = @_;
+    my ($class_or_this, $userinfo, $str, $callbacks, $msg, $sender, %optional) = @_;
+    my $this = $class_or_this->_this;
 
     Auto::AliasDB::CallbackUtils::register_stdcallbacks($callbacks, $msg, $sender);
     my ($add_alias) = add_stdreplace(
@@ -237,7 +248,8 @@ sub replace_with_callbacks {
     # $callbacksはalias/optionalで置換できなかった際に呼び出されるコールバック関数のリファレンス。
     # optionalの値はSCALARでもARRAY<SCALAR>でも良い。
     # userinfoはnick!user@hostの形式。
-    my ($this,$userinfo,$str,$callbacks,%optional) = @_;
+    my ($class_or_this,$userinfo,$str,$callbacks,%optional) = @_;
+    my $this = $class_or_this->_this;
     return $this->{database}->replace_with_callbacks($userinfo, $str, $callbacks, %optional);
 }
 
