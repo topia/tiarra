@@ -51,6 +51,8 @@ sub disconnect {
     $this->{connected} = undef;
     $this->_runloop->unregister_receive_socket($this->{sock});
     $this->{sock} = undef;
+    $this->{sendbuf} = '';
+    $this->{recvbuf} = '';
 }
 
 sub length { length(shift->sendbuf); }

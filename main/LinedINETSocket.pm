@@ -64,6 +64,8 @@ sub disconnect {
 	$this->{esock} = undef;
     }
     $this->{sock} = undef;
+    $this->{sendbuf} = '';
+    $this->{recvbuf} = '';
 }
 
 sub connect {
