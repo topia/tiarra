@@ -6,7 +6,6 @@
 # Tiarraモジュールではない。
 # このクラスは共通のインスタンスを一つだけ持つ。
 # -----------------------------------------------------------------------------
-# $Clovery: tiarra/module/Auto/AliasDB.pm,v 1.10 2003/03/02 01:16:46 topia Exp $
 package Auto::AliasDB;
 use strict;
 use warnings;

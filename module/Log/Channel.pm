@@ -1,7 +1,6 @@
 # -----------------------------------------------------------------------------
 # $Id: Channel.pm,v 1.11 2003/11/16 19:04:39 topia Exp $
 # -----------------------------------------------------------------------------
-# Local: $Clovery: tiarra/module/Log/Channel.pm,v 1.4 2003/02/11 07:53:40 topia Exp $
 package Log::Channel;
 use strict;
 use warnings;
@@ -98,7 +97,7 @@ sub message_arrived {
 	return $message;
     }
 
-    # Log::Channel/commandにマッチするか？
+    # __PACKAGE__/commandにマッチするか？
     if (Mask::match(lc($this->config->command || '*'),lc($message->command))) {
 	$this->{logger}->log($message,$sender);
     }
