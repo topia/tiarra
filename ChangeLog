@@ -1,3 +1,18 @@
+2003-10-14  Topia  <topia@clovery.jp>
+
+	* main/Multicast.pm (distribute_to_servers):
+	hijack_forward_to_server を適用(nickで使う)
+
+	* main/RunLoop.pm (_multi_server_mode_changed):
+	nick 変更を追加。
+
+	* main/IrcIO/Server.pm (_receive_while_logging_in):
+	single-server-mode 時の NICK 処理を追加。
+
+	* main/IrcIO/Server.pm (_receive_after_logged_in):
+	single-server-mode 時の NICK 処理に RunLoop/set_current_nick を追加。
+	437 での if 条件であほなミスをしていたので修正。
+
 2003-10-12  phonohawk  <phonohawk@lycos.co.uk>
 
 	* main/IRCMessage.pm (serialize):
@@ -947,7 +962,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.106 2003/10/12 12:08:57 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2003/10/12 12:08:57 $
-# Revision: $Revision: 1.106 $
+#       Id: $Id: ChangeLog,v 1.107 2003/10/14 04:47:59 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2003/10/14 04:47:59 $
+# Revision: $Revision: 1.107 $
