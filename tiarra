@@ -5,7 +5,7 @@
 # This is free software; you can redistribute it and/or modify it
 #   under the same terms as Perl itself.
 # -----------------------------------------------------------------------------
-# $Id: tiarra,v 1.35 2004/03/27 10:42:51 topia Exp $
+# $Id: tiarra,v 1.36 2004/04/01 03:18:29 admin Exp $
 # -----------------------------------------------------------------------------
 require 5.006;
 use strict;
@@ -281,8 +281,14 @@ sub printmsg {
 	$msg = '';
     }
     $msg =~ s/\n*$//s;
-    $msg = Unicode::Japanese->new($msg,'utf8')->conv(
-	Configuration->shared_conf->get('general')->stdout_encoding);
+
+    # Configurationが読み込まれていない時に文字コード変換するとdie。
+    eval {
+	local $SIG{__DIE__} = 'IGNORE';
+	local $SIG{__WARN__} = 'IGNORE';
+	$msg = Unicode::Japanese->new($msg,'utf8')->conv(
+	    Configuration->shared_conf->get('general')->stdout_encoding);
+    };
 
     my ($sec,$min,$hour,$day,$mon,$year) = localtime(time);
     $mon++;

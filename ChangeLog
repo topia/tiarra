@@ -1,3 +1,9 @@
+2004-04-01  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* tiarra:
+	confファイルが読み込まれる前に::printmsgを実行するとdieする問題を回避。
+	そのような場合には、文字コード変換を行わない。
+
 2004-03-27  Topia  <topia@clovery.jp>
 
 	* tiarra:
@@ -1525,7 +1531,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.141 2004/03/27 10:42:51 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2004/03/27 10:42:51 $
-# Revision: $Revision: 1.141 $
+#       Id: $Id: ChangeLog,v 1.142 2004/04/01 03:18:29 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2004/04/01 03:18:29 $
+# Revision: $Revision: 1.142 $
