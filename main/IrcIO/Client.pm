@@ -248,7 +248,7 @@ sub _receive_while_logging_in {
 			    Command => 'NOTICE',
 			    Params => [$current_nick,
 				       "*** Your global nick in $network_name is currently '$global_nick'."]));
-		} else {
+		} elsif (RunLoop->shared_loop->multi_server_mode_p) {
 		    $this->send_message(
 			new IRCMessage(
 			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),

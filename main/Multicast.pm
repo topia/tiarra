@@ -200,7 +200,8 @@ sub _WHOIS_from_client {
 
     # ローカルnickにWHOISしたら、全ネットワークのnickを表示する
     if (($message->command eq 'WHOIS' || $message->command eq 'WHO') &&
-	$message->param(0) eq $local_nick) {
+	$message->param(0) eq $local_nick &&
+	    $runloop->multi_server_mode_p) {
 	my $prefix = $runloop->sysmsg_prefix(qw(priv system));
 	$sender->send_message(
 	    new IRCMessage(Prefix => $prefix,
