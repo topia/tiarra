@@ -34,6 +34,7 @@ sub getu {
 
 sub _find_canon_encs {
     my $this = shift;
+    my $temp;
     grep {
 	return $_ unless wantarray;
 	1;
@@ -41,7 +42,13 @@ sub _find_canon_encs {
 	if (exists $encoding_names{$_}) {
 	    $encoding_names{$_};
 	} else {
-	    find_encoding($_)->name;
+	    $temp = find_encoding($_);
+	    if (defined $temp) {
+		$temp->name
+	    } elsif ($_ ne 'auto') {
+		warn "Unknown encoding: $_";
+		();
+	    }
 	}
     } @_;
 }
@@ -163,12 +170,12 @@ sub set {
     if (!defined $code) {
 	$code = 'utf8';
     } elsif ($code eq 'auto' || $code =~ /,/) {
-	my @encodings = ();
+	my @codes = ();
 	if ($code =~ /,/) {
 	    # comma seperated guess-list
-	    @encodings = split(/\s*,\s*/, $code);
+	    @codes = split(/\s*,\s*/, $code);
 	}
-	my ($enc, @enc_others) = $this->getcode($str, @encodings);
+	my ($enc, @enc_others) = $this->getcode($str, @codes);
 	if (defined $enc) {
 	    $code = $enc;
 	} else {
