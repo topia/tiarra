@@ -194,7 +194,7 @@ sub find_io_with_socket {
 sub _multi_server_mode_changed {
     my $this = shift;
     # 一旦全てのチャンネルについてPARTを発行した後、
-    # モードを変え接続中ネットワークを更新し、今度はJOINを発行する。
+    # モードを変え接続中ネットワークを更新し、NICKとJOINを発行する。
     my $new = !$this->{multi_server_mode};
 
     foreach my $string (
@@ -243,6 +243,17 @@ sub _multi_server_mode_changed {
        );
     $this->{multi_server_mode} = $new;
     $this->update_networks;
+    my $global_nick = (($this->networks_list)[0])->current_nick;
+    if ($global_nick ne $this->current_nick) {
+	$this->broadcast_to_clients(
+	    IRCMessage->new(
+		Command => 'NICK',
+		Param => $global_nick,
+		Remarks => {'fill-prefix-when-sending-to-client' => 1
+			   }));
+
+	$this->set_current_nick($global_nick);
+    }
     foreach my $client ($this->clients_list) {
 	$client->inform_joinning_channels;
     }

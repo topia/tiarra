@@ -262,7 +262,7 @@ sub _receive_after_logged_in {
 	if (defined $msg->params) {
 	    # 形式が正しい限りNICKには常に成功して、RunLoopのカレントnickが変更になる。
 	    # ただしネットワーク名が明示されていた場合はカレントを変更しない。
-	    my ($nick,undef,$specified) = Multicast::detatch($msg->params->[0]);
+	    my ($nick,undef,$specified) = Multicast::detach($msg->params->[0]);
 	    if (Multicast::nick_p($nick)) {
 		unless ($specified) {
 		    #$this->send_message(

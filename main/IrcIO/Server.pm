@@ -351,6 +351,17 @@ sub _receive_while_logging_in {
     if ($reply eq '001') {
 	# 成功した。
 	$this->{current_nick} = $first_msg->param(0);
+	if (!RunLoop->shared->multi_server_mode_p &&
+		RunLoop->shared_loop->current_nick ne $this->{current_nick}) {
+	    RunLoop->shared->broadcast_to_clients(
+		IRCMessage->new(
+		    Command => 'NICK',
+		    Param => $first_msg->param(0),
+		    Remarks => {'fill-prefix-when-sending-to-client' => 1
+			       }));
+
+	    RunLoop->shared_loop->set_current_nick($first_msg->param(0));
+	}
 	$this->{logged_in} = 1;
 	$this->person($this->{current_nick},
 		      $this->{user_shortname},
@@ -420,6 +431,8 @@ sub _receive_after_logged_in {
 					   $this->{network_name}.
 					       " is currently '".$this->{current_nick}."'."]));
 		}
+	    } else {
+		RunLoop->shared_loop->set_current_nick($msg->param(0));
 	    }
 	}
 	$this->_NICK($msg);
