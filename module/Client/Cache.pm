@@ -208,7 +208,7 @@ sub message_arrived {
 			    die 'cache data not enough';
 			}
 
-			my $message = $message_tmpl->clone(deep => 1);
+			my $message = $message_tmpl->clone;
 			$message->param(2, $p->username);
 			$message->param(3, $p->userhost);
 			$message->param(4, $p->server);
@@ -226,7 +226,7 @@ sub message_arrived {
 		    }
 		};
 		if (!$@) {
-		    my $message = $message_tmpl->clone(deep => 1);
+		    my $message = $message_tmpl->clone;
 		    $message->command(RPL_ENDOFWHO);
 		    $message->param(2, 'End of WHO list.');
 		    push(@messages, $message);
