@@ -35,7 +35,10 @@ use Tiarra::Socket;
 use base qw(Tiarra::Socket);
 use base qw(Tiarra::Utils);
 __PACKAGE__->define_attr_getter(0, qw(name));
-*socket = \&sock;
+
+sub socket {
+    shift->sock(@_);
+}
 
 use SelfLoader;
 SelfLoader->load_stubs;
