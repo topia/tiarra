@@ -56,19 +56,19 @@ sub new {
     if (!exists($args{'At'}) && !exists($args{'After'})) {
 	croak "Either parameter At or After (or Interval) is required to make Timer.\n";
     }
-    
+
     # Codeは常に必要。
     if (!exists($args{'Code'})) {
 	croak "Code is always required to make Timer.\n";
     }
-    
+
     # CodeがCODE型でなければdie。
     if (ref($args{'Code'}) ne 'CODE') {
 	croak "Parameter Code was not valid CODE ref.\n";
     }
 
     $obj->{code} = $args{'Code'};
-    
+
     if (defined $args{'At'}) {
 	# Atで起動時刻が与えられた場合は、Repeatは出来ない。
 	if ($args{'Repeat'}) {
@@ -83,7 +83,7 @@ sub new {
 	    $obj->{interval} = $args{'After'};
 	}
 	
-	$obj->{fire_time} = time + $args{'After'};	
+	$obj->{fire_time} = time + $args{'After'};
     }
 
     $obj;
@@ -106,10 +106,10 @@ sub install {
 	# 既にインストール済みだった。
 	croak "This Timer has been already installed to RunLoop.\n";
     }
-    
+
     $runloop = RunLoop->shared_loop unless defined $runloop;
     $runloop->install_timer($this);
-    
+
     $this->{runloop} = $runloop;
     $this;
 }
@@ -122,7 +122,7 @@ sub uninstall {
 	# インストールされていない。
 	croak "This Timer hasn't been installed yet\n";
     }
-    
+
     $this->{runloop}->uninstall_timer($this);
     $this->{runloop} = undef;
     $this;
@@ -151,7 +151,7 @@ sub execute {
     else {
 	$this->uninstall;
     }
-    
+
     $this;
 }
 
