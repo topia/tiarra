@@ -11,7 +11,13 @@ use Carp;
 use File::Spec;
 use DirHandle;
 use Tiarra::SharedMixin qw(shared shared_writer);
+use Tiarra::Utils;
 our $_shared_instance;
+
+Tiarra::Utils->define_attr_getter(0, qw(mainloop));
+Tiarra::Utils->define_proxy('mainloop', 0,
+			    map { ["mainloop_$_", "lazy_$_"] }
+				qw(install uninstall));
 
 # todo:
 #  - accept uri(maybe: ssh, syslog, ...)
@@ -23,9 +29,12 @@ sub _new {
 	schemes => {},
 	protocols => [],
 	fallbacks => [],
-	timer => undef,
     };
     bless $this, $class;
+    $this->{mainloop} = Tiarra::WrapMainLoop->new(
+	type => 'timer',
+	interval => 120,
+	closure => sub { $this->run; });
 
     return $this;
 }
@@ -90,7 +99,7 @@ sub _register_inner {
     }
     if (defined $object) {
 	$this->{objects}->{$path} = $object;
-	$this->_install_timer;
+	$this->_mainloop_install;
 	return $object;
     } else {
 	return undef;
@@ -118,7 +127,7 @@ sub object_release {
     delete $this->{objects}->{$path};
 
     if (scalar(keys(%{$this->{objects}})) == 0) {
-	$this->_uninstall_timer;
+	$this->_mainloop_uninstall;
     }
 }
 
@@ -208,39 +217,6 @@ sub notify_msg {
     my ($this, $str) = @_;
 
     RunLoop->shared_loop->notify_msg($str);
-}
-
-# timer
-sub _check_timer {
-    return defined(shift->{timer});
-}
-
-sub _install_timer {
-    my $this = shift;
-
-    if (!$this->_check_timer) {
-	$this->{timer} = Timer->new(
-	    Interval => 120,
-	    Repeat => 1,
-	    Code => sub {
-		my $timer = shift;
-		$this->run;
-	    },
-	   )->install;
-    }
-
-    return 0;
-}
-
-sub _uninstall_timer {
-    my $this = shift;
-
-    if ($this->_check_timer) {
-	$this->{timer}->uninstall;
-	$this->{timer} = undef;
-    }
-
-    return 0;
 }
 
 1;
