@@ -262,7 +262,7 @@ sub main {
 
     my $start_runloop = sub {
 	eval {
-	    RunLoop::shared_loop->run;
+	    RunLoop->shared_loop->run;
 	}; if ($@) {
 	    die "Tiarra aborted: $@\n";
 	}
@@ -274,7 +274,6 @@ sub main {
 	}
 	print "\n";
 	$load_config->();
-	ModuleManager->shared; # 準備させる
 	$start_runloop->();
     };
 
