@@ -9,12 +9,17 @@ use strict;
 use warnings;
 use Carp;
 use Tiarra::Socket;
-use Timer;
 use base qw(Tiarra::Socket);
+use Timer;
+use Tiarra::OptionalModules;
 use Tiarra::Utils;
-utils->define_attr_accessor(0, qw(host addr port callback),
+utils->define_attr_accessor(0, qw(domain host addr port callback),
 			    qw(bind_addr prefer timeout),
 			    qw(retry_int));
+utils->define_attr_enum_accessor('domain', 'eq',
+				 qw(tcp unix));
+
+# now supported tcp, unix
 
 sub new {
     my ($class, %opts) = @_;
@@ -25,6 +30,8 @@ sub new {
 	$this->$_($opts{$_});
     } qw(host addr port callback bind_addr timeout);
     $this->retry_int($opts{retry});
+    $this->domain(utils->get_first_defined($opts{domain},
+					   'tcp'));
     $this->prefer(utils->get_first_defined($opts{prefer},
 					   [qw(ipv6 ipv4)]));
     $this->{queue} = [];
@@ -42,14 +49,23 @@ sub connect {
 		$this->_connect_error('timeout');
 	    });
     }
-    Tiarra::Resolver->resolve('addr', utils->get_first_defined(
-	$this->addr, $this->host), sub {
-	    eval {
-		$this->_connect_stage(@_);
-	    }; if ($@) {
-		$this->_connect_error("internal error: $@");
-	    }
-	});
+
+    $this->prefer([qw('unix')]) if $this->domain_unix;
+    if (defined $this->addr || $this->domain_unix) {
+	my $entry = Tiarra::Resolver::QueueData->new;
+	$entry->answer_status($entry->ANSWER_OK);
+	$entry->answer_data([$this->addr]);
+	$this->_connect_stage($entry);
+    } else {
+	Tiarra::Resolver->resolve(
+	    'addr', $this->host, sub {
+		eval {
+		    $this->_connect_stage(@_);
+		}; if ($@) {
+		    $this->_connect_error("internal error: $@");
+		}
+	    });
+    }
     $this;
 }
 
@@ -65,7 +81,8 @@ sub _connect_stage {
 	    } elsif ($addr =~ m/^[0-9a-fA-F:]+$/) {
 		push (@{$addrs_by_types{ipv6}}, $addr);
 	    } else {
-		die "unsupported addr type: $addr";
+		# maybe
+		push (@{$addrs_by_types{unix}}, $addr);
 	    }
 	}
     } else {
@@ -125,11 +142,11 @@ sub _try_connect_ipv6 {
 	$additional{LocalAddr} = $this->{bind_addr};
     }
 
-    if (!::ipv6_enabled) {
+    if (!Tiarra::OptionalModules->ipv6) {
 	$this->_error(
 	    die qq{Host $this->{host} seems to be an IPv6 address, }.
 		qq{but IPv6 support is not enabled. }.
-		    qq{Use IPv4 server or install Socket6.pm if possible.\n});
+		    qq{Use IPv4 or install Socket6 or IO::Socket::INET6 if possible.\n});
     }
 
     $this->_try_connect_tcp('IO::Socket::INET6', %additional);
@@ -138,27 +155,38 @@ sub _try_connect_ipv6 {
 sub _try_connect_tcp {
     my $this = shift;
 
-    $this->_try_connect_io_socket(@_,
-				  Proto => 'tcp');
+    $this->_try_connect_io_socket(
+	@_,
+	PeerAddr => $this->{connecting}->{addr},
+	PeerPort => $this->{connecting}->{port},
+	Proto => 'tcp');
+}
+
+sub _try_connect_unix {
+    my $this = shift;
+
+    if (!Tiarra::OptionalModules->unix_dom) {
+	$this->_error(
+	    die qq{Host $this->{host} seems to be an Unix Domain Socket address, }.
+		qq{but Unix Domain Socket support is not enabled. }.
+		    qq{Use other protocol if possible.\n});
+    }
+
+    $this->_try_connect_io_socket(
+	'IO::Socket::UNIX',
+	Peer => $this->{connecting}->{addr},
+       );
 }
 
 sub _try_connect_io_socket {
     my ($this, $package, %additional) = @_;
 
-    # ソケットを開く。開けなかったらdie。
-    # 接続は次のようにして行なう。
-    # 1. ホストがIPv4アドレスであれば、IPv4として接続を試みる。
-    # 2. ホストがIPv6アドレスであれば、IPv6として接続を試みる。
-    # 3. どちらの形式でもない(つまりホスト名)であれば、
-    #    a. IPv6が利用可能ならIPv6での接続を試みた後、駄目ならIPv4にフォールバック
-    #    b. IPv6が利用可能でなければ、最初からIPv4での接続を試みる。
     my @new_socket_args = (
-	PeerAddr => $this->{connecting}->{addr},
-	PeerPort => $this->{connecting}->{port},
 	Timeout => undef,
 	%additional,
     );
 
+    eval "require $package";
     my $sock = $package->new(@new_socket_args);
     my $error = $!;
     if (defined $sock) {
@@ -216,8 +244,10 @@ sub type_name {
     my $type = $this->{connecting}->{type};
     if (!defined $type) {
 	return undef;
-	} elsif ($type =~ /^ipv(\d)+$/) {
+    } elsif ($type =~ /^ipv(\d)+$/) {
 	return "IPv$1";
+    } elsif ($type =~ /^unix$/) {
+	return "UNIX";
     } else {
 	return "unknown: $type";
     }
