@@ -17,10 +17,17 @@ BEGIN {
 	 RPL_YOURHOST      002
 	 RPL_CREATED       003
 	 RPL_MYINFO        004
-	 RPL_BOUNCE        005
+	 RPL_ISUPPORT      005
+	 RPL_BOUNCE        010
+	 RPL_MAP           015
+	 RPL_MAPMORE       016
+	 RPL_MAPEND        017
+	 RPL_MAPSTART      018
 
+	 RPL_NONE          300
 	 RPL_USERHOST      302
 	 RPL_ISON          303
+	 RPL_TEXT          304
 
 	 RPL_AWAY          301
 	 RPL_UNAWAY        305
@@ -198,9 +205,8 @@ BEGIN {
      };
     while (my ($key, $value) = each %replies) {
 	next if $key =~ /^-/; # コメント
-	eval qq{
-	    sub $key { $value; }
-	};
+	no strict 'refs';
+	*$key = sub (){ $value; };
         push @EXPORT, $key;
     }
 }
