@@ -18,7 +18,7 @@ sub _wantarray_to_type {
 	if (!wantarray) {
 	    return $_;
 	} else {
-	    $_;
+	    1;
 	}
     } map {
 	if (!defined $_) {

@@ -48,7 +48,13 @@ sub to_str {
     shift; # drop
     # undef(and so on) to str without warning
     no warnings 'uninitialized';
-    return map {
+    grep {
+	if (!wantarray) {
+	    return $_;
+	} else {
+	    1;
+	}
+    } map {
 	"$_"
     } @_;
 }
