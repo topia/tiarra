@@ -23,13 +23,14 @@ sub message_arrived {
 		# disable warning
 		local $SIG{__WARN__} = sub { };
 		# die handler
-		local $SIG{__DIE__} = sub { $err = $_[0]; };
+		#local $SIG{__DIE__} = sub { $err = $_[0]; };
 		no strict;
 		# untaint
 		$method =~ /\A(.*)\z/s;
 		$err = '';
 		$ret = eval($1);
 	    };
+	    $err = $@;
 
 	    my $message = IRCMessage->new(
 		Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
