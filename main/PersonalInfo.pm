@@ -20,6 +20,7 @@ use constant USERHOST => 2;
 use constant REALNAME => 3;
 use constant SERVER   => 4;
 use constant REMARK   => 5;
+use constant AWAY     => 6;
 
 sub new {
     my ($class,%args) = @_;
@@ -37,6 +38,7 @@ sub new {
     $obj->[REALNAME] = $def_or_null->($args{RealName});
     $obj->[SERVER] = $def_or_null->($args{Server});
     $obj->[REMARK] = undef; # HASH
+    $obj->[AWAY] = $def_or_null->($args{Away});
 
     $obj;
 }
@@ -49,7 +51,7 @@ sub info {
 }
 
 BEGIN {
-    foreach my $constname (qw/NICK USERNAME USERHOST REALNAME SERVER/) {
+    foreach my $constname (qw/NICK USERNAME USERHOST REALNAME SERVER AWAY/) {
 	my $methodname = lc $constname;
 	eval qq{
 	    sub $methodname {
