@@ -53,6 +53,11 @@ sub new {
 	(defined $this->{icon} ? (-icon => $this->{icon}) : ()),
 	-tip => 'Tiarra(irc proxy) #' . ::version());
 
+    if (defined $this->config->hide_console_on_load &&
+	    $this->config->hide_console_on_load) {
+	$this->Win32Event_NotifyIcon_Click();
+    }
+
     return $this;
 }
 
@@ -224,4 +229,8 @@ default: off
 # 通知領域に表示するアイコンを指定します。
 # Win32::GUI の制限でちゃんとしたアイコンファイルしか指定できません。
 iconfile: guiperl.ico
+
+# モジュールが読み込まれたときにコンソールウィンドウを隠すかどうかを
+# 指定します。
+hide-console-on-load: 1
 =cut
