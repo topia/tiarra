@@ -40,10 +40,12 @@ sub message_arrived {
     # クライアントの発言か？
     if ($sender->isa('IrcIO::Client')) {
 	# コマンド名は一致してるか？
-	if (Mask::match($this->config->broadcast_command,$msg->command)) {
+	if (Mask::match_deep([$this->config->broadcast_command('all')],
+			     $msg->command)) {
 	    RunLoop->shared_loop->broadcast_to_servers($msg->clone);
 	    $do_reload = 1;
-	} elsif (Mask::match($this->config->broadcast_command,$msg->command)) {
+	} elsif (Mask::match_deep([$this->config->command('all')],
+				  $msg->command)) {
 	    $do_reload = 1;
 	}
     }
