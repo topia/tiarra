@@ -1122,6 +1122,8 @@ sub apply_filters {
     my $source = $src_messages;
     my $filtered = [];
     foreach my $mod (@$mods) {
+	# (普通ないはずだが) $mod が undef だったらこのモジュールをとばす。
+	next unless defined $mod;
 	# sourceが空だったらここで終わり。
 	if (scalar(@$source) == 0) {
 	    return $source;
