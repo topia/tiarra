@@ -11,6 +11,7 @@ use UNIVERSAL;
 use base qw(Tiarra::IRC::NewMessageMixin);
 
 use SelfLoader;
+SelfLoader->load_stubs;
 1;
 __DATA__
 
