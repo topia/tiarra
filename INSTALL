@@ -3,9 +3,11 @@ $Id$
 
 必要なもの
 ==========
-
 * Perl:
     5.6.0 以上。
+
+あるとよいもの
+==============
 * IO::Socket::INET6 または Socket6:
     インストールすると IPv6 のサポートが追加されます。
 * Unicode::Japanese:
@@ -22,6 +24,11 @@ $Id$
 
 2. コピーした conf ファイルを編集します。
   $ vi foo.conf
+   最低でも main, network, そして network/name で指定したネットワークのブロック
+   (指定してないブロックは無視されるので書き換えていなくても大丈夫です)
+   を書き換えてください。
+   自動 Join 設定は Channel::Join::Connect に、ログ取り設定は Log::Channel にあります。
+   使うときはブロックの先頭の - を + に変えるのを忘れずに。
 
 3. 起動します。
   $ ./tiarra --config=foo.conf --quiet
