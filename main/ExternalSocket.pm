@@ -65,9 +65,9 @@ sub new {
     }
 
     foreach my $key (qw/Read Write WantToWrite/) {
-	if (defined $args{$key}) {
-	    if (ref($args{$key}) eq 'CODE') {
-		$this->{lc $key} = $args{$key};
+	if (defined $opts{$key}) {
+	    if (ref($opts{$key}) eq 'CODE') {
+		$this->{lc $key} = $opts{$key};
 	    }
 	    else {
 		croak "ExternalSocket->new, Arg{$key} was illegal reference: ".ref($args{$key})."\n";
