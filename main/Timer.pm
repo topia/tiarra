@@ -34,7 +34,7 @@ use warnings;
 use Carp;
 use RunLoop;
 use Tiarra::Utils;
-Tiarra::Utils->define_attr_accessor(0, qw(interval));
+Tiarra::Utils->define_attr_accessor(0, qw(interval name));
 
 sub new {
     my ($class,%args) = @_;
@@ -43,6 +43,7 @@ sub new {
 	interval => undef, # repeatする場合は、その間隔。しなければ未定義。
 	code => undef, # 走らせるコード
 	runloop => undef, # RunLoopに登録されている場合は、そのRunLoop。
+	name => sprintf('timer registered at %s line %s',(caller(0))[1,2]),
     };
     bless $obj,$class;
 
@@ -86,6 +87,10 @@ sub new {
 	}
 	
 	$obj->{fire_time} = time + $args{'After'};
+    }
+
+    if (defined $args{'Name'}) {
+	$obj->{name} = $args{'Name'};
     }
 
     $obj;
@@ -143,7 +148,7 @@ sub execute {
 	$this->{code}->($this);
     }; if ($@) {
 	RunLoop->shared_loop->notify_error(
-	    "Exception in Timer.\n".
+	    "Exception in Timer($this->{name}).\n".
 		"   $@");
     }
 
