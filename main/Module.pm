@@ -11,7 +11,8 @@ use warnings;
 use Carp;
 use Tiarra::ShorthandConfMixin;
 use Tiarra::Utils;
-use base qw(Tiarra::IRC::NewMessageMixin);
+use base qw(Tiarra::Mixin::NewIRCMessage);
+use base qw(Tiarra::Mixin::AttachPackage);
 # our @USES = ();
 Tiarra::Utils->define_attr_getter(0, [qw(_runloop runloop)]);
 
