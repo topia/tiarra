@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -t
 # -----------------------------------------------------------------------------
 # - T i a r r a - :::bootstrap:::
 # Copyright (c) 2002-2003 phonohawk. All rights reserved.
