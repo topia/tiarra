@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use Tiarra::DefineEnumMixin (qw(ID TIMEOUT),
 			     qw(QUERY_TYPE QUERY_DATA ANSWER_STATUS ANSWER_DATA));
-use Tiarra::DefineEnumMixin (qw(ANSWER_OK ANSWER_NXDOMAIN ANSWER_TIMEOUT),
+use Tiarra::DefineEnumMixin (qw(ANSWER_OK ANSWER_NOT_FOUND ANSWER_TIMEOUT),
 			     qw(ANSWER_NOT_SUPPORTED ANSWER_INTERNAL_ERROR));
 use Tiarra::Utils;
 Tiarra::Utils->define_array_attr_accessor(
@@ -288,7 +288,7 @@ sub _resolve {
     if ($resolved) {
 	$entry->answer_status($entry->ANSWER_OK);
     } else {
-	$entry->answer_status($entry->ANSWER_NXDOMAIN);
+	$entry->answer_status($entry->ANSWER_NOT_FOUND);
     }
     return $entry;
 }
@@ -296,16 +296,15 @@ sub _resolve {
 sub resolver_thread {
     my ($class, $ask_queue, $reply_queue) = @_;
 
-    my $entry;
-    while (defined ($entry = $ask_queue->dequeue)) {
+    my ($data, $entry);
+    while (defined ($data = $ask_queue->dequeue)) {
+	$entry = $dataclass->new->parse($data);
 	eval {
-	    $reply_queue->enqueue($class->_resolve(
-		$dataclass->new->parse($entry))->serialize);
+	    $reply_queue->enqueue($class->_resolve($entry)->serialize);
 	}; if ($@) {
-	    $entry = $dataclass->new->parse($entry);
-	    $entry->answer_status($entry->ANSWER_INTERNAL_ERROR);
-	    $entry->answer_data($@);
-	    $reply_queue->enqueue($entry->serialize);
+	    $data->answer_status($entry->ANSWER_INTERNAL_ERROR);
+	    $data->answer_data($@);
+	    $reply_queue->enqueue($data->serialize);
 	}
     }
     return 0;
