@@ -79,8 +79,7 @@ sub real_destruct {
 
 # base definition
 sub first_defined {
-    shift; #ignore class/instance
-    (grep { defined $_ } @_)[0];
+    shift->get_first_defined(@_);
 }
 
 sub define_accessor {
