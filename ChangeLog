@@ -1,3 +1,16 @@
+2003-11-09  Topia  <topia@clovery.jp>
+
+	* Reload.pm (message_arrived): bugfix/need reload.
+	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F22%2F%2Fpatch-1>
+	Timer を使って遅延処理することによって、reload command での
+	自分自身のリロードを可能にした。
+
+	* RunLoop.pm (run): bugfix(single-server-mode)/need reboot.
+	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F21%2F%2Fpatch-1>
+	single-server-mode 時の、クライアントから送られて来た
+	PRIVMSG/NOTICE のブロードキャストで、 network-suffix 付きの
+	チャンネルに送信してしまっていた。
+
 2003-11-09  phonohawk  <phonohawk@lycos.co.uk>
 
 	* tiarra (help):
@@ -6,13 +19,16 @@
 2003-11-08  Topia  <topia@clovery.jp>
 
 	* make-password: enhancement.
+	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F20%2F%2Fpatch-1>
 	パスワードの入力に、 Term::ReadLine を使用するようにした。
 
-	* module/Log/Recent.pm (client_attached): bugfix/need reload.
+	* module/Log/Recent.pm (client_attached): bugfix(single-server-mode)/need reload.
+	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F18%2F%2Fpatch-2>
 	single-server-mode 時に、送信チャンネル名から network-suffix
 	をはずす。
 
-	* main/RunLoop.pm (run): bugfix/need reboot.
+	* main/RunLoop.pm (run): bugfix(single-server-mode)/need reboot.
+	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F18%2F%2Fpatch-1>
 	single-server-mode 時に、クライアントから送られて来るメッセージに
 	network-suffix を付けるようにした。
 
@@ -1026,7 +1042,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.116 2003/11/09 07:32:12 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2003/11/09 07:32:12 $
-# Revision: $Revision: 1.116 $
+#       Id: $Id: ChangeLog,v 1.118 2003/11/09 09:04:17 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2003/11/09 09:04:17 $
+# Revision: $Revision: 1.118 $

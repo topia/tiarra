@@ -1,11 +1,12 @@
 # -----------------------------------------------------------------------------
-# $Id: Reload.pm,v 1.2 2003/07/26 14:00:37 admin Exp $
+# $Id: Reload.pm,v 1.3 2003/11/09 09:04:18 topia Exp $
 # -----------------------------------------------------------------------------
 package System::Reload;
 use strict;
 use warnings;
 use base qw(Module);
 use ReloadTrigger;
+use Timer;
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
@@ -14,16 +15,17 @@ sub message_arrived {
 	# コマンド名は一致してるか？
 	if ($msg->command eq uc($this->config->command)) {
 	    # 必要ならリロードを実行。
-	    $this->_reload_if_needed;
+	    Timer->new(
+		After => 0,
+		Code => sub {
+		    ReloadTrigger->reload_conf_if_updated;
+		    ReloadTrigger->reload_mods_if_updated;
+		}
+	       )->install;
 	    return undef;
 	}
     }
     return $msg;
-}
-
-sub _reload_if_needed {
-    ReloadTrigger->reload_conf_if_updated;
-    ReloadTrigger->reload_mods_if_updated;
 }
 
 1;
