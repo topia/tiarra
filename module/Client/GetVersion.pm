@@ -54,6 +54,7 @@ info: クライアントに CTCP Version を発行してバージョン情報を得る
 default: off
 
 # オプションはいまのところありません。
-# (開発者向け情報: 取得した情報は remark の client-version に設定されます。)
+# (開発者向け情報: 取得した情報は remark の client-version に設定され、
+#                  Client::Guess から使用されます。)
 
 =cut
