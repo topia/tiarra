@@ -255,7 +255,7 @@ sub makeconf {
 	}; if ($@) {
 	    die $pod->pkg_name.": $@";
 	}
-	[$pod->pkg_name,$pod->header->{info},$conf];
+	[$pod->pkg_name,$pod->header->{info},$conf,$pod];
     } $this->_parse_docpod;
 }
 

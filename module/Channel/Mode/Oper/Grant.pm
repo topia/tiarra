@@ -131,6 +131,7 @@ sub prepare_timer {
 =pod
 info: 特定のチャンネルに特定の人間がjoinした時に、自分がチャンネルオペレータ権限を持っていれば+oする。
 default: off
+section: important
 
 # splitからの復帰などで+o対象の人が一度に大量に入って来ても+oは少しずつ実行します。
 # Excess Floodにはならない筈ですが、本格的な防衛BOTに使える程の物ではありません。

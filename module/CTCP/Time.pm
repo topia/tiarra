@@ -46,6 +46,7 @@ sub message_arrived {
 =pod
 info: CTCP TIMEに応答する。
 default: off
+section: important
 
 # CTCP::Versionのintervalと同じ。
 interval: 3

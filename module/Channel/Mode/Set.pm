@@ -72,6 +72,7 @@ sub set_modes {
 =pod
 info: チャンネルを作成した時に自動的にモードを設定するモジュール。
 default: off
+section: important
 
 # 書式は<チャンネル名にマッチするマスク> <設定するモード>[,<設定するモード>,...]です。
 # #IRC談話室@ircnetなら+t+nを、それ以外なら+nを設定する例。

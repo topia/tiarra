@@ -293,6 +293,7 @@ sub _send_mode_cache {
 =pod
 info: データをキャッシュしてサーバに問い合わせないようにする
 default: off
+section: important
 
 # キャッシュを使用しても、使われるのは接続後最初の一度だけです。
 # 二度目からは通常通りにサーバに問い合わせます。

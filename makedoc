@@ -12,7 +12,18 @@ use Template;
 use TiarraDoc;
 my $unijp_init = Unicode::Japanese->new;
 
-my $conf_output = 'sample.conf';
+my $conf_outputs = {
+    sample => {
+	output => 'sample.conf',
+	sections => qr/(^|,)important($|,)/,
+	include_defaults => 1,
+    },
+    all => {
+	output => 'all.conf',
+	sections => qr/^/, # all
+	include_defaults => 1,
+    },
+};
 
 my $stdout_charset = 'utf8';
 my $conf_charset = 'euc';
@@ -30,15 +41,6 @@ mkdir 'doc';
 exit;
 
 sub makeconf {
-    print "*** Generating $conf_output... ***\n";
-
-    my $unijp = Unicode::Japanese->new;
-    my $t = Template->new('doc-src/sample.conf.in');
-
-    foreach my $conf (DocParser::Module->new('doc-src/conf-main.tdoc')->makeconf) {
-	print $conf->[0]." : ".$unijp->set($conf->[1])->$stdout_charset."\n";
-	$t->expand($conf->[0] => $unijp->set($conf->[2])->$conf_charset);
-    }
 
     # module下の.pmを検索
     my @modules;
@@ -48,16 +50,35 @@ sub makeconf {
 	}
     },'module');
 
-    map {
-	my @confs = DocParser::Module->new($_)->makeconf;
-	foreach my $conf (@confs) {
-	    print $conf->[0]." : ".$unijp->set($conf->[1])->$stdout_charset."\n";
-	    $t->modules->add(module => $unijp->set($conf->[2])->$conf_charset);
-	}
-    } sort @modules;
+    my $unijp = Unicode::Japanese->new;
+    foreach my $genre (qw(sample all)) {
+	my $output = $conf_outputs->{$genre};
+	my $sections = $output->{sections};
 
-    my $fh = IO::File->new($conf_output,'w');
-    $fh->print($t->str);
+	print "*** Generating $output->{output}... ***\n";
+
+	my $t = Template->new("doc-src/$genre.conf.in");
+
+	foreach my $conf (DocParser::Module->new('doc-src/conf-main.tdoc')->makeconf) {
+	    print $conf->[0]." : ".$unijp->set($conf->[1])->$stdout_charset."\n";
+	    $t->expand($conf->[0] => $unijp->set($conf->[2])->$conf_charset);
+	}
+
+	map {
+	    my @confs = DocParser::Module->new($_)->makeconf;
+	    foreach my $conf (@confs) {
+		unless ($output->{include_defaults} &&
+			    $conf->[3]->header->{default} eq 'on') {
+		    next unless ($conf->[3]->header->{section} || '') =~ /$sections/;
+		}
+		print $conf->[0]." : ".$unijp->set($conf->[1])->$stdout_charset."\n";
+		$t->modules->add(module => $unijp->set($conf->[2])->$conf_charset);
+	    }
+	} sort @modules;
+
+	my $fh = IO::File->new($output->{output}, 'w');
+	$fh->print($t->str);
+    }
 }
 
 our $classify_modules_CACHE;

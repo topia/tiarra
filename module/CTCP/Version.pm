@@ -48,6 +48,7 @@ sub message_arrived {
 =pod
 info: CTCP VERSIONに応答する。
 default: on
+section: important
 
 # 連続したCTCPリクエストに対する応答の間隔。単位は秒。
 # 例えば3秒に設定した場合、一度応答してから3秒間は

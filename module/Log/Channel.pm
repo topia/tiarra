@@ -315,6 +315,7 @@ sub destruct {
 =pod
 info: チャンネルやprivのログを取るモジュール。
 default: off
+section: important
 
 # Log系のモジュールでは、以下のように日付や時刻の置換が行なわれる。
 # %% : %

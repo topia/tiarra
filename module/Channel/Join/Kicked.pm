@@ -37,7 +37,8 @@ sub message_arrived {
 =pod
 info: 特定のチャンネルからkickされた時に、自動で入りなおす。
 default: off
-  
+section: important
+
 # 対象となるチャンネル名のマスク
 channel: *
 =cut

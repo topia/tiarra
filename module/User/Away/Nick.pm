@@ -72,6 +72,7 @@ sub away {
 =pod
 info: ニックネーム変更に応じて AWAY を設定します。
 default: off
+section: important
 
 # ニックネームを変更したときに、そのニックネームに対応するAWAYが
 # 設定されていれば、そのAWAYを設定します。そうでなければAWAYを取り消します。

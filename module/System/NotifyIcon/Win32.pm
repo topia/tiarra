@@ -433,6 +433,7 @@ sub init_win32_api {
 =pod
 info: タスクトレイにアイコンを表示する。
 default: off
+section: important
 
 # タスクトレイにアイコンを表示します。
 # クリックすると表示非表示を切り替えることができ、右クリックすると

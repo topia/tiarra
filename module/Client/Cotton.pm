@@ -76,6 +76,7 @@ sub is_cotton {
 =pod
 info: Cotton の行うおかしな動作のいくつかを無視する
 default: off
+section: important
 
 # 該当クライアントのオプション client-type に cotton や unknown と指定するか、
 # Client::GetVersion を利用してクライアントのバージョンを取得するように

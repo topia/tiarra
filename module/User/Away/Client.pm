@@ -48,7 +48,8 @@ sub connected_to_server {
 =pod
 info: クライアントが一つも接続されていない時にAWAYを設定します。
 default: off
-  
+section: important
+
 # どのようなAWAYメッセージを設定するか。省略された場合はAWAYを設定しません。
 -away: 居ない。
 =cut

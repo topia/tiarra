@@ -51,7 +51,7 @@ sub message_io_hook {
 1;
 =pod
 info: クライアントに CTCP Version を発行してバージョン情報を得る
-default: off
+default: on
 
 # オプションはいまのところありません。
 # (開発者向け情報: 取得した情報は remark の client-version に設定され、

@@ -50,7 +50,7 @@ sub is_target {
 1;
 =pod
 info: IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する
-default: off
+default: on
 
 # 特に注意書きがない場合はデフォルトで有効です。
 # また、 Client::GetVersion も同時に入れておくと便利です。

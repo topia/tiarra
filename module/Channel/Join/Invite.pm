@@ -47,6 +47,7 @@ sub message_arrived {
 =pod
 info: 招待されたらそのチャンネルに入る。
 default: off
+section: important
 
 # 許可するユーザ/チャンネルのマスク。
 mask: * *!*@*

@@ -86,6 +86,7 @@ sub connected_to_server {
 =pod
 info: サーバーに初めて接続した時、指定したチャンネルに入るモジュール。
 default: off
+section: important
 
 # 書式: <チャンネル1>[,<チャンネル2>,...] [<チャンネル1のキー>,...]
 #     コンマの直後のスペースは無視されます。

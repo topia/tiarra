@@ -51,6 +51,7 @@ sub connected_to_server {
 =pod
 info: クライアントが接続されていない時に、特定のnickに変更します。
 default: off
+section: important
 
 # クライアントが接続されていない時のnick。
 # このnickが既に使われていたら、適当に変更が加えられて使用されます。

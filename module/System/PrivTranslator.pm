@@ -27,6 +27,7 @@ sub message_arrived {
 =pod
 info: クライアントからの個人的なprivが相手に届かなくなる現象を回避する。
 default: off
+section: important
 
 # このモジュールは個人宛てのprivmsgの送信者のnickにネットワーク名を付加します。
 # 設定項目はありません。

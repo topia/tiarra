@@ -192,6 +192,7 @@ sub log {
 =pod
 info: クライアントを接続した時に、保存しておいた最近のメッセージを送る。
 default: off
+section: important
 
 # クライアントオプションの no-recent-logs が指定されていれば送信しません。
 

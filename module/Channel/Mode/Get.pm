@@ -77,6 +77,7 @@ sub setup_timer {
 =pod
 info: チャンネルにJOINした時、そのチャンネルのモードを取得します。
 default: off
+section: important
 
 # Channel::Mode::Set等が正しく動くためには
 # チャンネルのモードをTiarraが把握しておく必要があります。

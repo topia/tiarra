@@ -74,6 +74,7 @@ sub message_arrived {
 =pod
 info: 特定の文字列を発言した人を+oする。
 default: off
+section: important
 
 # Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。
 
