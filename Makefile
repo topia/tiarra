@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 all:
 	find . -name \*\~ -print0 | xargs -0 rm -f
-#	-zsh -c 'etags tiarra tiarra-conf.el tiarra-conf.l main/**/*.pm module/**/*.pm'
+	gtags
 
 update:
 	cvs -z 5 -q up -dP
