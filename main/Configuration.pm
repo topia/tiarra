@@ -223,7 +223,7 @@ sub _complete_table_with_defaults {
 sub _complete_block_with_defaults {
     my ($blocks, $defaults) = @_;
 
-    while (my ($default_block_name,$default_block) = each %{$defaults}) {
+    while (my ($default_block_name,$default_block) = each %$defaults) {
 	# このブロックは存在しているか？
 	unless (defined $blocks->get($default_block_name)) {
 	    # ブロックごと省略されていたので空のブロックを定義。
@@ -246,7 +246,7 @@ sub _complete_block_with_defaults {
 	    }
 	}
 	if (values %$must_check_child) {
-	    _complete_block_with_defaults_recursive($block, $must_check_child);
+	    _complete_block_with_defaults($block, $must_check_child);
 	}
     }
 }
