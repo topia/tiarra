@@ -192,10 +192,10 @@ sub find_io_with_socket {
     # networksとclientsの中から指定されたソケットを持つIrcIOを探します。
     # 見付からなければundefを返します。
     foreach my $io (values %{$this->{networks}}) {
-	return $io if $io->sock == $sock;
+	return $io if defined $io->sock && $io->sock == $sock;
     }
     foreach my $io (@{$this->{clients}}) {
-	return $io if $io->sock == $sock;
+	return $io if defined $io->sock && $io->sock == $sock;
     }
     undef;
 }
