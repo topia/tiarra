@@ -1,3 +1,14 @@
+2004-06-19  Topia  <topia@clovery.jp>
+
+	* Client::Cotton
+	  - 追加。いくつかの Cotton の不具合を回避する(予定)。
+	    今は network rejoin 時の自動 part を無視します。
+	    Client::GetVersion と組み合わせると良いと思います。
+
+	* Client::GetVersion
+	  - 追加。クライアントの接続時に CTCP Version を発行して
+	    クライアントのバージョンを取得します。
+
 2004-06-04  Topia  <topia@clovery.jp>
 
 	* 全般
@@ -14,7 +25,7 @@
 
 2004-02-23  Topia  <topia@clovery.jp>
 
-	* Debug::RawLog.pm
+	* Debug::RawLog
 	  - 追加。生の IRC メッセージ(のようなもの?)を ::printmsg を使って
 	    表示する。
 

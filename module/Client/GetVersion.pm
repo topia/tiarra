@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Skelton.pm,v 1.2 2004/02/04 12:08:54 admin Exp $
+# $Id: GetVersion.pm,v 1.1 2004/06/19 09:33:43 topia Exp $
 # -----------------------------------------------------------------------------
 # copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
 package Client::GetVersion;

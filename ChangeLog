@@ -1,3 +1,26 @@
+2004-06-19  Topia  <topia@clovery.jp>
+
+	* doc-src/conf-main.tdoc:
+	  - ./tiarra --make-password のことを書き加えた。
+
+	* main/Timer.pm:
+	  - code 中で die が起こっても abort しないようにした。
+
+	* module/Channel/Mode/Oper/Grant.pm:
+	  - $myself が undef でないかチェックするようにした。
+
+	* module/Client/Cotton.pm:
+	  - 追加。いくつかの Cotton の不具合を回避する(予定)。
+	  - 今は network rejoin 時の自動 part を無視する。
+
+	* module/Client/Eval.pm:
+	  - runloop に括弧を付け(て関数形式に認識させ)るのを
+	    忘れていたので修正。
+
+	* module/Client/GetVersion.pm:
+	  - 追加。クライアントの接続時に CTCP Version を発行して
+	    クライアントのバージョンを取得する。
+
 2004-06-09  Topia  <topia@clovery.jp>
 
 	* main/IrcIO/Server.pm:
@@ -1697,7 +1720,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.153 2004/06/09 09:27:37 topia Exp $
+#       Id: $Id: ChangeLog,v 1.154 2004/06/19 09:33:41 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2004/06/09 09:27:37 $
-# Revision: $Revision: 1.153 $
+#     Date: $Date: 2004/06/19 09:33:41 $
+# Revision: $Revision: 1.154 $
