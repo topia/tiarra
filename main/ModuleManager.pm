@@ -327,9 +327,12 @@ sub reload_modules_if_modified {
 		if (defined $USED) {
 		    # USEDの全ての要素に対し再帰的にマークを付ける。
 		    foreach my $used_elem (keys %$USED) {
-			$mods_to_be_reloaded->{$used_elem} = $depth;
-			$show_msg->("$used_elem will be reloaded because of modification of $modname");
-			$trace->($used_elem, $depth);
+			if (!defined $mods_to_be_reloaded->{$used_elem} ||
+				$mods_to_be_reloaded->{$used_elem} < $depth) {
+			    $mods_to_be_reloaded->{$used_elem} = $depth;
+			    $show_msg->("$used_elem will be reloaded because of modification of $modname");
+			    $trace->($used_elem, $depth);
+			}
 		    }
 		}
 	    };
@@ -378,6 +381,9 @@ sub reload_modules_if_modified {
 		no strict 'refs';
 		# その時、%USEDを保存する。@USEは保存しない。
 		my %USED = %{$modname.'::USED'};
+		eval {
+		    $modname->destruct;
+		};
 		$this->_unload($modname);
 		eval qq{
 		    use $modname;
