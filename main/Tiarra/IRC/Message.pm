@@ -652,10 +652,10 @@ sub remark {
 	$this->[REMARKS];
     } else {
 	my $key = shift;
-	if (@_ > 2) {
+	if (@_ > 1) {
 	    # have 3rd argument 'delete'
 	    delete $this->[REMARKS]->{$key};
-	} elsif (@_ > 1) {
+	} elsif (@_ > 0) {
 	    # have value
 	    $this->[REMARKS]->{$key} = shift;
 	} else {
