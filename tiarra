@@ -395,6 +395,7 @@ sub shutdown {
 	printmsg("Second Terminate Request; Force Exit! [$msg]");
 	# force
 	ModuleManager->shared_manager->terminate;
+	Tiarra::TerminateManager->terminate('main');
 	exit;
     } else {
 	$terminated = 1;
