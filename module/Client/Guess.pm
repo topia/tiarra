@@ -122,6 +122,9 @@ sub version_guess_c {
     if ($str =~ /^CHOCOA ($re_ver) \(($re_tok)\)$/) {
 	$struct_set->([qw(type ver plat)],
 		      'chocoa', $1, $2);
+    } elsif ($str =~ m[^Conversation ($re_ver) for (MacOS X|.+?) (http://$re_tok)$|]) {
+	$struct_set->([qw(type ver plat url)],
+		      'conversation', $1, $2, $3);
     } else {
 	return undef;
     }
