@@ -1009,7 +1009,7 @@ sub run {
 		    $this->notify_error($@);
 		}
 	    } else {
-		$this->notify_error('unknown readable handle: '.$handle);
+		$this->notify_error('unknown readable socket: '.$socket);
 	    }
 	}
 
@@ -1023,7 +1023,7 @@ sub run {
 		    $this->notify_error($@);
 		}
 	    } else {
-		$this->notify_error('unknown writable handle: '.$handle);
+		$this->notify_error('unknown writable socket: '.$socket);
 	    }
 	}
 
