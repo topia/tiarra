@@ -12,12 +12,18 @@ update:
 DIFF_PATH :=
 VENDOR_MASTER := ../vendor/cvs/master
 VENDOR_WORKING := ../vendor/cvs/working
+IGNORES := $(IGNORES) -I Clovery: -I Id:
+IGNORES := $(IGNORES) -x CVS -x .svn -x common -x test -x \*~ -x TAGS
+IGNORES := $(IGNORES) -x Makefile -x .tiarrarc -x doc -x filelist.\*
+IGNORES := $(IGNORES) -x web -x sample.conf -x run\* -x status
+IGNORES := $(IGNORES) -x think -x tools
+IGNORES := $(IGNORES) -x \*.\*.jp -x \*.ath.cx -x local -x stable
 
 checkdiff:
-	-LANG=C diff -rub -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
+	-LANG=C diff -burN -F'^[a-zA-Z]' $(IGNORES) $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
 
 diff:
-	-LANG=C diff -ru -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
+	-LANG=C diff -urN -F'^[a-zA-Z]' $(IGNORES) $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
 
 working_install:
 	cp ./$(DIFF_PATH) $(VENDOR_WORKING)/$(DIFF_PATH)
@@ -27,8 +33,8 @@ working_start:
 	cp -a $(VENDOR_MASTER)/$(DIFF_PATH) $(VENDOR_WORKING)/$(DIFF_PATH)
 
 working_checkdiff:
-	-LANG=C diff -rub -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_WORKING)/$(DIFF_PATH) ./$(DIFF_PATH)
+	-LANG=C diff -burN -F'^[a-zA-Z]' $(IGNORES) $(VENDOR_WORKING)/$(DIFF_PATH) ./$(DIFF_PATH)
 
 working_diff:
-	-LANG=C diff -ru -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_WORKING)/$(DIFF_PATH) ./$(DIFF_PATH)
+	-LANG=C diff -urN -F'^[a-zA-Z]' $(IGNORES) $(VENDOR_WORKING)/$(DIFF_PATH) ./$(DIFF_PATH)
 
