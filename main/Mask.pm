@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Mask.pm,v 1.12 2003/09/22 18:02:06 admin Exp $
+# $Id: Mask.pm,v 1.13 2003/12/31 05:39:35 admin Exp $
 # -----------------------------------------------------------------------------
 # $Clovery: tiarra/main/Mask.pm,v 1.10 2003/07/24 03:08:26 topia Exp $
 package Mask;
@@ -110,7 +110,7 @@ sub match_array {
       $work = make_regex($work);
     }
 
-    if ($str =~ m/$work/i) {
+    if ($str =~ m/$work/) {
       # マッチした
       $matched = $include;
       return $matched if  $match_type == 1;
@@ -246,7 +246,7 @@ sub make_regex {
 	$regex =~ s/\\\*/\.\*/g;
 	$regex = "^$regex\$";
 	
-	my $compiled = qr/$regex/;
+	my $compiled = qr/$regex/i;
 	push @cache_keys, $str;
 	$cache_table{$str} = $compiled;
 	

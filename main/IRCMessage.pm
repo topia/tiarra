@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: IRCMessage.pm,v 1.15 2003/10/24 15:52:29 admin Exp $
+# $Id: IRCMessage.pm,v 1.16 2004/01/14 14:48:35 admin Exp $
 # -----------------------------------------------------------------------------
 # IRCMessageはIRCのメッセージを表わすクラスです。実際のメッセージはUTF-8で保持します。
 # 生のメッセージのパース、シリアライズ、そしてメッセージの生成をサポートします。
@@ -145,7 +145,14 @@ sub _parse {
 	  # 無ければencodingsの一番最初を採用する。 (UTF-8をSJISと認識したりするため。)
 	  $use_encoding = ((map {$auto_charset eq $_ ? $_ : ()} @encodings), @encodings)[0];
 	}
-	my $value = $unicode->set($value_raw,$use_encoding)->utf8;
+	my $value = do {
+	    if (length ($value_raw) == 0) {
+		'';
+	    }
+	    else {
+		$unicode->set($value_raw,$use_encoding)->utf8;
+	    }
+	};
 
 	if ($this->[COMMAND]) {
 	    # commandはもう設定済み。次はパラメータだ。
