@@ -1,3 +1,8 @@
+2004-05-26  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* main/Unicode/Japanese.pm:
+	Unicode::Japanese 0.21に更新。
+
 2004-05-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO.pm (receive):
@@ -1644,7 +1649,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.149 2004/05/09 12:46:18 admin Exp $
+#       Id: $Id: ChangeLog,v 1.150 2004/05/26 07:02:37 admin Exp $
 #   Author: $Author: admin $
-#     Date: $Date: 2004/05/09 12:46:18 $
-# Revision: $Revision: 1.149 $
+#     Date: $Date: 2004/05/26 07:02:37 $
+# Revision: $Revision: 1.150 $
