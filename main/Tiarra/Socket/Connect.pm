@@ -299,8 +299,13 @@ sub read { shift->proc_sock }
 sub proc_sock {
     my $this = shift;
 
-    # error check
-    if ($this->sock->connect($this->{connecting}->{saddr}) || $!{EISCONN}) {
+    my $select = IO::Select->new($this->sock);
+    if (!$select->can_write(0)) {
+	my $error = $!;
+	$this->cleanup;
+	$this->close;
+	$this->_connect_error_try_next(($!+0).': '.$!);
+    } elsif ($this->sock->connect($this->{connecting}->{saddr}) || $!{EISCONN}) {
 	$this->cleanup;
 	$this->_call;
     } else {
