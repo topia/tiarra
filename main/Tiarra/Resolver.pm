@@ -220,7 +220,7 @@ sub _resolve {
 
     if ($entry->query_type eq QUERY_ADDR) {
 	if ($use_ipv6 && !$resolved) {
-	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
+	    my @res = getaddrinfo($entry->query_data, AI_NUMERICHOST, AF_UNSPEC, SOCK_STREAM);
 	    my ($saddr, $addr, @addrs, %addrs);
 	    threads::shared::share(@addrs) if $use_threads;
 	    while (scalar(@res) >= 5) {
@@ -252,7 +252,7 @@ sub _resolve {
 	}
     } elsif ($entry->query_type eq QUERY_HOST) {
 	if ($use_ipv6 && !$resolved) {
-	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
+	    my @res = getaddrinfo($entry->query_data, AI_NUMERICHOST, AF_UNSPEC, SOCK_STREAM);
 	    my ($saddr, $host, @hosts, %hosts);
 	    threads::shared::share(@hosts) if $use_threads;
 	    while (scalar(@res) >= 5) {
