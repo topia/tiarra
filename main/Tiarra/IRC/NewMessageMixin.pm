@@ -3,57 +3,18 @@
 # -----------------------------------------------------------------------------
 # copyright (C) 2005 Topia <topia@clovery.jp>. all rights reserved.
 package Tiarra::IRC::NewMessageMixin;
-use strict;
-use warnings;
-use Tiarra::IRC::Message;
+use base qw(Tiarra::Mixin::NewIRCMessage);
 
 =head1 NAME
 
-Tiarra::IRC::NewMessageMixin - Tiarra::IRC::Message Construction Interface Mixin
-=head1 SYNOPSIS
-
-  package foo::class; 
-  use base qw(Tiarra::IRC::NewMessageMixin); # use this
-  $this->irc_message_class->foo_class_method;
-  $this->construct_irc_message(Command => ...);
+Tiarra::IRC::NewMessageMixin - deprecated by Tiarra::Mixin::NewIRCMessage
 
 =head1 DESCRIPTION
 
-Tiarra::IRC::NewMessageMixin is define Tiarra::IRC::NewMessageMixin Construction Interface as Mixin.
-
-=head1 METHODS
-
-=over 4
+Tiarra::IRC::NewMessageMixin is deprecated by L<Tiarra::Mixin::NewIRCMessage> (renamed).
+please see L<Tiarra::Mixin::NewIRCMessage>.
 
 =cut
-
-=item irc_message_class
-
-  __PACKAGE__->irc_message_class; # return Tiarra::IRC::Message
-  $this->irc_message_class; # likewise.
-
-return Tiarra::IRC::Message class. you can change class to override this.
-
-=cut
-
-sub irc_message_class () { 'Tiarra::IRC::Message' }
-
-=item construct_irc_message
-
-  __PACKAGE__->construct_irc_message(...);
-  $this->construct_irc_message(...); # likewise.
-
-constraction Tiarra::IRC::Message(or specified by ->irc_message_class).
-
-=cut
-
-sub construct_irc_message {
-    my $this = shift;
-
-    $this->irc_message_class->new(
-	Generator => $this,
-	@_);
-}
 
 1;
 
@@ -62,7 +23,7 @@ __END__
 
 =head1 SEE ALSO
 
-L<Tiarra::IRC::Message>
+L<Tiarra::Mixin::NewIRCMessage>
 
 =head1 AUTHOR
 
