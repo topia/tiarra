@@ -82,7 +82,7 @@ sub check_channel {
 	return;
     }
     my $myself = $ch->names($server->current_nick);
-    if ($myself->has_o) {
+    if (defined $myself && $myself->has_o) {
 	# 自分が@を持っている。
 	return;
     }
