@@ -637,7 +637,7 @@ sub uninstall_socket {
 	if ($this->{sockets}->[$i] == $socket) {
 	    splice @{$this->{sockets}},$i,1;
 	    $this->unregister_receive_socket($socket->sock); # 受信セレクタから登録解除
-	    push @{$this->{sockets_to_cleanup}},$socket;
+	    push @{$this->{socks_to_cleanup}},$socket->sock;
 	    $i--;
 	}
     }
