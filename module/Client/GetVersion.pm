@@ -8,17 +8,24 @@ use warnings;
 use base qw(Module);
 use CTCP;
 
-sub CTCP_VERSION_EXPIRE_TIME (){5 * 60;}
+use constant ({
+    EXPIRE_TIME => 5 * 60,
+    FETCH_EXPIRE_KEY => __PACKAGE__->attach_package('fetching-version-expire'),
+});
 
 sub client_attached {
     my ($this,$client) = @_;
 
-    my $msg = CTCP::make('VERSION', RunLoop->shared_loop->current_nick, 'PRIVMSG');
-    $msg->prefix(RunLoop->shared_loop->sysmsg_prefix(qw(system)));
-
-    $client->send_message($msg);
-    $client->remark(__PACKAGE__.'/fetching-version-expire',
-		    time() + CTCP_VERSION_EXPIRE_TIME);
+    $client->send_message(
+	$this->construct_irc_message(
+	    Prefix => $this->_runloop->sysmsg_prefix(qw(system)),
+	    Command => 'PRIVMSG',
+	    Params => [
+		$this->_runloop->current_nick,
+		CTCP->make_text('VERSION'),
+	       ],
+	   ));
+    $client->remark(FETCH_EXPIRE_KEY, time() + EXPIRE_TIME);
 }
 
 sub message_io_hook {
@@ -28,20 +35,20 @@ sub message_io_hook {
 	if ($type eq 'in' && $msg->command eq 'NOTICE' &&
 		!Multicast::channel_p($msg->param(0)) &&
 		    defined $msg->param(1) &&
-			defined $io->remark(__PACKAGE__.'/fetching-version-expire')) {
-	    if ($io->remark(__PACKAGE__.'/fetching-version-expire')
+			defined $io->remark(FETCH_EXPIRE_KEY)) {
+	    if ($io->remark(FETCH_EXPIRE_KEY)
 		    >= time()) {
-		my $ctcp = CTCP::extract($msg);
+		my $ctcp = CTCP->extract_from_text($msg->param(1));
 		if (defined $ctcp) {
 		    my ($command, $text) = split(/ /, $ctcp, 2);
 		    if ($command eq 'VERSION') {
 			$io->remark('client-version', $text);
-			$io->remark(__PACKAGE__.'/fetching-version-expire', undef, 'delete');
+			$io->remark(FETCH_EXPIRE_KEY, undef, 'delete');
 			return undef;
 		    }
 		}
 	    } else {
-		$io->remark(__PACKAGE__.'/fetching-version-expire', undef, 'delete');
+		$io->remark(FETCH_EXPIRE_KEY, undef, 'delete');
 	    }
 	}
     }
