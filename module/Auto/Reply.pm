@@ -151,7 +151,7 @@ sub _search {
     my ($block, $str, $count, $rate) = @_;
 
     my @masks;
-    foreach my $mask ($block->{database}->keys) { 
+    foreach my $mask ($block->{database}->keys) {
 	if (Mask::match_array([$mask], $str, 1, $block->{use_re}, 0)) {
 	    # match
 	    if (!defined $rate || (int(rand() * hex('0xffffffff')) % 100) < $rate) {
@@ -230,7 +230,7 @@ std {
   # addとremoveを許可する人。省略された場合は「* *!*@*」と見做します。
   modifier: * *!*@*
 
-  # 正規表現拡張を許可するか。省略された場合は許可します。
+  # 正規表現拡張を許可するか。省略された場合は禁止します。
   use-re: 1
 }
 =cut
