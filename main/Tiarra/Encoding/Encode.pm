@@ -167,7 +167,7 @@ sub set {
 	    # (see Module::CoreList)
 	    Tiarra::OptionalModules->check('base64') or
 		    croak 'Couldn\'t load MIME::Base64.';
-	    $str = MIME::Base64::decode($str, '');
+	    $str = MIME::Base64::decode($str);
 	}
     }
 
