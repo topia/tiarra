@@ -1,3 +1,15 @@
+2003-10-19  Topia  <topia@clovery.jp>
+
+	* HACKING:
+	モジュール作成者向けのドキュメントを書いた。
+	まだ、Timer / Hook / Socket I/O 関連の記述がない。
+
+	* module/Skelton.pm:
+	新規モジュールのスケルトン。中身のほとんどは main/Module.pm と同一。
+
+	* module/Auto/Alias.pm (message_arrived):
+	返り値がおかしかったのを修正。
+
 2003-10-19  phonohawk  <phonohawk@lycos.co.uk>
 
 	* main/IrcIO/Server.pm
@@ -979,7 +991,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.109 2003/10/19 10:41:17 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2003/10/19 10:41:17 $
-# Revision: $Revision: 1.109 $
+#       Id: $Id: ChangeLog,v 1.110 2003/10/19 12:30:23 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2003/10/19 12:30:23 $
+# Revision: $Revision: 1.110 $

@@ -1,0 +1,48 @@
+モジュールについて
+
+* モジュールの新規作成
+module/Skelton.pm にモジュールのスケルトンがありますので、
+これをコピーして不要な関数を削除すれば、作ることが出来ます。
+
+* 注意すべき事項
+  - Tiarra はシングルスレッドです。時間がかかる処理をそのままやってはいけません。
+    Timer や Hook, ソケット入出力なら ExternalSocket を使って少しずつ処理してください。
+
+* 良く使うモジュール/関数
+  - Mask(main/Mask.pm)
+    汎用に使えるマスクマッチング関数群が実装してあります。
+    良く使う形は
+      Mask::match_deep_chan([$this->config->mask('all')], $msg->prefix, $channel_name_with_network)
+      Mask::match_deep([$this->config->keyword('all')], $keyword)
+    だと思います。
+
+  - Multicast(main/Multicast.pm)
+    + detach($str)	文字列 $str からネットワーク名を外す。
+      戻り値: (セパレータ前の文字列,ネットワーク名,ネットワーク名が明示されたかどうか)
+      ただしスカラーコンテクストではセパレータ前の文字列のみを返す。
+    + attach($str, $network_name)	$str にネットワーク名を付ける。
+      $strはChannelInfoのオブジェクトでも良い。
+      $network_nameは省略可能。IrcIO::Serverのオブジェクトでも良い。
+    + nick_p($str)	文字列 $str が nick name として許される形式なら 1 を返す。
+      ネットワーク名は付けたままでも構わない。処理前に detach される。
+    + channel_p($str)	文字列 $str が channel name として許される形式なら 1 を返す。
+      ネットワーク名は付けたままでも構わない。処理前に detach される。
+
+  - RunLoop(main/RunLoop.pm)
+    ここで紹介する関数は、全て RunLoop->shared_loop->function(...) と呼んで下さい。
+    + channel($str)	チャンネルを探す。
+      ネットワーク名付きのチャンネル名が引数です。無ければ undef を返します。
+    + broadcast_to_clients(@messages)	 メッセージを全てのクライアントに送信する。
+    * notify_msg($str)		全てのクライアントと、 STDOUT にメッセージを通知します。
+    + notify_error($str)	notify_msg を使ってエラーを通知します。
+    + notify_warn($str)		notify_msg を使って警告を通知します。
+
+  - main(tiarra)
+    + ::printmsg()		STDOUT にのみメッセージを通知します。
+    + ::debug_printmsg()	デバッグモードの時のみメッセージを通知します。
+    + ::debug_mode()		デバッグモードなら 1 を返します。
+    + ::ipv6_enabled()		IPv6 が有効なら 1 を返します。
+
+  - Auto::Utils(module/Auto/Utils.pm)
+    + generate_reply_closures(...)	一般的な自動反応をするのに有用なクロージャを生成する。
+      一般的な使い方は Skelton.pm に書いておきました。
