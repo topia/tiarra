@@ -26,6 +26,7 @@ use Timer;
 use ControlPort;
 use Hook;
 use base qw(HookTarget);
+use Tiarra::OptionalModules;
 use Tiarra::ShorthandConfMixin;
 use Tiarra::SharedMixin qw(shared shared_loop);
 use Tiarra::Utils;
@@ -99,7 +100,7 @@ sub new {
 	clients => [], # 接続されている全てのクライアント IrcIO::Client
 
 	timers => [], # インストールされている全てのTimer
-	sockets => [], # インストールされている全てのExternalSocket
+	sockets => [], # インストールされている全てのTiarra::Socket
 
 	conf_reloaded_hook => undef, # この下でインストールするフック
 
@@ -644,12 +645,14 @@ sub uninstall_socket {
 }
 
 sub register_receive_socket {
-    # 内部 API です。外部から使うときは Tiarra::Socket または ExternalSocket を使用してください。
+    # 内部 API です。外部から使うときは Tiarra::Socket または
+    # ExternalSocket を使用してください。
     shift->{receive_selector}->add(@_);
 }
 
 sub unregister_receive_socket {
-    # 内部 API です。外部から使うときは Tiarra::Socket または ExternalSocket を使用してください。
+    # 内部 API です。外部から使うときは Tiarra::Socket または
+    # ExternalSocket を使用してください。
     shift->{receive_selector}->remove(@_);
 }
 
@@ -754,7 +757,7 @@ sub run {
 		IO::Socket::INET->new(@args);
 	    }
 	    elsif ($ip_version eq 'v6') {
-		if (!&::ipv6_enabled) {
+		if (!Tiarra::OptionalModules->ipv6) {
 		    ::printmsg("*** IPv6 support is not enabled ***");
 		    ::printmsg("Set general/tiarra-ip-version to 'v4' or install Socket6.pm if possible.\n");
 		    die;
@@ -906,9 +909,11 @@ sub run {
 		    } else {
 			$new_sock->close;
 		    }
+		} else {
+		    $this->notify_error('unknown readable on listen sock');
 		}
 	    }
-	    elsif (my $socket = $this->find_socket_with_sock($sock, 'for read')) {
+	    elsif (my $socket = $this->find_socket_with_sock($sock)) {
 		eval {
 		    $socket->read;
 
@@ -1003,6 +1008,8 @@ sub run {
 		}; if ($@) {
 		    $this->notify_error($@);
 		}
+	    } else {
+		$this->notify_error('unknown readable handle: '.$handle);
 	    }
 	}
 
@@ -1015,6 +1022,8 @@ sub run {
 		}; if ($@) {
 		    $this->notify_error($@);
 		}
+	    } else {
+		$this->notify_error('unknown writable handle: '.$handle);
 	    }
 	}
 
