@@ -67,4 +67,23 @@ sub get_first_defined {
     return ();
 }
 
+sub to_ordinal_number {
+    shift; # drop
+    grep {
+	if (!wantarray) {
+	    return $_;
+	} else {
+	    1;
+	}
+    } map {
+	if (/1$/) {
+	    $_ . 'st';
+	} elsif (/(?:[^1]|^)([23])$/) {
+	    $_ . ($2 eq '2' ? 'nd' : 'rd');
+	} else {
+	    $_ . 'th';
+	}
+    } @_;
+}
+
 1;
