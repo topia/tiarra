@@ -47,15 +47,17 @@ sub import {
 	$call_pkg,
 	sub {
 	    my $class = shift;
-	    ${$instance_name} = $call_pkg->_new(@_);
+	    if (!defined ${$instance_name}) {
+		${$instance_name} = $call_pkg->_new(@_);
+		eval {
+		    # safe initialize with ->shared.
+		    ${$instance_name}->_initialize(@_);
+		};
+	    }
 	    $pkg->define_function(
 		$call_pkg,
 		sub () { ${$instance_name} },
 		@funcnames);
-	    eval {
-		# safe initialize with ->shared.
-		${$instance_name}->_initialize(@_);
-	    };
 	    ${$instance_name};
 	},
 	@funcnames,
