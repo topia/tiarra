@@ -288,8 +288,7 @@ sub interrupt {
 
     $this->cleanup;
     if (defined $this->{sock}) {
-	$this->{sock}->shutdown(2);
-	$this->{sock} = undef;
+	$this->close;
     }
     $this->callback->('interrupt', $this);
 }

@@ -39,9 +39,8 @@ sub disconnect_after_writing {
 sub disconnect {
     my $this = shift;
 
-    $this->sock->shutdown(2);
     $this->uninstall if $this->installed;
-    $this->detach;
+    $this->close;
 }
 
 sub attach {

@@ -65,6 +65,18 @@ sub detach {
     $this;
 }
 
+sub close {
+    my $this = shift;
+
+    if (!defined $this->sock) {
+	croak "already detached; can't close!";
+    }
+
+    my $sock = $this->sock;
+    $this->detach;
+    $sock->shutdown(2);
+}
+
 sub install {
     my $this = shift;
 
