@@ -2,6 +2,8 @@
 # $Id$
 # -----------------------------------------------------------------------------
 # Socket Wrapper
+# 注意: Win32 環境では Socket 以外のファイルハンドル等に select を使えません。
+# (see perlport)
 # -----------------------------------------------------------------------------
 # copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
 package Tiarra::Socket;
