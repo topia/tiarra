@@ -2,9 +2,8 @@
 # Unicode::Japanese
 # Unicode::Japanese::PurePerl
 # -----------------------------------------------------------------------------
-# $Id: Japanese.pm,v 1.66 2004/01/16 11:16:41 hio Exp $
+# $Id: Japanese.pm,v 1.69 2004/03/07 10:54:37 hio Exp $
 # -----------------------------------------------------------------------------
-
 package Unicode::Japanese::PurePerl;
 
 # methods of Unicode::Japanese::PurePerl are
@@ -17,16 +16,20 @@ package Unicode::Japanese;
 
 use strict;
 use vars qw($VERSION $PurePerl $xs_loaderror);
-$VERSION = '0.19';
+$VERSION = '0.20';
 
 # `use bytes' and `use Encode' if on perl-5.8.0 or later.
-my $evalerr_bak = $@;
-my $diehook_bak = $SIG{__DIE__};
-local($SIG{__DIE__}) = 'DEFAULT';
-$] >= 5.008 ? eval 'use bytes;use Encode;' : undef $@;
-defined($diehook_bak) and $SIG{__DIE__} = $diehook_bak;
-$@ && die $@;
-$@ = $evalerr_bak;
+if( $] >= 5.008 )
+{
+  my $evalerr;
+  {
+    local($SIG{__DIE__}) = 'DEFAULT';
+    local($@);
+    eval 'use bytes;use Encode;';
+    $evalerr = $@;
+  }
+  $evalerr and CORE::die($evalerr);
+}
 
 # -----------------------------------------------------------------------------
 # import
@@ -328,8 +331,7 @@ AUTOLOAD
     $sub = 'use bytes;'.$sub;
   }
 
-  $sub =~ /\A(.*)\z/s;
-  CORE::eval($1);
+  CORE::eval(($sub=~/(.*)/s)[0]);
   if ($@)
     {
       CORE::die $@;
@@ -383,22 +385,27 @@ sub _init_table {
       $FH = gensym;
       
       my $file = "Unicode/Japanese.pm";
-    OPEN:
+      OPEN:
       {
-	foreach my $path (@INC)
-	  {
-	    my $mypath = $path;
-	    $mypath =~ s#/$##;
-	    if (-f "$mypath/$file")
-	      {
-		open($FH,"$mypath/$file")	|| CORE::die;
-		binmode($FH);
-		last OPEN;
-	      }
-	  }
-	CORE::die "Can't find Japanese.pm in \@INC\n";
+        if( $INC{$file} )
+        {
+          open($FH,$INC{$file}) || CORE::die("could not open file [$INC{$file}] for input : $!");
+          last OPEN;
+        }
+        foreach my $path (@INC)
+          {
+            my $mypath = $path;
+            $mypath =~ s#/$##;
+            if (-f "$mypath/$file")
+              {
+                open($FH,"$mypath/$file") || CORE::die("could not open file [$INC{$file}] for input : $!");
+                last OPEN;
+              }
+          }
+        CORE::die "Can't find Japanese.pm in \@INC\n";
       }
-
+      binmode($FH);
+      
       local($/) = "\n";
       my $line;
       while($line = <$FH>)
@@ -412,8 +419,8 @@ sub _init_table {
       $HEADLEN = unpack('N', $HEADLEN);
       read($FH, $TABLE, $HEADLEN)
 	or die "Can't seek table. [$!]\n";
-      $TABLE =~ /\A(.*)\z/s;
-      $TABLE = eval $1;
+      $TABLE =~ /(.*)/s;
+      $TABLE = eval(($TABLE=~/(.*)/s)[0]);
       if($@)
 	{
 	  die "Internal Error. [$@]\n";
@@ -1065,7 +1072,7 @@ as it has a trailing binary data.
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001-2002
+Copyright 2001-2004
 SANO Taku (SAWATARI Mikage) and YAMASHINA Hio.
 All right reserved.
 

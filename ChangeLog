@@ -1,3 +1,8 @@
+2004-03-08  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* module/Unicode/Japanese.pm:
+	UniJP 0.20に置換え。
+
 2004-03-07  Topia  <topia@clovery.jp>
 
 	* tiarra:
@@ -1444,7 +1449,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.134 2004/03/07 10:34:19 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2004/03/07 10:34:19 $
-# Revision: $Revision: 1.134 $
+#       Id: $Id: ChangeLog,v 1.135 2004/03/07 17:52:34 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2004/03/07 17:52:34 $
+# Revision: $Revision: 1.135 $
