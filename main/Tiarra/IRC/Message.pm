@@ -46,7 +46,7 @@ use constant MAX_MIDDLES => 14;
 use constant MAX_PARAMS => MAX_MIDDLES + 1;
 # max params = (middles[14] + trailing[1]) = 15
 
-utils->define_array_attr_accessor(0, qw(time));
+utils->define_array_attr_accessor(0, qw(time), ['raw_prefix', PREFIX]);
 utils->define_array_attr_translate_accessor(
     0, sub {
 	my ($from, $to) = @_;
