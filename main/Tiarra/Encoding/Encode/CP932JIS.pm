@@ -1,11 +1,11 @@
-package Tiarra::Encoding::IRCJIS;
+package Tiarra::Encoding::CP932JIS;
 use strict;
 
 our $VERSION = '1.0';
 
 use Encode qw(:fallbacks);
 
-__PACKAGE__->Define(qw(irc-jis));
+__PACKAGE__->Define(qw(cp932-jis));
 
 use base qw(Encode::Encoding);
 

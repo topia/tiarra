@@ -11,7 +11,7 @@ use Carp;
 use Encode qw/find_encoding/;
 use Encode::Guess; # for getcode
 use Encode::JP::H2Z; # for h2zKana, z2hKana
-BEGIN { eval { require Tiarra::Encoding::Encode::IRCJIS } }
+BEGIN { eval { require Tiarra::Encoding::Encode::CP932JIS } }
 use Tiarra::OptionalModules;
 use base qw(Tiarra::Encoding);
 
@@ -21,7 +21,7 @@ our %encoding_names = ( # please specify _Encode.pm's canonical_ name.
     ucs4 => 'UTF-32BE',
     utf8 => 'utf8',
     utf16 => 'UTF-16',
-    jis => (find_encoding('irc-jis') ? 'irc-jis' : '7bit-jis'),
+    jis => (find_encoding('cp932-jis') ? 'cp932-jis' : '7bit-jis'),
     euc => 'euc-jp',
 );
 
