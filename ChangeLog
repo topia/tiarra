@@ -1,3 +1,8 @@
+2004-05-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* main/IrcIO.pm (receive):
+	サーバーやクライアントから空行を送られた場合に、エラーが出る問題を修正。
+
 2004-05-09  Topia  <topia@clovery.jp>
 
 	* main/Multicast.pm:
@@ -1639,7 +1644,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.148 2004/05/09 04:08:00 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2004/05/09 04:08:00 $
-# Revision: $Revision: 1.148 $
+#       Id: $Id: ChangeLog,v 1.149 2004/05/09 12:46:18 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2004/05/09 12:46:18 $
+# Revision: $Revision: 1.149 $
