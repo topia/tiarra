@@ -109,6 +109,9 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
 				残すけれど)クライアントには送信しないようにします。
       * do-not-send-to-servers	do-not-send-to-clients と同じような理由で、サーバに送信しない
 				ようにします。
+      * always-use-colon-on-last-param
+				シリアライズするとき、最終パラメータに常にコロンを使用する
+				ようにします。
   - ChannelInfo
     + 情報取得系
       * kicked-out		そのチャンネルから蹴り出されている(すでにそのチャンネルに

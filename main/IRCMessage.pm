@@ -262,10 +262,13 @@ sub serialize {
 		# 最後のパラメタなら頭にコロンを付けて後にはスペースを置かない。
 		# 但し半角スペースが一つも無く、且つコロンで始まっていなければコロンを付けない。
 		# パラメタが空文字列であった場合は例外としてコロンを付ける。
+		# また、 remark/always-use-colon-on-last-param が付いていた場合も
+		# コロンを付ける。
 		my $arg = $unicode->set($this->[PARAMS]->[$i])->conv($encoding);
 		if (length($arg) > 0 and
 		      index($arg, ' ') == -1 and
-			index($arg, ':') != 0) {
+			index($arg, ':') != 0 and
+			    !$this->remark('always-use-colon-on-last-param')) {
 		    $result .= $arg;
 		}
 		else {
