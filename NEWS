@@ -70,7 +70,7 @@
 
 	* 全般
 	  - クライアントとの接続時にチャンネルの送出順を指定する patch を
-	    暫定的に取り込みました。 network に fixed-channels ブロックを
+	    暫定的に取り込みました。 networks に fixed-channels ブロックを
 	    作り、中に channel をキー名としてマスクを列挙します。
 	    例:
 	      fixed-channels {
