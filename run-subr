@@ -1,0 +1,17 @@
+#!/bin/sh
+
+THISDIR="${THISDIR-$(dirname $0)}"
+[ "${DEBUG}" -ge 1 ] && echo "${THISDIR}/subr: start"
+[ "${DEBUG}" -ge 2 ] && echo "${THISDIR}/subr: read tiarrarc"
+[ -f "${THISDIR}/.tiarrarc" ] && . "${THISDIR}/.tiarrarc"
+
+# override
+WORKDIR="${WORKDIR:-${THISDIR}}"
+if [ -z "${TOPDIR}" ]; then
+  TOPDIR=.
+else
+  TOPDIR="${TOPDIR}/.."
+fi
+
+THISDIR="${THISDIR}/.."
+. "${THISDIR}/run"

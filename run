@@ -1,9 +1,17 @@
 #!/bin/sh
 # $Id$
 
+THISDIR="${THISDIR-$(dirname $0)}"
+[ "${DEBUG}" -ge 1 ] && echo "${THISDIR}/main: start"
+[ "${DEBUG}" -ge 2 ] && echo "${THISDIR}/main: read tiarrarc"
+[ -f "${THISDIR}/.tiarrarc" ] && . "${THISDIR}/.tiarrarc"
+
 WORKDIR=${WORKDIR:-$(dirname $0)}
-[ -f "${WORKDIR}/.tiarrarc" ] && . "${WORKDIR}/.tiarrarc"
-TOPDIR=${TOPDIR:-.}
+if [ -z "${TOPDIR}" ]; then
+  TOPDIR=.
+else
+  TOPDIR="${TOPDIR}/.."
+fi
 PERL=${PERL:-/usr/opt/bin/perl}
 PERLARG=${PERLARG:--wt}
 TIARRA=${TIARRA:-${TOPDIR}/tiarra}
@@ -11,5 +19,17 @@ CONF=${CONF:-tiarra.conf}
 REDIR_STDOUT=${REDIR_STDOUT:-errlog.stdout}
 REDIR_STDERR=${REDIR_STDERR:-errlog.stderr}
 
-cd "${WORKDIR}"
-${PERL} ${PERLARG} ${TIARRA} "--config=${CONF}" "$@" >> "${REDIR_STDOUT}" 2>> "${REDIR_STDERR}" <&- &
+if [ \! -z "${DEBUG}" ]; then
+  echo "    configuration"
+  echo "workdir: ${WORKDIR}"
+  echo "perl   : ${PERL}"
+  echo "perlarg: ${PERLARG}"
+  echo "tiarra : ${TIARRA}"
+  echo "config : ${CONF}"
+  echo "extra  : $@"
+  echo "stdout : ${REDIR_STDOUT}"
+  echo "stderr : ${REDIR_STDERR}"
+else
+  cd "${WORKDIR}"
+  ${PERL} ${PERLARG} ${TIARRA} "--config=${CONF}" "$@" >>"${REDIR_STDOUT}" 2>>"${REDIR_STDERR}" <&- &
+fi
