@@ -2,7 +2,7 @@
 # Unicode::Japanese
 # Unicode::Japanese::PurePerl
 # -----------------------------------------------------------------------------
-# $Id: Japanese.pm,v 1.63 2002/11/06 09:48:01 hio Exp $
+# $Id: Japanese.pm,v 1.66 2004/01/16 11:16:41 hio Exp $
 # -----------------------------------------------------------------------------
 
 package Unicode::Japanese::PurePerl;
@@ -17,7 +17,7 @@ package Unicode::Japanese;
 
 use strict;
 use vars qw($VERSION $PurePerl $xs_loaderror);
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 # `use bytes' and `use Encode' if on perl-5.8.0 or later.
 my $evalerr_bak = $@;
@@ -38,7 +38,14 @@ sub import
   foreach(@_)
   {
     $_ eq 'PurePerl' and $PurePerl=1, next;
-    $_ eq 'no_I18N_Japanese' and $^H &= ~0x0f00_0000,next;
+    if( $_ eq 'no_I18N_Japanese' )
+    {
+      $^H &= ~0x0f00_0000;
+      package Unicode::Japanese::PurePerl;
+      $^H &= ~0x0f00_0000;
+      package Unicode::Japanese;
+      next;
+    }
     push(@na,$_);
   }
   if( @na )
@@ -795,7 +802,7 @@ the detection is suppose to be the same for EUC-JP.
 
 =item $ocode: output character encoding (Choose from 'jis', 'sjis', 'euc', 'utf8', 'ucs2', 'ucs4', 'utf16', 'binary')
 
-=item $encode: ASCII encoding, may be omitted.
+=item $encode: encoding, may be omitted.
 
 =item $str: string
 
@@ -1079,7 +1086,7 @@ SUGIURA Tatsuki & Debian JP Project
 
 
 __DATA__
-  h{'utf16'=>{'length'=>187,'offset'=>0},'joinCsv'=>{'length'=>644,'offset'=>187},'_decodeBase64'=>{'length'=>609,'offset'=>831},'z2hNum'=>{'length'=>284,'offset'=>1440},'_utf16le_utf16'=>{'length'=>179,'offset'=>2966},'kata2hira'=>{'length'=>1242,'offset'=>1724},'_u2si2'=>{'length'=>1621,'offset'=>3145},'z2hAlpha'=>{'length'=>836,'offset'=>4766},'jcode/emoji2/eu2i.dat'=>{'length'=>8192,'offset'=>203923},'splitCsv'=>{'length'=>465,'offset'=>5602},'jcode/emoji2/eu2i2.dat'=>{'length'=>8192,'offset'=>214163},'_ucs4_utf8'=>{'length'=>936,'offset'=>6067},'h2zSym'=>{'length'=>314,'offset'=>7003},'sjis_jsky1'=>{'length'=>70,'offset'=>7317},'h2z'=>{'length'=>114,'offset'=>7387},'_s2j3'=>{'length'=>355,'offset'=>7501},'_u2s'=>{'length'=>2209,'offset'=>7856},'sjis'=>{'length'=>177,'offset'=>10065},'_u2si1'=>{'length'=>1620,'offset'=>10242},'_sj2u1'=>{'length'=>1144,'offset'=>11862},'tag2bin'=>{'length'=>328,'offset'=>13006},'z2hSym'=>{'length'=>570,'offset'=>13334},'_utf16_utf8'=>{'length'=>769,'offset'=>13904},'ucs2'=>{'length'=>183,'offset'=>14673},'jcode/emoji2/ei2u2.dat'=>{'length'=>2048,'offset'=>212115},'h2zNum'=>{'length'=>174,'offset'=>14856},'_si2u1'=>{'length'=>1228,'offset'=>15030},'h2zKanaK'=>{'length'=>979,'offset'=>16258},'strlen'=>{'length'=>360,'offset'=>17237},'_utf8_utf16'=>{'length'=>950,'offset'=>17597},'sjis_jsky2'=>{'length'=>70,'offset'=>18547},'jcode/emoji2/ei2u.dat'=>{'length'=>2048,'offset'=>201875},'getcode'=>{'length'=>1776,'offset'=>18617},'sjis_imode2'=>{'length'=>71,'offset'=>20393},'_j2s2'=>{'length'=>382,'offset'=>20464},'_validate_utf8'=>{'length'=>70,'offset'=>20846},'h2zKanaD'=>{'length'=>810,'offset'=>20916},'z2hKanaK'=>{'length'=>979,'offset'=>21726},'h2zAlpha'=>{'length'=>264,'offset'=>22705},'_utf16_utf16'=>{'length'=>300,'offset'=>22969},'_ucs2_utf8'=>{'length'=>549,'offset'=>23269},'set'=>{'length'=>2980,'offset'=>23818},'_sj2u2'=>{'length'=>1503,'offset'=>26798},'jcode/emoji2/ed2u.dat'=>{'length'=>5120,'offset'=>269459},'_utf32_ucs4'=>{'length'=>312,'offset'=>28301},'sjis_imode1'=>{'length'=>71,'offset'=>28613},'utf8'=>{'length'=>164,'offset'=>28684},'_s2e'=>{'length'=>244,'offset'=>29122},'h2zKana'=>{'length'=>185,'offset'=>28937},'z2hKana'=>{'length'=>89,'offset'=>28848},'_si2u2'=>{'length'=>1227,'offset'=>31139},'_u2sj1'=>{'length'=>1773,'offset'=>29366},'_u2sj2'=>{'length'=>1774,'offset'=>32366},'jcode/s2u.dat'=>{'length'=>48573,'offset'=>153302},'conv'=>{'length'=>1645,'offset'=>34140},'sjis_doti'=>{'length'=>188,'offset'=>35785},'_e2s'=>{'length'=>202,'offset'=>35973},'_utf16be_utf16'=>{'length'=>71,'offset'=>36175},'jcode/emoji2/eu2j.dat'=>{'length'=>20480,'offset'=>225427},'jcode/emoji2/ej2u2.dat'=>{'length'=>3072,'offset'=>245907},'hira2kata'=>{'length'=>1242,'offset'=>36246},'euc'=>{'length'=>175,'offset'=>37488},'_j2s3'=>{'length'=>337,'offset'=>37663},'jcode/emoji2/ej2u.dat'=>{'length'=>3072,'offset'=>222355},'ucs4'=>{'length'=>183,'offset'=>38000},'_sd2u'=>{'length'=>1221,'offset'=>38183},'sjis_doti1'=>{'length'=>69,'offset'=>39404},'_s2j'=>{'length'=>272,'offset'=>39473},'_s2e2'=>{'length'=>446,'offset'=>39745},'z2hKanaD'=>{'length'=>498,'offset'=>40191},'_u2sd'=>{'length'=>1616,'offset'=>40689},'jcode/emoji2/eu2j2.dat'=>{'length'=>20480,'offset'=>248979},'jcode/emoji2/eu2d.dat'=>{'length'=>8192,'offset'=>274579},'jcode/u2s.dat'=>{'length'=>85504,'offset'=>67798},'_utf8_ucs2'=>{'length'=>672,'offset'=>42305},'join_csv'=>{'length'=>92,'offset'=>42977},'_s2u'=>{'length'=>988,'offset'=>43069},'_utf32le_ucs4'=>{'length'=>178,'offset'=>44057},'sjis_jsky'=>{'length'=>189,'offset'=>44235},'sjis_imode'=>{'length'=>192,'offset'=>44959},'_e2s2'=>{'length'=>535,'offset'=>44424},'_s2j2'=>{'length'=>376,'offset'=>45151},'jis'=>{'length'=>179,'offset'=>45527},'_utf8_ucs4'=>{'length'=>1424,'offset'=>46447},'_encodeBase64'=>{'length'=>741,'offset'=>45706},'get'=>{'length'=>162,'offset'=>47871},'z2h'=>{'length'=>114,'offset'=>48033},'getu'=>{'length'=>266,'offset'=>48147},'split_csv'=>{'length'=>195,'offset'=>48413},'_loadConvTable'=>{'length'=>17934,'offset'=>48608},'strcut'=>{'length'=>1009,'offset'=>66542},'_utf32be_ucs4'=>{'length'=>70,'offset'=>67551},'_j2s'=>{'length'=>177,'offset'=>67621}}# -----------------------------------------------------------------------------
+  h{'utf16'=>{'length'=>187,'offset'=>0},'joinCsv'=>{'length'=>644,'offset'=>187},'_decodeBase64'=>{'length'=>609,'offset'=>831},'z2hNum'=>{'length'=>284,'offset'=>1440},'_utf16le_utf16'=>{'length'=>179,'offset'=>2966},'kata2hira'=>{'length'=>1242,'offset'=>1724},'_u2si2'=>{'length'=>1621,'offset'=>3145},'z2hAlpha'=>{'length'=>836,'offset'=>4766},'jcode/emoji2/eu2i.dat'=>{'length'=>8192,'offset'=>204120},'splitCsv'=>{'length'=>465,'offset'=>5602},'jcode/emoji2/eu2i2.dat'=>{'length'=>8192,'offset'=>214360},'_ucs4_utf8'=>{'length'=>936,'offset'=>6067},'h2zSym'=>{'length'=>316,'offset'=>7003},'sjis_jsky1'=>{'length'=>70,'offset'=>7319},'h2z'=>{'length'=>114,'offset'=>7389},'_s2j3'=>{'length'=>355,'offset'=>7503},'_u2s'=>{'length'=>2209,'offset'=>7858},'sjis'=>{'length'=>177,'offset'=>10067},'_u2si1'=>{'length'=>1620,'offset'=>10244},'_sj2u1'=>{'length'=>1144,'offset'=>11864},'tag2bin'=>{'length'=>328,'offset'=>13008},'z2hSym'=>{'length'=>583,'offset'=>13336},'_utf16_utf8'=>{'length'=>769,'offset'=>13919},'ucs2'=>{'length'=>183,'offset'=>14688},'jcode/emoji2/ei2u2.dat'=>{'length'=>2048,'offset'=>212312},'h2zNum'=>{'length'=>174,'offset'=>14871},'_si2u1'=>{'length'=>1228,'offset'=>15045},'h2zKanaK'=>{'length'=>979,'offset'=>16273},'strlen'=>{'length'=>360,'offset'=>17252},'_utf8_utf16'=>{'length'=>950,'offset'=>17612},'sjis_jsky2'=>{'length'=>70,'offset'=>18562},'jcode/emoji2/ei2u.dat'=>{'length'=>2048,'offset'=>202072},'getcode'=>{'length'=>1776,'offset'=>18632},'sjis_imode2'=>{'length'=>71,'offset'=>20408},'_j2s2'=>{'length'=>382,'offset'=>20479},'_validate_utf8'=>{'length'=>70,'offset'=>20861},'h2zKanaD'=>{'length'=>810,'offset'=>20931},'z2hKanaK'=>{'length'=>979,'offset'=>21741},'h2zAlpha'=>{'length'=>264,'offset'=>22720},'_utf16_utf16'=>{'length'=>300,'offset'=>22984},'_ucs2_utf8'=>{'length'=>549,'offset'=>23284},'set'=>{'length'=>2980,'offset'=>23833},'_sj2u2'=>{'length'=>1503,'offset'=>26813},'jcode/emoji2/ed2u.dat'=>{'length'=>5120,'offset'=>269656},'_utf32_ucs4'=>{'length'=>312,'offset'=>28316},'sjis_imode1'=>{'length'=>71,'offset'=>28628},'utf8'=>{'length'=>164,'offset'=>28699},'_s2e'=>{'length'=>244,'offset'=>29137},'h2zKana'=>{'length'=>185,'offset'=>28952},'z2hKana'=>{'length'=>89,'offset'=>28863},'_si2u2'=>{'length'=>1227,'offset'=>31154},'_u2sj1'=>{'length'=>1773,'offset'=>29381},'_u2sj2'=>{'length'=>1774,'offset'=>32381},'jcode/s2u.dat'=>{'length'=>48573,'offset'=>153499},'conv'=>{'length'=>1781,'offset'=>34155},'sjis_doti'=>{'length'=>188,'offset'=>35936},'_e2s'=>{'length'=>202,'offset'=>36124},'_utf16be_utf16'=>{'length'=>71,'offset'=>36326},'jcode/emoji2/eu2j.dat'=>{'length'=>20480,'offset'=>225624},'jcode/emoji2/ej2u2.dat'=>{'length'=>3072,'offset'=>246104},'hira2kata'=>{'length'=>1242,'offset'=>36397},'euc'=>{'length'=>175,'offset'=>37639},'_j2s3'=>{'length'=>337,'offset'=>37814},'jcode/emoji2/ej2u.dat'=>{'length'=>3072,'offset'=>222552},'ucs4'=>{'length'=>183,'offset'=>38151},'_sd2u'=>{'length'=>1221,'offset'=>38334},'sjis_doti1'=>{'length'=>69,'offset'=>39555},'_s2j'=>{'length'=>272,'offset'=>39624},'_s2e2'=>{'length'=>446,'offset'=>39896},'z2hKanaD'=>{'length'=>498,'offset'=>40342},'_u2sd'=>{'length'=>1616,'offset'=>40840},'jcode/emoji2/eu2j2.dat'=>{'length'=>20480,'offset'=>249176},'jcode/emoji2/eu2d.dat'=>{'length'=>8192,'offset'=>274776},'jcode/u2s.dat'=>{'length'=>85504,'offset'=>67995},'_utf8_ucs2'=>{'length'=>672,'offset'=>42456},'join_csv'=>{'length'=>92,'offset'=>43128},'_s2u'=>{'length'=>988,'offset'=>43220},'_utf32le_ucs4'=>{'length'=>178,'offset'=>44208},'sjis_jsky'=>{'length'=>189,'offset'=>44386},'sjis_imode'=>{'length'=>192,'offset'=>45110},'_e2s2'=>{'length'=>535,'offset'=>44575},'_s2j2'=>{'length'=>376,'offset'=>45302},'jis'=>{'length'=>179,'offset'=>45678},'_utf8_ucs4'=>{'length'=>1424,'offset'=>46598},'_encodeBase64'=>{'length'=>741,'offset'=>45857},'get'=>{'length'=>162,'offset'=>48022},'z2h'=>{'length'=>114,'offset'=>48184},'getu'=>{'length'=>266,'offset'=>48298},'split_csv'=>{'length'=>195,'offset'=>48564},'_loadConvTable'=>{'length'=>17980,'offset'=>48759},'strcut'=>{'length'=>1009,'offset'=>66739},'_utf32be_ucs4'=>{'length'=>70,'offset'=>67748},'_j2s'=>{'length'=>177,'offset'=>67818}}# -----------------------------------------------------------------------------
 # $bytes_utf16 = $unijp->utf16();
 # 
 sub utf16
@@ -1325,7 +1332,7 @@ sub h2zSym {
       $this->_loadConvTable;
     }
 
-  $this->{str} =~ s/(\x20|\x21|\x22|\x23|\x24|\x25|\x26|\x27|\x28|\x29|\x2a|\x2b|\x2c|\x2d|\x2e|\x2f|\x3a|\x3b|\x3c|\x3d|\x3e|\x3f|\x40|\x5b|\x5c|\x5d|\x5e|\x60|\x7b|\x7c|\x7d|\x7e)/$_h2zSym{$1}/eg;
+  $this->{str} =~ s/(\x20|\x21|\x22|\x23|\x24|\x25|\x26|\x27|\x28|\x29|\x2a|\x2b|\x2c|\x2d|\x2e|\x2f|\x3a|\x3b|\x3c|\x3d|\x3e|\x3f|\x40|\x5b|\x5c|\x5d|\x5e|_|\x60|\x7b|\x7c|\x7d|\x7e)/$_h2zSym{$1}/eg;
   
   $this;
 }
@@ -1612,7 +1619,7 @@ sub z2hSym {
       $this->_loadConvTable;
     }
 
-  $this->{str} =~ s/(\xe3\x80\x80|\xef\xbc\x8c|\xef\xbc\x8e|\xef\xbc\x9a|\xef\xbc\x9b|\xef\xbc\x9f|\xef\xbc\x81|\xef\xbd\x80|\xef\xbc\xbe|\xef\xbc\x8f|\xef\xbd\x9e|\xef\xbd\x9c|\xe2\x80\x99|\xe2\x80\x9d|\xef\xbc\x88|\xef\xbc\x89|\xef\xbc\xbb|\xef\xbc\xbd|\xef\xbd\x9b|\xef\xbd\x9d|\xef\xbc\x8b|\xef\xbc\x8d|\xef\xbc\x9d|\xef\xbc\x9c|\xef\xbc\x9e|\xef\xbf\xa5|\xef\xbc\x84|\xef\xbc\x85|\xef\xbc\x83|\xef\xbc\x86|\xef\xbc\x8a|\xef\xbc\xa0)/$_z2hSym{$1}/eg;
+  $this->{str} =~ s/(\xe3\x80\x80|\xef\xbc\x8c|\xef\xbc\x8e|\xef\xbc\x9a|\xef\xbc\x9b|\xef\xbc\x9f|\xef\xbc\x81|\xef\xbd\x80|\xef\xbc\xbe|\xef\xbc\xbf|\xef\xbc\x8f|\xef\xbd\x9e|\xef\xbd\x9c|\xe2\x80\x99|\xe2\x80\x9d|\xef\xbc\x88|\xef\xbc\x89|\xef\xbc\xbb|\xef\xbc\xbd|\xef\xbd\x9b|\xef\xbd\x9d|\xef\xbc\x8b|\xef\xbc\x8d|\xef\xbc\x9d|\xef\xbc\x9c|\xef\xbc\x9e|\xef\xbf\xa5|\xef\xbc\x84|\xef\xbc\x85|\xef\xbc\x83|\xef\xbc\x86|\xef\xbc\x8a|\xef\xbc\xa0)/$_z2hSym{$1}/eg;
   
   $this;
 }
@@ -2529,7 +2536,12 @@ sub conv {
   my (@option) = @_;
 
   my $res;
-  if($ocode eq 'utf8')
+  if(!defined($ocode))
+    {
+      use Carp;
+      croak(qq(String->conv, Param[1] is undef.));
+    }
+  elsif($ocode eq 'utf8')
     {
       $res = $this->utf8;
     }
@@ -2595,7 +2607,8 @@ sub conv {
     }
   else
     {
-      die qq(String->conv, Param[1] "$ocode" is error.\n);
+      use Carp;
+      croak(qq(String->conv, Param[1] "$ocode" is error.));
     }
 
   if(defined($encode))
@@ -2606,7 +2619,8 @@ sub conv {
 	}
       else
 	{
-	  die qq(String->conv, Param[2] "$encode" encode name error.\n);
+	  use Carp;
+	  croak(qq(String->conv, Param[2] "$encode" encode name error.));
 	}
     }
 
@@ -3248,10 +3262,10 @@ sub _loadConvTable {
 		"\x3e" => "\xef\xbc\x9e", "\x3f" => "\xef\xbc\x9f", 
 		"\x40" => "\xef\xbc\xa0", "\x5b" => "\xef\xbc\xbb", 
 		"\x5c" => "\xef\xbf\xa5", "\x5d" => "\xef\xbc\xbd", 
-		"\x5e" => "\xef\xbc\xbe", "\x60" => "\xef\xbd\x80", 
-		"\x7b" => "\xef\xbd\x9b", "\x7c" => "\xef\xbd\x9c", 
-		"\x7d" => "\xef\xbd\x9d", "\x7e" => "\xef\xbd\x9e", 
-		
+		"\x5e" => "\xef\xbc\xbe", "_" => "\xef\xbc\xbf", 
+		"\x60" => "\xef\xbd\x80", "\x7b" => "\xef\xbd\x9b", 
+		"\x7c" => "\xef\xbd\x9c", "\x7d" => "\xef\xbd\x9d", 
+		"\x7e" => "\xef\xbd\x9e", 
 );
 
 
@@ -3261,19 +3275,19 @@ sub _loadConvTable {
 		"\xef\xbc\x8e" => "\x2e", "\xef\xbc\x9a" => "\x3a", 
 		"\xef\xbc\x9b" => "\x3b", "\xef\xbc\x9f" => "\x3f", 
 		"\xef\xbc\x81" => "\x21", "\xef\xbd\x80" => "\x60", 
-		"\xef\xbc\xbe" => "\x5e", "\xef\xbc\x8f" => "\x2f", 
-		"\xef\xbd\x9e" => "\x7e", "\xef\xbd\x9c" => "\x7c", 
-		"\xe2\x80\x99" => "\x27", "\xe2\x80\x9d" => "\x22", 
-		"\xef\xbc\x88" => "\x28", "\xef\xbc\x89" => "\x29", 
-		"\xef\xbc\xbb" => "\x5b", "\xef\xbc\xbd" => "\x5d", 
-		"\xef\xbd\x9b" => "\x7b", "\xef\xbd\x9d" => "\x7d", 
-		"\xef\xbc\x8b" => "\x2b", "\xef\xbc\x8d" => "\x2d", 
-		"\xef\xbc\x9d" => "\x3d", "\xef\xbc\x9c" => "\x3c", 
-		"\xef\xbc\x9e" => "\x3e", "\xef\xbf\xa5" => "\x5c", 
-		"\xef\xbc\x84" => "\x24", "\xef\xbc\x85" => "\x25", 
-		"\xef\xbc\x83" => "\x23", "\xef\xbc\x86" => "\x26", 
-		"\xef\xbc\x8a" => "\x2a", "\xef\xbc\xa0" => "\x40", 
-		
+		"\xef\xbc\xbe" => "\x5e", "\xef\xbc\xbf" => "_", 
+		"\xef\xbc\x8f" => "\x2f", "\xef\xbd\x9e" => "\x7e", 
+		"\xef\xbd\x9c" => "\x7c", "\xe2\x80\x99" => "\x27", 
+		"\xe2\x80\x9d" => "\x22", "\xef\xbc\x88" => "\x28", 
+		"\xef\xbc\x89" => "\x29", "\xef\xbc\xbb" => "\x5b", 
+		"\xef\xbc\xbd" => "\x5d", "\xef\xbd\x9b" => "\x7b", 
+		"\xef\xbd\x9d" => "\x7d", "\xef\xbc\x8b" => "\x2b", 
+		"\xef\xbc\x8d" => "\x2d", "\xef\xbc\x9d" => "\x3d", 
+		"\xef\xbc\x9c" => "\x3c", "\xef\xbc\x9e" => "\x3e", 
+		"\xef\xbf\xa5" => "\x5c", "\xef\xbc\x84" => "\x24", 
+		"\xef\xbc\x85" => "\x25", "\xef\xbc\x83" => "\x23", 
+		"\xef\xbc\x86" => "\x26", "\xef\xbc\x8a" => "\x2a", 
+		"\xef\xbc\xa0" => "\x40", 
 );
 
 

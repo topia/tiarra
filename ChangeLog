@@ -1,3 +1,8 @@
+2004-01-20  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/Unicode/Japanese.pm:
+	同梱のUniJPを0.18から0.19に。JISの問題は解決。
+
 2004-01-14  phonohawk  <phonohawk@lycos.co.uk>
 
 	* main/Mask.pm:
@@ -1068,7 +1073,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.121 2004/01/14 14:48:35 admin Exp $
+#       Id: $Id: ChangeLog,v 1.122 2004/01/20 01:48:13 admin Exp $
 #   Author: $Author: admin $
-#     Date: $Date: 2004/01/14 14:48:35 $
-# Revision: $Revision: 1.121 $
+#     Date: $Date: 2004/01/20 01:48:13 $
+# Revision: $Revision: 1.122 $
