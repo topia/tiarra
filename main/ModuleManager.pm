@@ -16,6 +16,11 @@ use Tiarra::Utils;
 our $_shared_instance;
 utils->define_attr_getter(1, [qw(_runloop runloop)]);
 
+sub __initialized {
+    # internal public method for instance initialized
+    defined $_shared_instance;
+}
+
 sub _new {
     shift->new(shift || RunLoop->shared);
 }
