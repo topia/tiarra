@@ -237,7 +237,7 @@ sub main {
 	};
 	$SIG{__DIE__} = sub {
 	    die @_ if $_[0] =~ /^[Cc]ouldn't connect/;
-	    die @_ if $_[0] =~ /^\w+\s+Server replied/;
+	    die @_ if $_[0] =~ /^network\/.+:\s*Server replied/;
 	    die(Carp::longmess(@_));
 	}
     } else {
