@@ -51,6 +51,8 @@ use constant HOST    => 5;
 
 use constant REMARKS => 6;
 
+use constant TIME    => 7;
+
 sub new {
     my ($class,%args) = @_;
     my $obj = bless [] => $class;
@@ -63,6 +65,8 @@ sub new {
     $obj->[HOST] = undef;
 
     $obj->[REMARKS] = undef;
+
+    $obj->[TIME] = CORE::time();
 
     if (exists $args{'Line'}) {
 	$args{'Line'} =~ s/\x0d\x0a$//s; # 行末のcrlfは消去。
@@ -379,6 +383,12 @@ sub remark {
 	defined $this->[REMARKS] ?
 	    $this->[REMARKS]->{$key} : undef;
     }
+}
+
+sub time {
+    my ($this,$new_val) = @_;
+    $this->[TIME] = $new_val if defined($new_val);
+    $this->[TIME];
 }
 
 1;
