@@ -7,7 +7,7 @@
 package Tools::Hash;
 use strict;
 use warnings;
-use Tiarra::DefineEnumMixin qw(PARENT DATA);
+use enum qw(PARENT DATA);
 use Tiarra::Utils;
 use overload
     '%{}' => sub { shift->data },
@@ -32,9 +32,14 @@ sub keys	{ CORE::keys(%{shift->data}); }
 sub values	{ CORE::values(%{shift->data}); }
 
 sub clone {
-    my $this = shift;
-    # shallow copy
-    ref($this)->new(undef, {%{$this->data}});
+    my ($this, %args) = @_;
+    if ($args{deep}) {
+	eval
+	    Data::Dumper->new([$this])->Terse(1)->Deepcopy(1)->Purity(1)->Dump;
+    } else {
+	# shallow copy
+	ref($this)->new(undef, {%{$this->data}});
+    }
 }
 
 sub equals {
@@ -64,18 +69,14 @@ sub equals {
     return 1;
 }
 
-sub set_modified {
-    my $this = shift;
-    if (defined $this->parent) {
-	$this->parent->set_modified(@_);
-    }
-}
-
-sub with_session {
-    my $this = shift;
-    if (defined $this->parent) {
-	$this->parent->with_session(@_);
-    }
+foreach (qw(set_modified queue_cleanup with_session)) {
+    eval "
+    sub $_ \{
+	my \$this = shift;
+	if (defined \$this->parent) {
+	    \$this->parent->$_(\@_);
+	}
+    }";
 }
 
 sub get_value_random {
@@ -185,6 +186,7 @@ sub del_array {
 		    delete $this->data->{$key};
 		}
 		$this->set_modified;
+		$this->queue_cleanup;
 		# deleted
 		return $count;
 	    }
@@ -196,5 +198,6 @@ sub del_array {
 
 *add_value = \&add_array;
 *del_value = \&del_array;
+*del_key = \&del_array;
 
 1;
