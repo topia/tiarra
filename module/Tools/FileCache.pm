@@ -116,6 +116,24 @@ sub main_loop {
     }
 }
 
+sub destruct {
+    my $this = shared();
+
+    # expire all
+    foreach my $key (keys(%{$this->{files}})) {
+	my $file = $this->{files}->{$key};
+	foreach my $mode (keys(%$file)) {
+	    my $obj = $file->{$mode};
+	    $obj->clean();
+	    delete $this->{files}->{$key}->{$mode};
+	}
+	delete $this->{files}->{$key};
+    }
+
+    # re-run main_loop (for uninstall timer)
+    $this->main_loop();
+}
+
 # misc/timer
 sub _check_timer {
     my $this = shift;
