@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: ControlPort.pm,v 1.3 2003/06/03 15:27:42 admin Exp $
+# $Id: ControlPort.pm,v 1.4 2004/04/18 06:01:16 admin Exp $
 # -----------------------------------------------------------------------------
 =pod
     << NOTIFY Log::Channel TIARRACONTROL/1.0
@@ -180,7 +180,7 @@ sub main {
 	    if ($line =~ m|^(.+?)\s+(.+?)\s+TIARRACONTROL/(\d+)\.(\d+)$|) {
 		$this->{method} = $1;
 		$this->{module} = $2;
-		if (!{GET => 1,NOTIFT => 1}->{$this->{method}}) {
+		if (!{GET => 1,NOTIFY => 1}->{$this->{method}}) {
 		    $this->reply(501,'Method Not Implemented');
 		}
 		my $version = "$3.$4";

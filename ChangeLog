@@ -1,3 +1,8 @@
+2004-04-18  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* main/ControlPort.pm (ControlPort::Session::main):
+	誤字修正。 NOTIFT => NOTIFY
+
 2004-04-07  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO/Server.pm (new):
@@ -1567,7 +1572,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.144 2004/04/07 11:49:58 admin Exp $
+#       Id: $Id: ChangeLog,v 1.145 2004/04/18 06:01:16 admin Exp $
 #   Author: $Author: admin $
-#     Date: $Date: 2004/04/07 11:49:58 $
-# Revision: $Revision: 1.144 $
+#     Date: $Date: 2004/04/18 06:01:16 $
+# Revision: $Revision: 1.145 $
