@@ -13,7 +13,7 @@ use Timer;
 use Tiarra::Utils;
 my $utils = Tiarra::Utils->shared;
 $utils->define_attr_accessor(0,
-			     qw(installed),
+			     qw(installed name),
 			     map { ["_$_", $_] }
 				 qw(closure type interval object));
 
@@ -27,6 +27,9 @@ sub new {
     $this->type($utils->get_first_defined($opt{type}, 'timer'));
     $this->interval($utils->get_first_defined($opt{interval}, 5));
     $this->_closure($utils->get_first_defined($opt{closure}, undef));
+    $this->name($utils->get_first_defined(
+	$opt{name},
+	$utils->simple_caller_formatter('wrapmainloop registered')));
     $this;
 }
 
@@ -105,6 +108,7 @@ sub _install {
 	unless defined $this->_closure;
     if ($this->_type eq 'timer') {
 	$this->_object(Timer->new(
+	    Name => 'WrapMainLoop: '.$this->name,
 	    Repeat => 1,
 	    Interval => $this->_interval,
 	    Code => $this->_closure)->install);
