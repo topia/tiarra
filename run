@@ -23,8 +23,8 @@ PERL=${PERL:-/usr/bin/perl}
 PERLARG=${PERLARG:--w}
 TIARRA=${TIARRA:-${TOPDIR}/tiarra}
 CONF=${CONF:-tiarra.conf}
-REDIR_STDOUT=${REDIR_STDOUT:-errlog.stdout}
-REDIR_STDERR=${REDIR_STDERR:-errlog.stderr}
+REDIR_STDOUT=${REDIR_STDOUT:->errlog.stdout}
+REDIR_STDERR=${REDIR_STDERR:->errlog.stderr}
 REDIR_STDIN=${REDIR_STDIN:-&-}
 DAEMON_MODE=${DAEMON_MODE:-yes}
 
@@ -34,8 +34,8 @@ cmd_line="${cmd_line} "'${TIARRA}'
 cmd_line="${cmd_line} "'--config="${CONF}"'
 cmd_line="${cmd_line} ${TIARRAARG}"
 cmd_line="${cmd_line} "'"$@"'
-[ "X${REDIR_STDOUT}" = "X-" ] || cmd_line="${cmd_line} >>${REDIR_STDOUT}"
-[ "X${REDIR_STDERR}" = "X-" ] || cmd_line="${cmd_line} 2>>${REDIR_STDERR}"
+[ "X${REDIR_STDOUT}" = "X-" ] || cmd_line="${cmd_line} >${REDIR_STDOUT}"
+[ "X${REDIR_STDERR}" = "X-" ] || cmd_line="${cmd_line} 2>${REDIR_STDERR}"
 [ "X${REDIR_STDIN}" = "X-" ] || cmd_line="${cmd_line} <${REDIR_STDIN}"
 
 if [ "X${DAEMON_MODE}" = "Xyes" ]; then
