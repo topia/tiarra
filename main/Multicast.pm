@@ -637,7 +637,7 @@ sub forward_to_server {
     }
     else {
 	my $io = $runloop->network($network_name);
-	if (defined $io) {
+	if (defined $io && $io->logged_in) {
 	    $io->send_message($msg);
 	}
     }
@@ -646,7 +646,7 @@ sub forward_to_server {
 sub distribute_to_servers {
     no strict;
     my $msg = shift;
-    foreach my $server (values %{$runloop->networks}) {
+    foreach my $server ($runloop->networks_list) {
 	if (defined $hijack_forward_to_server) {
 	    #::printmsg("forward_to_server HIJACKED");
 	    $hijack_forward_to_server->($msg, $server->network_name);
