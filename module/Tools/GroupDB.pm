@@ -31,6 +31,7 @@ use File::stat;
 use Unicode::Japanese;
 use Mask;
 use Carp;
+use Module::Use qw(Tools::HashTools);
 use Tools::HashTools;
 
 sub new {
