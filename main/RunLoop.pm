@@ -26,6 +26,7 @@ use Timer;
 use ControlPort;
 use Hook;
 our @ISA = 'HookTarget';
+use Tiarra::SharedMixin;
 our $_shared_instance;
 
 BEGIN {
@@ -37,13 +38,7 @@ BEGIN {
     }
 }
 
-*shared = \&shared_loop;
-sub shared_loop {
-    if (!defined $_shared_instance) {
-	$_shared_instance = _new RunLoop;
-    }
-    $_shared_instance;
-}
+*shared_loop = \&shared;
 
 sub _new {
     my $class = shift;
