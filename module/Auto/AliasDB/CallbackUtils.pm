@@ -85,8 +85,12 @@ sub register_stdcallbacks {
     register_callback(\&RandomSelectConvert, $callbacks);
     register_callback(\&RandomAliasConvert, $callbacks);
     register_callback(\&JoinedListConvert, $callbacks);
-    register_RandomNickConvert($callbacks, $msg->param(0), $sender);
-    register_MessageReplace($callbacks, $msg->param(1));
+    if (defined $msg) {
+	if (defined $sender) {
+	    register_RandomNickConvert($callbacks, $msg->param(0), $sender);
+	}
+	register_MessageReplace($callbacks, $msg->param(1));
+    }
 
     return $callbacks;
 }
