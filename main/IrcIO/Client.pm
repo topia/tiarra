@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Client.pm,v 1.26 2004/02/23 05:41:21 topia Exp $
+# $Id: Client.pm,v 1.27 2004/03/13 07:17:34 admin Exp $
 # -----------------------------------------------------------------------------
 # IrcIO::Clientはクライアントからの接続を受け、
 # IRCメッセージをやり取りするクラスです。
@@ -9,6 +9,7 @@ use strict;
 use warnings;
 use Carp;
 use base qw(IrcIO);
+use IrcIO;
 use Net::hostent;
 use Crypt;
 use Configuration;
@@ -17,10 +18,11 @@ use Mask;
 use LocalChannelManager;
 use NumericReply;
 
-use SelfLoader;
-SelfLoader->load_stubs; # このクラスには親クラスがあるから。(SelfLoaderのpodを参照)
-1;
-__DATA__
+# 複数のパッケージを混在させてるとSelfLoaderが使えない…？
+#use SelfLoader;
+#SelfLoader->load_stubs; # このクラスには親クラスがあるから。(SelfLoaderのpodを参照)
+#1;
+#__DATA__
 
 sub new {
     my ($class,$sock) = @_;
@@ -468,6 +470,9 @@ sub inform_joinning_channels {
 	    my $ch_name = $_;
 	    if (Mask::match($mask, $ch_name)) {
 		$send_channelinfo->(@{$channels{$ch_name}});
+		# channel-infoフックの引数は (IrcIO::Client, チャンネル名)
+		IrcIO::Client::HookTarget->shared->call(
+		    'channel-info', $this, $ch_name);
 		delete $channels{$ch_name};
 		last;
 	    }
@@ -475,9 +480,55 @@ sub inform_joinning_channels {
     }
 
     # のこりを出力
-    map {
-	$send_channelinfo->(@$_);
-    } values %channels;
+    while (my ($ch_name, $pair) = each %channels) {
+	$send_channelinfo->(@$pair);
+	IrcIO::Client::HookTarget->shared->call(
+	    'channel-info', $this, $ch_name);
+    }
+}
+
+# -----------------------------------------------------------------------------
+# クライアントにチャンネル情報(JOIN,TOPIC,NAMES等)を渡した直後に呼ばれるフック。
+# チャンネル名(multi server modeならネットワーク名付き)を引数として、
+# チャンネル一つにつき一度ずつ呼ばれる。
+#
+# my $hook = IrcIO::Client::Hook->new(sub {
+#     my $hook_itself = shift;
+#     # 何らかの処理を行なう。
+# })->install('channel-info'); # チャンネル情報転送時にこのフックを呼ぶ。
+# -----------------------------------------------------------------------------
+package IrcIO::Client::Hook;
+use FunctionalVariable;
+use base 'Hook';
+
+our $HOOK_TARGET_NAME = 'IrcIO::Client::HookTarget';
+our @HOOK_NAME_CANDIDATES = qw/channel-info/;
+our $HOOK_NAME_DEFAULT = 'channel-info';
+our $HOOK_TARGET_DEFAULT;
+FunctionalVariable::tie(
+    \$HOOK_TARGET_DEFAULT,
+    FETCH => sub {
+	IrcIO::Client::HookTarget->shared;
+    },
+   );
+
+# -----------------------------------------------------------------------------
+package IrcIO::Client::HookTarget;
+use Hook;
+our @ISA = 'HookTarget';
+our $_shared;
+
+sub shared {
+    my $class = shift;
+    if (!defined $_shared) {
+	$_shared = bless {} => $class; # 繼承するなら問題になるが…
+    }
+    $_shared;
+}
+
+sub call {
+    my ($this, $name, @args) = @_;
+    $this->call_hooks($name, @args);
 }
 
 1;

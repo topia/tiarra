@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Recent.pm,v 1.9 2004/02/23 02:46:19 topia Exp $
+# $Id: Recent.pm,v 1.10 2004/03/13 07:17:35 admin Exp $
 # -----------------------------------------------------------------------------
 # Local: $Clovery: tiarra/module/Log/Recent.pm,v 1.5 2003/02/11 07:59:32 topia Exp $
 package Log::Recent;
@@ -25,7 +25,32 @@ sub new {
 	    },
 	    $this,
 	    'S_PRIVMSG','C_PRIVMSG','S_NOTICE','C_NOTICE');
+    $this->{hook} = IrcIO::Client::Hook->new(
+	sub {
+	    my ($hook, $client, $ch_name) = @_;
+	    my $ch = RunLoop->shared->channel($ch_name);
+	    # ログはあるか？
+	    my $vec = $ch->remarks('recent-log');
+	    if (defined $vec) {
+		my $ch_name;
+		foreach my $elem (@$vec) {
+		    $ch_name =
+			RunLoop->shared->multi_server_mode_p ?
+			    $elem->[0] : $ch->name;
+		    $client->send_message(
+			IRCMessage->new(
+			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(channel log)),
+			    Command => 'NOTICE',
+			    Params => [$ch_name,$elem->[1]]));
+		}
+	    }
+	})->install('channel-info');
     $this;
+}
+
+sub destruct {
+    my $this = shift;
+    $this->{hook} and $this->{hook}->uninstall;
 }
 
 sub message_arrived {
@@ -50,26 +75,27 @@ sub client_attached {
 		Command => 'NOTICE',
 		Params => [$local_nick,$elem->[1]])); # $elem->[0]は常に'priv'
     }
+
     # 次に各チャンネル
-    foreach my $network (values %{RunLoop->shared->networks}) {
-	foreach my $ch (values %{$network->channels}) {
-	    # ログはあるか？
-	    my $vec = $ch->remarks('recent-log');
-	    if (defined $vec) {
-		my $ch_name;
-		foreach my $elem (@$vec) {
-		    $ch_name =
-			RunLoop->shared->multi_server_mode_p ?
-			    $elem->[0] : $ch->name;
-		    $client->send_message(
-			IRCMessage->new(
-			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(channel log)),
-			    Command => 'NOTICE',
-			    Params => [$ch_name,$elem->[1]]));
-		}
-	    }
-	}
-    }
+#    foreach my $network (values %{RunLoop->shared->networks}) {
+#	foreach my $ch (values %{$network->channels}) {
+#	    # ログはあるか？
+#	    my $vec = $ch->remarks('recent-log');
+#	    if (defined $vec) {
+#		my $ch_name;
+#		foreach my $elem (@$vec) {
+#		    $ch_name =
+#			RunLoop->shared->multi_server_mode_p ?
+#			    $elem->[0] : $ch->name;
+#		    $client->send_message(
+#			IRCMessage->new(
+#			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(channel log)),
+#			    Command => 'NOTICE',
+#			    Params => [$ch_name,$elem->[1]]));
+#		}
+#	    }
+#	}
+#    }
 }
 
 *S_PRIVMSG = \&PRIVMSG_or_NOTICE;

@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # Makefile which deletes all backup files made by Emacs.
 # -----------------------------------------------------------------------------
-# $Id: Makefile,v 1.3 2003/06/03 15:27:43 admin Exp $
+# $Id: Makefile,v 1.4 2004/03/13 07:17:33 admin Exp $
 # -----------------------------------------------------------------------------
 all:
 	find . -name \*\~ -print0 | xargs -0 rm -f
@@ -9,6 +9,7 @@ all:
 
 update:
 	cvs -z 5 -q up -dP
+	./makedoc
 
 DIFF_PATH :=
 VENDOR_MASTER := ../vendor/cvs/master

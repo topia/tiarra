@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: RunLoop.pm,v 1.54 2004/02/23 06:24:20 topia Exp $
+# $Id: RunLoop.pm,v 1.56 2004/03/13 07:17:34 admin Exp $
 # -----------------------------------------------------------------------------
 # このクラスはTiarraのメインループを実装します。
 # select()を実行し、サーバーやクライアントとのI/Oを行うのはこのクラスです。
@@ -88,8 +88,6 @@ sub _new {
 
 	timers => [], # インストールされている全てのTimer
 	external_sockets => [], # インストールされている全てのExternalSocket
-	#hooks_before_select => [], # インストールされている全てのbefore-selectフック
-	#hooks_after_select => [], # インストールされている全てのafter-selectフック
 
 	conf_reloaded_hook => undef, # この下でインストールするフック
     };
@@ -666,67 +664,6 @@ sub find_esock_with_socket {
     undef;
 }
 
-=pod
-sub install_hook {
-    my ($this,$hook_name,$hook) = @_;
-    my $array = do {
-	if ($hook_name eq 'before-select') {
-	    $this->{hooks_before_select};
-	}
-	elsif ($hook_name eq 'after-select') {
-	    $this->{hooks_after_select};
-	}
-	else {
-	    croak "RunLoop->install_hook, hook name '$hook_name' is invalid.\n";
-	}
-    };
-    push @$array,$hook;
-    $this;
-}
-
-sub uninstall_hook {
-    my ($this,$hook_name,$hook) = @_;
-    my $array = do {
-	if ($hook_name eq 'before-select') {
-	    $this->{hooks_before_select};
-	}
-	elsif ($hook_name eq 'after-select') {
-	    $this->{hooks_after_select};
-	}
-	else {
-	    croak "RunLoop->uninstall_hook, hook name '$hook_name' is invalid.\n";
-	}
-    };
-    @$array = grep {
-	$_ != $hook;
-    } @$array;
-    $this;
-}
-
-sub call_hooks {
-    my ($this,$hook_name) = @_;
-    my $array = do {
-	if ($hook_name eq 'before-select') {
-	    $this->{hooks_before_select};
-	}
-	elsif ($hook_name eq 'after-select') {
-	    $this->{hooks_after_select};
-	}
-	else {
-	    croak "RunLoop->call_hooks, hook name '$hook_name' is invalid.\n";
-	}
-    };
-    foreach my $hook (@$array) {
-	eval {
-	    $hook->call;
-	}; if ($@) {
-	    die "RunLoop: Exception in calling hook.\n$@\n";
-	}
-    }
-}
-
-=cut
-
 sub install_timer {
     my ($this,$timer) = @_;
     push @{$this->{timers}},$timer;
@@ -883,7 +820,7 @@ sub run {
     }
 
     my $zerotime = {
-	limit => 100,
+	limit => 300,
 	minimum_to_reset => 2,
 	interval => 10,
 
@@ -905,7 +842,7 @@ sub run {
 		}
 	    }
 	}
-	elsif ($elapsed < $zerotime->{minimum_to_reset}) {
+	elsif ($elapsed > $zerotime->{minimum_to_reset}) {
 	    $zerotime->{count} = 0;
 	}
     };
@@ -1286,9 +1223,6 @@ sub notify_msg {
 # })->install('after-select'); # select実行直後にこのフックを呼ぶ。
 # -----------------------------------------------------------------------------
 package RunLoop::Hook;
-#use strict;
-#use warnings;
-#use Carp;
 use FunctionalVariable;
 use base 'Hook';
 
@@ -1302,68 +1236,5 @@ FunctionalVariable::tie(
 	RunLoop->shared;
     },
    );
-
-=pod
-sub new {
-    my ($class,$code) = @_;
-    my $this = {
-	runloop => undef,
-	hook_name => undef,
-
-	code => $code,
-    };
-
-    if (!defined $code) {
-	croak "RunLoop::Hook->new, Arg[0] was undef.\n";
-    }
-    elsif (ref($code) ne 'CODE') {
-	croak "RunLoop::Hook->new, Arg[0] was bad type.\n";
-    }
-
-    bless $this,$class;
-}
-
-sub install {
-    # $hook_name: 'before-select' または 'after-select'。
-    #             それぞれselect直前か直後に呼ばれる。省略されたりundefが渡された場合はafter-selectになる。
-    # $runloop:   インストールするRunLoop。省略された場合はRunLoop->shared。
-    my ($this,$hook_name,$runloop) = @_;
-    $hook_name = 'after-select' if !defined $hook_name;
-    $runloop = RunLoop->shared if !defined $runloop;
-
-    if (defined $this->{runloop}) {
-	croak "RunLoop::Hook->install, this hook is already installed.\n";
-    }
-
-    $this->{runloop} = $runloop;
-    $this->{hook_name} = $hook_name;
-    $runloop->install_hook($hook_name,$this);
-
-    $this;
-}
-
-sub uninstall {
-    my $this = shift;
-
-    $this->{runloop}->uninstall_hook($this->{hook_name},$this);
-    $this->{runloop} = undef;
-    $this->{hook_name} = undef;
-
-    $this;
-}
-
-sub call {
-    my $this = shift;
-
-    my ($caller_pkg) = caller;
-    if ($caller_pkg->isa('RunLoop')) {
-	$this->{code}->($this);
-    }
-    else {
-	croak "Only RunLoop can call RunLoop::Hook->call\n";
-    }
-}
-
-=cut
 
 1;

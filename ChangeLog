@@ -1,3 +1,26 @@
+2004-03-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* main/Hook.pm (Hook::call, HookTarget::call_hooks):
+	フック関数に引数を渡せるように変更。
+
+	* main/RunLoop.pm:
+	Hook.pmで一般化したためにコメントアウトしてあったフック関連のコードを削除。
+
+	* main/IrcIO/Client.pm (inform_joinning_channels):
+	チャンネル情報一つ転送される度に呼ばれるフック channel-info を定義。
+	このフックには引数としてIrcIO::Client自身とチャンネル名が渡される。
+	フッククラスは同ファイルで定義されるIrcIO::Client::Hook。
+
+	* module/Log/Recent/pm:
+	クライアントに送られるチャンネルと同じ順番でログも送るように変更。
+	この動作はIrcIO::Clientのフックを利用している。
+
+	* main/RunLoop.pm (run):
+	Tiarra暴走検出のコードにバグがあったので修正。
+	0秒selectに2秒以上の間隔が開いた場合にはカウンタをリセットする意図があったと思うが
+	2秒*以下*の間隔でリセットしていた。
+	ついでなので警告の閾値も300まで引き上げ。
+
 2004-03-09  Topia  <topia@clovery.jp>
 
 	* module/Client/Cache.pm:
@@ -1454,7 +1477,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.136 2004/03/09 07:48:12 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2004/03/09 07:48:12 $
-# Revision: $Revision: 1.136 $
+#       Id: $Id: ChangeLog,v 1.138 2004/03/13 07:17:33 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2004/03/13 07:17:33 $
+# Revision: $Revision: 1.138 $

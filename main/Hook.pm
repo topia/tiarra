@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Hook.pm,v 1.1 2003/08/12 01:45:35 admin Exp $
+# $Id: Hook.pm,v 1.2 2004/03/13 07:17:34 admin Exp $
 # -----------------------------------------------------------------------------
 # Hook: あらゆるフックのベースクラス
 # HookTarget: あらゆるフック先のベースクラス
@@ -23,7 +23,7 @@
 #
 # $HOOK_TARGET_DEFAULT:
 #   フックを掛ける対象のオブジェクトが省略された場合のデフォルト値。
-#   これは省略可能で、
+#   これは省略可能で、省略した場合はinstall時にターゲットの省略が出来なくなる。
 #
 # これらの変数を定義し、Hookを@ISAに入れたパッケージを作る。
 # -----------------------------------------------------------------------------
@@ -31,6 +31,8 @@
 #
 # HookTargetを@ISAに入れたクラスを作る。コンストラクタでの配慮は不要。
 # $obj->call_hooks($hook_name)で、インストールされた全てのフックを呼ぶ。
+# $obj->call_hooks($hook_name, $foo, $bar, $baz)のように任意の個数の引数を
+# 渡す事が可能で、その場合はそれらを引数としてフック関数が呼ばれる。
 #
 # 現在の実装では、HookTargetはオブジェクトをハッシュで持つクラスでのみ使用可能。
 # また、`installed-hooks'と云うキーを勝手に使う。
@@ -149,14 +151,15 @@ sub uninstall {
 }
 
 sub call {
-    my $this = shift;
+    my ($this, @args) = @_;
 
     my ($caller_pkg) = caller(2);
     if ($caller_pkg->isa(ref $this->{target})) {
-	$this->{code}->($this);
+	$this->{code}->($this, @args);
     }
     else {
-	croak "Only ${\ref($this->{target})} can call ${\ref($this)}->call\n";
+	croak "Only ${\ref($this->{target})} can call ${\ref($this)}->call\n".
+	  "$caller_pkg is not allowed to do so.\n";
     }
 }
 
@@ -205,12 +208,12 @@ sub uninstall_hook {
 }
 
 sub call_hooks {
-    my ($this, $hook_name) = @_;
+    my ($this, $hook_name, @args) = @_;
     my $array = $this->_get_hooks_array($hook_name);
 
     foreach my $hook (@$array) {
 	eval {
-	    $hook->call;
+	    $hook->call(@args);
 	}; if ($@) {
 	    die ref($this)."->call_hooks, exception occured: $@\n";
 	}
