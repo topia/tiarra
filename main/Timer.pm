@@ -33,6 +33,8 @@ use strict;
 use warnings;
 use Carp;
 use RunLoop;
+use Tiarra::Utils;
+Tiarra::Utils->define_attr_accessor(0, qw(interval));
 
 sub new {
     my ($class,%args) = @_;
@@ -153,18 +155,6 @@ sub execute {
     }
 
     $this;
-}
-
-sub interval {
-    # 明示的にundefを渡せば、intervalが解除される。
-    my ($this,$value) = @_;
-    if (defined $value) {
-	$this->{interval} = $value;
-    }
-    elsif (@_ >= 2) {
-	$this->{interval} = undef;
-    }
-    $this->{interval};
 }
 
 sub reset {
