@@ -212,6 +212,8 @@ sub define_proxy {
 }
 
 sub define_enum {
+    # this function is deprecated.
+    # please use enum.pm instead.
     my $pkg = shift;
     my $i = 0;
     foreach (@_) {
