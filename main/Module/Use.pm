@@ -9,6 +9,7 @@
 package Module::Use;
 use strict;
 use warnings;
+use ModuleManager;
 
 sub import {
     my ($class,@modules) = @_;
@@ -22,9 +23,9 @@ sub import {
 	eval qq{ \$${_}::USED{\$caller_pkg} = 1; };
     }
 
-    if (%ModuleManager::) {
+    if (ModuleManager->__initialized) {
 	# ModuleManager が存在していれば、 ModuleManagerにuse先を登録。
-	# 存在していなければ MainLoop 経由で起動されてないと思うので無視。
+	# 存在していなければ RunLoop 経由で起動されていないと思うので無視。
 	my $mod_manager = ModuleManager->shared_manager;
 	foreach (@modules) {
 	    $mod_manager->timestamp($_,time);
