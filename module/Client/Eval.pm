@@ -15,7 +15,9 @@ sub message_arrived {
     # クライアントからのメッセージか？
     if ($sender->isa('IrcIO::Client')) {
 	# 指定されたコマンドか?
-	if (Mask::match_deep([$this->config->command('all')], $msg->command)) {
+	my $cmd = Mask::match_deep([$this->config->command('all')], $msg->command);
+	my $hexcmd = Mask::match_deep([$this->config->hex_command('all')], $msg->command);
+	if ($cmd || $hexcmd) {
 	    # メッセージ再構築
 	    my ($method) = join(' ', @{$msg->params});
 	    my ($ret, $err);
@@ -38,17 +40,38 @@ sub message_arrived {
 		Params => [RunLoop->shared_loop->current_nick,
 			   ''],
 	       );
+	    my $process = sub {
+		if (defined $this->config->max_line &&
+			@_ > $this->config->max_line) {
+		    splice @_, $this->config->max_line;
+		}
+		map {
+		    if ($hexcmd) {
+			s/([^\s,'[:print:]])/'\x'.unpack('H*', $1)/eg;
+			s/\$/\\\$/g;
+		    }
+		    $_;
+		} @_;
+	    };
 	    do {
-		local($Data::Dumper::Terse) = 1;
-		local($Data::Dumper::Purity) = 1;
+		my $dumper = sub {
+		    my $val = shift;
+		    local $SIG{__WARN__} = sub {};
+		    Data::Dumper->new([$val])->Terse(1)->Purity(1)
+			    ->Seen({
+				($this->_runloop ne $val) ?
+				    (current_runloop => $this->_runloop) :
+					(),
+			    })->Dump."\n";
+		};
 		map {
 		    my $new = $message->clone;
 		    $new->param(1, $_);
 		    $sender->send_message($new);
 		} (
-		    (split /\n/, 'method: '.Dumper($method)),
-		    (split /\n/, 'result: '.Dumper($ret)),
-		    (split /\n/, 'error: '.$err),
+		    $process->(split /\n/, 'method: '.$dumper->($method)),
+		    $process->(split /\n/, 'result: '.$dumper->($ret)),
+		    $process->(split /\n/, 'error: '.$err),
 		   );
 		return undef;
 	    };
@@ -69,10 +92,18 @@ sub reload {
     ReloadTrigger->_install_reload_timer;
     return undef;
 }
+
 sub reload_mod {
     my $name = shift;
-    delete $INC{$name};
-    require $name;
+    $name .= '.pm';
+    $name =~ s|::|/|g;
+    reload_pm($name);
+}
+
+sub reload_pm {
+    my $file = shift;
+    delete $INC{$file};
+    require $file;
 }
 
 1;
@@ -84,4 +115,13 @@ default: off
 # この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された
 # コマンド名を設定すべきではありません。
 command: eval
+
+# hex eval を実行するコマンド名。省略されるとコマンドを追加しません。
+# この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された
+# コマンド名を設定すべきではありません。
+hex-command: hexeval
+
+# 表示する最大行数を指定します。省略するとすべての行を表示します。
+max-line: 30
+
 =cut
