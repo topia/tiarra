@@ -38,9 +38,9 @@ sub cond_yesno {
     my ($value, $default) = @_;
 
     return $default unless defined $value;
-    return 0 if ($value =~ /[fn]/i); # false/no
-    return 1 if ($value =~ /[ty]/i); # true/yes
-    return 1 if ($value); # 数値判定
+    return 0 if $value =~ /[fn]/i; # false/no
+    return 1 if $value =~ /[ty]/i; # true/yes
+    return 1 if $value; # 数値判定
     return 0;
 }
 
