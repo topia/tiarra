@@ -200,11 +200,10 @@ sub set {
 
 sub conv {
     my $this = shift;
-    my $str = shift;
     my $code = shift;
     my $encode = shift;
 
-    $str = $this->encode($str, $code);
+    my $str = $this->encode($code);
 
     if (defined $encode && defined $str) {
 	if ($encode eq 'base64') {
