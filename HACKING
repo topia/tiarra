@@ -12,6 +12,47 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
     書いてください。
 
 * 良く使うモジュール/関数
+  - Tiarra::SharedMixin(main/Tiarra/SharedMixin.pm)
+    インポートするだけで ->shared を簡単に実現する mixin です。
+    ->_new(...) がインスタンス初期化に呼ばれ、 ->_initialize(...) が
+    (->shared を利用する文を含む)初期化用に呼ばれます。 ->_initialize は定義しなくても OK です。
+    + $class_or_this->_this	$class_or_this がただのパッケージ名だったとしても、
+				->shared を呼び出してインスタンス化します。
+				クラスメソッド (package->func(...)) を簡単に実装したいときに
+				使えます。
+  - Tiarra::Utils(main/Tiarra/Utils.pm)
+    このモジュールの関数はすべて package->func(...) または package->shared->func(...) で呼んで
+    ください。
+    + define_function($code, $funcname, ...)
+				呼び出し元パッケージに $code で指定された関数を $funcname という
+				名前で追加します。
+    + define_attr_accessor($class_method, $name, ...)
+				呼び出し元パッケージに $name で指定された属性アクセサ(値の取得設定
+				ともに可能なもの)を定義します。
+				$class_method には、この関数を package->name(...) でアクセスできる
+				ようにするかを指定します。
+				$name には無名配列を指定することもでき、その場合は[関数名, 属性名]
+				と解釈されます。
+    + define_attr_getter($class_method, $name, ...)
+				呼び出し元パッケージに $name で指定された属性取得関数を定義します。
+				引数の意味は define_attr_accessor と同じです。
+    + define_attr_setter($class_method, $name, ...)
+				呼び出し元パッケージに $name で指定された属性設定関数を定義します。
+				引数の意味は define_attr_accessor と同じです。
+    + get_packag($level)	呼び出し元のパッケージ名を取得します。
+				$level が省略された場合は 0 で、この値は呼び出し元の呼び出し元(通常
+				欲しいと思われる値)を返します。
+    + cond_yesno($str, $default)
+				$str を yes か no か評価します。他には true と false を受け付け
+				ます。 $str が未定義だった場合は $default (または 0)を返します。
+    + to_str($value, ...)	任意の値を文字化します。特に undef/ininitialized なエラーを無視して
+				文字化します。
+    + get_first_defined($value, ...)
+				引数の中で一番最初に定義されていたものを返します。
+				(with defined_or: $a // $b // $c // ...)
+  - Tiarra::ShorthandConfMixin(main/Tiarra/ShorthandConfMixin.pm)
+    _runloop を定義した状態でインポートすると、 _conf, _conf_general, _conf_networks,
+    _conf_messages を定義します。
   - Mask(main/Mask.pm)
     汎用に使えるマスクマッチング関数群が実装してあります。
     良く使う形は
