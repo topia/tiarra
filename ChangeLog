@@ -1,3 +1,8 @@
+2004-03-09  Topia  <topia@clovery.jp>
+
+	* module/Client/Cache.pm:
+	  - destruct において、呼ぶメソッドを勘違いしていたのを修正。
+
 2004-03-08  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Unicode/Japanese.pm:
@@ -1449,7 +1454,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.135 2004/03/07 17:52:34 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2004/03/07 17:52:34 $
-# Revision: $Revision: 1.135 $
+#       Id: $Id: ChangeLog,v 1.136 2004/03/09 07:48:12 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2004/03/09 07:48:12 $
+# Revision: $Revision: 1.136 $
