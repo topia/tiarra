@@ -19,6 +19,9 @@ use UNIVERSAL;
 use Multicast;
 use NumericReply;
 use Tiarra::Utils;
+use Tiarra::Socket;
+use Tiarra::Resolver;
+use base qw(Tiarra::Utils);
 
 sub new {
     my ($class,$runloop,$network_name) = @_;
@@ -26,7 +29,6 @@ sub new {
     $this->{network_name} = $network_name;
     $this->{current_nick} = ''; # 現在使用中のnick。ログインしていなければ空。
     $this->{server_hostname} = ''; # サーバが主張している hostname。こちらもログインしてなければ空。
-    $this->reload_config;
 
     $this->{logged_in} = 0; # このサーバーへのログインに成功しているかどうか。
     $this->{new_connection} = 1;
@@ -40,14 +42,57 @@ sub new {
     $this->{people} = {}; # nick => PersonalInfo
     $this->{isupport} = {}; # isupport
 
-    $this->connect;
+    $this->{connecting} = undef;
+    $this->state('initializing');
+
+    $this->reconnect;
+}
+
+sub connecting { defined shift->{connecting}; }
+
+sub _connect_interrupted {
+    my $this = shift;
+    $this->state_terminating || $this->state_finalizing;
+}
+
+sub _gen_msg {
+    my ($this, $msg) = @_;
+
+    'network/'.$this->network_name.': '.$msg;
+}
+
+sub die {
+    my ($this, $msg) = @_;
+    CORE::die($this->_gen_msg($msg));
+}
+
+sub warn {
+    my ($this, $msg) = @_;
+    CORE::warn($this->_gen_msg($msg));
+}
+
+sub printmsg {
+    my ($this, $msg) = @_;
+
+#    if (defined $this->{last_msg} &&
+#	    $this->{last_msg}->[0] eq $msg &&
+#		$this->{last_msg}->[1] <= (time - 10)) {
+#	# repeated
+#	return
+#    }
+#    $this->{last_msg} = [$msg, time];
+    ::printmsg($this->_gen_msg($msg));
 }
 
 Tiarra::Utils->define_attr_getter(0,
-				  qw(network_name current_nick),
+				  qw(network_name current_nick logged_in),
 				  qw(server_hostname isupport config),
 				  [qw(host server_host)]);
 Tiarra::Utils->define_attr_accessor(0, qw(state));
+Tiarra::Utils->define_attr_enum_accessor('state', 'eq',
+					 qw(connecting finalizing terminating),
+					 qw(terminated finalized connected),
+					 qw(reconnecting));
 
 sub nick_p {
     my ($this, $nick) = @_;
@@ -124,18 +169,20 @@ sub reload_config {
     my $conf = $this->{config} = $this->_conf->get($this->{network_name});
     $this->{server_host} = $conf->host;
     $this->{server_port} = $conf->port;
-    $this->{destination} = do {
-	if ($this->{server_host} =~ m/^[0-9a-fA-F:]+$/) {
-	    "[$this->{server_host}]:$this->{server_port}";
-	}
-	else {
-	    "$this->{server_host}:$this->{server_port}";
-	}
-    };
     $this->{server_password} = $conf->password;
     $this->{initial_nick} = $this->config_or_default('nick'); # ログイン時に設定するnick。
     $this->{user_shortname} = $this->config_or_default('user');
     $this->{user_realname} = $this->config_or_default('name');
+    $this->{prefer_socket_types} = [qw(ipv6 ipv4)];
+}
+
+sub destination {
+    my $this = shift;
+    Tiarra::Socket->repr_destination(
+	host => $this->{server_host},
+	addr => $this->{server_addr},
+	port => $this->{server_port},
+	type => $this->{proto});
 }
 
 sub person_if_exists {
@@ -173,109 +220,201 @@ sub channel {
     $this->{channels}->{$channel_name};
 }
 
+sub _queue_retry {
+    my $this = shift;
+
+    return if $this->_connect_interrupted;
+    $this->state_reconnecting(1);
+
+    $this->_cleanup if defined $this->{timer};
+    $this->{timer} = Timer->new(
+	Name => $this->_gen_msg('retry timer'),
+	After => 30,
+	Code => sub {
+	    $this->{timer} = undef;
+	    $this->{connecting} = undef;
+	    return if $this->_connect_interrupted;
+	    $this->connect;
+	})->install;
+}
+
+sub reconnect {
+    my $this = shift;
+    $this->reload_config;
+    $this->connect;
+}
+
 sub connect {
     my $this = shift;
-    return if $this->connected;
+    #return if $this->connected;
+    croak 'connected!' if $this->connected;
+    croak 'connecting!' if $this->connecting;
 
     # 初期化すべきフィールドを初期化
-    $this->{state} = undef;
     $this->{nick_retry} = 0;
     $this->{logged_in} = undef;
+    $this->state_connecting(1);
+    my $conn_stat = $this->{connection_status} = {
+	start => time,
+	tried => [],
+    };
 
-    my $server_host = $this->{server_host};
+    Tiarra::Resolver->resolve('addr', $this->{server_host}, sub {
+				  $this->_connect_stage_1(@_);
+			      });
+    $this;
+}
+
+sub _connect_stage_1 {
+    my ($this, $entry) = @_;
+
+    my %addrs_by_types;
     my $server_port = $this->{server_port};
 
-    # 追加パラメータ
-    my $additional_ipv4 = {};
+    return if $this->_connect_interrupted;
+
+    if ($entry->answer_status eq $entry->ANSWER_OK) {
+	foreach my $addr (@{$entry->answer_data}) {
+	    if ($addr =~ m/^(?:\d+\.){3}\d+$/) {
+		push (@{$addrs_by_types{ipv4}}, $addr);
+	    } elsif ($addr =~ m/^[0-9a-fA-F:]+$/) {
+		push (@{$addrs_by_types{ipv6}}, $addr);
+	    } else {
+		$this->die("unsupported addr type: $addr");
+	    }
+	}
+    } else {
+	$this->printmsg("Couldn't resolve hostname: $this->{server_host}");
+	$this->_queue_retry;
+	return;
+    }
+
+    foreach my $sock_type (@{$this->{prefer_socket_types}}) {
+	my $struct;
+	push (@{$this->{connection_queue}},
+	      map {
+		  $struct = {
+		      type => $sock_type,
+		      addr => $_,
+		      host => $entry->query_data,
+		      port => $server_port,
+		  };
+	      } @{$addrs_by_types{$sock_type}});
+    }
+    $this->_connect_try_next;
+}
+
+sub _connect_try_next {
+    my $this = shift;
+
+    my $trying =
+	$this->{connecting} = shift @{$this->{connection_queue}};
+    if (defined $trying) {
+	my $methodname = '_try_connect_' . $this->{connecting}->{type};
+	$this->$methodname($trying);
+    } else {
+	$this->printmsg("Couldn't connect to any host");
+	$this->_queue_retry;
+	return;
+    }
+}
+
+sub _try_connect_ipv4 {
+    my ($this, $conn_struct) = @_;
+
+    my %additional;
     my $ipv4_bind_addr =
 	$this->config_or_default('ipv4-bind-addr') ||
-	$this->config_or_default('bind-addr'); # 下は過去互換性の為に残す。
+	    $this->config_or_default('bind-addr'); # 下は過去互換性の為に残す。
     if (defined $ipv4_bind_addr) {
-	$additional_ipv4->{LocalAddr} = $ipv4_bind_addr;
+	$additional{bind_addr} = $ipv4_bind_addr;
     }
-    my $additional_ipv6 = {};
+    $this->_try_connect_socket($conn_struct, %additional);
+}
+
+sub _try_connect_ipv6 {
+    my ($this, $conn_struct) = @_;
+
+    my %additional;
     my $ipv6_bind_addr = $this->config_or_default('ipv6-bind-addr');
     if (defined $ipv6_bind_addr) {
-	$additional_ipv6->{LocalAddr} = $ipv6_bind_addr;
+	$additional{bind_addr} = $ipv6_bind_addr;
     }
 
-    # ソケットを開く。開けなかったらdie。
-    # 接続は次のようにして行なう。
-    # 1. ホストがIPv4アドレスであれば、IPv4として接続を試みる。
-    # 2. ホストがIPv6アドレスであれば、IPv6として接続を試みる。
-    # 3. どちらの形式でもない(つまりホスト名)であれば、
-    #    a. IPv6が利用可能ならIPv6での接続を試みた後、駄目ならIPv4にフォールバック
-    #    b. IPv6が利用可能でなければ、最初からIPv4での接続を試みる。
-    my @new_socket_args = (
-	PeerAddr => $server_host,
-	PeerPort => $server_port,
-	Proto => 'tcp',
-	Timeout => 5,
-    );
-    my $sock = do {
-	if ($server_host =~ m/^(?:\d+\.){3}\d+$/) {
-	    IO::Socket::INET->new(@new_socket_args,%$additional_ipv4);
-	}
-	elsif ($server_host =~ m/^[0-9a-fA-F:]+$/) {
-	    if (&::ipv6_enabled) {
-		IO::Socket::INET6->new(@new_socket_args,%$additional_ipv6);
-	    }
-	    else {
-		die qq{Host $server_host seems to be an IPv6 address, }.
-		    qq{but IPv6 support is not enabled. }.
-		    qq{Use IPv4 server or install Socket6.pm if possible.\n};
-	    }
-	}
-	else {
-	    if (&::ipv6_enabled) {
-		my $s = IO::Socket::INET6->new(@new_socket_args,%$additional_ipv6);
-		if (defined $s) {
-		    # IPv6での接続に成功。
-		    $s;
-		}
-		else {
-		    # IPv4にフォールバック。
-		    IO::Socket::INET->new(@new_socket_args,%$additional_ipv4);
-		}
-	    }
-	    else {
-		IO::Socket::INET->new(@new_socket_args,%$additional_ipv4);
-	    }
-	}
-    };
-    if (defined $sock) {
-	$sock->autoflush(1);
-	$this->{sock} = $sock;
-	$this->{connected} = 1;
-	my $ip_version = do {
-	    if ($sock->isa('IO::Socket::INET')) {
-		'IPv4';
-	    }
-	    else {
-		'IPv6';
-	    }
-	};
-	::printmsg("Opened connection to $this->{destination} ($ip_version)");
-	$this->_runloop->register_receive_socket($sock);
-    }
-    else {
-	die "Couldn't connect to $this->{destination}\n";
-    }
+    $this->_try_connect_socket($conn_struct, %additional);
+}
 
+sub _try_connect_socket {
+    my ($this, $conn_struct, %additional) = @_;
+
+    $this->{connector} = Tiarra::Socket::Connect->new(
+	host => $conn_struct->{host},
+	addr => $conn_struct->{addr},
+	port => $conn_struct->{port},
+	callback => sub {
+	    my ($subject, $socket, $obj) = @_;
+
+	    if ($subject eq 'sock') {
+		$this->_attach;
+	    } elsif ($subject eq 'error') {
+		$this->_connect_error;
+	    } elsif ($subject eq 'warn') {
+		$this->_connect_warn($obj);
+	    }
+	},
+	%additional);
+    $this;
+}
+
+sub _attach {
+    my ($this) = @_;
+
+    $this->{connecting} = undef;
+    $this->{sock} = $this->{connector}->sock;
+    $this->{sock}->autoflush(1);
+    $this->{server_addr} = $this->{connector}->host;
+    $this->{proto} = $this->{connector}->type_name;
+    $this->{connected} = 1;
+    $this->state_connected(1);
+
+    $this->_send_connection_messages;
+
+    $this->{connector} = undef;
+    $this->printmsg("Opened connection to ". $this->destination .".");
+    $this->_runloop->register_receive_socket($this->{sock});
+
+    $this;
+}
+
+sub _connect_error {
+    my ($this, $msg) = @_;
+
+    $this->printmsg("Couldn't connect to ".$this->destination."\n");
+    $this->_connect_try_next;
+}
+
+sub _connect_warn {
+    my ($this, $msg) = @_;
+
+    $this->printmsg("** $msg\n");
+}
+
+sub _send_connection_messages {
+    my $this = shift;
     # (PASS) -> NICK -> USERの順に送信し、中に入る。
     # NICKが成功したかどうかは接続後のreceiveメソッドが判断する。
     my $server_password = $this->{server_password};
     if (defined $server_password && $server_password ne '') {
 	$this->send_message(new IRCMessage(
-				Command => 'PASS',
-				Param => $this->{server_password}));
+	    Command => 'PASS',
+	    Param => $this->{server_password}));
     }
     if (!defined $this->{current_nick} || $this->{current_nick} eq '') {
 	$this->{current_nick} = $this->{initial_nick};
     }
     $this->send_message(new IRCMessage(
-			    Command => 'NICK',
-			    Param => $this->{current_nick}));
+	Command => 'NICK',
+	Param => $this->{current_nick}));
 
     # +iなどの文字列からユーザーモード値を算出する。
     my $usermode = 0;
@@ -292,19 +431,74 @@ sub connect {
 	}
     }
     $this->send_message(new IRCMessage(
-			    Command => 'USER',
-			    Params => [$this->{user_shortname},
-				       $usermode,
-				       '*',
-				       $this->{user_realname}]));
-    $this;
+	Command => 'USER',
+	Params => [$this->{user_shortname},
+		   $usermode,
+		   '*',
+		   $this->{user_realname}]));
+}
+
+sub terminate {
+    my ($this, $msg) = @_;
+
+    $this->_interrupt($msg, 'terminating');
+}
+
+sub finalize {
+    my ($this, $msg) = @_;
+
+    $this->_interrupt($msg, 'finalizing');
+}
+
+sub _interrupt {
+    my ($this, $msg, $state) = @_;
+
+    if ($this->logged_in) {
+	$this->state($state);
+	$this->quit($msg);
+    } elsif ($this->state_connecting || $this->state_reconnecting) {
+	$this->state($state);
+	$this->_cleanup;
+    } else {
+	if (!$this->state_connected) {
+	    $this->warn('_interrupt/unexpected state: '.$this->state)
+		if &::debug_mode;
+	}
+	$this->state($state);
+	$this->disconnect;
+    }
 }
 
 sub disconnect {
     my $this = shift;
 
+    $this->_cleanup;
     $this->SUPER::disconnect;
-    ::printmsg("Disconnected from $this->{destination}.");
+    $this->printmsg("Disconnected from ".$this->destination.".");
+    if ($this->state_reconnecting || $this->state_connected) {
+	$this->state_reconnecting(1);
+	$this->reload_config;
+	$this->_queue_retry;
+    }
+    $this->{logged_in} = undef;
+}
+
+sub _cleanup {
+    my ($this, $mode) = @_;
+
+    if (defined $this->{connector}) {
+	$this->{connector}->interrupt;
+	$this->{connector} = undef;
+    }
+    if (defined $this->{timer}) {
+	$this->{timer}->uninstall;
+	$this->{timer} = undef;
+    }
+    if ($this->state_terminating) {
+	$this->state_terminated(1);
+    } elsif ($this->state_finalizing) {
+	$this->state_finalized(1);
+    }
 }
 
 sub quit {
@@ -356,7 +550,7 @@ sub pop_queue {
     # 接続を切ってからdieします。
     if (defined $msg) {
 	# ログイン作業中か？
-	if ($this->{logged_in}) {
+	if ($this->logged_in) {
 	    # ログイン作業中でない。
 	    return $this->_receive_after_logged_in($msg);
 	}
@@ -393,7 +587,7 @@ sub _receive_while_logging_in {
 		      $this->{user_shortname},
 		      $this->{user_realname});
 
-	::printmsg("Logged-in successfuly into $this->{destination}.");
+	$this->printmsg("Logged-in successfuly into ".$this->destination.".");
 
 	# 各モジュールにサーバー追加の通知を行なう。
 	$this->_runloop->notify_modules('connected_to_server',$this,$this->{new_connection});
@@ -428,10 +622,10 @@ sub _receive_while_logging_in {
 	# 但し、ニューメリックリプライでもERRORでもなければ無視する。
 	if ($reply eq 'ERROR' or $reply =~ m/^\d+/) {
 	    $this->disconnect;
-	    die "Server replied $reply.\n".$first_msg->serialize."\n";
+	    $this->die("Server replied $reply.\n".$first_msg->serialize."\n");
 	}
 	else {
-	    warn "Server replied $reply.\n".$first_msg->serialize."\n";
+	    $this->warn("Server replied $reply.\n".$first_msg->serialize."\n");
 	    return;
 	}
     }
@@ -1077,7 +1271,7 @@ sub _set_to_next_nick {
 	    Prefix => $this->_runloop->sysmsg_prefix(qw(priv nick::system)),
 	    Command => 'NOTICE',
 	    Params => [$this->_runloop->current_nick,$msg_for_user]));
-    main::printmsg($msg_for_user);
+    $this->printmsg($msg_for_user);
 }
 
 sub modify_nick {

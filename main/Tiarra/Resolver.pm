@@ -169,7 +169,11 @@ sub paranoid_check {
 
     # stage 1
     $this->resolve('host', $data, sub {
-		       $this->_paranoid_stage1($data, $closure, $my_use_threads, shift);
+		       eval {
+			   $this->_paranoid_stage1($data, $closure, $my_use_threads, shift);
+		       }; if ($@) {
+			   $closure->(0, undef);
+		       }
 		   }, $my_use_threads);
 }
 
@@ -183,7 +187,11 @@ sub _paranoid_stage1 {
 	    $host = $host->[0];
 	}
 	$this->resolve('addr', $host, sub {
-			   $this->_paranoid_stage2($data, $closure, $my_use_threads, shift);
+			   eval {
+			       $this->_paranoid_stage2($data, $closure, $my_use_threads, shift);
+			   }; if ($@) {
+			       $closure->(0, undef, $entry);
+			   }
 		       }, $my_use_threads);
     } else {
 	$closure->(0, undef, $entry);

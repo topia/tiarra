@@ -32,6 +32,7 @@ use Tiarra::Utils;
 use Tiarra::Resolver;
 use Tiarra::TerminateManager;
 our $_shared_instance;
+my $utils = Tiarra::Utils->shared;
 
 BEGIN {
     # Time::HiResは使えるか？
@@ -96,12 +97,10 @@ sub new {
 
 	default_network => undef, # デフォルトのネットワーク名
 	networks => {}, # ネットワーク名 → IrcIO::Server
-	disconnected_networks => {}, # 切断されたネットワーク。
-	terminated_networks => {}, # 終了したネットワーク。
 	clients => [], # 接続されている全てのクライアント IrcIO::Client
 
 	timers => [], # インストールされている全てのTimer
-	external_sockets => [], # インストールされている全てのExternalSocket
+	sockets => [], # インストールされている全てのExternalSocket
 
 	conf_reloaded_hook => undef, # この下でインストールするフック
 
@@ -133,25 +132,34 @@ sub DESTROY {
 sub network {
     my ($class_or_this,$network_name) = @_;
     my $this = $class_or_this->_this;
-    my $network;
-    foreach my $genre (qw(networks disconnected_networks terminated_networks)) {
-	$network = $this->{$genre}->{$network_name};
-	next unless defined $network;
-	return wantarray ? ($network, $genre) : $network;
-    }
-    return wantarray ? () : undef;
+    return $this->{networks}->{$network_name};
 }
 
-Tiarra::Utils->define_attr_getter(1, qw(default_network networks clients),
-				  [qw(multi_server_mode_p multi_server_mode)],
-				  [qw(_mod_manager mod_manager)]);
+sub networks {
+    my ($class_or_this,@options) = @_;
+    my $this = $class_or_this->_this;
+
+    if (defined $options[0] && $options[0] eq 'even-if-not-connected') {
+	$this->{networks};
+    } else {
+	my $hash = $this->{networks};
+	$hash = {
+	    map { $_ => $hash->{$_} }
+		grep { $hash->{$_}->connected }
+		    keys %$hash};
+    }
+}
+
+$utils->define_attr_getter(1, qw(default_network clients),
+			   [qw(multi_server_mode_p multi_server_mode)],
+			   [qw(_mod_manager mod_manager)]);
 
 # クライアントから見た、現在のnick。
 # このnickは実際に使われているnickとは異なっている場合がある。
 # すなわち、希望のnickが既に使われていた場合である。
-Tiarra::Utils->define_attr_getter(1, qw(current_nick));
+$utils->define_attr_getter(1, qw(current_nick));
 
-sub networks_list { values %{shift->networks}; }
+sub networks_list { values %{shift->networks(@_)}; }
 sub clients_list { @{shift->clients}; }
 
 sub channel {
@@ -180,7 +188,7 @@ sub change_nick {
     my ($class_or_this,$new_nick) = @_;
     my $this = $class_or_this->_this;
 
-    foreach my $io (values %{$this->{networks}}) {
+    foreach my $io ($this->networks_list) {
 	$io->send_message(
 	    new IRCMessage(
 		Command => 'NICK',
@@ -193,7 +201,7 @@ sub find_io_with_socket {
     my $this = $class_or_this->_this;
     # networksとclientsの中から指定されたソケットを持つIrcIOを探します。
     # 見付からなければundefを返します。
-    foreach my $io (values %{$this->{networks}}) {
+    foreach my $io ($this->networks_list('even-if-not-connected')) {
 	return $io if defined $io->sock && $io->sock == $sock;
     }
     foreach my $io (@{$this->{clients}}) {
@@ -311,7 +319,7 @@ sub _update_send_selector {
 
     # どうもこの動作が怪しい。無理に再利用しなくても良いような気がする。
     my $sel = $this->{send_selector} = IO::Select->new;
-    foreach my $io (values %{$this->{networks}}) {
+    foreach my $io ($this->networks_list('even-if-not-connected')) {
 	if ($io->need_to_send) {
 	    $sel->add($io->sock);
 	}
@@ -321,7 +329,7 @@ sub _update_send_selector {
 	    $sel->add($io->sock);
 	}
     }
-    foreach my $esock (@{$this->{external_sockets}}) {
+    foreach my $esock (@{$this->{sockets}}) {
 	if ($esock->want_to_write) {
 	    $sel->add($esock->sock);
 	}
@@ -334,26 +342,13 @@ sub _cleanup_closed_link {
     # networksならクライアントに然るべき通知をし、再接続するタイマーをインストールする。
     my $this = shift;
 
-    my %networks_closed = ();
-    while (my ($network_name,$io) = each %{$this->{networks}}) {
-	$networks_closed{$network_name} = $io unless $io->connected;
-    }
     my $do_update_networks_after = 0;
-    while (my ($network_name,$io) = each %networks_closed) {
-	# セレクタから外す。
-	$this->unregister_receive_socket($io->sock);
-	# networksから削除する。
-	delete $this->{networks}->{$network_name};
-	if (!defined $io->state || $io->state eq 'reconnecting') {
-	    $this->{disconnected_networks}->{$network_name} = $io;
-	    $do_update_networks_after = 3;
-	} elsif ($io->state eq 'terminating') {
-	    $this->{terminated_networks}->{$network_name} = $io;
+    while (my ($network_name,$io) = each %{$this->networks('even-if-not-connected')}) {
+	next if $io->connected || $io->connecting;
+	if ($io->state_finalized) {
+	    delete $this->{networks}->{$network_name};
+	} elsif ($io->state_terminated) {
 	    $do_update_networks_after = 1;
-	} elsif ($io->state eq 'finalizing') {
-	    # remove
-	} else {
-	    $this->notify_warn('Unknown network state('.$io->state.') on '.$network_name);
 	}
     }
     if ($do_update_networks_after) {
@@ -533,42 +528,29 @@ sub update_networks {
     foreach my $net_name (@net_names) {
 	$net_conf = $this->_conf->get($net_name);
 
-	($network, $genre) = $this->network($net_name);
+	$network = $this->network($net_name);
 	eval {
-	    if (!defined $genre || !defined $network) {
+	    if (!defined $network) {
 		# 新しいネットワーク
-		if ($host_tried->{$net_conf->host}) {
-		    $do_update_networks_after = 15;
-		    $network = undef;
-		}
-		else {
-		    $host_tried->{$net_conf->host} = 1;
-
-		    $network = IrcIO::Server->new($this, $net_name);
-		    $this->{networks}->{$net_name} = $network; # networksに登録
-		}
+		$network = IrcIO::Server->new($this, $net_name);
+		$this->{networks}->{$net_name} = $network; # networksに登録
 	    }
-	    elsif ($genre eq 'networks') {
-		# 既に接続されている。
-		# このサーバーについての設定が変わっていたら、一旦接続を切る。
-		if (!$net_conf->equals($network->config)) {
-		    #$network->disconnect;
-		    #$do_cleanup_closed_links_after = 1;
-		    $network->state('reconnecting');
-		    $network->quit(
-			$this->_conf_messages->quit->netconf_changed_reconnect);
+	    else {
+		if ($network->state_connected || $network->state_connecting) {
+		    # 既に接続されている。
+		    # このサーバーについての設定が変わっていたら、一旦接続を切る。
+		    if (!$net_conf->equals($network->config)) {
+			$network->state_reconnecting(1);
+			$network->quit(
+			    $this->_conf_messages->quit->netconf_changed_reconnect);
+		    }
+		} elsif ($network->state_terminated) {
+		    # 終了している
+		    # このサーバーについての設定が変わっていたら、接続する。
+		    if (!$net_conf->equals($network->config)) {
+			$this->reconnect_server($net_name);
+		    }
 		}
-	    }
-	    elsif ($genre eq 'terminated_networks') {
-		# 終了している
-		# このサーバーについての設定が変わっていたら、接続する。
-		if (!$net_conf->equals($network->config)) {
-		    $this->reconnect_server($net_name);
-		}
-	    }
-	    elsif ($genre eq 'disconnected_networks') {
-		# 切断されている
-		$this->reconnect_server($net_name);
 	    }
 	}; if ($@) {
 	    if ($@ =~ /^[Cc]ouldn't connect to /i) {
@@ -604,25 +586,8 @@ sub update_networks {
     }
     foreach my $net_name (@nets_to_disconnect) {
 	my $server = $this->{networks}->{$net_name};
-	$server->state('finalizing');
-	$server->quit(
+	$server->finalize(
 	    $this->_conf_messages->quit->netconf_changed_disconnect);
-    }
-    # 不要なネットワークを削除
-    foreach my $genre (qw(disconnected_networks terminated_networks)) {
-	while (my ($net_name,$server) = each %{$this->{$genre}}) {
-	    # 入っていなかったら忘れる。
-	    unless ($is_there_in_net_names->($net_name)) {
-		if (!$server->connected) {
-		    push @nets_to_forget,$net_name;
-		} else {
-		    $do_update_networks_after ||= 3;
-		}
-	    }
-	}
-	foreach (@nets_to_forget) {
-	    delete $this->{$genre}->{$_};
-	}
     }
 
     if ($do_update_networks_after) {
@@ -639,23 +604,16 @@ sub terminate_server {
     my ($class_or_this,$network, $msg) = @_;
     my $this = $class_or_this->_this;
 
-    $network->state('terminating');
-    $network->quit($msg);
+    $network->terminate($msg);
 }
 
 sub reconnect_server {
     # terminate/disconnect(サーバから)されたサーバへ接続しなおす。
     my ($class_or_this,$network_name) = @_;
     my $this = $class_or_this->_this;
-    my ($network, $genre) = $this->network($network_name);
+    my $network = $this->network($network_name);
 
-    if (defined $genre && $genre ne 'networks') {
-	$network->reload_config;
-	$network->connect;
-	# 今のジャンルからnetworksへ移す。
-	$this->{networks}->{$network_name} = $network;
-	delete $this->{$genre}->{$network_name};
-    }
+    $network->reconnect if defined $network;
 }
 
 sub disconnect_server {
@@ -664,8 +622,7 @@ sub disconnect_server {
     # $server: IrcIO::Server
     my ($class_or_this,$server) = @_;
     my $this = $class_or_this;
-    $server->disconnect;
-    delete $this->{networks}->{$server->network_name};
+    $server->terminate('');
 }
 
 sub close_client {
@@ -702,7 +659,7 @@ sub install_socket {
 	croak "RunLoop->install_socket, Arg[1] was undef.\n";
     }
 
-    push @{$this->{external_sockets}},$esock;
+    push @{$this->{sockets}},$esock;
     $this->register_receive_socket($esock->sock); # 受信セレクタに登録
     undef;
 }
@@ -713,9 +670,9 @@ sub uninstall_socket {
 	croak "RunLoop->uninstall_socket, Arg[1] was undef.\n";
     }
 
-    for (my $i = 0; $i < @{$this->{external_sockets}}; $i++) {
-	if ($this->{external_sockets}->[$i] == $esock) {
-	    splice @{$this->{external_sockets}},$i,1;
+    for (my $i = 0; $i < @{$this->{sockets}}; $i++) {
+	if ($this->{sockets}->[$i] == $esock) {
+	    splice @{$this->{sockets}},$i,1;
 	    $this->unregister_receive_socket($esock->sock); # 受信セレクタから登録解除
 	    $i--;
 	}
@@ -735,7 +692,7 @@ sub unregister_receive_socket {
 
 sub find_esock_with_socket {
     my ($this,$sock) = @_;
-    foreach my $esock (@{$this->{external_sockets}}) {
+    foreach my $esock (@{$this->{sockets}}) {
 	if ($esock->sock == $sock) {
 	    return $esock;
 	}
@@ -874,23 +831,19 @@ sub run {
     Timer->new(
 	Interval => 3 * 60,
 	Code => sub {
-	    foreach my $network (values %{$this->{networks}}) {
+	    foreach my $network ($this->networks_list) {
 		$network->send_message(
 		    IRCMessage->new(
 			Command => 'PING',
 			Param => $network->server_hostname));
 
 		my $cntr = $network->remark('pong-drop-counter');
-		if (defined $cntr) {
-		    $cntr++;
-		}
-		else {
-		    $cntr = 1;
-		}
-		$network->remark('pong-drop-counter',$cntr);
+		$network->remark('pong-drop-counter',
+				 $utils->get_first_defined($cntr,0) + 1);
 	    }
 	},
 	Repeat => 1,
+	Name => __PACKAGE__ . '/send ping',
     )->install;
 
     # control-socket-nameが指定されていたら、ControlPortを開く。
@@ -945,7 +898,7 @@ sub run {
 	# (普段は何かしら登録されていると思うが)タイマーが一つも登録されていなければ、タイムアウトはundefである。すなわちタイムアウトしない。
 	# タイマーが一つでも登録されていた場合は、全てのタイマーの中で最も発動時間が早いものを調べ、
 	# それが発動するまでの時間をselectのタイムアウト時間とする。
-	
+
 	# select前フックを呼ぶ
 	$this->call_hooks('before-select');
 
@@ -962,7 +915,7 @@ sub run {
 
 	# 書き込むべきデータがあるソケットだけをsend_selectorに登録する。そうでないソケットは除外。
 	$this->_update_send_selector;
-	
+
 	# select実行
 	my $time_before_select = CORE::time;
 	my ($readable_socks,$writable_socks) =
@@ -1091,7 +1044,7 @@ sub run {
 		}
 	    }
 	}
-	
+
 	foreach my $sock ($this->{send_selector}->can_write(0)) {
 	    if (my $io = $this->find_io_with_socket($sock)) {
 		next unless $io->need_to_send;
@@ -1121,18 +1074,22 @@ sub run {
 
 	# 終了処理中でサーバもクライアントもいなくなればループ終了。
 	if ($this->{terminating}) {
-	    if ((scalar $this->networks_list <= 0) &&
+	    if ((scalar $this->networks_list('even-if-not-connected') <= 0) &&
 		    (scalar $this->clients_list <= 0)
 		   ) {
 		last;
 	    } else {
 		++$this->{terminating};
-		if ($this->{terminating} >= 400) {
+		#if ($this->{terminating} >= 400) {
+		if ($this->{terminating} >= 10) {
 		    # quit loop でそんなに回るとは思えない。
 		    $this->notify_error(
 			"very long terminating loop!".
 			    "(".$this->{terminating}." count(s))\n".
 				"maybe something is wrong; exit force...");
+		    $this->notify_error(
+			map {$_->network_name.": ".$_->state."\n" }
+			    $this->networks_list('even-if-not-connected'));
 		    last;
 		}
 	    }
@@ -1145,7 +1102,7 @@ sub run {
 	$this->unregister_receive_socket($this->{tiarra_server_socket});
     }
     $this->_mod_manager->terminate;
-    Tiarra::TerminateManager->shared->terminate('main');
+    Tiarra::TerminateManager->terminate('main');
 }
 
 sub terminate {
@@ -1153,10 +1110,11 @@ sub terminate {
     my $this = $class_or_this->_this;
 
     $this->{terminating} = 1;
-    map { $this->terminate_server($_, $message) } $this->networks_list;
+    map { $_->finalize($message) } $this->networks_list('even-if-not-connected');
     map { $this->close_client($_, $message) } $this->clients_list;
-    # なぜかこの位置でサーバソケットを閉じるとおかしくなる。
-    # accept で処理することにする。
+    if (defined $this->{tiarra_server_socket}) {
+	$this->{tiarra_server_socket}->shutdown(2);
+    }
 }
 
 sub broadcast_to_clients {
@@ -1182,7 +1140,7 @@ sub broadcast_to_servers {
     # IRCメッセージを全てのサーバーに送信する。
     my ($class_or_this,@messages) = @_;
     my $this = $class_or_this->_this;
-    foreach my $network (values %{$this->{networks}}) {
+    foreach my $network ($this->networks_list) {
 	foreach my $msg (@messages) {
 	    $network->send_message($msg);
 	}

@@ -16,6 +16,7 @@ use Mask;
 use LocalChannelManager;
 use NumericReply;
 use Tiarra::Resolver;
+use Tiarra::Socket;
 use Tiarra::Utils;
 # shorthand
 my $utils = Tiarra::Utils->shared;
@@ -48,9 +49,9 @@ sub accept {
     my ($this, $paranoid_ok, $host, $entry) = @_;
 
     $this->{client_host} = $paranoid_ok ? $host : $this->{client_addr};
-    $this->{client_host_repr} = $this->{client_host} .
-	($this->{client_addr} ne $this->{client_host} ?
-	     '('.$this->{client_addr}.')' : '');
+    $this->{client_host_repr} = Tiarra::Socket->repr_destination(
+	host => $this->{client_host},
+	addr => $this->{client_addr});
 
     # このホストからの接続は許可されているか？
     my $allowed_host = $this->_conf_general->client_allowed;
