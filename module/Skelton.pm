@@ -13,7 +13,7 @@ sub new {
     # モジュールが必要になった時に呼ばれる。
     # これはモジュールのコンストラクタである。
     # 引数は無し。
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
 
     return $this;
 }
