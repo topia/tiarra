@@ -387,7 +387,11 @@ sub _action_message_for_each {
 	    Params => ['', # チャンネル名は後で設定。
 		       '*** The connection has been revived between '.$network->network_name.'.']);
 	foreach my $ch (values %{$network->channels}) {
-	    $msg->param(0,Multicast::attach($ch->name,$network_name));
+	    if ($this->{multi_server_mode}) {
+		$msg->param(0,Multicast::attach($ch->name,$network_name));
+	    } else {
+		$msg->param(0,$ch->name);
+	    }
 	    $this->broadcast_to_clients($msg);
 	}
     }
@@ -398,7 +402,11 @@ sub _action_message_for_each {
 	    Params => ['', # チャンネル名は後で設定。
 		       '*** The connection has been broken between '.$network->network_name.'.']);
 	foreach my $ch (values %{$network->channels}) {
-	    $msg->param(0,Multicast::attach($ch->name,$network_name));
+	    if ($this->{multi_server_mode}) {
+		$msg->param(0,Multicast::attach($ch->name,$network_name));
+	    } else {
+		$msg->param(0,$ch->name);
+	    }
 	    $this->broadcast_to_clients($msg);
 	}
     }
