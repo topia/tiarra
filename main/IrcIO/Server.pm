@@ -370,6 +370,9 @@ sub _attach {
     my ($this) = @_;
 
     $this->{connecting} = undef;
+    if ($this->_connect_interrupted) {
+	return $this->disconnect;
+    }
     $this->{sock} = $this->{connector}->sock;
     $this->{sock}->autoflush(1);
     $this->{server_addr} = $this->{connector}->host;
