@@ -4,10 +4,6 @@
 # Socket Wrapper
 # -----------------------------------------------------------------------------
 # copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
-# This is free software; you can redistribute it and/or modify it
-#   under the same terms as Perl itself.
-# $Id$
-# $URL$
 package Tiarra::Socket;
 use strict;
 use warnings;
@@ -42,6 +38,23 @@ sub repr_destination {
 	$str .= $class_or_this->to_str($data{type});
     }
     $str;
+}
+
+sub probe_type_by_class {
+    my ($class_or_this, $obj) = @_;
+
+    map {
+	if (!wantarray) {
+	    return $_->[1];
+	} else {
+	    $_->[1];
+	}
+    } grep {
+	UNIVERSAL::isa($obj, $_->[0]);
+    } map {
+	substr($_->[0],0,0) = 'IO::Socket::';
+	$_;
+    } ([qw(UNIX Unix)], [qw(INET6 IPv6)], [qw(INET IPv4)]);
 }
 
 package Tiarra::Socket::Connect;
@@ -197,13 +210,13 @@ sub _try_connect_tcp {
 sub _try_connect_io_socket {
     my ($this, $package, %additional) = @_;
 
-    # ã‚½ã‚±ãƒƒãƒˆã‚’é–‹ãã€‚é–‹ã‘ãªã‹ã£ãŸã‚‰dieã€‚
-    # æŽ¥ç¶šã¯æ¬¡ã®ã‚ˆã†ã«ã—ã¦è¡Œãªã†ã€‚
-    # 1. ãƒ›ã‚¹ãƒˆãŒIPv4ã‚¢ãƒ‰ãƒ¬ã‚¹ã§ã‚ã‚Œã°ã€IPv4ã¨ã—ã¦æŽ¥ç¶šã‚’è©¦ã¿ã‚‹ã€‚
-    # 2. ãƒ›ã‚¹ãƒˆãŒIPv6ã‚¢ãƒ‰ãƒ¬ã‚¹ã§ã‚ã‚Œã°ã€IPv6ã¨ã—ã¦æŽ¥ç¶šã‚’è©¦ã¿ã‚‹ã€‚
-    # 3. ã©ã¡ã‚‰ã®å½¢å¼ã§ã‚‚ãªã„(ã¤ã¾ã‚Šãƒ›ã‚¹ãƒˆå)ã§ã‚ã‚Œã°ã€
-    #    a. IPv6ãŒåˆ©ç”¨å¯èƒ½ãªã‚‰IPv6ã§ã®æŽ¥ç¶šã‚’è©¦ã¿ãŸå¾Œã€é§„ç›®ãªã‚‰IPv4ã«ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯
-    #    b. IPv6ãŒåˆ©ç”¨å¯èƒ½ã§ãªã‘ã‚Œã°ã€æœ€åˆã‹ã‚‰IPv4ã§ã®æŽ¥ç¶šã‚’è©¦ã¿ã‚‹ã€‚
+    # ¥½¥±¥Ã¥È¤ò³«¤¯¡£³«¤±¤Ê¤«¤Ã¤¿¤édie¡£
+    # ÀÜÂ³¤Ï¼¡¤Î¤è¤¦¤Ë¤·¤Æ¹Ô¤Ê¤¦¡£
+    # 1. ¥Û¥¹¥È¤¬IPv4¥¢¥É¥ì¥¹¤Ç¤¢¤ì¤Ð¡¢IPv4¤È¤·¤ÆÀÜÂ³¤ò»î¤ß¤ë¡£
+    # 2. ¥Û¥¹¥È¤¬IPv6¥¢¥É¥ì¥¹¤Ç¤¢¤ì¤Ð¡¢IPv6¤È¤·¤ÆÀÜÂ³¤ò»î¤ß¤ë¡£
+    # 3. ¤É¤Á¤é¤Î·Á¼°¤Ç¤â¤Ê¤¤(¤Ä¤Þ¤ê¥Û¥¹¥ÈÌ¾)¤Ç¤¢¤ì¤Ð¡¢
+    #    a. IPv6¤¬ÍøÍÑ²ÄÇ½¤Ê¤éIPv6¤Ç¤ÎÀÜÂ³¤ò»î¤ß¤¿¸å¡¢ÂÌÌÜ¤Ê¤éIPv4¤Ë¥Õ¥©¡¼¥ë¥Ð¥Ã¥¯
+    #    b. IPv6¤¬ÍøÍÑ²ÄÇ½¤Ç¤Ê¤±¤ì¤Ð¡¢ºÇ½é¤«¤éIPv4¤Ç¤ÎÀÜÂ³¤ò»î¤ß¤ë¡£
     my @new_socket_args = (
 	PeerAddr => $this->{connecting}->{addr},
 	PeerPort => $this->{connecting}->{port},
@@ -254,7 +267,9 @@ sub destination {
 
     $this->repr_destination(
 	host => $this->host,
-	addr => $this->{connecting}->{addr},
+	addr => $this->get_first_defined(
+	    $this->{connecting}->{addr},
+	    $this->addr),
 	port => $this->get_first_defined(
 	    $this->{connecting}->{port},
 	    $this->port),
@@ -311,6 +326,7 @@ sub interrupt {
 	$this->{sock}->shutdown(2);
 	$this->{sock} = undef;
     }
+    $this->callback->('interrupt', $this);
 }
 
 sub _install {
