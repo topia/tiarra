@@ -11,19 +11,17 @@ require 5.006;
 use strict;
 use warnings;
 BEGIN {
+    use File::Basename;
+    use File::Spec;
     my $add_inc = sub {
 	foreach my $path (@_) {
 	    unshift(@INC,
-		    map{ "$path/$_" } qw(main module));
+		    map{ File::Spec->catdir($path, $_); } qw(main module));
 	}
     };
-    my $dirname = sub {
-	($_[0] =~ m%(.*)[\\\/][^\\\/]*$%)[0];
-    };
 
-    
-    $add_inc->($dirname->(readlink($0))) if (-l $0);
-    $add_inc->($dirname->($0), ".");
+    $add_inc->(File::Spec->rel2abs(map dirname($_), (readlink($0), $0))) if (-l $0);
+    $add_inc->(dirname($0), ".");
 }
 use Configuration;
 use RunLoop;
