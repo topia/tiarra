@@ -29,6 +29,8 @@ our @ISA = 'HookTarget';
 use Tiarra::ShorthandConfMixin;
 use Tiarra::SharedMixin qw(shared shared_loop);
 use Tiarra::Utils;
+use Tiarra::Resolver;
+use Tiarra::TerminateManager;
 our $_shared_instance;
 
 BEGIN {
@@ -1143,6 +1145,7 @@ sub run {
 	$this->unregister_receive_socket($this->{tiarra_server_socket});
     }
     $this->_mod_manager->terminate;
+    Tiarra::TerminateManager->shared->terminate('main');
 }
 
 sub terminate {
@@ -1312,13 +1315,13 @@ use FunctionalVariable;
 use base 'Hook';
 
 our $HOOK_TARGET_NAME = 'RunLoop';
-our @HOOK_NAME_CANDIDATES = qw/before-select after-select set-current-nick/;
+our @HOOK_NAME_CANDIDATES = qw(before-select after-select set-current-nick);
 our $HOOK_NAME_DEFAULT = 'after-select';
 our $HOOK_TARGET_DEFAULT;
 FunctionalVariable::tie(
     \$HOOK_TARGET_DEFAULT,
     FETCH => sub {
-	RunLoop->shared_loop;
+	$HOOK_TARGET_NAME->shared_loop;
     },
    );
 
