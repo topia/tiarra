@@ -412,7 +412,7 @@ sub _unload {
 		::debug_printmsg("unload subroutine: $key");
 		undef &entry;
 	    } else {
-		if (::debug_mode) {
+		if (::debug_mode()) {
 		    if (!defined $defined_on) {
 			::printmsg("not-unload subroutine: $key, " .
 				       'defined on (anywhere)');
