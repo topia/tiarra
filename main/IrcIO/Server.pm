@@ -438,7 +438,7 @@ sub _receive_after_logged_in {
 		    my $old_nick = $msg->nick;
 		    RunLoop->shared_loop->broadcast_to_clients(
 			IRCMessage->new(
-			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
+			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv nick::system)),
 			    Command => 'NOTICE',
 			    Params => [$local_nick,
 				       "*** Your global nick in ".
@@ -1004,7 +1004,7 @@ sub _set_to_next_nick {
 	    Param => $next_nick));
     RunLoop->shared_loop->broadcast_to_clients(
 	new IRCMessage(
-	    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
+	    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv nick::system)),
 	    Command => 'NOTICE',
 	    Params => [RunLoop->shared_loop->current_nick,$msg_for_user]));
     main::printmsg($msg_for_user);
