@@ -435,7 +435,7 @@ sub _receive_after_logged_in {
     }
     elsif ($msg->command eq '437') {
 	# nick/channel temporary unavaliable
-	if (Multicast::nick_p && RunLoop->shared->multi_server_mode_p) {
+	if (Multicast::nick_p($msg->param(1)) && RunLoop->shared->multi_server_mode_p) {
 	    $this->_set_to_next_nick($msg->param(1));
 
 	    # これもクライアントには伝えない。
