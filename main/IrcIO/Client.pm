@@ -87,7 +87,7 @@ sub parse_realname {
 
     my $line = qr{^\$(?:\s*($pair)\s*)*\s*($lastpair)\s*\$$};
     if (my @pairs = ($realname =~ m/$line/g)) {
-        %{$this->{options}} = map {
+	%{$this->{options}} = map {
 	    m/^\s*($key)\s*=\s*($value)\s*;?$/;
 	} grep {
 	    defined;
@@ -132,12 +132,12 @@ sub receive {
 sub pop_queue {
     my $this = shift;
     my $msg = $this->SUPER::pop_queue;
-    
+
     # クライアントがログイン中なら、ログインを受け付ける。
     if (defined $msg) {
 	# 各モジュールに通知
 	RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'in');
-	
+
 	# ログイン作業中か？
 	if ($this->{logging_in}) {
 	    return $this->_receive_while_logging_in($msg);
@@ -151,7 +151,7 @@ sub pop_queue {
 
 sub _receive_while_logging_in {
     my ($this,$msg) = @_;
-    
+
     # NICK及びUSERを受け取った時点でそのログインの正当性を確認し、作業を終了する。
     my $command = $msg->command;
     if ($command eq 'PASS') {
@@ -177,7 +177,7 @@ sub _receive_while_logging_in {
 		Param => 'Closing Link: ['.$this->fullname_from_client.'] ()'));
 	$this->disconnect_after_writing;
     }
-    
+
     if ($this->{nick} ne '' && $this->{username} ne '') {
 	# general/tiarra-passwordを取得
 	my $valid_password = Configuration->shared_conf->general->tiarra_password;
@@ -185,7 +185,7 @@ sub _receive_while_logging_in {
 	    ! Crypt::check($this->{pass_received},$valid_password)) {
 	    # パスワードが正しくない。
 	    ::printmsg("Refused login of ".$this->fullname_from_client." because of bad password.");
-	    
+
 	    $this->send_message(
 		new IRCMessage(Prefix => 'tiarra',
 			       Command => '464',
@@ -230,20 +230,20 @@ sub _receive_while_logging_in {
 			new IRCMessage(Prefix => 'tiarra',
 				       Command => 'NOTICE',
 				       Params => [$current_nick,
-						  "*** Your global nick in $network_name is currently '$global_nick'."]));					     
+						  "*** Your global nick in $network_name is currently '$global_nick'."]));
 		}
 	    } values %{RunLoop->shared_loop->networks};
-	    
+
 	    foreach my $line (main::get_credit()) {
 		$this->send_message(
 		    new IRCMessage(Prefix => 'tiarra',
 				   Command => '002',
 				   Params => [$current_nick,$line]));
 	    }
-	    
+
 	    # joinしている全てのチャンネルの情報をクライアント送る。
 	    $this->inform_joinning_channels;
-	    
+
 	    # 各モジュールにクライアント追加の通知を出す。
 	    RunLoop->shared->notify_modules('client_attached',$this);
 	}
@@ -254,10 +254,10 @@ sub _receive_while_logging_in {
 
 sub _receive_after_logged_in {
     my ($this,$msg) = @_;
-    
+
     # ログイン中でない。
     my $command = $msg->command;
-    
+
     if ($command eq 'NICK') {
 	# 形式が正しい限りNICKには常に成功して、RunLoopのカレントnickが変更になる。
 	# ただしネットワーク名が明示されていた場合はカレントを変更しない。
@@ -295,15 +295,15 @@ sub _receive_after_logged_in {
     elsif ($command eq 'QUIT') {
 	my $quit_message = $msg->param(0);
 	$quit_message = '' unless defined $quit_message;
-	
+
 	$this->send_message(
 	    new IRCMessage(Command => 'ERROR',
 			   Param => 'Closing Link: '.$this->fullname('error').' ('.$quit_message.')'));
 	$this->disconnect_after_writing;
-	
+
 	# 接続が切れた事にする。
 	RunLoop->shared->notify_modules('client_detached',$this);
-	
+
 	# これは鯖に送らない。
 	$msg = undef;
     }
@@ -324,7 +324,7 @@ sub inform_joinning_channels {
 	my $global_to_local = sub {
 	    $_[0] eq $global_nick ? $local_nick : $_[0];
 	};
-	
+
 	map {
 	    my $ch = $_;
 	    my $ch_name = do {
@@ -335,7 +335,7 @@ sub inform_joinning_channels {
 		    $ch->name;
 		}
 	    };
-	    
+
 	    # まずJOIN
 	    $this->send_message(
 		IRCMessage->new(
@@ -375,7 +375,7 @@ sub inform_joinning_channels {
 	    my $flush_enum_buffer = sub {
 		if ($nick_enumeration ne '') {
 		    $this->send_message(
-		        IRCMessage->new(
+			IRCMessage->new(
 			    Prefix => $this->fullname,
 			    Command => '353',
 			    Params => [$local_nick,
