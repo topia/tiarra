@@ -25,7 +25,7 @@ sub linecount {
 
 sub next {
     # 次のトークンを得る。もう残っていなければundefを返す。
-    # $contenxt: 'outside' | 'block'
+    # $context: 'outside' | 'block'
     #
     # outside: 今、ブロックの外側に居る事を示す。
     # block: 今、ブロック内に居る事を示す。
