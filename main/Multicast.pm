@@ -683,7 +683,7 @@ sub channel_p {
     # 文字列がchannelとして許される形式であるかどうかを真偽値で返す。
     my $str = detach(shift);
     return undef unless length($str);
-    my $chantypes = shift || '#&!';
+    my $chantypes = shift || '#&+!';
 
     my $first_char = "[\Q$chantypes\E]";
     my $suffix_spec = '(?::[a-z*.]+)?';
