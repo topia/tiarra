@@ -391,7 +391,8 @@ sub attach {
 sub _connect_error {
     my ($this, $msg) = @_;
 
-    $this->printmsg("Couldn't connect to ".$this->destination.": $msg\n");
+    # avoid double error message (we don't use timeout)
+    #$this->printmsg("Couldn't connect to ".$this->destination.": $msg\n");
     $this->_connect_try_next;
 }
 
