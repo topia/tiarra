@@ -127,8 +127,13 @@ sub new {
 sub clone {
     my ($this, %args) = @_;
     if ($args{deep}) {
-	eval
-	    Data::Dumper->new([$this])->Terse(1)->Deepcopy(1)->Purity(1)->Dump;
+	# inhibits generator deep clone.
+	my $obj = $this->clone;
+	$obj->generator(undef);
+	$obj = eval(Data::Dumper->new([$obj])->Terse(1)
+		->Deepcopy(1)->Purity(1)->Dump);
+	$obj->generator($this->generator);
+	$obj;
     } else {
 	my @new = @$this;
 	# do not clone raw_params. this behavior is by design.
