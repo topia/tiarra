@@ -31,6 +31,7 @@ sub new {
 	buffer => '',
 	always_flush => $class->first_defined($options{always_flush}, 1),
 	uri => $uri,
+	notify_cache => {},
        };
 
     bless $this, $class;
@@ -167,19 +168,47 @@ sub destruct {
 sub _notify_warn {
     my ($this, $str) = @_;
 
-    $this->parent->notify_warn($this->_notify_prefix(1).$str);
+    if ($this->_check_notify_cache($str)) {
+	$this->parent->notify_warn($this->_notify_prefix(1).$str);
+    }
 }
 
 sub _notify_error {
     my ($this, $str) = @_;
 
-    $this->parent->notify_error($this->_notify_prefix(1).$str);
+    if ($this->_check_notify_cache($str)) {
+	$this->parent->notify_error($this->_notify_prefix(1).$str);
+    }
 }
 
 sub _notify_msg {
     my ($this, $str) = @_;
 
-    $this->parent->notify_msg($this->_notify_prefix(1).$str);
+    if ($this->_check_notify_cache($str)) {
+	$this->parent->notify_msg($this->_notify_prefix(1).$str);
+    }
+}
+
+sub _check_notify_cache {
+    # check cache and return true if can notify
+    my ($this, $str) = @_;
+
+    if (%{$this->{notify_cache}}) {
+	grep {
+	    if ($this->{notify_cache}->{$_} < time) {
+		# expire
+		delete $this->{notify_cache};
+	    }
+	    0;
+	} keys %{$this->{notify_cache}};
+    }
+    if ($this->{notify_cache}->{$str}) {
+	return 0;
+    } else {
+	# ignore 15sec
+	$this->{notify_cache}->{$str} = time + 15;
+	return 1;
+    }
 }
 
 sub _notify_prefix {
