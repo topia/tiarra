@@ -45,11 +45,19 @@ sub _session_init {
 	my $lock : shared;
 	$this->{lock} = \$lock;
     }
+    $this->{session_name} = (caller)[0].' session';
+}
+
+sub session_name {
+    my $this = shift;
+    $this->get_first_defined(
+	eval { $this->name; },
+	$this->{session_name});
 }
 
 sub session_start {
     my $this = shift;
-    if ($this->session_level) {
+    if ($this->session_level == 1) {
 	carp 'this object already started...';
     }
     eval { $this->_before_session_start; };
@@ -60,7 +68,7 @@ sub session_start {
 
 sub session_finish {
     my $this = shift;
-    if (!$this->session_level) {
+    if ($this->session_level == 0) {
 	carp 'this object already finished!';
 	$this->session_level = 1;
     }
@@ -77,7 +85,14 @@ sub with_session {
     $this->session_start unless $level;
     lock $this->{lock} if $use_threads;
     $this->do_with_ensure(
-	sub { $this->call_with_wantarray($wantarray, $closure); },
+	sub {
+	    $this->do_with_errmsg(
+		$this->session_name.": start_level: $level",
+		sub {
+		    $this->call_with_wantarray($wantarray, $closure);
+		}
+	       );
+	},
 	sub { $this->session_finish unless $level; });
 }
 

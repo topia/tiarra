@@ -82,6 +82,7 @@ sub new {
 	ignore_proc => $ignore_proc || sub { $_[0] =~ /^\s*#/; },
 	cleanup_queued => undef,
 
+	caller_name => $utils->simple_caller_formatter('GroupDB registered'),
 	database => undef, # ARRAY<HASH*>
 	# <キー SCALAR,値の集合 ARRAY<SCALAR>>
     };
@@ -99,52 +100,56 @@ $utils->define_attr_accessor(0,
 __PACKAGE__->define_session_wrap(0,
 				 qw(checkupdate synchronize cleanup));
 
+sub name {
+    my $this = shift;
+    join('/', $this->{caller_name},
+	 (defined $this->fpath ? $this->fpath : ()));
+}
+
 sub _load {
     my $this = shift;
-    $this->with_session(
-	sub {
-	    my $database = [];
+    my $database = [];
 
-	    if (defined $this->fpath && $this->fpath ne '') {
-		my $fh = IO::File->new($this->fpath,'r');
-		if (defined $fh) {
-		    my $current = {};
-		    my $flush = sub {
-			if ((!$this->split_primary && scalar(%$current)) ||
-				defined $current->{$this->primary_key}) {
-			    push @{$database}, Tools::Hash->new($this, $current);
-			    $current = {};
-			}
-		    };
-		    my $unicode = Unicode::Japanese->new;
-		    foreach (<$fh>) {
-			my $line = $unicode->set($_, $this->charset)->get;
-			next if $this->{ignore_proc}->($line);
-			my ($key,$value) = grep {defined($_)}
-			    ($line =~ /^\s*(?:([^:]+?)\s*|:([^:]+?)):\s*(.+?)\s*$/);
-			if (!defined $key || $key eq '' ||
-				!defined $value || $value eq '') {
-			    if (!$this->split_primary) {
-				$flush->();
-			    }
-			} else {
-			    # can use colon(:) on key, but cannot use space( ).
-			    $key =~ s/ /:/g;
-			    if ($this->split_primary &&
-				    $key eq $this->primary_key) {
-				$flush->();
-			    }
-			    push(@{$current->{$key}}, $value);
-			}
+    if (defined $this->fpath && $this->fpath ne '') {
+	my $fh = IO::File->new($this->fpath,'r');
+	if (defined $fh) {
+	    my $current = {};
+	    my $flush = sub {
+		if ((!$this->split_primary && scalar(%$current)) ||
+			(defined $this->primary_key &&
+			     defined $current->{$this->primary_key})) {
+		    push @{$database}, Tools::Hash->new($this, $current);
+		    $current = {};
+		}
+	    };
+	    my $unicode = Unicode::Japanese->new;
+	    foreach (<$fh>) {
+		my $line = $unicode->set($_, $this->charset)->get;
+		next if $this->{ignore_proc}->($line);
+		my ($key,$value) = grep {defined($_)}
+		    ($line =~ /^\s*(?:([^:]+?)\s*|:([^:]+?)):\s*(.+?)\s*$/);
+		if (!defined $key || $key eq '' ||
+			!defined $value || $value eq '') {
+		    if (!$this->split_primary) {
+			$flush->();
 		    }
-		    $flush->();
-		    $this->{database} = $database;
-		    $this->set_time;
-		    $this->clear_modified;
-		    $this->dequeue_cleanup;
+		} else {
+		    # can use colon(:) on key, but cannot use space( ).
+		    $key =~ s/ /:/g;
+		    if ($this->split_primary &&
+			    $key eq $this->primary_key) {
+			$flush->();
+		    }
+		    push(@{$current->{$key}}, $value);
 		}
 	    }
-	});
+	    $flush->();
+	    $this->{database} = $database;
+	    $this->set_time;
+	    $this->clear_modified;
+	    $this->dequeue_cleanup;
+	}
+    }
     return $this;
 }
 
@@ -253,12 +258,15 @@ sub find_groups {
     my ($this, $keys, $values, $count) = @_;
     my (@ret);
 
-    if (ref($keys) eq 'SCALAR') {
-	$keys = [$$keys];
-    }
-    if (ref($values) eq 'SCALAR') {
-	$values = [$$values];
-    }
+    ($keys, $values) = map {
+	if (!ref($_)) {
+	    [$_];
+	} elsif (ref($_) eq 'SCALAR') {
+	    [$$_];
+	} else {
+	    $_;
+	}
+    } ($keys, $values);
 
     my ($return) = sub {
 	if (wantarray) {
