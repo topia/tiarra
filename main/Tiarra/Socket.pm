@@ -47,6 +47,7 @@ sub attach {
     return undef unless defined $sock;
     $sock->autoflush(1);
     $this->_sock($sock);
+    $this;
 }
 
 sub detach {
@@ -61,6 +62,7 @@ sub detach {
     }
 
     $this->_sock(undef);
+    $this;
 }
 
 sub install {
