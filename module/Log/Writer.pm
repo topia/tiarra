@@ -11,12 +11,13 @@ use Carp;
 use File::Spec;
 use DirHandle;
 use Tiarra::SharedMixin qw(shared shared_writer);
+use Tiarra::WrapMainLoop;
 use Tiarra::Utils;
 our $_shared_instance;
 
 Tiarra::Utils->define_attr_getter(0, qw(mainloop));
 Tiarra::Utils->define_proxy('mainloop', 0,
-			    map { ["mainloop_$_", "lazy_$_"] }
+			    map { ["_mainloop_$_", "lazy_$_"] }
 				qw(install uninstall));
 
 # todo:
