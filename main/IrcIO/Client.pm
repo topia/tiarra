@@ -299,7 +299,7 @@ sub _receive_while_logging_in {
 		       );
 		    # last param is reserved for 'are supported...'
 		    # and first param for nick
-		    my $max_params = IRCMessage::MAX_PARAMS - 2;
+		    my $max_params = IRCMessage->MAX_PARAMS - 2;
 		    my @params = ();
 		    my $length = 0;
 		    my $flush_msg = sub {
