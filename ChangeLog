@@ -1,3 +1,17 @@
+2004-04-18  Topia  <topia@clovery.jp>
+
+	* HACKING:
+	  - BulletinBoard と remark についてを追記。
+	  - こまかい修正。
+
+	* main/IrcIO/Client.pm, module/Client/Cache.pm:
+	  - __PACKAGE__ がダブルクォートの中では展開されないことを
+	    忘れていたので修正。
+
+	* module/Channel/Rejoin.pm:
+	  - 自分自身がいないチャンネル(そもそもふつうはこんなことには
+	    ならないのだが)の rejoin 判定時に error が起きるのを修正。
+
 2004-04-18  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/ControlPort.pm (ControlPort::Session::main):
@@ -1572,7 +1586,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.145 2004/04/18 06:01:16 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2004/04/18 06:01:16 $
-# Revision: $Revision: 1.145 $
+#       Id: $Id: ChangeLog,v 1.146 2004/04/18 07:44:46 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2004/04/18 07:44:46 $
+# Revision: $Revision: 1.146 $
