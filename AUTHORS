@@ -21,6 +21,10 @@ phonohawk: (初期バージョンのみ)設計と実装
 phonohawk: ほぼ全て
 Topia: 幾つかのクラスの設計と実装, 多数の改良とバグ修正
 
+* bundle/IO/Socket/INET6.pm
+
+phonohawk
+
 * tiarra-conf.el
 
 phonohawk
@@ -29,13 +33,22 @@ phonohawk
 
 Noboruhi: tiarra-conf.elからの移植
 
-* doc/*
+* doc/*, doc-src/*
 
 phonohawk: ほぼ全て
+other: モジュールから ./makedoc により自動生成。
 
 * アーカイブの作成と配布
 
-Topia (2004年2月現在)
+Topia (2004年10月現在)
+
+* bundle/ にバンドルされている外部モジュール
+ (IO/Socket/INET6.pm は除きます。)
+
+Unicode::Japanese(PurePerl):
+  Copyright 2001-2004
+  SANO Taku (SAWATARI Mikage) and YAMASHINA Hio.
+  All right reserved.
 
 ===============
 その他、多数の方々よりバグ報告や改良案等を頂き、Tiarraは改善されております。
