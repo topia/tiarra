@@ -1,3 +1,40 @@
+2004-05-08  Topia  <topia@clovery.jp>
+
+	* HACKING:
+	  - typo を修正した。
+	  - IrcIO::Server->remark に isupport と uid を追加した。
+	  - ChannelInfo->remark に creation-time を追加した。
+
+	* main/Multicast.pm:
+	  - $server_sent, $client_sent: RPL_CREATIONTIME へ対応した。
+	  - $client_sent: admin コマンドを追加した。
+
+	* main/NumericReply.pm:
+	  - RPL_BOUNCE を RPL_REDIR に変更。 RPL_BOUNCE はエイリアスとして
+	    そのまま残すようにした。
+	  - RPL_CREATIONTIME を追加した。
+	  - RPL_TOPICWHOTIME を RPL_TOPIC_WHO_TIME に変更した。
+	    RPL_TOPICWHOTIME はエイリアスとしてそのまま残すようにした。
+	  - irc2.11 なものをいくつか追加した。
+	    + RPL_HELLO(020)
+	    + RPL_YOURID(042)
+	    + RPL_SAVENICK(043)
+	    + RPL_REOPLIST(344)
+	    + RPL_ENDOFREOPLIST(345)
+
+	* main/IrcIO/Server.pm:
+	  - RPL_{CREATIONTIME,ISUPPORT,YOURID} に対応した。
+	(_receive_while_logging_in):
+	  - RPL_HELLO 対策を追加した。
+	(modify_nick):
+	  - 第二引数で nicklen を指定できるようにした。
+	(_set_to_next_nick):
+	  - ISUPPORT に NICKLEN が含まれていれば、それを使うようにした。
+
+	* module/Client/Cache.pm:
+	(_send_mode_cache):
+	  - creation-time が存在すれば、それも返すようにした。
+
 2004-04-18  Topia  <topia@clovery.jp>
 
 	* HACKING:
@@ -1586,7 +1623,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.146 2004/04/18 07:44:46 topia Exp $
+#       Id: $Id: ChangeLog,v 1.147 2004/05/08 08:11:30 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2004/04/18 07:44:46 $
-# Revision: $Revision: 1.146 $
+#     Date: $Date: 2004/05/08 08:11:30 $
+# Revision: $Revision: 1.147 $
