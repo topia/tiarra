@@ -17,7 +17,6 @@ use IO::Select;
 use Configuration;
 use IrcIO::Server;
 use IrcIO::Client;
-use Unicode::Japanese;
 use Mask;
 use ModuleManager;
 use Multicast;

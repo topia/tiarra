@@ -11,7 +11,6 @@ package Configuration::Parser;
 use strict;
 use warnings;
 use Carp;
-use Unicode::Japanese;
 use Configuration::LexicalAnalyzer;
 use Configuration::Block;
 

@@ -8,7 +8,6 @@ package Configuration;
 # Configuration及びConfiguration::BlockはUTF-8バイト列でデータを保持します。
 use strict;
 use warnings;
-use Unicode::Japanese;
 use UNIVERSAL;
 use Carp;
 use Configuration::Preprocessor;

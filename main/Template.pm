@@ -4,7 +4,6 @@
 package Template;
 use strict;
 use warnings;
-use Unicode::Japanese;
 use Symbol;
 use Carp;
 use UNIVERSAL;
