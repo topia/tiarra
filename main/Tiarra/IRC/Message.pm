@@ -34,6 +34,7 @@ package Tiarra::IRC::Message;
 use strict;
 use warnings;
 use Carp;
+use overload;
 use Unicode::Japanese;
 use Data::Dumper;
 use Tiarra::OptionalModules;
@@ -46,7 +47,7 @@ use constant MAX_MIDDLES => 14;
 use constant MAX_PARAMS => MAX_MIDDLES + 1;
 # max params = (middles[14] + trailing[1]) = 15
 
-utils->define_array_attr_accessor(0, qw(time), ['raw_prefix', PREFIX]);
+utils->define_array_attr_accessor(0, qw(time));
 utils->define_array_attr_translate_accessor(
     0, sub {
 	my ($from, $to) = @_;
@@ -229,7 +230,12 @@ sub serialize {
 		# パラメタが空文字列であった場合は例外としてコロンを付ける。
 		# また、 remark/always-use-colon-on-last-param が付いていた場合も
 		# コロンを付ける。
-		my $arg = $unicode->set($this->[PARAMS]->[$i])->conv($encoding);
+		my $arg = $this->[PARAMS]->[$i];
+		if (ref($arg) && !overload::Method($arg,'""')) {
+		    croak "Param [$i] neither scalar nor stringifiable.";
+		}
+		# do stringify force to avoid bug on unijp
+		$arg = $unicode->set("$arg")->conv($encoding);
 		if (length($arg) > 0 and
 		      index($arg, ' ') == -1 and
 			index($arg, ':') != 0 and
@@ -359,13 +365,19 @@ sub encoding_params {
     }
 }
 
-foreach (qw(prefix nick name host)) {
+foreach (qw(nick name host)) {
     eval "
     sub $_ \{
 	my \$this = shift;
-	\$this->[PREFIX] ||= Tiarra::IRC::Prefix->new;
-	\$this->[PREFIX]->$_(\@_);
+	\$this->prefix->$_(\@_);
     \}";
+}
+
+sub prefix {
+    my $this = shift;
+    $this->[PREFIX] ||= Tiarra::IRC::Prefix->new;
+    $this->[PREFIX]->prefix(shift) if $#_ >= 0;
+    $this->[PREFIX];
 }
 
 1;
