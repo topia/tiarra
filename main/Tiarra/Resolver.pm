@@ -47,7 +47,7 @@ use Tiarra::TerminateManager;
 use Socket;
 use Carp;
 use Net::hostent;
-use Tiarra::DefineEnumMixin qw(QUERY_HOST QUERY_ADDR);
+use Tiarra::DefineEnumMixin qw(QUERY_HOST QUERY_ADDR QUERY_SADDR);
 my $dataclass = 'Tiarra::Resolver::QueueData';
 our $use_threads;
 our $use_ipv6;
@@ -126,6 +126,10 @@ sub resolve {
 	$entry->query_type(QUERY_HOST);
 	$entry->query_data($data);
 	$do = 1;
+    } elsif ($type eq 'saddr') {
+	$entry->query_type(QUERY_SADDR);
+	$entry->query_data($data);
+	$do = 1;
     }
     if ($do) {
 	$entry->timeout(0);
@@ -134,11 +138,13 @@ sub resolve {
 	if ($my_use_threads) {
 	    $this->{ask_queue}->enqueue($entry->serialize);
 	    $this->{mainloop}->lazy_install;
+	    undef;
 	} else {
 	    $this->_call($this->_resolve($entry));
 	}
+    } else {
+	undef;
     }
-    undef;
 }
 
 sub paranoid_check {
@@ -147,13 +153,14 @@ sub paranoid_check {
     my $this = $class_or_this->_this;
 
     # stage 1
-    $this->resolve('host', $data, sub {
-		       eval {
-			   $this->_paranoid_stage1($data, $closure, $my_use_threads, shift);
-		       }; if ($@) {
-			   $closure->(0, undef);
-		       }
-		   }, $my_use_threads);
+    $this->resolve(
+	'host', $data, sub {
+	    eval {
+		$this->_paranoid_stage1($data, $closure, $my_use_threads, shift);
+	    }; if ($@) {
+		$closure->(0, undef);
+	    }
+	}, $my_use_threads);
 }
 
 sub _paranoid_stage1 {
@@ -165,13 +172,14 @@ sub _paranoid_stage1 {
 	    # FIXME: support multiple hostname resolved
 	    $host = $host->[0];
 	}
-	$this->resolve('addr', $host, sub {
-			   eval {
-			       $this->_paranoid_stage2($data, $closure, $my_use_threads, shift);
-			   }; if ($@) {
-			       $closure->(0, undef, $entry);
-			   }
-		       }, $my_use_threads);
+	$this->resolve(
+	    'addr', $host, sub {
+		eval {
+		    $this->_paranoid_stage2($data, $closure, $my_use_threads, shift);
+		}; if ($@) {
+		    $closure->(0, undef, $entry);
+		}
+	    }, $my_use_threads);
     } else {
 	$closure->(0, undef, $entry);
     }
@@ -198,6 +206,7 @@ sub _call {
     if (!%{$this->{closures}} && $use_threads) {
 	$this->{mainloop}->lazy_uninstall;
     }
+    $entry;
 }
 
 sub _resolve {
@@ -208,7 +217,7 @@ sub _resolve {
 
     if ($entry->query_type eq QUERY_ADDR) {
 	if ($use_ipv6 && !$resolved) {
-	    my @res = getaddrinfo($entry->query_data, AI_NUMERICHOST, AF_UNSPEC, SOCK_STREAM);
+	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
 	    my ($saddr, $addr, @addrs, %addrs);
 	    threads::shared::share(@addrs) if $use_threads;
 	    while (scalar(@res) >= 5) {
@@ -240,7 +249,7 @@ sub _resolve {
 	}
     } elsif ($entry->query_type eq QUERY_HOST) {
 	if ($use_ipv6 && !$resolved) {
-	    my @res = getaddrinfo($entry->query_data, AI_NUMERICHOST, AF_UNSPEC, SOCK_STREAM);
+	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
 	    my ($saddr, $host, @hosts, %hosts);
 	    threads::shared::share(@hosts) if $use_threads;
 	    while (scalar(@res) >= 5) {
@@ -267,6 +276,24 @@ sub _resolve {
 		$entry->answer_data($hostent->name);
 		$resolved = 1;
 	    }
+	}
+    } elsif ($entry->query_type eq QUERY_SADDR) {
+	if ($use_ipv6 && !$resolved) {
+	    my @res = getaddrinfo($entry->query_data->[0],
+				  $entry->query_data->[1],
+				  AF_UNSPEC, SOCK_STREAM);
+	    my ($saddr);
+	    (undef, undef, undef, $saddr, undef, @res) = @res;
+	    if (defined $saddr) {
+		$entry->answer_data($saddr);
+		$resolved = 1;
+	    }
+	}
+	if (!$resolved) {
+	    my $addr = inet_aton($entry->query_data->[0]);
+	    $entry->answer_data(pack_sockaddr_in($entry->query_data->[1],
+						 $addr));
+	    $resolved = 1;
 	}
     } else {
 	carp 'unsupported query type('.$entry->query_type.')';
