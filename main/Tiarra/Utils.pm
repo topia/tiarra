@@ -271,29 +271,50 @@ sub get_first_defined {
     return undef;
 }
 
-sub call_with_wantarray {
+sub _wantarrays_to_types {
     shift; # drop
-    my ($wantarray, $closure, @args) = @_;
+    map {
+	if (!defined $_) {
+	    'void';
+	} elsif (!$_) {
+	    'scalar';
+	} else {
+	    'list';
+	}
+    } @_;
+}
 
-    if (!defined $wantarray) {
+sub _wantarray_to_type {
+    (shift->_wantarrays_to_types(@_))[0];
+}
+
+sub call_with_wantarray {
+    my $class_or_this = shift;
+    my ($wantarray, $closure, @args) = @_;
+    my $type = $class_or_this->_wantarray_to_type($wantarray);
+
+    if ($type eq 'void') {
 	# void context
 	$closure->(@args);
 	return undef;
-    } elsif (!$wantarray) {
+    } elsif ($type eq 'scalar') {
 	# scalar context
 	my $ret = $closure->(@args);
 	return $ret;
-    } else {
+    } elsif ($type eq 'list') {
 	# list context
 	my $ret = [$closure->(@args)];
 	return @$ret;
+    } else {
+	croak "unsupported wantarray type: $type";
     }
 }
 
 sub do_with_ensure {
-    shift; # drop
+    my $class_or_this = shift;
     my ($closure, $ensure, @args) = @_;
     my $retval;
+    my $type = $class_or_this->_wantarray_to_type(wantarray);
 
     eval {
 	$retval = [$closure->(@args)];
@@ -303,7 +324,11 @@ sub do_with_ensure {
     if ($error) {
 	croak $error;
     } else {
-	return @$retval;
+	if ($type eq 'scalar') {
+	    return $retval->[0];
+	} else {
+	    return @$retval;
+	}
     }
 }
 
