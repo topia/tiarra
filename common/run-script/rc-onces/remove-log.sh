@@ -2,9 +2,7 @@
 # $Id$
 # copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
 
-# FIXME: fixed string
-REDIR_STDOUT="${REDIR_STDOUT:->errlog.stdout}"
-REDIR_STDERR="${REDIR_STDERR:->errlog.stderr}"
+LAZY_EXECUTE="${LAZY_EXECUTE}"'
 for i in "${REDIR_STDOUT}" "${REDIR_STDERR}"; do
   case "$i" in
     \&*|-) ;;
@@ -13,3 +11,4 @@ for i in "${REDIR_STDOUT}" "${REDIR_STDERR}"; do
       ;;
   esac
 done
+'
