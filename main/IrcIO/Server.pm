@@ -402,6 +402,10 @@ sub _receive_while_logging_in {
 	$this->_set_to_next_nick($first_msg->param(1));
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
     }
+    elsif ($reply eq RPL_HELLO) {
+	# RPL_HELLO (irc2.11.x)
+	return; # 何もしない
+    }
     else {
 	# それ以外。手の打ちようがないのでconnectionごと切断してしまう。
 	# 但し、ニューメリックリプライでもERRORでもなければ無視する。
@@ -502,7 +506,8 @@ sub _receive_after_logged_in {
 		map("RPL_$_",
 		    qw(CHANNELMODEIS NOTOPIC TOPIC TOPICWHOTIME
 		       CREATIONTIME WHOREPLY NAMREPLY ENDOFNAMES
-		       WHOISUSER WHOISSERVER AWAY ENDOFWHOIS),
+		       WHOISUSER WHOISSERVER AWAY ENDOFWHOIS
+		       ISUPPORT),
 		    map({("${_}LIST", "ENDOF${_}LIST");}
 			    qw(INVITE EXCEPT BAN)),
 		   )) {
@@ -1005,10 +1010,43 @@ sub _RPL_CHANNELMODEIS {
 		       Params => \@args));
 }
 
+sub _RPL_ISUPPORT {
+    # 歴史的な理由で、 RPL_ISUPPORT(005) は
+    # RPL_BOUNCE(005) として使われていることがある。
+    my ($this,$msg) = @_;
+    if ($msg->n_params >= 2 && # nick + [params] + 'are supported by this server'
+	    $msg->param($msg->n_params - 1) =~ /supported/i) {
+	my $isupport = $this->remark('isupport');
+	foreach my $param ((@{$msg->params})[1...($msg->n_params - 2)]) {
+	    my ($negate, $key, $value) = $param =~ /^(-)?([[:alnum:]]+)(?:=(.+))?$/;
+	    if (!defined $negate) {
+		# empty value
+		$value = '' unless defined $value;
+		$isupport->{$key} = $value;
+	    } elsif (!defined $value) {
+		# negate a previously specified parameter
+		delete $isupport->{$key};
+	    } else {
+		# inconsistency param
+		carp("inconsistency RPL_ISUPPORT param: $param");
+	    }
+	}
+	$this->remark('isupport', $isupport);
+    }
+}
+
 sub _set_to_next_nick {
     my ($this,$failed_nick) = @_;
     # failed_nickの次のnickを試します。nick重複でログインに失敗した時に使います。
-    my $next_nick = modify_nick($failed_nick);
+    my $nicklen = do {
+	if (defined $this->remark('isupport') &&
+		defined $this->remark('isupport')->{NICKLEN}) {
+	    $this->remark('isupport')->{NICKLEN};
+	} else {
+	    9;
+	}
+    };
+    my $next_nick = modify_nick($failed_nick, $nicklen);
 
     my $msg_for_user = "Nick $failed_nick was already in use in the ".$this->network_name.". Trying ".$next_nick."...";
     $this->send_message(
@@ -1025,26 +1063,31 @@ sub _set_to_next_nick {
 
 sub modify_nick {
     my $nick = shift;
-    if ($nick =~ /(\d+)$/) {
+    my $nicklen = shift || 9;
+
+    if ($nick =~ /^(.*\D)?(\d+)$/) {
 	# 最後の数文字が数字だったら、それをインクリメント
-	my $base = $`;
-	my $next_num = $1 + 1;
-	if (length($base . $next_num) <= 9) {
-	    # 9文字以内に収まるのでこれで試す。
+	my $base = $1;
+	my $next_num = $2 + 1;
+	if (($next_num - 1) eq $next_num) {
+	    # 桁あふれしているので数字部分を全部消す。
+	    $nick = $base;
+	} elsif (length($base . $next_num) <= $nicklen) {
+	    # $nicklen 文字以内に収まるのでこれで試す。
 	    $nick = $base . $next_num;
 	}
 	else {
-	    # 収まらないので9文字に縮める。
-	    $nick = substr($base,0,9 - length($next_num)) . $next_num;
+	    # 収まらないので $nicklen 文字に縮める。
+	    $nick = substr($base,0,$nicklen - length($next_num)) . $next_num;
 	}
     }
-    elsif ($nick =~ /_$/ && length($nick) >= 9) {
+    elsif ($nick =~ /_$/ && length($nick) >= $nicklen) {
 	# 最後の文字が_で、それ以上_を付けられない場合、それを0に。
 	$nick =~ s/_$/0/;
     }
     else {
 	# 最後に_を付ける。
-	if (length($nick) >= 9) {
+	if (length($nick) >= $nicklen) {
 	    $nick =~ s/.$/_/;
 	}
 	else {
