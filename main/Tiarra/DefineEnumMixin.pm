@@ -7,8 +7,8 @@
 package Tiarra::DefineEnumMixin;
 use strict;
 use warnings;
-use Tiarra::Utils;
-use base qw(Tiarra::Utils);
+use Tiarra::Utils::DefineHelper;
+use base qw(Tiarra::Utils::DefineHelper);
 
 
 # usage:
@@ -22,10 +22,12 @@ use base qw(Tiarra::Utils);
 
 sub import {
     my $pkg = shift;
-    local $Tiarra::Utils::ExportLevel;
-    ++$Tiarra::Utils::ExportLevel;
-
-    $pkg->define_enum(@_);
+    my @args = @_;
+    $pkg->do_with_define_exportlevel(
+	0,
+	sub {
+	    $pkg->define_enum(@args);
+	});
 }
 
 1;

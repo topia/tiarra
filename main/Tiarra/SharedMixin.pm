@@ -7,17 +7,16 @@
 package Tiarra::SharedMixin;
 use strict;
 use warnings;
-use Tiarra::Utils;
-use base qw(Tiarra::Utils);
+use Tiarra::Utils::DefineHelper;
+use base qw(Tiarra::Utils::DefineHelper);
 our $ExportLevel = 0;
-
 
 # usage:
 #  use Tiarra::SharedMixin qw(shared shared_module);
 #  our $_shared_instance; # optional, but useful for documentation.
 #  sub _new {
 #      my $class = shift;
-#      my ($this) = {};
+#      my ($this) = {@_};
 #      bless $this, $class;
 #      #__PACKAGE__->shared->some_func; # can't use
 #      return $this;
@@ -26,13 +25,14 @@ our $ExportLevel = 0;
 #      my $this = shift;
 #      __PACKAGE__->shared->some_func; # OK
 #  }
+#  __PACKAGE__->_shared_init(args...);
 
 # use $_shared_instance variable.
-# import shared and _this functions.
+# import shared and _shared_init and _this functions.
 
 sub import {
     my $pkg = shift;
-    my $call_pkg = caller($ExportLevel);
+    my $call_pkg = $pkg->get_package($ExportLevel);
     my $instance_name = $call_pkg.'::_shared_instance';
     if ($#_ != 0) {
 	push(@_, 'shared');
@@ -63,7 +63,7 @@ sub import {
 
     $pkg->define_function(
 	$call_pkg,
-	\&Tiarra::Utils::_this,
+	\&Tiarra::Utils::Core::_this,
 	'_this');
 }
 
