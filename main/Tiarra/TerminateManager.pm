@@ -11,8 +11,6 @@ use Carp;
 use Hook;
 use base qw(HookTarget);
 use Tiarra::SharedMixin;
-use Tiarra::Utils;
-my $utils = Tiarra::Utils->shared;
 
 sub _new {
     my $class = shift;
