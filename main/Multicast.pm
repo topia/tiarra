@@ -585,6 +585,16 @@ sub attach {
     $str;
 }
 
+sub attach_for_client {
+    my ($str, $network_name) = @_;
+
+    if ($runloop->multi_server_mode_p) {
+	attach($str, $network_name);
+    } else {
+	$str;
+    }
+}
+
 sub classify {
     # array: 配列への参照
     # 戻り値: ネットワーク名→パース後の文字列を並べた配列への参照
