@@ -1,11 +1,11 @@
 #!/usr/bin/perl
 # -----------------------------------------------------------------------------
 # - T i a r r a - :::bootstrap:::
-# Copyright (c) 2002-2003 phonohawk. All rights reserved.
+# Copyright (c) 2002-2004 phonohawk. All rights reserved.
 # This is free software; you can redistribute it and/or modify it
 #   under the same terms as Perl itself.
 # -----------------------------------------------------------------------------
-# $Id: tiarra,v 1.31 2004/01/22 19:13:45 topia Exp $
+# $Id: tiarra,v 1.32 2004/02/14 16:40:34 admin Exp $
 # -----------------------------------------------------------------------------
 require 5.006;
 use strict;
@@ -297,7 +297,7 @@ sub get_credit {
 		 ("- T i a r r a - :::version ${version}:::",
 		  "                    based #${based_version}")
 	    ),
-	    "Copyright (c) 2002-2003 phonohawk. All rights reserved.",
+	    "Copyright (c) 2002-2004 phonohawk. All rights reserved.",
 	    "This is free software; you can redistribute it and/or modify it",
 	    "  under the same terms as Perl itself.");
 }
