@@ -9,7 +9,7 @@ use warnings;
 use base qw(Module);
 use Multicast;
 
-sub NICK_CACHE_EXPIRE_TIME (){ 5 * 60 }
+sub NICK_CACHE_EXPIRE_TIME (){ 20 * 60 }
 sub NICK_CACHE_EXPIRE_KEY (){ __PACKAGE__ . '/nick-avails' }
 sub REMARK_NICK_ATTACHED_KEY (){ __PACKAGE__ . '/nick-attached' }
 
