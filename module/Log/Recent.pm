@@ -132,8 +132,12 @@ sub log {
 	else {
 	    # privでなければChannelInfoに'recent-log'として保存。
 	    my ($ch_short,$network_name) = Multicast::detach($ch_full);
-	    my $ch = RunLoop->shared->
-		network($network_name)->channel($ch_short);
+	    my $network = RunLoop->shared->network($network_name);
+	    if (!defined $network) {
+		RunLoop->shared->notify_warn("errorness network name: $network_name");
+		return;
+	    }
+	    my $ch = $network->channel($ch_short);
 	    if (!defined $ch) {
 		return;
 	    }
