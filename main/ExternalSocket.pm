@@ -35,14 +35,14 @@ use Tiarra::Socket;
 use base qw(Tiarra::Socket);
 utils->define_attr_getter(0, qw(name));
 
-sub socket {
-    shift->sock(@_);
-}
-
 use SelfLoader;
 SelfLoader->load_stubs;
 1;
 __DATA__
+
+sub socket {
+    shift->sock(@_);
+}
 
 sub new {
     my ($class,%opts) = @_;
@@ -52,6 +52,7 @@ sub new {
     $this->{read} = undef;
     $this->{write} = undef;
     $this->{wanttowrite} = undef;
+    my $this_func = $class . '->new';
 
     if (defined $opts{Socket}) {
 	if (ref $opts{Socket} &&
@@ -59,11 +60,11 @@ sub new {
 	    $this->attach($opts{Socket});
 	}
 	else {
-	    croak "ExternalSocket->new, Arg{Socket} was illegal object: ".ref($opts{Socket})."\n";
+	    croak "$this_func, Arg{Socket} was illegal object: ".ref($opts{Socket})."\n";
 	}
     }
     else {
-	croak "ExternalSocket->new, Arg{Socket} not exists\n";
+	croak "$this_func, Arg{Socket} not exists\n";
     }
 
     foreach my $key (qw/Read Write WantToWrite/) {
@@ -72,11 +73,11 @@ sub new {
 		$this->{lc $key} = $opts{$key};
 	    }
 	    else {
-		croak "ExternalSocket->new, Arg{$key} was illegal reference: ".ref($args{$key})."\n";
+		croak "$this_func, Arg{$key} was illegal reference: ".ref($args{$key})."\n";
 	    }
 	}
 	else {
-	    croak "ExternalSocket->new, Arg{$key} not exists\n";
+	    croak "$this_func, Arg{$key} not exists\n";
 	}
     }
 
@@ -93,7 +94,8 @@ sub install {
     my ($this,$runloop) = @_;
 
     if ($this->installed) {
-	croak "This ExternalSocket has been already installed to RunLoop\n";
+	croak "This " . ref($this) .
+	    " has been already installed to RunLoop\n";
     }
 
     $runloop = RunLoop->shared unless defined $runloop;
@@ -107,21 +109,26 @@ sub uninstall {
 
     if (!$this->installed) {
 	# インストールされていない。
-	croak "This ExternalSocket hasn't been installed yet\n";
+	croak "This " . ref($this) . " hasn't been installed yet\n";
     }
 
     $this->SUPER::uninstall;
+}
+
+sub __check_caller {
+    my $this = shift;
+    my $caller_pkg = utils->get_package(1);
+    if (!$caller_pkg->isa('RunLoop')) {
+	croak "Only RunLoop may call method read/write/want_to_write of " .
+	    ref($this) . "\n";
+    }
 }
 
 sub read {
     # Readを実行する。RunLoopのみがこのメソッドを呼べる。
     my $this = shift;
 
-    my ($caller_pkg) = caller;
-    if (!$caller_pkg->isa('RunLoop')) {
-	croak "Only RunLoop may call method read/write/want_to_write of ExternalSocket\n";
-    }
-    
+    $this->__check_caller;
     $this->{read}->($this);
     $this;
 }
@@ -130,11 +137,7 @@ sub write {
     # Writeを実行する。
     my $this = shift;
 
-    my ($caller_pkg) = caller;
-    if (!$caller_pkg->isa('RunLoop')) {
-	croak "Only RunLoop may call method read/write/want_to_write of ExternalSocket\n";
-    }
-    
+    $this->__check_caller;
     $this->{write}->($this);
     $this;
 }
@@ -143,11 +146,7 @@ sub want_to_write {
     # WantToWriteを実行する。
     my $this = shift;
 
-    my ($caller_pkg) = caller;
-    if (!$caller_pkg->isa('RunLoop')) {
-	croak "Only RunLoop may call method read/write/want_to_write of ExternalSocket\n";
-    }
-    
+    $this->__check_caller;
     $this->{wanttowrite}->($this);
 }
 
