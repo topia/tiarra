@@ -53,12 +53,16 @@ sub client_attached {
 	    # ログはあるか？
 	    my $vec = $ch->remarks('recent-log');
 	    if (defined $vec) {
+		my $ch_name;
 		foreach my $elem (@$vec) {
+		    $ch_name =
+			RunLoop->shared->multi_server_mode_p ?
+			    $elem->[0] : $ch->name;
 		    $client->send_message(
 			IRCMessage->new(
 			    Prefix => 'Tiarra',
 			    Command => 'NOTICE',
-			    Params => [$elem->[0],$elem->[1]]));
+			    Params => [$ch_name,$elem->[1]]));
 		}
 	    }
 	}
@@ -92,7 +96,7 @@ sub PRIVMSG_or_NOTICE {
 	}
 	else {
 	    my $format = do {
-		if ($this->config->distinguish_myself && $sender->isa('IrcIO::Client')) {		    
+		if ($this->config->distinguish_myself && $sender->isa('IrcIO::Client')) {
 		    $cmd eq 'PRIVMSG' ? '>%s< %s' : ')%s( %s';
 		}
 		else {
