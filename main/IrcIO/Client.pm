@@ -15,6 +15,7 @@ use Configuration;
 use Multicast;
 use Mask;
 use LocalChannelManager;
+use NumericReply;
 
 use SelfLoader;
 SelfLoader->load_stubs; # このクラスには親クラスがあるから。(SelfLoaderのpodを参照)
@@ -189,7 +190,7 @@ sub _receive_while_logging_in {
 
 	    $this->send_message(
 		new IRCMessage(Prefix => $prefix,
-			       Command => '464',
+			       Command => ERR_PASSWDMISMATCH,
 			       Params => [$this->{nick},'Password incorrect']));
 	    $this->send_message(
 		new IRCMessage(Command => 'ERROR',
@@ -210,7 +211,7 @@ sub _receive_while_logging_in {
 
 	    $this->send_message(
 		new IRCMessage(Prefix => $prefix,
-			       Command => '001',
+			       Command => RPL_WELCOME,
 			       Params => [$this->{nick},'Welcome to the Internet Relay Network '.$this->fullname_from_client]));
 
 	    my $current_nick = RunLoop->shared_loop->current_nick;
@@ -245,12 +246,12 @@ sub _receive_while_logging_in {
 		}
 	    } values %{RunLoop->shared_loop->networks};
 
-	    $send_message->('002', "Your host is $prefix, running version ".::version());
-	    $send_message->('375', "- $prefix Message of the Day -");
+	    $send_message->(RPL_YOURHOST, "Your host is $prefix, running version ".::version());
+	    $send_message->(RPL_MOTDSTART, "- $prefix Message of the Day -");
 	    foreach my $line (main::get_credit()) {
-		$send_message->('372', "- ".$line);
+		$send_message->(RPL_MOTD, "- ".$line);
 	    }
-	    $send_message->('376', "End of MOTD command.");
+	    $send_message->(RPL_ENDOFMOTD, "End of MOTD command.");
 
 	    # joinしている全てのチャンネルの情報をクライアント送る。
 	    $this->inform_joinning_channels;
@@ -295,7 +296,7 @@ sub _receive_after_logged_in {
 		$this->send_message(
 		    new IRCMessage(
 			Prefix => Configuration->shared->general->sysmsg_prefix,
-			Command => '432',
+			Command => ERR_ERRONEOUSNICKNAME,
 			Params => [RunLoop->shared_loop->current_nick,
 				   $msg->params->[0],
 				   'Erroneous nickname']));
@@ -306,7 +307,7 @@ sub _receive_after_logged_in {
 	    $this->send_message(
 		new IRCMessage(
 		    Prefix => Configuration->shared->general->sysmsg_prefix,
-		    Command => '431',
+		    Command => ERR_NONICKNAMEGIVEN,
 		    Params => [RunLoop->shared_loop->current_nick,
 			       'No nickname given']));
 	    # これは鯖に送らない。
@@ -368,7 +369,7 @@ sub inform_joinning_channels {
 		$this->send_message(
 		    IRCMessage->new(
 			Prefix => $this->fullname,
-			Command => '332',
+			Command => RPL_TOPIC,
 			Params => [$local_nick,$ch_name,$ch->topic]));
 	    }
 	    # 次にRPL_TOPICWHOTIME(あれば)
@@ -376,7 +377,7 @@ sub inform_joinning_channels {
 		$this->send_message(
 		    IRCMessage->new(
 			Prefix => $this->fullname,
-			Command => '333',
+			Command => RPL_TOPICWHOTIME,
 			Params => [$local_nick,$ch_name,$ch->topic_who,$ch->topic_time]));
 	    }
 	    # 次にRPL_NAMREPLY
@@ -398,7 +399,7 @@ sub inform_joinning_channels {
 		    $this->send_message(
 			IRCMessage->new(
 			    Prefix => $this->fullname,
-			    Command => '353',
+			    Command => RPL_NAMREPLY,
 			    Params => [$local_nick,
 				       $ch_property_char,
 				       $ch_name,
@@ -438,7 +439,7 @@ sub inform_joinning_channels {
 	    $this->send_message(
 		IRCMessage->new(
 		    Prefix => $this->fullname,
-		    Command => '366',
+		    Command => RPL_ENDOFNAMES,
 		    Params => [$local_nick,$ch_name,'End of NAMES list']));
 	} values %{$network->channels};
     } values %{RunLoop->shared_loop->networks};
