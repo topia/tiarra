@@ -342,7 +342,7 @@ sub _makeconf {
 		(my $stripped = $line) =~ s/^\s*//;
 		"$block_indent$stripped";
 	    }
-	    elsif ($line =~ m/^(.+?)\s*:\s*(.+)$/) {
+	    elsif ($line =~ m/^(.+?)\s*:\s*(.*)$/) {
 		my ($key,$value) = ($1,$2);
 		if ($key =~ s/^-//) {
 		    "$block_indent#$key: $value";

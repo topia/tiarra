@@ -224,7 +224,7 @@ sub makehtml_mods {
 				  } @group);
 		    $html .= qq{</p>\n};
 		}
-		elsif ($line =~ m/^-?(.+?)\s*:\s*(.+)$/) {
+		elsif ($line =~ m/^-?(.+?)\s*:\s*(.*)$/) {
 		    my ($key,$value) = ($1,$2);
 		    $html .= qq{<span class="key">$key</span>:<span class="value">$value</span><br />\n};
 		} elsif ($line =~ m/^(.+?)\s*{\s*$/) {
