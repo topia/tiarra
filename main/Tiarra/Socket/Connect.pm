@@ -304,8 +304,10 @@ sub proc_sock {
 	$this->cleanup;
 	$this->_call;
     } else {
+	my $error = $!;
 	$this->cleanup;
 	$this->close;
+	$! = $error;
 	$this->_connect_error_try_next(($!+0).': '.$!);
     }
 }
