@@ -11,9 +11,6 @@ use Module::Use qw(Log::Writer::Base);
 use Log::Writer::Base;
 use base qw(Log::Writer::Base);
 
-Log::Writer->register_as_protocol;
-Log::Writer->register_as_fallback;
-
 sub new {
     my ($class, $parent, $uri, %options) = @_;
     my $this = $class->SUPER::new($parent, $uri, %options);
@@ -111,5 +108,9 @@ sub mkdirs {
 	}
     }
 }
+
+# should last
+Log::Writer->register_as_protocol;
+Log::Writer->register_as_fallback;
 
 1;

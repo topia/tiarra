@@ -7,9 +7,6 @@ use strict;
 use warnings;
 use Carp;
 
-#Log::Writer->register_as_protocol;
-#Log::Writer->register_as_fallback;
-
 # pure virtual function helper
 sub not_implemented_error {
     my ($class_or_this) = shift;
@@ -199,5 +196,9 @@ sub _notify_prefix {
     $this->name.'/'.(caller(1 + $stack_level))[3].'('
 	.$this->uri.'): ';
 }
+
+# should last
+#Log::Writer->register_as_protocol;
+#Log::Writer->register_as_fallback;
 
 1;
