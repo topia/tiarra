@@ -132,7 +132,7 @@ sub update_modules {
 	    eval {
 		$loaded_mods{$_->block_name}->destruct;
 	    }; if ($@) {
-		RunLoop->shared_loop->notify_error->($@);
+		RunLoop->shared_loop->notify_error($@);
 	    }
 	}
 	$this->_unload($_);
@@ -226,6 +226,7 @@ sub reload_modules_if_modified {
 		if (defined $USED) {
 		    # USEDの全ての要素に対し再帰的にマークを付ける。
 		    foreach my $used_elem (keys %$USED) {
+			$mods_to_be_reloaded->{$used_elem} = 1;
 			$show_msg->("$used_elem will be reloaded because of modification of $modname");
 			$trace->($used_elem);
 		    }
@@ -256,7 +257,7 @@ sub reload_modules_if_modified {
 		eval {
 		    $this->{modules}->[$idx]->destruct;
 		}; if ($@) {
-		    RunLoop->shared_loop->notify_error->($@);
+		    RunLoop->shared_loop->notify_error($@);
 		}
 
 		my $conf_block = $this->{mod_configs}->{$modname};
@@ -274,7 +275,7 @@ sub reload_modules_if_modified {
 		eval qq{
 		    use $modname;
 		}; if ($@) {
-		    RunLoop->shared_loop->notify_error->($@);
+		    RunLoop->shared_loop->notify_error($@);
 		}
 		eval qq{
                     \%${modname}::USED = \%USED;
@@ -383,58 +384,26 @@ sub _unload {
     $mod_filename .= '.pm';
 
     # シンボルテーブルを削除してしまえば変数やサブルーチンにアクセス出来なくなる。
-    # 多分これでメモリが開放されるだろう。
-    #eval 'undef %'.$modname.'::;';
-    # NG。v5.6.0 built for darwinでこれをやるとbus errorで落ちる。
-    # 落ちなかったとしても非常に危険である。
-    # 代わりにシンボルテーブル内の全てのシンボルをundefする。
-    # シンボルテーブル一つ分のメモリはリークするが、仕方が無い。
+    use Symbol ();
+    # サブパッケージを消す挙動は危険かもしれないのでとりあえず退避。
+    # (%INC のこともあるし)
+    # ただし、サブパッケージの性格上メインパッケージなしに動く保証はどこにもない。
+
     no strict;
     local(*stab) = eval qq{\*${modname}::};
-    my $defined_on;
-    my %showed_modules;
-    while (my ($key,$val) = each(%stab)) {
-	local(*entry) = $val;
-	if (defined $entry) {
-	    ::debug_printmsg("unload scalar: $key");
-	    undef $entry;
+    my %shelter = map {
+	if ($_ =~ /::$/ &&
+		$_ !~ /^(SUPER)::$/ && $_ !~ /^::(ISA|ISA::CACHE)::$/) {
+	    ($_, $stab{$_});
+	} else {
+	    ();
 	}
-	if (defined @entry) {
-	    ::debug_printmsg("unload array: $key");
-	    undef @entry;
-	}
-	if (defined &entry) {
-	    $defined_on = eval q{
-		use B;
-		B::svref_2object(\&entry)->FILE
-	    };
-	    if ($defined_on && $defined_on eq $INC{$mod_filename}) {
-		::debug_printmsg("unload subroutine: $key");
-		undef &entry;
-	    } else {
-		if (::debug_mode()) {
-		    if (!defined $defined_on) {
-			::printmsg("not-unload subroutine: $key, " .
-				       'defined on (anywhere)');
-		    } else {
-			++$showed_modules{$defined_on};
-			if ($showed_modules{$defined_on} <= 10) {
-			    ::printmsg("not-unload subroutine: $key" .
-					   ", defined on $defined_on");
-			}
-			if ($showed_modules{$defined_on} == 10) {
-			    ::printmsg("not-unload subroutine: omit the rest " .
-					   "of defined on $defined_on...");
-			}
-		    }
-		}
-	    }
-	}
-	if ($key ne "${modname}::" && defined %entry) {
-	    ::debug_printmsg("unload symtable: $key");
-	    undef %entry;
-	}
-    }
+    } keys(%stab);
+
+    Symbol::delete_package($modname);
+
+    # 隔離しておいたものを戻す。
+    eval qq{\%${modname}:: = ( \%shelter, \%${modname}:: ) };
 
     # %INCからも削除
     delete $INC{$mod_filename};
