@@ -76,16 +76,14 @@ sub check_if_updated {
     my $this = shift->_this;
     if ($this->{time_on_load} == 0) {
 	1;
-    }
-    else {
+    } else {
 	if (defined $this->{conf_file}) {
 	    #$this->{time_on_load} < (stat $this->{conf_file})[9];
 	    foreach (@{$this->{included_files}}) {
 		return 1 if ($this->{time_on_load} < (stat $_)[9]);
 	    }
 	    0;
-	}
-	else {
+	} else {
 	    0;
 	}
     }
@@ -104,17 +102,14 @@ sub load {
 	if (ref($conf_file) && UNIVERSAL::isa($conf_file,'IO::Handle')) {
 	    # IO::Handleだった場合は保存しておけない。
 	    $this->{conf_file} = undef;
-	}
-	else {
+	} else {
 	    # ファイル名なので保存しておく。
 	    $this->{conf_file} = $conf_file;
 	}
-    }
-    else {
+    } else {
 	if (defined $this->{conf_file}) {
 	    $conf_file = $this->{conf_file};
-	}
-	else {
+	} else {
 	    croak "Configuration->load, Arg[1] was omitted or undef, but no file names were saved yet.\n";
 	}
     }
@@ -154,15 +149,13 @@ sub load {
 	if ($blockname =~ m/^-/) {
 	    # -ブロックなので捨てる。
 	    next;
-	}
-	elsif ($blockname =~ m/^\+/) {
+	} elsif ($blockname =~ m/^\+/) {
 	    # +ブロックなので+を消して登録
 	    $blockname =~ s/^\+\s*//;
 	    $block->block_name($blockname);
 
 	    push @$modules,$block;
-	}
-	else {
+	} else {
 	    # 普通のブロック。
 	    $blocks->{$blockname} = $block;
 	}
@@ -207,7 +200,7 @@ my $defaults = {
 		'netconf-changed-disconnect' =>
 		    'Server Configuration changed; disconnect',
 	    }
-	},
+	   },
     },
     networks => {
 	'name' => 'main',
@@ -246,7 +239,7 @@ sub _complete_block_with_defaults {
 	    $blocks->set($default_block_name,
 			 Configuration::Block->new($default_block_name));
 	}
-	
+
 	my $block = $blocks->get($default_block_name);
 	my $must_check_child = {};
 	while (my ($default_key,$default_value) = each %{$default_block}) {
@@ -349,6 +342,6 @@ FunctionalVariable::tie(
     FETCH => sub {
 	Configuration->shared;
     },
-);
+   );
 
 1;
