@@ -30,7 +30,8 @@ DAEMON_MODE=${DAEMON_MODE:-yes}
 
 
 cmd_line='${PERL} ${PERLARG}'
-cmd_line="${cmd_line} "'${TIARRA} --config="${CONF}"'
+cmd_line="${cmd_line} "'${TIARRA}'
+cmd_line="${cmd_line} "'--config="${CONF}"'
 cmd_line="${cmd_line} ${TIARRAARG}"
 cmd_line="${cmd_line} "'"$@"'
 [ "X${REDIR_STDOUT}" = "X-" ] || cmd_line="${cmd_line} >>${REDIR_STDOUT}"
