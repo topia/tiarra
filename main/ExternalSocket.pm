@@ -21,6 +21,12 @@
 #               # 引数はReadやWriteと同じだが、真偽値を返さなければならない。
 #               undef;
 #             },
+#     Exception => sub {
+#               # ソケットに例外が発生したときに呼ばれるクロージャ。
+#               my $this = shift;
+#               ::printmsg($this->errmsg('foo socket error'));
+#               $this->disconnect;
+#             },
 #     )->install;
 #
 # $esock->uninstall;
@@ -52,6 +58,7 @@ sub new {
     $this->{read} = undef;
     $this->{write} = undef;
     $this->{wanttowrite} = undef;
+    $this->{exception} = undef;
     my $this_func = $class . '->new';
 
     if (defined $opts{Socket}) {
@@ -67,7 +74,7 @@ sub new {
 	croak "$this_func, Arg{Socket} not exists\n";
     }
 
-    foreach my $key (qw/Read Write WantToWrite/) {
+    foreach my $key (qw/Read Write WantToWrite Exception/) {
 	if (defined $opts{$key}) {
 	    if (ref($opts{$key}) eq 'CODE') {
 		$this->{lc $key} = $opts{$key};
@@ -148,6 +155,14 @@ sub want_to_write {
 
     $this->__check_caller;
     $this->{wanttowrite}->($this);
+}
+
+sub exception {
+    # Exceptionを実行する。
+    my $this = shift;
+
+    $this->__check_caller;
+    $this->{exception}->($this);
 }
 
 1;
