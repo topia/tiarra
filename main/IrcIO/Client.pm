@@ -8,15 +8,17 @@ package IrcIO::Client;
 use strict;
 use warnings;
 use Carp;
-use base qw(IrcIO);
 use IrcIO;
+use base qw(IrcIO);
 use Net::hostent;
 use Crypt;
-use Configuration;
 use Multicast;
 use Mask;
 use LocalChannelManager;
 use NumericReply;
+use Tiarra::Utils;
+# shorthand
+my $utils = Tiarra::Utils->shared;
 
 # 複数のパッケージを混在させてるとSelfLoaderが使えない…？
 #use SelfLoader;
@@ -25,31 +27,31 @@ use NumericReply;
 #__DATA__
 
 sub new {
-    my ($class,$sock) = @_;
-    my $obj = $class->SUPER::new;
-    $obj->{sock} = $sock;
-    $obj->{connected} = 1;
-    $obj->{client_host} = do {
+    my ($class,$runloop,$sock) = @_;
+    my $this = $class->SUPER::new($runloop);
+    $this->{sock} = $sock;
+    $this->{connected} = 1;
+    $this->{client_host} = do {
 	my $hostent = Net::hostent::gethost($sock->peerhost); # 逆引き
 	defined $hostent ? $hostent->name : $sock->peerhost;
     };
-    $obj->{pass_received} = ''; # クライアントから受け取ったパスワード
-    $obj->{nick} = ''; # ログイン時にクライアントから受け取ったnick。変更されない。
-    $obj->{username} = ''; # 同username
-    $obj->{logging_in} = 1; # ログイン中なら1
-    $obj->{options} = {}; # クライアントが接続時に$key=value$で指定したオプション。
+    $this->{pass_received} = ''; # クライアントから受け取ったパスワード
+    $this->{nick} = ''; # ログイン時にクライアントから受け取ったnick。変更されない。
+    $this->{username} = ''; # 同username
+    $this->{logging_in} = 1; # ログイン中なら1
+    $this->{options} = {}; # クライアントが接続時に$key=value$で指定したオプション。
 
     # このホストからの接続は許可されているか？
-    my $allowed_host = Configuration->shared_conf->general->client_allowed;
+    my $allowed_host = $this->_conf_general->client_allowed;
     if (defined $allowed_host) {
-	unless (Mask::match($allowed_host,$obj->{client_host})) {
+	unless (Mask::match($allowed_host,$this->{client_host})) {
 	    # マッチしないのでdie。
-	    die "One client at ".$obj->{client_host}." connected to me, but the host is not allowed.\n";
+	    die "One client at ".$this->{client_host}." connected to me, but the host is not allowed.\n";
 	}
     }
-    ::printmsg("One client at ".$obj->{client_host}." connected to me.");
-    RunLoop->shared_loop->register_receive_socket($sock);
-    $obj;
+    ::printmsg("One client at ".$this->{client_host}." connected to me.");
+    $this->_runloop->register_receive_socket($sock);
+    $this;
 }
 
 sub logging_in {
@@ -68,10 +70,10 @@ sub fullname {
     # このクライアントをtiarraから見たnick!username@userhostの形式で表現する。
     my ($this,$type) = @_;
     if (defined $type && $type eq 'error') {
-	RunLoop->shared_loop->current_nick.'['.$this->{username}.'@'.$this->{client_host}.']';
+	$this->_runloop->current_nick.'['.$this->{username}.'@'.$this->{client_host}.']';
     }
     else {
-	RunLoop->shared_loop->current_nick.'!'.$this->{username}.'@'.$this->{client_host};
+	$this->_runloop->current_nick.'!'.$this->{username}.'@'.$this->{client_host};
     }
 }
 
@@ -119,25 +121,48 @@ sub option {
     }
 }
 
+sub option_or_default {
+    my ($this, $base, $config_prefix, $option_prefix, $default) = @_;
+    my $value;
+
+    $utils->get_first_defined(
+	$this->option($utils->to_str($option_prefix).$base),
+	$this->_conf_general->get($utils->to_str($option_prefix).$base),
+	$default);
+}
+
+sub option_or_default_multiple {
+    my ($this, $base, $types, $config_prefix) = @_;
+
+    return $utils->get_first_defined(
+	(map {
+	    $this->option(join('',$utils->to_str($_, $base)));
+	} @$types),
+	(map {
+	    $this->_conf_general->get(
+		join('',$utils->to_str($config_prefix, $_, $base)));
+	} @$types));
+}
+
 sub send_message {
     my ($this,$msg) = @_;
 
     # 各モジュールに通知
-    #RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'out');
+    #$this->_runloop->notify_modules('notification_of_message_io',$msg,$this,'out');
 
     $this->SUPER::send_message(
 	$msg,
-	$this->option('encoding') || Configuration->shared->general->client_out_encoding);
+	$this->option_or_default_multiple('encoding', ['out-', ''], 'client-'));
 }
 
 sub receive {
     my ($this) = shift;
     $this->SUPER::receive(
-	$this->option('encoding') || Configuration->shared->general->client_in_encoding);
+	$this->option_or_default_multiple('encoding', ['in-', ''], 'client'));
 
     # 接続が切れたら、各モジュールへ通知
     if (!$this->connected) {
-	RunLoop->shared->notify_modules('client_detached',$this);
+	$this->_runloop->notify_modules('client_detached',$this);
     }
 }
 
@@ -148,7 +173,7 @@ sub pop_queue {
     # クライアントがログイン中なら、ログインを受け付ける。
     if (defined $msg) {
 	# 各モジュールに通知
-	#RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'in');
+	#$this->_runloop->notify_modules('notification_of_message_io',$msg,$this,'in');
 
 	# ログイン作業中か？
 	if ($this->{logging_in}) {
@@ -192,8 +217,8 @@ sub _receive_while_logging_in {
 
     if ($this->{nick} ne '' && $this->{username} ne '') {
 	# general/tiarra-passwordを取得
-	my $valid_password = Configuration->shared_conf->general->tiarra_password;
-	my $prefix = RunLoop->shared_loop->sysmsg_prefix('system');
+	my $valid_password = $this->_conf_general->tiarra_password;
+	my $prefix = $this->_runloop->sysmsg_prefix('system');
 	if (defined $valid_password && $valid_password ne '' &&
 	    ! Crypt::check($this->{pass_received},$valid_password)) {
 	    # パスワードが正しくない。
@@ -225,7 +250,7 @@ sub _receive_while_logging_in {
 			       Command => RPL_WELCOME,
 			       Params => [$this->{nick},'Welcome to the Internet Relay Network '.$this->fullname_from_client]));
 
-	    my $current_nick = RunLoop->shared_loop->current_nick;
+	    my $current_nick = $this->_runloop->current_nick;
 	    if ($this->{nick} ne $current_nick) {
 		# クライアントが送ってきたnickとローカルのnickが食い違っているので正しいnickを教える。
 		$this->send_message(
@@ -252,17 +277,17 @@ sub _receive_while_logging_in {
 		if ($global_nick ne $current_nick) {
 		    $this->send_message(
 			new IRCMessage(
-			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
+			    Prefix => $this->_runloop->sysmsg_prefix(qw(priv system)),
 			    Command => 'NOTICE',
 			    Params => [$current_nick,
 				       "*** Your global nick in $network_name is currently '$global_nick'."]));
 		}
-	    } values %{RunLoop->shared_loop->networks};
+	    } values %{$this->_runloop->networks};
 	    
 	    $send_message->(RPL_YOURHOST, "Your host is $prefix, running version ".::version());
-	    if (!RunLoop->shared_loop->multi_server_mode_p) {
+	    if (!$this->_runloop->multi_server_mode_p) {
 		# single server mode
-		my $network = (RunLoop->shared_loop->networks_list)[0];
+		my $network = ($this->_runloop->networks_list)[0];
 
 		if (defined $network) {
 		    # send isupport
@@ -309,7 +334,7 @@ sub _receive_while_logging_in {
 	    $this->inform_joinning_channels;
 
 	    # 各モジュールにクライアント追加の通知を出す。
-	    RunLoop->shared->notify_modules('client_attached',$this);
+	    $this->_runloop->notify_modules('client_attached',$this);
 	}
     }
     # ログイン作業中にクライアントから受け取ったいかなるメッセージもサーバーには送らない。
@@ -334,22 +359,22 @@ sub _receive_after_logged_in {
 		    #	Prefix => $this->fullname,
 		    #	Command => 'NICK',
 		    #	Param => $msg->params->[0]));
-		    if (RunLoop->shared->multi_server_mode_p) {
-			RunLoop->shared->broadcast_to_clients(
+		    if ($this->_runloop->multi_server_mode_p) {
+			$this->_runloop->broadcast_to_clients(
 			    IRCMessage->new(
 				Command => 'NICK',
 				Param => $msg->param(0),
 				Remarks => {'fill-prefix-when-sending-to-client' => 1}));
 
-			RunLoop->shared_loop->set_current_nick($msg->params->[0]);
+			$this->_runloop->set_current_nick($msg->params->[0]);
 		    }
 		}
 	    } else {
 		$this->send_message(
 		    new IRCMessage(
-			Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
+			Prefix => $this->_runloop->sysmsg_prefix('system'),
 			Command => ERR_ERRONEOUSNICKNAME,
-			Params => [RunLoop->shared_loop->current_nick,
+			Params => [$this->_runloop->current_nick,
 				   $msg->params->[0],
 				   'Erroneous nickname']));
 		# これは鯖に送らない。
@@ -358,9 +383,9 @@ sub _receive_after_logged_in {
 	} else {
 	    $this->send_message(
 		new IRCMessage(
-		    Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
+		    Prefix => $this->_runloop->sysmsg_prefix('system'),
 		    Command => ERR_NONICKNAMEGIVEN,
-		    Params => [RunLoop->shared_loop->current_nick,
+		    Params => [$this->_runloop->current_nick,
 			       'No nickname given']));
 	    # これは鯖に送らない。
 	    $msg = undef;
@@ -376,7 +401,7 @@ sub _receive_after_logged_in {
 	$this->disconnect_after_writing;
 
 	# 接続が切れた事にする。
-	RunLoop->shared->notify_modules('client_detached',$this);
+	$this->_runloop->notify_modules('client_detached',$this);
 
 	# これは鯖に送らない。
 	$msg = undef;
@@ -417,7 +442,7 @@ sub do_namreply {
 		IRCMessage->new(
 		    Prefix => $this->fullname,
 		    Command => RPL_NAMREPLY,
-		    Params => [RunLoop->shared_loop->current_nick,
+		    Params => [$this->_runloop->current_nick,
 			       $ch_property_char,
 			       Multicast::attach_for_client($ch->name, $network->network_name),
 			       $nick_enumeration]));
@@ -458,7 +483,7 @@ sub do_namreply {
 
 sub inform_joinning_channels {
     my $this = shift;
-    my $local_nick = RunLoop->shared_loop->current_nick;
+    my $local_nick = $this->_runloop->current_nick;
 
     my $send_channelinfo = sub {
 	my ($network, $ch) = @_;
@@ -505,7 +530,7 @@ sub inform_joinning_channels {
 		'channel-info', $this, $ch_name, $network, $ch);
 	}; if ($@) {
 	    # エラーメッセージは表示するが、送信処理は続ける
-	    RunLoop->shared_loop->notify_error(__PACKAGE__." hook call error: $@");
+	    $this->_runloop->notify_error(__PACKAGE__." hook call error: $@");
 	}
     };
 
@@ -516,10 +541,10 @@ sub inform_joinning_channels {
 	    (Multicast::attach($ch->name, $network->network_name) =>
 		    [$network, $ch]);
 	} values %{$network->channels};
-    } values %{RunLoop->shared_loop->networks};
+    } values %{$this->_runloop->networks};
 
     # Mask を使って、マッチしたものを出力
-    foreach (Configuration->shared->networks->
+    foreach ($this->_conf_networks->
 		 fixed_channels('block')->channel('all')) {
 	my $mask = $_;
 	foreach (keys %channels) {

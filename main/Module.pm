@@ -8,14 +8,23 @@
 package Module;
 use strict;
 use warnings;
+use Carp;
+use RunLoop;
+use Tiarra::ShorthandConfMixin;
 # our @USES = ();
 
 sub new {
-    my $class = shift;
+    my ($class, $runloop) = @_;
+    if (!defined $runloop) {
+	carp 'please update module constructor; see Skelton.pm';
+	$runloop = RunLoop->shared;
+    }
     # モジュールが必要になった時に呼ばれる。
     # これはモジュールのコンストラクタである。
     # 引数は無し。
-    bless {},$class; # デフォルトではモジュールはフィールドを持たない。
+    bless {
+	runloop => $runloop,
+    },$class; # デフォルトではモジュールはフィールドを持たない。
 }
 
 sub destruct {
@@ -124,12 +133,16 @@ sub control_requested {
     die "This module doesn't support controlling.\n";
 }
 
+sub _runloop {
+    shift->{runloop};
+}
+
 sub config {
     my $this = shift;
     # このモジュールの設定を取得する。
     # オーバーライドする必要は無い。
     # 戻り値はConfiguration::Block。
-    Configuration->shared->find_module_conf(ref $this);
+    $this->_conf->find_module_conf(ref($this),'block');
 }
 
 1;

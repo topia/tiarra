@@ -26,6 +26,7 @@ use Timer;
 use ControlPort;
 use Hook;
 our @ISA = 'HookTarget';
+use Tiarra::ShorthandConfMixin;
 use Tiarra::SharedMixin;
 our $_shared_instance;
 
@@ -41,9 +42,23 @@ BEGIN {
 *shared_loop = \&shared;
 
 sub _new {
-    my $class = shift;
-    my $conf = Configuration::shared_conf;
+    shift->new(Configuration->shared);
+}
+
+sub new {
+    my ($class, $conf) = @_;
+    carp 'conf is not specified!' unless defined $conf;
+    # early initialization
     my $this = {
+	conf => $conf,
+	mod_manager => undef,
+    };
+    bless $this, $class;
+
+    # update
+    %$this = (
+	%$this,
+
 	# 受信用セレクタ。あらゆるソケットは常に受信の必要があるため、あらゆるソケットが登録されている。
 	receive_selector => new IO::Select,
 
@@ -54,7 +69,7 @@ sub _new {
 	tiarra_server_socket => undef,
 
 	# 現在のnick。全てのサーバーとクライアントの間で整合性を保ちつつnickを変更する手段を、RunLoopが用意する。
-	current_nick => $conf->general->nick,
+	current_nick => $this->_conf_general->nick,
 
 	# 鯖から切断された時の動作。
 	action_on_disconnected => do {
@@ -63,7 +78,7 @@ sub _new {
 		'one-message' => \&_action_one_message,
 		'message-for-each' => \&_action_message_for_each,
 	    };
-	    my $action_name = $conf->networks->action_when_disconnected;
+	    my $action_name = $this->_conf_networks->action_when_disconnected;
 	    unless (defined $action_name) {
 		$action_name = 'part-and-join';
 	    }
@@ -90,20 +105,19 @@ sub _new {
 	conf_reloaded_hook => undef, # この下でインストールするフック
 
 	terminating => 0, # 正のときは終了処理中。
-    };
-    bless $this, $class;
+       );
 
     $this->{conf_reloaded_hook} = Configuration::Hook->new(
 	sub {
 	    # マルチサーバーモードのOn/Offが変わったか？
 	    my $old = $this->{multi_server_mode} ? 1 : 0;
-	    my $new = Configuration->shared->networks->multi_server_mode ? 1 : 0;
+	    my $new = $this->_conf_networks->multi_server_mode ? 1 : 0;
 	    if ($old != $new) {
 		# 変わった
 		$this->_multi_server_mode_changed;
 	    }
 	},
-       )->install;
+       )->install(undef, $this->_conf);
 
     $this;
 }
@@ -116,7 +130,8 @@ sub DESTROY {
 }
 
 sub network {
-    my ($this,$network_name) = @_;
+    my ($class_or_this,$network_name) = @_;
+    my $this = $class_or_this->_this;
     my $network;
     foreach my $genre (qw(networks disconnected_networks terminated_networks)) {
 	$network = $this->{$genre}->{$network_name};
@@ -127,29 +142,30 @@ sub network {
 }
 
 sub default_network {
-    shift->{default_network};
+    shift->_this->{default_network};
 }
 
 sub networks {
-    shift->{networks};
+    shift->_this->{networks};
 }
 
 sub networks_list {
-    values %{shift->{networks}};
+    values %{shift->_this->{networks}};
 }
 
 sub clients {
-    shift->{clients};
+    shift->_this->{clients};
 }
 
 sub clients_list {
-    @{shift->{clients}};
+    @{shift->_this->{clients}};
 }
 
 sub channel {
     # $ch_long: ネットワーク名修飾付きチャンネル名
     # 見付かったらChannelInfo、見付からなければundefを返す。
-    my ($this,$ch_long) = @_;
+    my ($class_or_this,$ch_long) = @_;
+    my $this = $class_or_this->_this;
 
     my ($ch_short,$net_name) = Multicast::detach($ch_long);
     my $network = $this->{networks}->{$net_name};
@@ -164,17 +180,19 @@ sub current_nick {
     # クライアントから見た、現在のnick。
     # このnickは実際に使われているnickとは異なっている場合がある。
     # すなわち、希望のnickが既に使われていた場合である。
-    shift->{current_nick};
+    shift->_this->{current_nick};
 }
 
 sub set_current_nick {
-    my ($this,$new_nick) = @_;
+    my ($class_or_this,$new_nick) = @_;
+    my $this = $class_or_this->_this;
     $this->{current_nick} = $new_nick;
     $this->call_hooks('set-current-nick');
 }
 
 sub change_nick {
-    my ($this,$new_nick) = @_;
+    my ($class_or_this,$new_nick) = @_;
+    my $this = $class_or_this->_this;
 
     foreach my $io (values %{$this->{networks}}) {
 	$io->send_message(
@@ -185,11 +203,12 @@ sub change_nick {
 }
 
 sub multi_server_mode_p {
-    shift->{multi_server_mode};
+    shift->_this->{multi_server_mode};
 }
 
 sub find_io_with_socket {
-    my ($this,$sock) = @_;
+    my ($class_or_this,$sock) = @_;
+    my $this = $class_or_this->_this;
     # networksとclientsの中から指定されたソケットを持つIrcIOを探します。
     # 見付からなければundefを返します。
     foreach my $io (values %{$this->{networks}}) {
@@ -201,14 +220,12 @@ sub find_io_with_socket {
     undef;
 }
 
-# shorthand for Configuration::shared_conf->...
-sub _conf { Configuration::shared_conf; }
-sub _conf_general { shift->_conf->general; }
-sub _conf_networks { shift->_conf->networks; }
-sub _conf_messages { shift->_conf_general->messages; }
+sub _runloop { shift->_this; }
+sub _mod_manager { shift->_this->{mod_manager}; }
 
 sub sysmsg_prefix {
-    my ($this,$purpose,$category) = @_;
+    my ($class_or_this,$purpose,$category) = @_;
+    my $this = $class_or_this->_this;
     $category = (caller)[0] . (defined $category ? "::$category" : '');
     # $purpose は、この関数で得た prefix を何に使うかを示す。
     #     いまのところ system(NumericReply など)/priv/channel
@@ -546,7 +563,7 @@ sub update_networks {
 		else {
 		    $host_tried->{$net_conf->host} = 1;
 
-		    $network = IrcIO::Server->new($net_name);
+		    $network = IrcIO::Server->new($this, $net_name);
 		    $this->{networks}->{$net_name} = $network; # networksに登録
 		}
 	    }
@@ -638,7 +655,8 @@ sub update_networks {
 }
 
 sub terminate_server {
-    my ($this,$network, $msg) = @_;
+    my ($class_or_this,$network, $msg) = @_;
+    my $this = $class_or_this->_this;
 
     $network->state('terminating');
     $network->quit($msg);
@@ -646,7 +664,8 @@ sub terminate_server {
 
 sub reconnect_server {
     # terminate/disconnect(サーバから)されたサーバへ接続しなおす。
-    my ($this,$network_name) = @_;
+    my ($class_or_this,$network_name) = @_;
+    my $this = $class_or_this->_this;
     my ($network, $genre) = $this->network($network_name);
 
     if (defined $genre && $genre ne 'networks') {
@@ -662,7 +681,8 @@ sub disconnect_server {
     # 指定されたサーバーとの接続を切る。
     # fdの監視をやめてしまうので、この後IrcIO::Serverのreceiveはもう呼ばれない事に注意。
     # $server: IrcIO::Server
-    my ($this,$server) = @_;
+    my ($class_or_this,$server) = @_;
+    my $this = $class_or_this;
     $server->disconnect;
     delete $this->{networks}->{$server->network_name};
 }
@@ -670,7 +690,8 @@ sub disconnect_server {
 sub close_client {
     # 指定したクライアントとの接続を切る。
     # $client: IrcIO::Client
-    my ($this, $client, $message) = @_;
+    my ($class_or_this, $client, $message) = @_;
+    my $this = $class_or_this->_this;
     $client->send_message(
 	IRCMessage->new(
 	    Command => 'ERROR',
@@ -682,13 +703,15 @@ sub close_client {
 }
 
 sub reconnected_server {
-    my ($this,$network) = @_;
+    my ($class_or_this,$network) = @_;
+    my $this = $class_or_this->_this;
     # 再接続だった場合の処理
     $this->{action_on_disconnected}->($this,$network,'connected');
 }
 
 sub disconnected_server {
-    my ($this,$network) = @_;
+    my ($class_or_this,$network) = @_;
+    my $this = $class_or_this->_this;
     $this->{action_on_disconnected}->($this,$network,'disconnected');
 }
 
@@ -787,12 +810,16 @@ sub _execute_all_timers_to_fire {
 }
 
 sub run {
-    my $this = shift;
+    my $this = shift->_this;
     my $conf_general = $this->_conf_general;
 
     # マルチサーバーモード
     $this->{multi_server_mode} =
-      $this->_conf_networks->multi_server_mode;
+	$this->_conf_networks->multi_server_mode;
+
+    # FIXME: only shared
+    $this->{mod_manager} =
+	ModuleManager->shared($this);
 
     # まずはtiarra-portをlistenするソケットを作る。
     # 省略されていたらlistenしない。
@@ -972,7 +999,7 @@ sub run {
 		if (defined $new_sock) {
 		    if (!$this->{terminating}) {
 			eval {
-			    my $client = new IrcIO::Client($new_sock);
+			    my $client = new IrcIO::Client($this, $new_sock);
 			    push @{$this->{clients}},$client;
 			}; if ($@) {
 			    $this->notify_msg($@);
@@ -1136,11 +1163,12 @@ sub run {
 	$this->{tiarra_server_socket}->close;
 	$this->unregister_receive_socket($this->{tiarra_server_socket});
     }
-    ModuleManager->shared_manager->terminate;
+    $this->_mod_manager->terminate;
 }
 
 sub terminate {
-    my ($this, $message) = @_;
+    my ($class_or_this, $message) = @_;
+    my $this = $class_or_this->_this;
 
     $this->{terminating} = 1;
     map { $this->terminate_server($_, $message) } $this->networks_list;
@@ -1153,7 +1181,8 @@ sub broadcast_to_clients {
     # IRCMessageをログイン中でない全てのクライアントに送信する。
     # fill-prefix-when-sending-to-clientという註釈が付いていたら、
     # Prefixをそのクライアントのfullnameに設定する。
-    my ($this,@messages) = @_;
+    my ($class_or_this,@messages) = @_;
+    my $this = $class_or_this->_this;
     foreach my $client (@{$this->{clients}}) {
 	next if $client->logging_in;
 	
@@ -1169,7 +1198,8 @@ sub broadcast_to_clients {
 
 sub broadcast_to_servers {
     # IRCメッセージを全てのサーバーに送信する。
-    my ($this,@messages) = @_;
+    my ($class_or_this,@messages) = @_;
+    my $this = $class_or_this->_this;
     foreach my $network (values %{$this->{networks}}) {
 	foreach my $msg (@messages) {
 	    $network->send_message($msg);
@@ -1178,8 +1208,9 @@ sub broadcast_to_servers {
 }
 
 sub notify_modules {
-    my ($this,$method,@args) = @_;
-    foreach my $mod (@{ModuleManager->shared_manager->get_modules}) {
+    my ($class_or_this,$method,@args) = @_;
+    my $this = $class_or_this->_this;
+    foreach my $mod (@{$this->_mod_manager->get_modules}) {
 	eval {
 	    $mod->$method(@args);
 	}; if ($@) {
@@ -1196,7 +1227,7 @@ sub apply_filters {
 
     my $source = $src_messages;
     my $filtered = [];
-    foreach my $mod (@{ModuleManager->shared_manager->get_modules}) {
+    foreach my $mod (@{$this->_mod_manager->get_modules}) {
 	# (普通ないはずだが) $mod が undef だったらこのモジュールをとばす。
 	next unless defined $mod;
 	# sourceが空だったらここで終わり。
@@ -1212,13 +1243,13 @@ sub apply_filters {
 	    }; if ($@) {
 		my $modname = ref($mod);
 		# ブラックリストに入れておく
-		ModuleManager->shared_manager->add_to_blacklist($modname);
+		$this->_mod_manager->add_to_blacklist($modname);
 		$this->notify_error(
 		    "Exception in ".$modname.".\n".
 			"This module added to blacklist!\n".
 			    "The message was '".$src->serialize."'.\n".
 				"   $@");
-		ModuleManager->shared_manager->remove_from_blacklist($modname);
+		$this->_mod_manager->remove_from_blacklist($modname);
 	    }
 	    
 	    if (defined $reply[0]) {
@@ -1253,18 +1284,19 @@ sub _apply_filters {
 }
 
 sub notify_error {
-    my ($this,$str) = @_;
-    $this->notify_msg("===== ERROR =====\n$str");
+    my ($class_or_this,$str) = @_;
+    $class_or_this->notify_msg("===== ERROR =====\n$str");
 }
 sub notify_warn {
-    my ($this,$str) = @_;
-    $this->notify_msg(":: WARNING :: $str");
+    my ($class_or_this,$str) = @_;
+    $class_or_this->notify_msg(":: WARNING :: $str");
 }
 sub notify_msg {
     # 渡された文字列をSTDOUTに出力すると同時に全クライアントにNOTICEする。
     # 改行コードLFで行を分割する。
     # 文字コードはUTF-8でなければならない。
-    my ($this,$str) = @_;
+    my ($class_or_this,$str) = @_;
+    my $this = $class_or_this->_this;
     $str =~ s/\n+$//s; # 末尾のLFは消去
 
     # STDOUTへ
@@ -1307,7 +1339,7 @@ our $HOOK_TARGET_DEFAULT;
 FunctionalVariable::tie(
     \$HOOK_TARGET_DEFAULT,
     FETCH => sub {
-	RunLoop->shared;
+	RunLoop->shared_loop;
     },
    );
 

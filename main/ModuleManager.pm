@@ -6,18 +6,25 @@
 # -----------------------------------------------------------------------------
 package ModuleManager;
 use strict;
+use Carp;
 use warnings;
 use UNIVERSAL;
-use Configuration;
 use RunLoop;
 use Tiarra::SharedMixin;
+use Tiarra::ShorthandConfMixin;
 our $_shared_instance;
 
 *shared_manager = \&shared;
 
 sub _new {
-    my $class = shift;
+    shift->new(shift || RunLoop->shared);
+}
+
+sub new {
+    my ($class, $runloop) = @_;
+    croak 'runloop is not specified!' unless defined $runloop;
     my $obj = {
+	runloop => $runloop,
 	modules => [], # 現在使用されている全てのモジュール
 	using_modules_cache => undef, # ブラックリストを除いた全てのモジュールのキャッシュ。
 	mod_configs => {}, # 現在使用されている全モジュールのConfiguration::Block
@@ -33,6 +40,10 @@ sub _initialize {
     $this->update_modules;
 }
 
+sub _runloop {
+    shift->_this->{runloop};
+}
+
 sub add_to_blacklist {
     my ($this,$modname) = @_;
     $this->_set_blacklist($modname, 1);
@@ -44,13 +55,14 @@ sub remove_from_blacklist {
 }
 
 sub check_blacklist {
-    my ($this,$modname) = @_;
+    my ($class_or_this,$modname) = @_;
 
-    exists $this->{mod_blacklist}->{$modname};
+    exists $class_or_this->_this->{mod_blacklist}->{$modname};
 }
 
 sub _set_blacklist {
-    my ($this,$modname,$add_or_remove) = @_;
+    my ($class_or_this,$modname,$add_or_remove) = @_;
+    my $this = $class_or_this->_this;
 
     $this->_clear_module_cache;
     if ($add_or_remove) {
@@ -72,7 +84,8 @@ sub get_modules {
     # @options(省略可能):
     #   'even-if-blacklisted': ブラックリスト入りのものを含める。
     # モジュールの配列への参照を返すが、これを変更してはならない！
-    my ($this,@options) = @_;
+    my ($class_or_this,@options) = @_;
+    my $this = $class_or_this->_this;
     if (defined $options[0] && $options[0] eq 'even-if-blacklisted') {
 	return $this->{modules};
     } else {
@@ -86,7 +99,8 @@ sub get_modules {
 }
 
 sub get {
-    my ($this,$modname) = @_;
+    my ($class_or_this,$modname) = @_;
+    my $this = $class_or_this->_this;
     foreach (@{$this->{modules}}) {
 	return $_ if ref $_ eq $modname;
     }
@@ -95,7 +109,7 @@ sub get {
 
 sub terminate {
     # Tiarra終了時に呼ぶ事。
-    my $this = shift;
+    my $this = shift->_this;
     foreach (@{$this->{modules}}) {
 	eval {
 	    $_->destruct;
@@ -117,7 +131,8 @@ sub terminate {
 }
 
 sub timestamp {
-    my ($this,$module,$timestamp) = @_;
+    my ($class_or_this,$module,$timestamp) = @_;
+    my $this = $class_or_this->_this;
     if (defined $timestamp) {
 	$this->{mod_timestamps}->{$module} = $timestamp;
     }
@@ -125,7 +140,8 @@ sub timestamp {
 }
 
 sub check_timestamp_update {
-    my ($this,$module,$timestamp) = @_;
+    my ($class_or_this,$module,$timestamp) = @_;
+    my $this = $class_or_this->_this;
 
     $timestamp = $this->{mod_timestamps}->{$module} if !defined $timestamp;
     if (defined $timestamp) {
@@ -148,16 +164,15 @@ sub update_modules {
     # もはや必要とされなくなったモジュールがあれば破棄する。
     # 二度目以降、つまり起動後にこれが実行された場合は
     # モジュールのロードや破棄に関して成功時にもメッセージを出力する。
-    my $this = shift;
-    my $mod_configs = Configuration->shared_conf->get_list_of_modules;
+    my $this = shift->_this;
+    my $mod_configs = $this->_conf->get_list_of_modules;
     my ($new,$deleted,$changed,$not_changed) = $this->_check_difference($mod_configs);
 
     my $show_msg = sub {
 	if ($this->{updated_once}) {
 	    # 過去に一度以上、update_modulesが実行された事がある。
 	    return sub {
-		RunLoop->shared_loop
-		    ->notify_msg( $_[0] );
+		$this->_runloop->notify_msg( $_[0] );
 	    };
 	}
 	else {
@@ -218,7 +233,7 @@ sub update_modules {
 	    eval {
 		$loaded_mods{$_->block_name}->destruct;
 	    }; if ($@) {
-		RunLoop->shared_loop->notify_error($@);
+		$this->_runloop->notify_error($@);
 	    }
 	}
 	$this->_unload($_);
@@ -292,7 +307,7 @@ sub reload_modules_if_modified {
     my $this = shift;
 
     my $show_msg = sub {
-	RunLoop->shared_loop->notify_msg($_[0]);
+	$this->_runloop->notify_msg($_[0]);
     };
 
     my $mods_to_be_reloaded = {}; # モジュール名 => 1
@@ -309,8 +324,9 @@ sub reload_modules_if_modified {
 	    my $trace;
 	    $trace = sub {
 		my $modname = shift;
+		no strict 'refs';
 		# このモジュールに%USEDは定義されているか？
-		my $USED = eval qq{ \\\%${modname}::USED };
+		my $USED = \%{$modname.'::USED'};
 		if (defined $USED) {
 		    # USEDの全ての要素に対し再帰的にマークを付ける。
 		    foreach my $used_elem (keys %$USED) {
@@ -345,7 +361,7 @@ sub reload_modules_if_modified {
 		eval {
 		    $this->{modules}->[$idx]->destruct;
 		}; if ($@) {
-		    RunLoop->shared_loop->notify_error($@);
+		    $this->_runloop->notify_error($@);
 		}
 
 		my $conf_block = $this->{mod_configs}->{$modname};
@@ -359,17 +375,16 @@ sub reload_modules_if_modified {
 	    }
 	    else {
 		# アンロード後、use。
+		no strict 'refs';
 		# その時、%USEDを保存する。@USEは保存しない。
-		my %USED = eval qq{ \%${modname}::USED };
+		my %USED = %{$modname.'::USED'};
 		$this->_unload($modname);
 		eval qq{
 		    use $modname;
 		}; if ($@) {
-		    RunLoop->shared_loop->notify_error($@);
+		    $this->_runloop->notify_error($@);
 		}
-		eval qq{
-                    \%${modname}::USED = \%USED;
-                };
+		%{$modname.'::USED'} = %USED;
 	    }
 	}
 
@@ -404,7 +419,7 @@ sub _load {
     eval qq {
 	    use $mod_name;
     }; if ($@) {
-	RunLoop->shared_loop->notify_error(
+	$this->_runloop->notify_error(
 	    "Couldn't load module $mod_name because of exception.\n$@");
 	return undef;
     }
@@ -414,7 +429,7 @@ sub _load {
     #(my $mod_filename = $mod_name) =~ s|::|/|g;
     #my $filepath = $INC{$mod_filename.'.pm'};
     #if ($filepath !~ m|^module/|) {
-    #  RunLoop->shared_loop->notify_error(
+    #  $this->_runloop->notify_error(
     #      "Class $mod_name exists outside the module directory.\n$filepath\n");
     #  next;
     #}
@@ -422,9 +437,10 @@ sub _load {
     # このモジュールは本当にModuleのサブクラスか？
     # 何故かUNIVERSAL::isaは嘘を付く事があるので自力で@ISA内を検索する。
     # 5.6.0 for darwinではモジュールをリロードすると嘘を付く。
+    no strict 'refs';
     my $is_inherit_ok = sub {
 	return 1 if UNIVERSAL::isa($mod_name,'Module');
-	my @isa = eval qq{ \@${mod_name}::ISA };
+	my @isa = @{$mod_name.'::ISA'};
 	foreach (@isa) {
 	    if ($_ eq 'Module') {
 		::debug_printmsg('UNIVERSAL::isa tell a lie...');
@@ -434,7 +450,7 @@ sub _load {
 	undef;
     };
     unless ($is_inherit_ok->()) {
-	RunLoop->shared_loop->notify_error(
+	$this->_runloop->notify_error(
 	    "Class $mod_name doesn't inherit class Module.");
 	return undef;
     }
@@ -442,16 +458,16 @@ sub _load {
     # インスタンス生成
     my $mod;
     eval {
-	$mod = new $mod_name;
+	$mod = $mod_name->new($this->_runloop);
     }; if ($@) {
-	RunLoop->shared_loop->notify_error(
+	$this->_runloop->notify_error(
 	    "Couldn't instantiate module $mod_name because of exception.\n$@");
 	return undef;
     }
 
     # このインスタンスは本当に$mod_nameそのものか？
     if (ref($mod) ne $mod_name) {
-	RunLoop->shared_loop->notify_error(
+	$this->_runloop->notify_error(
 	    "A thing ".$mod_name."->new returned was not a instance of $mod_name.");
 	return undef;
     }
@@ -485,7 +501,7 @@ sub _unload {
     # ただし、サブパッケージの性格上メインパッケージなしに動く保証はどこにもない。
 
     no strict;
-    local(*stab) = eval qq{\*${modname}::};
+    my(%stab) = %{$modname.'::'};
     my %shelter = map {
 	if ($_ =~ /::$/ &&
 		$_ !~ /^(SUPER)::$/ && $_ !~ /^::(ISA|ISA::CACHE)::$/) {
@@ -498,7 +514,7 @@ sub _unload {
     Symbol::delete_package($modname);
 
     # 隔離しておいたものを戻す。
-    eval qq{\%${modname}:: = ( \%shelter, \%${modname}:: ) };
+    %{$modname.'::'} = ( %shelter, %{$modname.'::'} );
 
     # %INCからも削除
     delete $INC{$mod_filename};
@@ -507,13 +523,14 @@ sub _unload {
 sub fix_USED_fields {
     my $this = shift;
     my $result;
+    no strict 'refs';
     foreach my $modname (keys %{$this->{mod_timestamps}}) {
-	my $USED = eval qq{ \\\%${modname}::USED };
+	my $USED = \%{$modname.'::USED'};
 	if (defined $USED) {
 	    my @mods_refer_me = keys %$USED;
 	    foreach my $mod_refs_me (@mods_refer_me) {
 		# このモジュールの@USEには本当に$modnameが入っているか？
-		my $USE = eval qq{ \\\@${mod_refs_me}::USE };
+		my $USE = \@{$mod_refs_me.'::USE'};
 		my $refers_actually = sub {
 		    if (defined $USE) {
 			foreach (@$USE) {
@@ -542,6 +559,7 @@ sub gc {
     # %all_modsの要素で値が空になっている部分が、マークされた個所。
 
     my $trace;
+    no strict 'refs';
     $trace = sub {
 	my $modname = shift;
 	# 既にマークされているか、もしくはモジュールが存在しなければ抜ける。
@@ -554,7 +572,7 @@ sub gc {
 	    $all_mods{$modname} = '';
 	    # このモジュールに@USEが定義されていたら、
 	    # その全てのモジュールについて再帰的にトレース。
-	    my $USE = eval qq{\\\@${modname}::USE};
+	    my $USE = \@{$modname.'::USE'};
 	    if (defined $USE) {
 		foreach (@$USE) {
 		    $trace->($_);
@@ -569,14 +587,13 @@ sub gc {
     }
 
     # マークされなかったサブモジュールは到達不可能なのでアンロードする。
-    my $runloop = RunLoop->shared_loop;
     while (my ($key,$value) = each %all_mods) {
 	if ($value ne '') {
-	    eval qq{
-		\&${key}::destruct();
+	    eval {
+		$key->destruct;
 	    };
 
-	    $runloop->notify_msg(
+	    $this->_runloop->notify_msg(
 		"Submodule $key is no longer required. It will be unloaded.");
 	    $this->_unload($key);
 	}

@@ -63,7 +63,7 @@ sub new {
     do {
 	no strict;
 	no warnings;
-	
+
 	local *symtable = eval "\*${class}::";
 	if (defined ${$symtable{HOOK_TARGET_NAME}}) {
 	    $this->{target_package_name} = ${$symtable{HOOK_TARGET_NAME}};

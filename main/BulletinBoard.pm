@@ -20,24 +20,27 @@ sub _new {
 }
 
 sub set {
-    my ($this,$key,$value) = @_;
+    my ($class_or_this,$key,$value) = @_;
+    my $this = $class_or_this->_this;
     $this->{table}->{$key} = $value;
     $this;
 }
 
 sub get {
-    my ($this,$key) = @_;
+    my ($class_or_this,$key) = @_;
+    my $this = $class_or_this->_this;
     $this->{table}->{$key};
 }
 
 sub keys {
-    keys %{shift->{table}};
+    keys %{shift->_this->{table}};
 }
 
 sub AUTOLOAD {
     # $board->foo_bar => $board->get('foo-bar')
     # $board->foo_bar('foo') => $board->set('foo-bar','foo');
-    my ($this,$newvalue) = @_;
+    my ($class_or_this,$newvalue) = @_;
+    my $this = $class_or_this->_this;
     (my $key = $AUTOLOAD) =~ s/.+?:://g;
     $key =~ s/_/-/g;
 

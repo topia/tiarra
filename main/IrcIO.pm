@@ -11,10 +11,13 @@ use IO::Socket::INET;
 use Configuration;
 use IRCMessage;
 use Exception;
+use Tiarra::ShorthandConfMixin;
 
 sub new {
-    my $class = shift;
+    my ($class, $runloop) = @_;
+    carp 'runloop is not specified!' unless defined $runloop;
     my $obj = {
+	runloop => $runloop,
 	sock => undef, # IO::Socket::INET
 	connected => undef, # どうも$sock->connectedは信用出来ない。
 	sendbuf => '',
@@ -24,6 +27,10 @@ sub new {
 	remarks => {},
     };
     bless $obj,$class;
+}
+
+sub _runloop {
+    shift->{runloop};
 }
 
 sub server_p {
@@ -42,7 +49,7 @@ sub disconnect {
     my $this = shift;
     $this->{sock}->shutdown(2);
     $this->{connected} = undef;
-    RunLoop->shared_loop->unregister_receive_socket($this->{sock});
+    $this->_runloop->unregister_receive_socket($this->{sock});
 }
 
 sub sock {
@@ -89,7 +96,7 @@ sub send_message {
     }
     elsif ($msg->isa('IRCMessage')) {
 	# message_io_hook
-	my $filtered = RunLoop->shared->apply_filters(
+	my $filtered = $this->_runloop->apply_filters(
 	    [$msg], 'message_io_hook', $this, 'out');
 	foreach (@$filtered) {
 	    $data_to_send .= $_->serialize($encoding)."\x0d\x0a";
@@ -173,7 +180,7 @@ sub receive {
 	# message_io_hook
 	my $msg = IRCMessage->new(
 	    Line => $current_line, Encoding => $encoding);
-	my $filtered = RunLoop->shared->apply_filters(
+	my $filtered = $this->_runloop->apply_filters(
 	    [$msg], 'message_io_hook', $this, 'in');
 	
 	foreach (@$filtered) {

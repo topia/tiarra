@@ -9,37 +9,37 @@
 package IrcIO::Server;
 use strict;
 use warnings;
+use IrcIO;
 use base qw(IrcIO);
 use Carp;
 use ChannelInfo;
 use PersonalInfo;
 use PersonInChannel;
-use Configuration;
 use UNIVERSAL;
 use Multicast;
 use NumericReply;
 
 sub new {
-    my ($class,$network_name) = @_;
-    my $obj = $class->SUPER::new;
-    $obj->{network_name} = $network_name;
-    $obj->{current_nick} = ''; # 現在使用中のnick。ログインしていなければ空。
-    $obj->{server_hostname} = ''; # サーバが主張している hostname。こちらもログインしてなければ空。
-    $obj->reload_config;
+    my ($class,$runloop,$network_name) = @_;
+    my $this = $class->SUPER::new($runloop);
+    $this->{network_name} = $network_name;
+    $this->{current_nick} = ''; # 現在使用中のnick。ログインしていなければ空。
+    $this->{server_hostname} = ''; # サーバが主張している hostname。こちらもログインしてなければ空。
+    $this->reload_config;
 
-    $obj->{logged_in} = 0; # このサーバーへのログインに成功しているかどうか。
-    $obj->{new_connection} = 1;
+    $this->{logged_in} = 0; # このサーバーへのログインに成功しているかどうか。
+    $this->{new_connection} = 1;
 
-    $obj->{receiving_namreply} = {}; # RPL_NAMREPLYを受け取ると<チャンネル名,1>になり、RPL_ENDOFNAMESを受け取るとそのチャンネルの要素が消える。
-    $obj->{receiving_banlist} = {}; # 同上。RPL_BANLIST
-    $obj->{receiving_exceptlist} = {}; # 同上。RPL_EXCEPTLIST
-    $obj->{receiving_invitelist} = {}; # 同上、RPL_INVITELIST
+    $this->{receiving_namreply} = {}; # RPL_NAMREPLYを受け取ると<チャンネル名,1>になり、RPL_ENDOFNAMESを受け取るとそのチャンネルの要素が消える。
+    $this->{receiving_banlist} = {}; # 同上。RPL_BANLIST
+    $this->{receiving_exceptlist} = {}; # 同上。RPL_EXCEPTLIST
+    $this->{receiving_invitelist} = {}; # 同上、RPL_INVITELIST
 
-    $obj->{channels} = {}; # 小文字チャンネル名 => ChannelInfo
-    $obj->{people} = {}; # nick => PersonalInfo
-    $obj->{isupport} = {}; # isupport
+    $this->{channels} = {}; # 小文字チャンネル名 => ChannelInfo
+    $this->{people} = {}; # nick => PersonalInfo
+    $this->{isupport} = {}; # isupport
 
-    $obj->connect;
+    $this->connect;
 }
 
 sub network_name {
@@ -129,10 +129,24 @@ sub config {
     shift->{config};
 }
 
+sub config_or_default {
+    my ($this, $base, $general_prefix, $local_prefix, $default) = @_;
+
+    foreach ([$this->config, $local_prefix],
+	     [$this->_conf_general, $general_prefix]) {
+	my ($conf, $prefix) = @$_;
+	$prefix = '' unless defined $prefix;
+	my $value = $conf->get("$prefix$base");
+	if (defined $value) {
+	    return $value;
+	}
+    }
+    return $default;
+}
+
 sub reload_config {
     my $this = shift;
-    my $conf = $this->{config} = Configuration->shared->get($this->{network_name});
-    my $general = Configuration->shared->general;
+    my $conf = $this->{config} = $this->_conf->get($this->{network_name});
     $this->{server_host} = $conf->host;
     $this->{server_port} = $conf->port;
     $this->{destination} = do {
@@ -143,18 +157,17 @@ sub reload_config {
 	    "$this->{server_host}:$this->{server_port}";
 	}
     };
-    my $def = sub{defined$_[0]?$_[0]:$_[1]};
     $this->{server_password} = $conf->password;
-    $this->{initial_nick} = $def->($conf->nick,$general->nick); # ログイン時に設定するnick。
-    $this->{user_shortname} = $def->($conf->user,$general->user);
-    $this->{user_realname} = $def->($conf->name,$general->name);
+    $this->{initial_nick} = $this->config_or_default('nick'); # ログイン時に設定するnick。
+    $this->{user_shortname} = $this->config_or_default('user');
+    $this->{user_realname} = $this->config_or_default('name');
 }
 
 sub person_if_exists {
     my ($this, $nick) = @_;
     $this->{people}{$nick};
 }
-    
+
 sub person {
     # nick以外は全て省略可能。
     # 未知のnickが指定された場合は新規に追加する。
@@ -198,20 +211,15 @@ sub connect {
     my $server_port = $this->{server_port};
 
     # 追加パラメータ
-    my $conf = Configuration->shared;
     my $additional_ipv4 = {};
     my $ipv4_bind_addr =
-	$conf->get($this->{network_name})->ipv4_bind_addr ||
-	$conf->general->ipv4_bind_addr ||
-	$conf->get($this->{network_name})->bind_addr ||
-	$conf->general->bind_addr; # 以上二つは過去互換性の為に残す。
+	$this->config_or_default('ipv4-bind-addr') ||
+	$this->config_or_default('bind-addr'); # 下は過去互換性の為に残す。
     if (defined $ipv4_bind_addr) {
 	$additional_ipv4->{LocalAddr} = $ipv4_bind_addr;
     }
     my $additional_ipv6 = {};
-    my $ipv6_bind_addr =
-	Configuration->shared->get($this->{network_name})->ipv6_bind_addr ||
-	Configuration->shared->general->ipv6_bind_addr;
+    my $ipv6_bind_addr = $this->config_or_default('ipv6-bind-addr');
     if (defined $ipv6_bind_addr) {
 	$additional_ipv6->{LocalAddr} = $ipv6_bind_addr;
     }
@@ -273,7 +281,7 @@ sub connect {
 	    }
 	};
 	::printmsg("Opened connection to $this->{destination} ($ip_version)");
-	RunLoop->shared_loop->register_receive_socket($sock);
+	$this->_runloop->register_receive_socket($sock);
     }
     else {
 	die "Couldn't connect to $this->{destination}\n";
@@ -296,7 +304,7 @@ sub connect {
 
     # +iなどの文字列からユーザーモード値を算出する。
     my $usermode = 0;
-    if (my $usermode_str = Configuration->shared->general->user_mode) {
+    if (my $usermode_str = $this->_conf_general->user_mode) {
 	if ($usermode_str =~ /^\+/) {
 	    foreach my $c (split //,substr($usermode_str,1)) {
 		if ($c eq 'w') {
@@ -346,24 +354,21 @@ sub send_message {
     }
 
     # 各モジュールへ通知
-    #RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'out');
+    #$this->_runloop->notify_modules('notification_of_message_io',$msg,$this,'out');
 
     $this->SUPER::send_message(
 	$msg,
-	Configuration->shared->get($this->{network_name})->out_encoding ||
-	Configuration->shared->general->server_out_encoding);
+	$this->config_or_default('out-encoding', 'server-'));
 }
 
 sub receive {
     my $this = shift;
-    $this->SUPER::receive(
-	Configuration->shared->get($this->{network_name})->in_encoding ||
-	Configuration->shared->general->server_in_encoding);
+    $this->SUPER::receive($this->config_or_default('in-encoding', 'server-'));
 
     # 接続が切れたら、各モジュールとRunLoopへ通知
     if (!$this->connected) {
-	RunLoop->shared->notify_modules('disconnected_from_server',$this);
-	RunLoop->shared->disconnected_server($this);
+	$this->_runloop->notify_modules('disconnected_from_server',$this);
+	$this->_runloop->disconnected_server($this);
     }
 }
 
@@ -375,9 +380,6 @@ sub pop_queue {
     # パスワードが違うなどで何度やり直してもログイン出来る見込みが無ければ
     # 接続を切ってからdieします。
     if (defined $msg) {
-	# 各モジュールに通知
-	#RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'in');
-
 	# ログイン作業中か？
 	if ($this->{logged_in}) {
 	    # ログイン作業中でない。
@@ -400,16 +402,16 @@ sub _receive_while_logging_in {
 	# 成功した。
 	$this->{current_nick} = $first_msg->param(0);
 	$this->{server_hostname} = $first_msg->prefix;
-	if (!RunLoop->shared->multi_server_mode_p &&
-		RunLoop->shared_loop->current_nick ne $this->{current_nick}) {
-	    RunLoop->shared->broadcast_to_clients(
+	if (!$this->_runloop->multi_server_mode_p &&
+		$this->_runloop->current_nick ne $this->{current_nick}) {
+	    $this->_runloop->broadcast_to_clients(
 		IRCMessage->new(
 		    Command => 'NICK',
 		    Param => $first_msg->param(0),
 		    Remarks => {'fill-prefix-when-sending-to-client' => 1
 			       }));
 
-	    RunLoop->shared_loop->set_current_nick($first_msg->param(0));
+	    $this->_runloop->set_current_nick($first_msg->param(0));
 	}
 	$this->{logged_in} = 1;
 	$this->person($this->{current_nick},
@@ -419,10 +421,10 @@ sub _receive_while_logging_in {
 	::printmsg("Logged-in successfuly into $this->{destination}.");
 
 	# 各モジュールにサーバー追加の通知を行なう。
-	RunLoop->shared->notify_modules('connected_to_server',$this,$this->{new_connection});
+	$this->_runloop->notify_modules('connected_to_server',$this,$this->{new_connection});
 	# 再接続だった場合の処理
 	if (!$this->{new_connection}) {
-	    RunLoop->shared->reconnected_server($this);
+	    $this->_runloop->reconnected_server($this);
 	}
 	$this->{new_connection} = undef;
     }
@@ -436,7 +438,7 @@ sub _receive_while_logging_in {
 	$this->_set_to_next_nick($first_msg->param(1));
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
     }
-    elsif (grep { $_ eq $reply } (RPL_WELCOME, qw(NOTICE PRIVMSG))) {
+    elsif (grep { $_ eq $reply } (RPL_HELLO, RPL_WELCOME, qw(NOTICE PRIVMSG))) {
 	# RPL_HELLO (irc2.11.x) / NOTICE / PRIVMSG
 	return; # 何もしない
     }
@@ -472,21 +474,21 @@ sub _receive_after_logged_in {
 	if ($msg->nick eq $current_nick) {
 	    $this->{current_nick} = $msg->param(0);
 
-	    if (RunLoop->shared->multi_server_mode_p) {
+	    if ($this->_runloop->multi_server_mode_p) {
 		# ここで消してしまうとプラグインにすらNICKが行かなくなる。
 		# 消す代わりに"do-not-send-to-clients => 1"という註釈を付ける。
 		$msg->remark('do-not-send-to-clients',1);
 
 		# ローカルnickと違っていれば、その旨を通知する。
 		# 但し、networks/always-notify-new-nickが設定されていれば常に通知する。
-		my $local_nick = RunLoop->shared_loop->current_nick;
-		if (Configuration->shared->networks->always_notify_new_nick ||
+		my $local_nick = $this->_runloop->current_nick;
+		if ($this->_conf_networks->always_notify_new_nick ||
 		    $this->{current_nick} ne $local_nick) {
 
 		    my $old_nick = $msg->nick;
-		    RunLoop->shared_loop->broadcast_to_clients(
+		    $this->_runloop->broadcast_to_clients(
 			IRCMessage->new(
-			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv nick::system)),
+			    Prefix => $this->_runloop->sysmsg_prefix(qw(priv nick::system)),
 			    Command => 'NOTICE',
 			    Params => [$local_nick,
 				       "*** Your global nick in ".
@@ -495,14 +497,14 @@ sub _receive_after_logged_in {
 						   $this->{current_nick}."."]));
 		}
 	    } else {
-		RunLoop->shared_loop->set_current_nick($msg->param(0));
+		$this->_runloop->set_current_nick($msg->param(0));
 	    }
 	}
 	$this->_NICK($msg);
     }
     elsif ($msg->command eq ERR_NICKNAMEINUSE) {
 	# nickが既に使用中
-	if (RunLoop->shared->multi_server_mode_p) {
+	if ($this->_runloop->multi_server_mode_p) {
 	    $this->_set_to_next_nick($msg->param(1));
 
 	    # これもクライアントには伝えない。
@@ -511,7 +513,7 @@ sub _receive_after_logged_in {
     }
     elsif ($msg->command eq ERR_UNAVAILRESOURCE) {
 	# nick/channel temporary unavaliable
-	if (Multicast::nick_p($msg->param(1)) && RunLoop->shared->multi_server_mode_p) {
+	if (Multicast::nick_p($msg->param(1)) && $this->_runloop->multi_server_mode_p) {
 	    $this->_set_to_next_nick($msg->param(1));
 
 	    # これもクライアントには伝えない。
@@ -1090,11 +1092,11 @@ sub _set_to_next_nick {
 	new IRCMessage(
 	    Command => 'NICK',
 	    Param => $next_nick));
-    RunLoop->shared_loop->broadcast_to_clients(
+    $this->_runloop->broadcast_to_clients(
 	new IRCMessage(
-	    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv nick::system)),
+	    Prefix => $this->_runloop->sysmsg_prefix(qw(priv nick::system)),
 	    Command => 'NOTICE',
-	    Params => [RunLoop->shared_loop->current_nick,$msg_for_user]));
+	    Params => [$this->_runloop->current_nick,$msg_for_user]));
     main::printmsg($msg_for_user);
 }
 

@@ -28,7 +28,8 @@ sub register {
     # Name => チャンネル名
     # Topic => トピック
     # Handler => ハンドラ; $handler->($client, $msg)のように呼ばれる。
-    my ($this, %args) = @_;
+    my ($class_or_this, %args) = @_;
+    my $this = $class_or_this->_this;
 
     foreach my $arg (qw/Name Topic Handler/) {
 	if (!defined $args{$arg}) {
@@ -48,19 +49,24 @@ sub register {
 }
 
 sub unregister {
-    my ($this, $channel) = @_;
+    my ($class_or_this, $channel) = @_;
+    my $this = $class_or_this->_this;
+
     delete $this->{registered}{$channel};
     $this;
 }
 
 sub registered_p {
-    my ($this, $channel) = @_;
+    my ($class_or_this, $channel) = @_;
+    my $this = $class_or_this->_this;
+
     defined $this->{registered}{$channel};
 }
 
 sub message_arrived {
     # IRCMessageまたはundefを返す。
-    my ($this, $msg, $sender) = @_;
+    my ($class_or_this, $msg, $sender) = @_;
+    my $this = $class_or_this->_this;
 
     my $method = '_'.$msg->command;
     if ($this->can($method)) {

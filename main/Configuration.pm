@@ -40,7 +40,8 @@ sub _new {
 }
 
 sub get {
-    my ($this,$block_name) = @_;
+    my ($class_or_this,$block_name) = @_;
+    my $this = $class_or_this->_this;
     # 汎用ブロックを検索
 
     if (!defined $block_name) {
@@ -51,25 +52,30 @@ sub get {
 }
 
 sub find_module_conf {
-    my ($this,$module_name) = @_;
+    my ($class_or_this,$module_name,$option) = @_;
+    my $this = $class_or_this->_this;
     # モジュールの設定を検索
     foreach my $conf (@{$this->{modules}}) {
 	return $conf if $conf->block_name eq $module_name;
     }
-    undef;
+    if ($option eq 'block') {
+	Configuration::Block->new($module_name);
+    } else {
+	undef;
+    }
 }
 
 sub get_list_of_modules {
     # confで指定された順番で、+とされた全てのモジュールの
     # Configuration::Blockを持つ配列を指すリファレンスを返す。
-    shift->{modules};
+    shift->_this->{modules};
 }
 
 sub check_if_updated {
     # 最後にloadを実行してからconfファイルが更新されたか。
     # 一度もloadしていなければ必ず1を返す。
     # ファイル名が保存されていなければ必ず0を返す。
-    my $this = shift;
+    my $this = shift->_this;
     if ($this->{time_on_load} == 0) {
 	1;
     }
@@ -92,7 +98,8 @@ sub load {
     # 前回のload時に指定されたパスからリロードする。
     # ファイル名の代わりにIO::Handleのオブジェクトを渡しても良い。
     # その場合はリロードは不可能になる。
-    my ($this,$conf_file) = @_;
+    my ($class_or_this,$conf_file) = @_;
+    my $this = $class_or_this->_this;
     my $this_is_reload = !defined $conf_file;
 
     if (defined $conf_file) {
@@ -123,7 +130,7 @@ sub load {
     my $parsed = $parser->parsed;
 
     # 定義されていない値はデフォルト値で埋める。
-    &_complete_table_with_defaults($parsed);
+    $this->_complete_table_with_defaults($parsed);
 
     # general->conf-encodingを見て文字コードをUTF-8に変換
     my $conf_encoding = do {
@@ -213,13 +220,13 @@ my $defaults = {
     },
 };
 sub _complete_table_with_defaults {
-    my ($blocks) = @_;
+    my ($this, $blocks) = @_;
 
     my $root_block = Configuration::Block->new('ROOT');
     map {
 	$root_block->set($_->block_name, $_);
     } @$blocks;
-    _complete_block_with_defaults($root_block, $defaults);
+    $this->_complete_block_with_defaults($root_block, $defaults);
 
     # networksのdefaultだけは別処理。
     my $networks = $root_block->networks;
@@ -232,7 +239,7 @@ sub _complete_table_with_defaults {
 }
 
 sub _complete_block_with_defaults {
-    my ($blocks, $defaults) = @_;
+    my ($this, $blocks, $defaults) = @_;
 
     while (my ($default_block_name,$default_block) = each %$defaults) {
 	# このブロックは存在しているか？
@@ -257,7 +264,7 @@ sub _complete_block_with_defaults {
 	    }
 	}
 	if (values %$must_check_child) {
-	    _complete_block_with_defaults($block, $must_check_child);
+	    $this->_complete_block_with_defaults($block, $must_check_child);
 	}
     }
 }
