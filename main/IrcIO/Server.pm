@@ -372,7 +372,7 @@ sub _attach {
     $this->{connecting} = undef;
     $this->{sock} = $connector->sock;
     $this->{sock}->autoflush(1);
-    $this->{server_addr} = $connector->host;
+    $this->{server_addr} = $connector->addr;
     $this->{proto} = $connector->type_name;
     $this->{connected} = 1;
     $this->state_connected(1);
