@@ -9,7 +9,7 @@ use base qw(Module);
 
 sub message_arrived {
     my ($this,$message,$sender) = @_;
-    
+
     if ($message->command eq 'PING') {
 	my ($prefix) = do {
 	    if ($sender->isa('IrcIO::Server')) {
@@ -54,7 +54,7 @@ sub message_arrived {
 		       ]));
 	}
 	# print "System::Pong ponged to ".$message->params->[0].".\n";
-	
+
 	# PINGメッセージはこれ以上伝達させず、ここで消してしまう。
 	return undef;
     }
