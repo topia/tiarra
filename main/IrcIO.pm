@@ -65,13 +65,14 @@ sub send_message {
 	$data_to_send = "$msg\x0d\x0a";
     }
     elsif ($msg->isa($this->irc_message_class)) {
+	$msg->remark(encoding => $encoding);
+
 	# message_io_hook
 	my $filtered = $this->_runloop->apply_filters(
 	    [$msg], 'message_io_hook', $this, 'out');
 	foreach (@$filtered) {
-	    $data_to_send .= $_->serialize($encoding)."\x0d\x0a";
+	    $data_to_send .= $_->serialize('remark')."\x0d\x0a";
 	}
-	#$data_to_send = $msg->serialize($encoding)."\x0d\x0a";
     }
     else {
 	die "IrcIO::send_message : parameter msg was invalid; $msg\n";

@@ -23,7 +23,7 @@
 #                       Host => 'hogehoge.net', # 以上３つのパラメータの代わりにPrefix => 'foo!~bar@hogehoge.net'でも良い。
 #                       Command => 'NICK',
 #                       Params => 'huga', # Paramsは要素が一つだけならスカラー値でも良い。(この時、ParamsでなくParamでも良い。)
-#                       Remarks => {'saitama' => 'SAITAMA'}, # 備考欄。シリアライズには影響しない。
+#                       Remarks => {'saitama' => 'SAITAMA'}, # 備考欄。
 # print $msg->serialize('jis'); # ":foo!~bar@hogehoge.net NICK :huga"を表示
 #
 # $msg = new Tiarra::IRC::Message(Command => 'NOTICE',
@@ -229,6 +229,15 @@ sub serialize {
 	$result .= ':'.$this->prefix.' ';
     }
 
+    if ($encoding eq 'remark') {
+	if (defined $this->remark('encoding')) {
+	    $encoding = $this->remark('encoding');
+	} else {
+	    carp 'encoding specified as "remark", but encoding remark not found! use utf8.';
+	    $encoding = 'utf8';
+	}
+    }
+
     $result .= $this->command.' ';
 
     if ($this->[PARAMS]) {
@@ -247,7 +256,7 @@ sub serialize {
 		# また、 remark/always-use-colon-on-last-param が付いていた場合も
 		# コロンを付ける。
 		$arg = $unicode->from_to($arg, 'utf8', $encoding);
-		if (length($arg) > 0 and
+		if (CORE::length($arg) > 0 and
 		      index($arg, ' ') == -1 and
 			index($arg, ':') != 0 and
 			    !$this->remark('always-use-colon-on-last-param')) {
