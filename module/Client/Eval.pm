@@ -7,6 +7,7 @@ use warnings;
 use base qw(Module);
 use Mask;
 use Data::Dumper;
+use Configuration;
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
@@ -27,6 +28,7 @@ sub message_arrived {
 	    };
 
 	    my $message = IRCMessage->new(
+		Prefix => Configuration->shared->general->sysmsg_prefix,
 		Command => 'NOTICE',
 		Params => [RunLoop->shared_loop->current_nick,
 			   ''],
