@@ -378,20 +378,26 @@ sub install_signal_handlers {
 	$SIG{$_} = \&handle_exit;
     }
     $SIG{HUP} = \&handle_reload;
+    $SIG{USR1} = \&handle_conf_reload;
 }
 
 sub handle_exit {
     my $signame = shift;
-    printmsg('Signal received.');
-    &shutdown('Tiarra '.::version.': '.
-		  (defined $signame ? "SIG$signame" : 'Signal').
-		      ' received; exit');
+    printmsg("SIG$signame received.");
+    &shutdown('Tiarra '.::version.": SIG$signame received; exit");
 }
 
 sub handle_reload {
-    printmsg('SIGHUP received.');
+    my $signame = shift;
+    printmsg("SIG$signame received.");
     ReloadTrigger->reload_conf_if_updated;
     ReloadTrigger->reload_mods_if_updated;
+}
+
+sub handle_conf_reload {
+    my $signame = shift;
+    printmsg("SIG$signame received.");
+    ReloadTrigger->reload_conf_if_updated;
 }
 
 sub shutdown {
