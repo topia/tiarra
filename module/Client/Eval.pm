@@ -17,7 +17,7 @@ sub message_arrived {
 	# 指定されたコマンドか?
 	if (Mask::match_deep([$this->config->command('all')], $msg->command)) {
 	    # メッセージ再構築
-	    my ($method) = join(' ', @{$msg->params}[0 .. ($msg->n_params - 1)]);
+	    my ($method) = join(' ', @{$msg->params});
 	    my ($ret, $err);
 	    do {
 		# disable warning
