@@ -263,7 +263,7 @@ sub length {
 sub params {
     croak "Parameter specified to params(). You must mistaked with param().\n" if (@_ > 1);
     my $this = shift;
-    $this->[PARAMS] = [] if !defined $this->[PARAMS];
+    $this->[PARAMS] = [] unless defined $this->[PARAMS];
     $this->[PARAMS];
 }
 
@@ -291,8 +291,12 @@ sub pop {
 
 sub _raw_params {
     my $this = shift;
-    $this->[RAW_PARAMS] = [] if !defined $this->[RAW_PARAMS];
+    $this->[RAW_PARAMS] = [] unless defined $this->[RAW_PARAMS];
     $this->[RAW_PARAMS];
+}
+
+sub purge_raw_params {
+    shift->_raw_params(undef);
 }
 
 sub _raw_push {
@@ -302,6 +306,14 @@ sub _raw_push {
 
 sub _raw_pop {
     CORE::pop(@{shift->_raw_params});
+}
+
+sub _n_raw_params {
+    scalar @{shift->_raw_params};
+}
+
+sub have_raw_params {
+    shift->_n_raw_params > 0;
 }
 
 sub remark {
@@ -326,16 +338,17 @@ sub remark {
     }
 }
 
-sub purge_raw_params {
-    my $this = shift;
-    $this->_raw_params(undef);
-}
-
 sub encoding_params {
     my ($this, $encoding) = @_;
 
-    croak "raw_params already purged; can't re encoding"
-	unless defined $this->_raw_params;
+    if (!$this->have_raw_params) {
+	if ($this->n_params) {
+	    croak "raw_params already purged; cannot re-encoding";
+	} else {
+	    # we don't have any params
+	    return undef;
+	}
+    }
 
     my $unicode = Tiarra::Encoding->new;
 
