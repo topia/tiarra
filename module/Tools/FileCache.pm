@@ -1,11 +1,15 @@
 # -*- cperl -*-
+# -----------------------------------------------------------------------------
 # Tools::FileCache, Data shared file cache service.
+# -----------------------------------------------------------------------------
 # $Id$
+# -----------------------------------------------------------------------------
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 package Tools::FileCache;
 use strict;
 use warnings;
 use RunLoop;
+use Carp;
 use Module::Use qw(Tools::FileCache::EachFile);
 use Tools::FileCache::EachFile;
 our $_shared;

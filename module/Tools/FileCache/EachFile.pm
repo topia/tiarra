@@ -57,41 +57,27 @@ sub new {
 
 
 sub register {
-    my ($this) = @_;
+    my $this = shift;
 
-    $this->add_refcount();
-    return $this;
+    $this->add_ref;
+    $this;
 }
 
 sub unregister {
-    my ($this) = @_;
+    my $this = shift;
 
-    $this->del_refcount();
-    return $this;
+    $this->release;
+    $this;
 }
 
-sub add_refcount {
-    my ($this) = @_;
-
-    return ++($this->{refcount});
-}
-
-sub del_refcount {
-    my ($this) = @_;
-
-    return --($this->{refcount});
-}
-
-sub refcount {
-    my ($this) = @_;
-
-    return $this->{refcount};
-}
+sub add_ref { ++(shift->{refcount}); }
+sub release { --(shift->{refcount}); }
+sub refcount { shift->{refcount}; }
 
 sub can_remove {
     my $this = shift;
 
-    return ($this->{refcount} <= 0);
+    return ($this->refcount <= 0);
 }
 
 sub set_expire {
