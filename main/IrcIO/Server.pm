@@ -32,6 +32,9 @@ utils->define_attr_enum_accessor('state', 'eq',
 				 qw(reconnecting));
 
 
+sub out_encoding { shift->config_local_or_general('out-encoding', 'server-') }
+sub in_encoding { shift->config_local_or_general('in-encoding', 'server-') }
+
 sub new {
     my ($class,$runloop,$network_name) = @_;
     my $this = $class->SUPER::new(
@@ -542,12 +545,12 @@ sub send_message {
 
     $this->SUPER::send_message(
 	$msg,
-	$this->config_local_or_general('out-encoding', 'server-'));
+	$this->out_encoding);
 }
 
 sub read {
     my $this = shift;
-    $this->SUPER::read($this->config_local_or_general('in-encoding', 'server-'));
+    $this->SUPER::read($this->in_encoding);
 
     # 接続が切れたら、各モジュールとRunLoopへ通知
     if (!$this->connected) {
