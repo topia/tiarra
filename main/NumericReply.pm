@@ -88,7 +88,7 @@ BEGIN {
 
 	 RPL_INFO             371
 	 RPL_MOTD             372
-	 RPL_INFOSTART        375
+	 RPL_INFOSTART        373
 	 RPL_ENDOFINFO        374
 	 RPL_MOTDSTART        375
 	 RPL_ENDOFMOTD        376
