@@ -47,7 +47,7 @@ sub message_io_hook {
 
     $conf_entry .= '-' . $type;
 
-    if ($this->config->get($conf_entry) != 0) {
+    if ($this->config->get($conf_entry)) {
 	::printmsg($prefix . $message->serialize());
     }
 
@@ -55,3 +55,22 @@ sub message_io_hook {
 }
 
 1;
+
+=pod
+info: 標準出力にクライアントやサーバとの通信をダンプする。
+default: off
+
+# 0 または省略で表示しない。 1 で表示する。
+
+# サーバからの入力
+enable-server-in: 0
+
+# サーバへの出力
+enable-server-out: 0
+
+# クライアントからの入力
+enable-client-in: 1
+
+# クライアントへの出力
+enable-client-out: 1
+=cut
