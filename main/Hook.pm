@@ -43,6 +43,7 @@ use warnings;
 use Carp;
 use UNIVERSAL;
 use Tiarra::Utils;
+utils->define_attr_getter(0, qw(name));
 
 sub new {
     my $class = shift;
