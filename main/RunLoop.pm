@@ -369,7 +369,7 @@ sub _action_part_and_join {
 		    IRCMessage->new(
 			Prefix => $client->fullname,
 			Command => 'PART',
-			Params => [Multicast::attach($ch->name,$network_name),
+			Params => [Multicast::attach_for_client($ch->name,$network_name),
 				   $network->host." closed the connection."]));
 	    }
 	}
@@ -408,11 +408,7 @@ sub _action_message_for_each {
 	    Params => ['', # チャンネル名は後で設定。
 		       '*** The connection has been revived between '.$network->network_name.'.']);
 	foreach my $ch (values %{$network->channels}) {
-	    if ($this->{multi_server_mode}) {
-		$msg->param(0,Multicast::attach($ch->name,$network_name));
-	    } else {
-		$msg->param(0,$ch->name);
-	    }
+	    $msg->param(0,Multicast::attach_for_client($ch->name,$network_name));
 	    $this->broadcast_to_clients($msg);
 	}
     }
@@ -423,11 +419,7 @@ sub _action_message_for_each {
 	    Params => ['', # チャンネル名は後で設定。
 		       '*** The connection has been broken between '.$network->network_name.'.']);
 	foreach my $ch (values %{$network->channels}) {
-	    if ($this->{multi_server_mode}) {
-		$msg->param(0,Multicast::attach($ch->name,$network_name));
-	    } else {
-		$msg->param(0,$ch->name);
-	    }
+	    $msg->param(0,Multicast::attach_for_client($ch->name,$network_name));
 	    $this->broadcast_to_clients($msg);
 	}
     }
@@ -1097,10 +1089,15 @@ sub apply_filters {
 	    eval {
 		@reply = $mod->$method($src, @extra_args);
 	    }; if ($@) {
+		my $modname = ref($mod);
+		# ブラックリストに入れておく
+		ModuleManager->shared_manager->add_to_blacklist($modname);
 		$this->notify_error(
-		    "Exception in ".ref($mod).".\n".
-		      "The message was '".$src->serialize."'.\n".
-			"   $@");
+		    "Exception in ".$modname.".\n".
+			"This module added to blacklist!\n".
+			    "The message was '".$src->serialize."'.\n".
+				"   $@");
+		ModuleManager->shared_manager->remove_from_blacklist($modname);
 	    }
 	    
 	    if (defined $reply[0]) {
@@ -1117,7 +1114,7 @@ sub apply_filters {
 		
 		# これをfilteredに追加。
 		push @$filtered,@reply;
-	    }	    
+	    }
 	}
 
 	# 次のsourceはfilteredに。filteredは空の配列に。
