@@ -12,9 +12,8 @@ use IO::Socket::INET;
 use IO::Select;
 use RunLoop;
 use Tiarra::Utils;
-use Tiarra::Socket::Buffered;
-use base qw(Tiarra::Socket::Buffered);
-utils->define_attr_accessor(0, qw(eol));
+use Tiarra::Socket::Lined;
+use base qw(Tiarra::Socket::Lined);
 
 use SelfLoader;
 SelfLoader->load_stubs;
@@ -34,16 +33,10 @@ sub new {
 
     my $this = $class->SUPER::new(
 	_caller => 1,
-	_subject => 'lined-inet-socket');
-    $this->eol(utils->get_first_defined(
-	$eol,
-	"\x0d\x0a"));
-    $this->{recvqueue} = [];
+	_subject => 'lined-inet-socket',
+	eol => $eol,
+       );
     $this;
-}
-
-sub disconnect_after_writing {
-    shift->{disconnect_after_writing} = 1;
 }
 
 sub connect {
@@ -59,6 +52,12 @@ sub connect {
     $this->attach($sock);
 }
 
+sub attach {
+    my $this = shift;
+    $this->SUPER::attach(@_);
+    $this->install;
+}
+
 sub length { shift->write_length; }
 
 sub send_reserve {
@@ -67,40 +66,9 @@ sub send_reserve {
     # CRLFはつけてはならない。
 
     if ($this->sock) {
-	$this->append($string . $this->eol);
+	$this->append_line($string);
     } else {
 	die "LinedINETSocket::send_reserve : socket is not connected.";
-    }
-}
-
-sub read {
-    my $this = shift;
-
-    $this->SUPER::read;
-
-    while (1) {
-	my $eol_pos = index($this->recvbuf, $this->eol);
-	if ($eol_pos == -1) {
-	    # 一行分のデータが届いていない。
-	    last;
-	}
-
-	my $current_line = substr($this->recvbuf, 0, $eol_pos);
-	substr($this->recvbuf, 0, $eol_pos + CORE::length($this->eol)) = '';
-
-	push @{$this->{recv_queue}}, $current_line;
-    }
-}
-
-sub pop_queue {
-    # このメソッドは受信キュー内の最も古いものを取り出します。
-    # キューが空ならundefを返します。
-    my ($this) = @_;
-    $this->flush;	   # 念のためflushをしてbufferを更新しておく。
-    if (@{$this->{recv_queue}} == 0) {
-	return undef;
-    } else {
-	return splice @{$this->{recv_queue}},0,1;
     }
 }
 
