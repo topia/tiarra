@@ -132,7 +132,7 @@ sub update_modules {
 	    eval {
 		$loaded_mods{$_->block_name}->destruct;
 	    }; if ($@) {
-		$show_msg->($@);
+		RunLoop->shared_loop->notify_error->($@);
 	    }
 	}
 	$this->_unload($_);
