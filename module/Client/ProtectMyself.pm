@@ -11,7 +11,6 @@ use RunLoop;
 use IRCMessage;
 use Auto::AliasDB;
 use Tiarra::Utils;
-my $utils = Tiarra::Utils->shared;
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
@@ -58,25 +57,25 @@ sub message_io_hook {
 	    }
 	};
 	if ($msg->command eq 'NICK') {
-	    $msg_tmpl = $utils->get_first_defined(
+	    $msg_tmpl = utils->get_first_defined(
 		$this->config->nick_format,
 		'Nick changed #(nick.now) -> #(nick.new)');
 	    $additional_replaces{'nick.new'} = $msg->param(0);
 	    $set_affected_by_remark->();
 	} elsif ($msg->command eq 'PART') {
-	    $msg_tmpl = $utils->get_first_defined(
+	    $msg_tmpl = utils->get_first_defined(
 		$this->config->part_format,
 		'Part #(nick.now) (#(message)) from #(target)');
 	    $additional_replaces{'message'} = $msg->param(1);
 	    @affected = $msg->param(0);
 	} elsif ($msg->command eq 'QUIT') {
-	    $msg_tmpl = $utils->get_first_defined(
+	    $msg_tmpl = utils->get_first_defined(
 		$this->config->quit_format,
 		'Quit #(nick.now) (#(message))');
 	    $additional_replaces{'message'} = $msg->param(0);
 	    $set_affected_by_remark->();
 	} elsif ($msg->command eq 'JOIN') {
-	    $msg_tmpl = $utils->get_first_defined(
+	    $msg_tmpl = utils->get_first_defined(
 		$this->config->join_format,
 		'Join #(nick.now) (#(prefix.now)) to #(target)');
 	    @affected = $msg->param(0);

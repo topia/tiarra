@@ -40,7 +40,6 @@ use Tiarra::Utils;
 use Tiarra::ModifiedFlagMixin;
 use Tiarra::SessionMixin;
 use base qw(Tiarra::SessionMixin);
-my $utils = Tiarra::Utils->shared;
 
 sub new {
     # コンストラクタ
@@ -73,13 +72,13 @@ sub new {
     $this->_load;
 }
 
-$utils->define_attr_accessor(0,
-			     qw(time fpath charset),
-			     qw(use_re));
-$utils->define_proxy('database', 0,
-		     qw(keys values),
-		     qw(add_value add_array del_value del_array),
-		     qw(get_array get_value get_value_random));
+__PACKAGE__->define_attr_accessor(0,
+				  qw(time fpath charset),
+				  qw(use_re));
+__PACKAGE__->define_proxy('database', 0,
+			  qw(keys values),
+			  qw(add_value add_array del_value del_array),
+			  qw(get_array get_value get_value_random));
 __PACKAGE__->define_session_wrap(0,
 				 qw(checkupdate synchronize cleanup));
 
