@@ -14,10 +14,10 @@ VENDOR_MASTER := ../vendor/cvs/master
 VENDOR_WORKING := ../vendor/cvs/working
 
 checkdiff:
-	-diff -rub -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
+	-LANG=C diff -rub -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
 
 diff:
-	-diff -ru -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
+	-LANG=C diff -ru -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
 
 working_install:
 	cp ./$(DIFF_PATH) $(VENDOR_WORKING)/$(DIFF_PATH)
@@ -27,8 +27,8 @@ working_start:
 	cp -a $(VENDOR_MASTER)/$(DIFF_PATH) $(VENDOR_WORKING)/$(DIFF_PATH)
 
 working_checkdiff:
-	-diff -rub -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_WORKING)/$(DIFF_PATH) ./$(DIFF_PATH)
+	-LANG=C diff -rub -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_WORKING)/$(DIFF_PATH) ./$(DIFF_PATH)
 
 working_diff:
-	-diff -ru -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_WORKING)/$(DIFF_PATH) ./$(DIFF_PATH)
+	-LANG=C diff -ru -F'^[a-zA-Z]' -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_WORKING)/$(DIFF_PATH) ./$(DIFF_PATH)
 
