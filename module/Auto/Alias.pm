@@ -11,70 +11,70 @@ use Auto::Utils;
 use Mask;
 
 sub new {
-  my $class = shift;
-  my $this = $class->SUPER::new(@_);
-  Auto::AliasDB::setfile($this->config->alias,
-			 $this->config->alias_encoding);
-  $this;
+    my $class = shift;
+    my $this = $class->SUPER::new(@_);
+    Auto::AliasDB::setfile($this->config->alias,
+			   $this->config->alias_encoding);
+    $this;
 }
 
 sub message_arrived {
-  my ($this,$msg,$sender) = @_;
-  my @result = ($msg);
+    my ($this,$msg,$sender) = @_;
+    my @result = ($msg);
 
-  if ($msg->command eq 'PRIVMSG') {
+    if ($msg->command eq 'PRIVMSG') {
 
-    if (Mask::match($this->config->confirm,$msg->param(1))) {
-      # その人のエイリアスがあればprivで返す。
-      my (undef,undef,$reply_as_priv,undef,undef)
-	= Auto::Utils::generate_reply_closures($msg,$sender,\@result, 0); # Alias conversion disable.
+	if (Mask::match($this->config->confirm,$msg->param(1))) {
+	    # その人のエイリアスがあればprivで返す。
+	    my (undef,undef,$reply_as_priv,undef,undef)
+		= Auto::Utils::generate_reply_closures($msg,$sender,\@result, 0); # Alias conversion disable.
 
-      my $alias = Auto::AliasDB->shared->find_alias_prefix($msg->prefix);
-      if (defined $alias) {
-	while (my ($key,$values) = each %$alias) {
-	  map {
-	    $reply_as_priv->("$key: $_");
-	  } @$values;
-	}
-      }
-    }
-    else {
-      my (undef,undef,undef,$reply_anywhere,undef)
-	= Auto::Utils::generate_reply_closures($msg,$sender,\@result, 1);
-
-      my $msg_from_modifier_p = sub {
-	  !defined $msg->prefix ||
-	      Mask::match_deep([Mask::array_or_all($this->config->modifier('all'))],
-			       $msg->prefix);
-      };
-
-      my ($temp) = $msg->param(1);
-      $temp =~ s/^\s*(.+)\s*$/$1/;
-      my ($keyword,$key,$value)
-	= split(/\s+/, $temp, 3);
-
-      if(Mask::match($this->config->get('add'),$keyword)) {
-	if ($msg_from_modifier_p->() && defined $key && defined $value) {
-	  if (Auto::AliasDB->shared->add_value_with_prefix($msg->prefix, $key, $value)) {
-	    if (defined $this->config->added_format && $this->config->added_format ne '') {
-	      $reply_anywhere->($this->config->added_format, 'key' => $key, 'value' => $value);
+	    my $alias = Auto::AliasDB->find_alias_prefix($msg->prefix);
+	    if (defined $alias) {
+		while (my ($key,$values) = each %$alias) {
+		    map {
+			$reply_as_priv->("$key: $_");
+		    } @$values;
+		}
 	    }
-	  }
-	}
-      }
-      elsif (Mask::match($this->config->get('remove'),$keyword)) {
-	if ($msg_from_modifier_p->() && defined $key) {
-	  my $count = Auto::AliasDB->shared->del_value_with_prefix($msg->prefix, $key, $value);
-	  if ($count) {
-	    if (defined $this->config->removed_format && $this->config->removed_format ne '') {
-	      $reply_anywhere->($this->config->removed_format, 'key' => $key, 'value' => $value, 'count' => $count);
+	} else {
+	    my (undef,undef,undef,$reply_anywhere,undef)
+		= Auto::Utils::generate_reply_closures($msg,$sender,\@result, 1);
+
+	    my $msg_from_modifier_p = sub {
+		!defined $msg->prefix ||
+		    Mask::match_deep([Mask::array_or_all($this->config->modifier('all'))],
+				     $msg->prefix);
+	    };
+
+	    my ($temp) = $msg->param(1);
+	    $temp =~ s/^\s*(.+)\s*$/$1/;
+	    my ($keyword,$key,$value)
+		= split(/\s+/, $temp, 3);
+
+	    if (Mask::match($this->config->get('add'),$keyword)) {
+		if ($msg_from_modifier_p->() && defined $key && defined $value) {
+		    if (Auto::AliasDB->add_value_with_prefix($msg->prefix, $key, $value)) {
+			$reply_anywhere->([$this->config->added_format('all')],
+					  'key' => $key, 'value' => $value);
+		    } else {
+			$reply_anywhere->([$this->config->add_failed_format('all')],
+					  'key' => $key, 'value' => $value);
+		    }
+		}
+	    } elsif (Mask::match($this->config->get('remove'),$keyword)) {
+		if ($msg_from_modifier_p->() && defined $key) {
+		    my $count = Auto::AliasDB->del_value_with_prefix($msg->prefix, $key, $value);
+		    if ($count) {
+			$reply_anywhere->([$this->config->removed_format('all')], 'key' => $key, 'value' => $value, 'count' => $count);
+		    } else {
+			$reply_anywhere->([$this->config->remove_failed_format('all')], 'key' => $key, 'value' => $value);
+		    }
+		}
 	    }
-	  }
 	}
-      }
     }
-  }
-  return @result;
+    return @result;
 }
 
 1;
@@ -120,10 +120,12 @@ remove: エイリアス削除
 # それぞれ相手のnick、チャンネル名に置換されます。
 # #(key)、#(value)は、追加されたキーと値に置換されます。
 added-format: #(name|nick.now): エイリアス #(key) に #(value) を追加しました。
+add-failed-format: #(name|nick.now): エイリアス #(key) の追加に失敗しました。
 
 # メッセージが削除されたときの反応を指定します。
 # added-formatで指定できるものと同じです。
 removed-format: #(name|nick.now): エイリアス #(key) から #(value) を削除しました。
+remove-failed-format: #(name|nick.now): エイリアス #(key) からの削除に失敗しました。
 
 # エイリアスの追加や削除が許されている人。省略された場合は「*!*@*」と見做される。
 modifier: *!*@*

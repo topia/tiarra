@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
+# copyright (C) 2003-2004 Topia <topia@clovery.jp>. all rights reserved.
 
 # GroupDB の1レコード分のデータを保持する。
 
@@ -33,8 +33,14 @@ use File::stat;
 use Unicode::Japanese;
 use Mask;
 use Carp;
-use Module::Use qw(Tools::HashTools);
+use Module::Use qw(Tools::Hash Tools::HashTools);
+use Tools::Hash;
 use Tools::HashTools;
+use Tiarra::Utils;
+use Tiarra::ModifiedFlagMixin;
+use Tiarra::SessionMixin;
+use base qw(Tiarra::SessionMixin);
+my $utils = Tiarra::Utils->shared;
 
 sub new {
     # コンストラクタ
@@ -51,7 +57,7 @@ sub new {
 
     my ($class,$fpath,$charset,$use_re,$ignore_proc) = @_;
 
-    my $obj = {
+    my $this = {
 	time => undef,			# ファイルの最終読み込み時刻
 	fpath => $fpath,
 	charset => $charset || 'utf8',	# ファイルの文字コード
@@ -61,41 +67,61 @@ sub new {
 	database => undef,		# HASH
     };
 
-    bless $obj,$class;
-    $obj->_load;
+    bless $this,$class;
+    $this->clear_modified;
+    $this->_session_init;
+    $this->_load;
 }
+
+$utils->define_attr_accessor(0,
+			     qw(time fpath charset),
+			     qw(use_re));
+$utils->define_proxy('database', 0,
+		     qw(keys values),
+		     qw(add_value add_array del_value del_array),
+		     qw(get_array get_value get_value_random));
+__PACKAGE__->define_session_wrap(0,
+				 qw(checkupdate synchronize cleanup));
 
 sub _load {
     my $this = shift;
-    $this->{database} = {};
 
-    if (defined $this->{fpath} && $this->{fpath} ne '') {
-	my $fh = IO::File->new($this->{fpath},'r');
-	if (defined $fh) {
-	    my $unicode = Unicode::Japanese->new;
-	    foreach (<$fh>) {
-		my $line = $unicode->set($_, $this->{charset})->get;
-		next if $this->{ignore_proc}->($line);
-		my ($key,$value) = grep {defined($_)} ($line =~ /^\s*(?:([^:]+?)\s*|:([^:]+?)):\s*(.+?)\s*$/);
-		if (!defined $key || $key eq '' ||
-			!defined $value || $value eq '') {
-		    # ignore
-		} else {
-		    $key =~ s/ /:/g; # can use colon(:) on key, but cannot use space( ).
-		    push(@{$this->{database}->{$key}}, $value);
+    $this->with_session(
+	sub {
+	    my $database = Tools::Hash->new;
+
+	    if (defined $this->fpath && $this->fpath ne '') {
+		my $fh = IO::File->new($this->fpath,'r');
+		if (defined $fh) {
+		    my $unicode = Unicode::Japanese->new;
+		    foreach (<$fh>) {
+			my $line = $unicode->set($_, $this->charset)->get;
+			next if $this->{ignore_proc}->($line);
+			my ($key,$value) = grep {defined($_)}
+			    ($line =~ /^\s*(?:([^:]+?)\s*|:([^:]+?)):\s*(.+?)\s*$/);
+			if (!defined $key || $key eq '' ||
+				!defined $value || $value eq '') {
+			    # ignore
+			} else {
+			    # can use colon(:) on key, but cannot use space( ).
+			    $key =~ s/ /:/g;
+			    $database->add_value($key, $value);
+			}
+		    }
+		    $this->{database} = $database;
+		    $this->set_time;
+		    $this->clear_modified;
 		}
 	    }
-	    $this->{time} = time();
-	}
-    }
+	});
     return $this;
 }
 
-sub checkupdate {
+sub _checkupdate {
     my $this = shift;
 
-    if (defined $this->{fpath} && $this->{fpath} ne '') {
-	my $stat = stat($this->{fpath});
+    if (defined $this->fpath && $this->fpath ne '') {
+	my $stat = stat($this->fpath);
 
 	if (defined $stat && $stat->mtime > $this->{time}) {
 	    $this->_load();
@@ -105,10 +131,13 @@ sub checkupdate {
     return 0;
 }
 
-sub synchronize {
+sub _synchronize {
     my $this = shift;
-    if (defined $this->{fpath} && $this->{fpath} ne '') {
-	my $fh = IO::File->new($this->{fpath},'w');
+    my $force = shift || 0;
+
+    if (defined $this->fpath && $this->fpath ne '' &&
+	    ($this->modified || $force)) {
+	my $fh = IO::File->new($this->fpath,'w');
 	if (defined $fh) {
 	    my $unicode = Unicode::Japanese->new;
 	    while (my ($key,$values) = each %{$this->{database}}) {
@@ -120,110 +149,30 @@ sub synchronize {
 		    $fh->print($unicode->set($line)->conv($this->{charset}));
 		} @$values
 	    }
-	    $this->{time} = time();
+	    $this->set_time;
+	    $this->clear_modified;
 	}
     }
     return $this;
 }
 
-sub to_hashref {
+sub set_time       { shift->time(CORE::time); }
+
+sub database {
     my $this = shift;
-
-    $this->checkupdate();
-
-    return $this->{database};
+    return $this->with_session(sub{$this->{database};});
 }
+*to_hashref = \&database;
 
-sub keys {
+sub _before_session_start {
     my $this = shift;
-
-    $this->checkupdate();
-
-    return CORE::keys(%{$this->to_hashref});
+    $this->_checkupdate;
 }
 
-sub values {
+sub _after_session_finish {
     my $this = shift;
-
-    $this->checkupdate();
-
-    return CORE::values(%{$this->to_hashref});
+    $this->_synchronize;
 }
-
-sub add_value {
-    # 値を追加する。
-    # 成功すれば 1(true) が返る。
-    # 不正なキーのため失敗した場合は 0(false) が返る。
-
-    my ($this, $key, $value) = @_;
-
-    return 0 if $key =~ / /;
-
-    $this->checkupdate();
-
-    my $values = $this->{database}->{$key};
-    if (!defined $values) {
-	$values = [];
-	$this->{database}->{$key} = $values;
-    }
-    push @$values,$value;
-
-    $this->synchronize();
-
-    return 1;
-}
-
-sub del_value {
-    my ($this, $key, $value) = @_;
-
-    $this->checkupdate();
-
-    my $values = $this->{database}->{$key};
-    if (defined $values) {
-	# あった。
-	my ($count) = scalar @$values;
-	if (defined $value) {
-	    @$values = grep {
-		$_ ne $value;
-	    } @$values;
-	    $count -= scalar(@$values);
-	    # この項目が空になったら項目自体を削除
-	    if (@$values == 0) {
-		delete $this->{database}->{$key};
-	    }
-	} else {
-	    # $value が指定されていない場合は項目削除
-	    delete $this->{database}->{$key};
-	}
-
-	$this->synchronize();
-
-	return $count;		# deleted
-    }
-    return 0;			# not deleted
-}
-
-sub get_value_random {
-    my ($this, $key) = @_;
-
-    $this->checkupdate();
-    return Tools::HashTools::get_value_random($this->{database}, $key);
-}
-
-sub get_value {
-    my ($this, $key) = @_;
-
-    $this->checkupdate();
-    return Tools::HashTools::get_value($this->{database}, $key);
-}
-
-sub get_array {
-    my ($this, $key) = @_;
-
-    $this->checkupdate();
-    return Tools::HashTools::get_array($this->{database}, $key);
-}
-
 
 # group misc functions
 sub dup_group {

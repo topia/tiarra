@@ -19,12 +19,20 @@ use Mask;
 use Configuration;
 use Configuration::Block;
 use Tiarra::SharedMixin;
+use Tiarra::Utils;
 our $_shared_instance;
 
+Tiarra::Utils->define_attr_getter(1, qw(database config));
+Tiarra::Utils->define_proxy('database', 1,
+			    [qw(add_alias add_group)],
+			    map { [$_.'_prefix', $_.'_primary'] }
+				qw(add_value_with del_value_with));
+
 sub setfile {
-    # クラスメソッド。
+    # クラス関数。
     my ($fpath,$charset) = @_;
-    $_shared_instance = __PACKAGE__->_new($fpath,$charset);
+    # re-initialize
+    __PACKAGE__->_shared_init($fpath,$charset);
 }
 
 sub _new {
@@ -32,14 +40,10 @@ sub _new {
     my ($class,$fpath,$charset) = @_;
     my $obj = {
 	database => Tools::GroupDB->new($fpath, 'user', $charset || undef, 0),
-	config => Configuration::shared_conf->get('Auto::AliasDB')
-	    || Configuration::Block->new('Auto::AliadDB'), 
+	config => Configuration::shared_conf->get(__PACKAGE__)
+	    || Configuration::Block->new(__PACKAGE__),
     };
     bless $obj,$class;
-}
-
-sub config {
-    return shift->_this->{config};
 }
 
 sub find_alias_prefix {
@@ -77,39 +81,16 @@ sub find_alias {
     return undef;
 }
 
-sub add_alias {
-    my ($class_or_this,$alias) = @_;
-    my $this = $class_or_this->_this;
-
-    return $this->{database}->add_group($alias);
-}
-
 sub add_value {
     my ($class_or_this, $alias, $key, $value) = @_;
-    my $this = $class_or_this->_this;
 
-    return $this->{database}->add_value($alias, $key, $value);
-}
-
-sub add_value_with_prefix {
-    my ($class_or_this, $prefix, $key, $value) = @_;
-    my $this = $class_or_this->_this;
-
-    return $this->{database}->add_value_with_primary($prefix, $key, $value);
+    return $alias->add_value($key, $value);
 }
 
 sub del_value {
     my ($class_or_this, $alias, $key, $value) = @_;
-    my $this = $class_or_this->_this;
 
-    return $this->{database}->del_value($alias, $key, $value);
-}
-
-sub del_value_with_prefix {
-    my ($class_or_this, $prefix, $key, $value) = @_;
-    my $this = $class_or_this->_this;
-
-    return $this->{database}->del_value_with_primary($prefix, $key, $value);
+    return $alias->del_value($key, $value);
 }
 
 # alias misc functions
