@@ -21,6 +21,11 @@ phonohawk: (初期バージョンのみ)設計と実装
 phonohawk: ほぼ全て
 Topia: 幾つかのクラスの設計と実装, 多数の改良とバグ修正
 
+* module/System/SendMessage.pm
+
+Yoichi Imai: 初期設計と実装。
+Topia: 改良
+
 * bundle/IO/Socket/INET6.pm
 
 phonohawk
