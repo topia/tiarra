@@ -115,6 +115,10 @@ sub check_changelog {
 	    }
 	    $version .= '+cvs-' . $revision if defined $revision;
 	    $version .= '(' . $date . ')' if defined $date;
+
+	    (my $svndir = dirname($file)) =~ s/'/'\''/;
+	    my $svnversion = `svnversion -n '$svndir'`;
+	    $version .= '+svn-' . $svnversion if defined $svnversion;
 	    return;
 	}
     }
