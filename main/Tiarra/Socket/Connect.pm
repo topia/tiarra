@@ -153,12 +153,14 @@ sub _try_connect_tcp {
 	return;
     }
     if (!defined $sock->blocking(0)) {
-	$this->_warn('cannot blocking');
+	# effect only on connecting; comment out
+	#$this->_warn('cannot blocking') if ::debug_mode();
     }
     my $saddr = Tiarra::Resolver->resolve(
 	'saddr', [$this->current_addr, $this->current_port],
 	sub {}, 0);
-    if ($sock->connect($saddr->answer_data)) {
+    $this->{connecting}->{saddr} = $saddr->answer_data;
+    if ($sock->connect($this->{connecting}->{saddr})) {
 	my $error = $!;
 	$this->{sock} = $sock;
 	$! = $error;
@@ -291,15 +293,21 @@ sub want_to_write {
     1;
 }
 
-sub write {
-    my $this = shift;
-    $this->cleanup;
-    $this->_call;
-}
+sub write { shift->proc_sock }
+sub read { shift->proc_sock }
 
-sub read {
+sub proc_sock {
     my $this = shift;
-    $this->_warn('->read should be stub method!');
+
+    # error check
+    if ($this->sock->connect($this->{connecting}->{saddr}) || $!{EISCONN}) {
+	$this->cleanup;
+	$this->_call;
+    } else {
+	$this->cleanup;
+	$this->close;
+	$this->_connect_error_try_next(($!+0).': '.$!);
+    }
 }
 
 1;
