@@ -9,6 +9,8 @@ use strict;
 use warnings;
 use enum qw(PREFIX NICK NAME HOST);
 use Tiarra::Utils;
+use overload
+    '""' => sub { shift->prefix };
 
 utils->define_array_attr_notify_accessor(
     0, '$this->_update_prefix', qw(nick name host));
