@@ -259,35 +259,45 @@ sub _receive_after_logged_in {
     my $command = $msg->command;
 
     if ($command eq 'NICK') {
-	# 形式が正しい限りNICKには常に成功して、RunLoopのカレントnickが変更になる。
-	# ただしネットワーク名が明示されていた場合はカレントを変更しない。
-	my ($nick,undef,$specified) = Multicast::detatch($msg->params->[0]);
-	if (Multicast::nick_p($nick)) {
-	    unless ($specified) {
-		#$this->send_message(
-		#    new IRCMessage(
-		#	Prefix => $this->fullname,
-		#	Command => 'NICK',
-		#	Param => $msg->params->[0]));
-		if (RunLoop->shared->multi_server_mode_p) {
-		    RunLoop->shared->broadcast_to_clients(
-			IRCMessage->new(
-			    Command => 'NICK',
-			    Param => $msg->param(0),
-			    Remarks => {'fill-prefix-when-sending-to-client' => 1}));
+	if (defined $msg->params) {
+	    # 形式が正しい限りNICKには常に成功して、RunLoopのカレントnickが変更になる。
+	    # ただしネットワーク名が明示されていた場合はカレントを変更しない。
+	    my ($nick,undef,$specified) = Multicast::detatch($msg->params->[0]);
+	    if (Multicast::nick_p($nick)) {
+		unless ($specified) {
+		    #$this->send_message(
+		    #    new IRCMessage(
+		    #	Prefix => $this->fullname,
+		    #	Command => 'NICK',
+		    #	Param => $msg->params->[0]));
+		    if (RunLoop->shared->multi_server_mode_p) {
+			RunLoop->shared->broadcast_to_clients(
+			    IRCMessage->new(
+				Command => 'NICK',
+				Param => $msg->param(0),
+				Remarks => {'fill-prefix-when-sending-to-client' => 1}));
 
-		    RunLoop->shared_loop->set_current_nick($msg->params->[0]);
+			RunLoop->shared_loop->set_current_nick($msg->params->[0]);
+		    }
 		}
+	    } else {
+		$this->send_message(
+		    new IRCMessage(
+			Prefix => 'tiarra',
+			Command => '432',
+			Params => [RunLoop->shared_loop->current_nick,
+				   $msg->params->[0],
+				   'Erroneous nickname']));
+		# これは鯖に送らない。
+		$msg = undef;
 	    }
-	}
-	else {
+	} else {
 	    $this->send_message(
 		new IRCMessage(
 		    Prefix => 'tiarra',
-		    Command => '432',
+		    Command => '431',
 		    Params => [RunLoop->shared_loop->current_nick,
-			       $msg->params->[0],
-			       'Erroneous nickname']));
+			       'No nickname given']));
 	    # これは鯖に送らない。
 	    $msg = undef;
 	}
@@ -343,7 +353,7 @@ sub inform_joinning_channels {
 		    Command => 'JOIN',
 		    Param => $ch_name));
 	    # 次にRPL_TOPIC(あれば)
-	    if (defined($ch->topic)) {
+	    if ($ch->topic ne '') {
 		$this->send_message(
 		    IRCMessage->new(
 			Prefix => $this->fullname,
