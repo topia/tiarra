@@ -20,6 +20,45 @@ sub _yesno {
     return 0;
 }
 
+sub message_io_hook {
+    my ($this,$msg,$io,$type) = @_;
+
+    if ($io->isa('IrcIO::Server')) {
+	if ($type eq 'out' &&
+		$msg->command eq 'MODE' &&
+		    Multicast::channel_p($msg->param(0)) &&
+			    !defined $msg->param(1)) {
+	    my $ch = $io->channel($msg->param(0));
+	    if (defined $ch) {
+		$ch->remark('fetching-switches', 1);
+	    }
+	} elsif ($type eq 'in' &&
+		     $msg->command eq RPL_CHANNELMODEIS &&
+			 Multicast::channel_p($msg->param(1))) {
+	    my $ch = $io->channel($msg->param(1));
+	    if (defined $ch) {
+		$ch->remark('fetching-switches', undef, 'delete');
+	    }
+	} elsif ($type eq 'out' &&
+		     $msg->command eq 'WHO' &&
+			 Multicast::channel_p($msg->param(0))) {
+	    my $ch = $io->channel($msg->param(0));
+	    if (defined $ch) {
+		$ch->remark('fetching-who', 1);
+	    }
+	} elsif ($type eq 'in' &&
+		     $msg->command eq RPL_WHOREPLY &&
+			 Multicast::channel_p($msg->param(1))) {
+	    # 処理の都合上、一つでも帰ってきた時点で取り消し。
+	    my $ch = $io->channel($msg->param(1));
+	    if (defined $ch) {
+		$ch->remark('fetching-who', undef, 'delete');
+	    }
+	}
+    }
+    return $msg;
+}
+
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
 
@@ -45,26 +84,34 @@ sub message_arrived {
 		last;
 	    }
 	    my $ch = $network->channel($chan_short);
-	    last unless (defined $ch && $ch->remark('switches-are-known'));
-	    my $remark = $sender->remark('mode-cache-used') || {};
-	    if (!exists $remark->{$chan_long}) {
-		$sender->send_message(
-		    IRCMessage->new(
-			Prefix => Configuration->shared_conf->general->sysmsg_prefix,
-			Command => RPL_CHANNELMODEIS,
-			Params => [
-			    RunLoop->shared_loop->current_nick,
-			    $chan_long,
-			    $ch->mode_string,
-			   ],
-			Remarks => {
-			    'fill-prefix-when-sending-to-client' => 1,
-			},
-		       )
-		   );
-		$remark->{$chan_long} = 1;
-		$sender->remark('mode-cache-used', $remark);
-		return undef;
+	    last if !defined $ch;
+	    if ($ch->remark('switches-are-known')) {
+		my $remark = $sender->remark('mode-cache-used') || {};
+		if (!exists $remark->{$chan_long}) {
+		    $sender->send_message(
+			IRCMessage->new(
+			    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+			    Command => RPL_CHANNELMODEIS,
+			    Params => [
+				RunLoop->shared_loop->current_nick,
+				$chan_long,
+				$ch->mode_string,
+			       ],
+			    Remarks => {
+				'fill-prefix-when-sending-to-client' => 1,
+			    },
+			   )
+		       );
+		    $remark->{$chan_long} = 1;
+		    $sender->remark('mode-cache-used', $remark);
+		    return undef;
+		}
+	    } else {
+		if ($ch->remark('fetching-switches')) {
+		    # 取得しているクライアントがいるなら、今回は消す。
+		    return undef;
+		}
+		# 取得しにいってもらう。
 	    }
 	} elsif ($msg->command eq 'WHO' &&
 		     $this->_yesno($this->config->use_who_cache) &&
@@ -110,7 +157,7 @@ sub message_arrived {
 			    # データ不足。あきらめる。
 			    RunLoop->shared_loop->notify_warn(
 				__PACKAGE__.': cache data not enough: '.$p->info.
-				    ' on '.$p->server) if ::debug_mode;
+				    ' on '.$p->server.' in '.$chan_long) if ::debug_mode;
 			    die 'cache data not enough';
 			}
 
@@ -140,6 +187,12 @@ sub message_arrived {
 		    $remark->{$chan_long} = 1;
 		    $sender->remark('who-cache-used', $remark);
 		    return undef;
+		} else {
+		    if ($ch->remark('fetching-who')) {
+			# 取得しているクライアントがいるなら、今回は消して便乗。
+			return undef;
+		    }
+		    # 取得しにいってもらう。
 		}
 	    }
 	}
