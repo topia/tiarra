@@ -246,6 +246,11 @@ sub reconnect {
     $this->connect;
 }
 
+# connect --(resolve)--> stage_1 --> (queueing) --> try_next -->
+#  each connect method
+#    ok  -> attach
+#    err -> _connect_error
+
 sub connect {
     my $this = shift;
     #return if $this->connected;
