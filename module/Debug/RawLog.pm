@@ -52,7 +52,13 @@ sub message_io_hook {
 	last if (($message->command =~ /^P[IO]NG$/) &&
 		     $this->config->ignore_ping);
 	last unless ($this->config->get($conf_entry));
-	::printmsg($prefix . $message->serialize());
+	my $msg = $message->clone;
+	if ($this->config->resolve_numeric && $message->command =~ /^\d{3}$/) {
+	    $msg->command(
+		(NumericReply::fetch_name($message->command)||'undef').
+		    '('.$message->command.')');
+	}
+	::printmsg($prefix . $msg->serialize());
 	last;
     }
 
@@ -81,4 +87,7 @@ enable-client-out: 0
 
 # PING/PONG を無視する
 ignore-ping: 1
+
+# NumericReply の名前を解決して表示する(ちゃんとした dump では無くなります)
+resolve-numeric: 1
 =cut
