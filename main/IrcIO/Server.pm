@@ -18,6 +18,7 @@ use PersonInChannel;
 use UNIVERSAL;
 use Multicast;
 use NumericReply;
+use Tiarra::Utils;
 
 sub new {
     my ($class,$runloop,$network_name) = @_;
@@ -42,28 +43,11 @@ sub new {
     $this->connect;
 }
 
-sub network_name {
-    shift->{network_name};
-}
-
-sub current_nick {
-    shift->{current_nick};
-}
-
-sub server_hostname {
-    shift->{server_hostname};
-}
-
-sub isupport {
-    shift->{isupport};
-}
-
-sub state {
-    my ($this, $state) = @_;
-
-    $this->{state} = $state if defined $state;
-    $this->{state};
-}
+Tiarra::Utils->define_attr_getter(0,
+				  qw(network_name current_nick),
+				  qw(server_hostname isupport config),
+				  [qw(host server_host)]);
+Tiarra::Utils->define_attr_accessor(0, qw(state));
 
 sub nick_p {
     my ($this, $nick) = @_;
@@ -116,17 +100,8 @@ sub person_list {
     values %{shift->{people}};
 }
 
-sub host {
-    shift->{server_host};
-}
-
 sub fullname {
     $_[0]->{current_nick}.'!'.$_[0]->{user_shortname}.'@'.$_[0]->{server_host};
-}
-
-sub config {
-    # このオブジェクトの生成に用いられたConfiguration::Blockを返す。
-    shift->{config};
 }
 
 sub config_or_default {
@@ -465,8 +440,13 @@ sub _receive_while_logging_in {
 
 sub _receive_after_logged_in {
     my ($this,$msg) = @_;
-      
+
     $this->person($msg->nick,$msg->name,$msg->host); # nameとhostを覚えておく。
+
+    if (defined $msg->nick &&
+	    $msg->nick ne $this->current_nick) {
+	$msg->remark('message-send-by-other', 1);
+    }
 
     if ($msg->command eq 'NICK') {
 	# nickを変えたのが自分なら、それをクライアントには伝えない。

@@ -10,11 +10,11 @@ use Carp;
 use warnings;
 use UNIVERSAL;
 use RunLoop;
-use Tiarra::SharedMixin;
+use Tiarra::SharedMixin qw(shared shared_manager);
 use Tiarra::ShorthandConfMixin;
+use Tiarra::Utils;
 our $_shared_instance;
-
-*shared_manager = \&shared;
+Tiarra::Utils->define_attr_getter(1, [qw(_runloop runloop)]);
 
 sub _new {
     shift->new(shift || RunLoop->shared);
@@ -38,10 +38,6 @@ sub new {
 sub _initialize {
     my $this = shift;
     $this->update_modules;
-}
-
-sub _runloop {
-    shift->_this->{runloop};
 }
 
 sub add_to_blacklist {

@@ -11,7 +11,9 @@ use warnings;
 use Carp;
 use RunLoop;
 use Tiarra::ShorthandConfMixin;
+use Tiarra::Utils;
 # our @USES = ();
+Tiarra::Utils->define_attr_getter(0, [qw(_runloop runloop)]);
 
 sub new {
     my ($class, $runloop) = @_;
@@ -131,10 +133,6 @@ sub control_requested {
     #    内容 : ControlPort::Request
     #          送られたリクエスト
     die "This module doesn't support controlling.\n";
-}
-
-sub _runloop {
-    shift->{runloop};
 }
 
 sub config {

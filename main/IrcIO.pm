@@ -12,6 +12,7 @@ use Configuration;
 use IRCMessage;
 use Exception;
 use Tiarra::ShorthandConfMixin;
+use Tiarra::Utils;
 
 sub new {
     my ($class, $runloop) = @_;
@@ -29,9 +30,8 @@ sub new {
     bless $obj,$class;
 }
 
-sub _runloop {
-    shift->{runloop};
-}
+Tiarra::Utils->define_attr_getter(0, qw(sock connected sendbuf recvbuf),
+				  [qw(_runloop runloop)]);
 
 sub server_p {
     shift->isa('IrcIO::Server');
@@ -47,24 +47,15 @@ sub disconnect_after_writing {
 
 sub disconnect {
     my $this = shift;
-    $this->{sock}->shutdown(2);
+    $this->sock->shutdown(2);
     $this->{connected} = undef;
     $this->_runloop->unregister_receive_socket($this->{sock});
+    $this->{sock} = undef;
 }
 
-sub sock {
-    $_[0]->{sock};
-}
-
-sub connected {
-    #defined $_[0]->{sock} && $_[0]->{sock}->connected;
-    shift->{connected};
-}
-
-sub need_to_send {
-    # 送るべきデータがあれば1、無ければundefを返します。
-    $_[0]->{sendbuf} eq '' ? undef : 1;
-}
+sub length { length(shift->sendbuf); }
+# 送るべきデータがあれば1、無ければ0を返します。
+sub need_to_send { (shift->length > 0); }
 
 *remarks = \&remark;
 sub remark {
@@ -126,11 +117,11 @@ sub send {
     }
 
     #my $bytes_sent = $this->{sock}->send($this->{sendbuf}) || 0;
-    my $bytes_sent = $this->{sock}->syswrite($this->{sendbuf}, length($this->{sendbuf})) || 0;
-    $this->{sendbuf} = substr($this->{sendbuf},$bytes_sent);
+    my $bytes_sent = $this->sock->syswrite($this->sendbuf, $this->length) || 0;
+    substr($this->{sendbuf}, 0, $bytes_sent) = '';
 
     if ($this->{disconnect_after_writing} &&
-	$this->{sendbuf} eq '') {
+	    !$this->need_to_send) {
 	$this->disconnect;
     }
 }
@@ -142,14 +133,14 @@ sub receive {
     # 操作をブロックします。それがまずい場合は予めselectで読める事を確認しておいて下さい。
     # このメソッドを実行したことで始めてソケットが閉じられた事が分かった場合は、
     # メソッド実行後からはconnectedメソッドが偽を返すようになります。
-    if (!defined($this->{sock}) || !$this->connected) {
+    if (!defined($this->sock) || !$this->connected) {
 	# die "IrcIO::receive : socket is not connected.\n";
 	$this->disconnect;
 	return ();
     }
     
     my $recvbuf = '';
-    sysread($this->{sock},$recvbuf,4096); # とりあえず最大で4096バイトを読む
+    sysread($this->sock,$recvbuf,4096); # とりあえず最大で4096バイトを読む
     if ($recvbuf eq '') {
 	# ソケットが閉じられていた。
 	$this->disconnect;
@@ -160,19 +151,19 @@ sub receive {
     
     while (1) {
 	# CRLFまたはLFが行の終わり。	
-	my $newline_pos = index($this->{recvbuf},"\x0a");
+	my $newline_pos = index($this->recvbuf,"\x0a");
 	if ($newline_pos == -1) {
 	    # 一行分のデータが届いていない。
 	    last;
 	}
 
-	my $current_line = substr($this->{recvbuf},0,$newline_pos);
-	$this->{recvbuf} = substr($this->{recvbuf},$newline_pos+1);
+	my $current_line = substr($this->recvbuf,0,$newline_pos);
+	$this->{recvbuf} = substr($this->recvbuf,$newline_pos+1);
 
 	# CRLFだった場合、末尾にCRが付いているので取る。
 	$current_line =~ s/\x0d$//;
 
-	if (length($current_line) == 0) {
+	if (CORE::length($current_line) == 0) {
 	    # 空行はスキップ
 	    next;
 	}

@@ -6,6 +6,8 @@ package Log::Writer::Base;
 use strict;
 use warnings;
 use Carp;
+use Tiarra::Utils;
+use base qw(Tiarra::Utils);
 
 # pure virtual function helper
 sub not_implemented_error {
@@ -82,26 +84,18 @@ sub first_defined {
 }
 
 sub define_accessor {
-    shift; #ignore class/instance
-    foreach my $name (@_) {
-	eval '
-	sub '.$name.' {
-	    my ($this, $value) = @_;
-
-	    $this->{'.$name.'} = $value if defined $value;
-	    return $this->{'.$name.'};
-	}';
-    }
+    # backward compat
+    shift->define_attr_accessor(0, @_);
 }
-__PACKAGE__->define_accessor(qw(buffer always_flush uri));
+
+__PACKAGE__->define_attr_accessor(0, qw(buffer always_flush uri));
+__PACKAGE__->define_attr_getter(0, qw(refcount parent));
 
 sub add_ref { ++(shift->{refcount}); }
 sub release { --(shift->{refcount}); }
-sub refcount { shift->{refcount}; }
 sub length { CORE::length(shift->buffer); }
 sub clear { shift->buffer(''); }
 sub has_data { shift->length > 0; }
-sub parent { shift->{parent}; }
 
 sub path {
     my $this = shift;

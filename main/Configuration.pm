@@ -17,14 +17,12 @@ use Configuration::Block;
 use Hook;
 our @ISA = 'HookTarget';
 our $AUTOLOAD;
-use Tiarra::SharedMixin;
+use Tiarra::SharedMixin qw(shared shared_conf);
 our $_shared_instance;
 # 値を取得するにはgetメソッドを用いる他、エントリ名をそのままメソッドとして呼ぶ事も出来ます。
 #
 # $conf->hoge;
 # ブロックhogeを返す。hogeが未定義ならundef値を返す。
-
-*shared_conf = \&shared;
 
 sub _new {
     my ($class) = @_;

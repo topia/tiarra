@@ -54,17 +54,7 @@ sub new {
     $this;
 }
 
-sub logging_in {
-    shift->{logging_in};
-}
-
-sub username {
-    shift->{username};
-}
-
-sub client_host {
-    shift->{client_host};
-}
+$utils->define_attr_getter(0, qw(logging_in username client_host));
 
 sub fullname {
     # このクライアントをtiarraから見たnick!username@userhostの形式で表現する。

@@ -9,6 +9,7 @@ use warnings;
 use Carp;
 use Module::Use qw(Tools::LinedDB);
 use Tools::LinedDB;
+use Tiarra::Utils;
 our $AUTOLOAD;
 
 my $timeout = 2.5 * 60;
@@ -70,27 +71,17 @@ sub unregister {
     $this;
 }
 
+Tiarra::Utils->define_attr_getter(0, qw(refcount expire));
+
 sub add_ref { ++(shift->{refcount}); }
 sub release { --(shift->{refcount}); }
-sub refcount { shift->{refcount}; }
-
-sub can_remove {
-    my $this = shift;
-
-    return ($this->refcount <= 0);
-}
+sub can_remove { (shift->refcount <= 0); }
 
 sub set_expire {
     my ($this) = @_;
 
     $this->{expire} = time() + $timeout;
     return $this;
-}
-
-sub expire {
-    my ($this) = @_;
-
-    return $this->{expire};
 }
 
 sub clean {

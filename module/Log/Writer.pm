@@ -10,13 +10,11 @@ use Timer;
 use Carp;
 use File::Spec;
 use DirHandle;
-use Tiarra::SharedMixin;
+use Tiarra::SharedMixin qw(shared shared_writer);
 our $_shared_instance;
 
 # todo:
 #  - accept uri(maybe: ssh, syslog, ...)
-
-*shared_writer = \&shared;
 
 sub _new {
     my $class = shift;

@@ -43,7 +43,7 @@ sub scheme {
 *name = \&scheme;
 *supported_schemes = \&scheme;
 
-__PACKAGE__->define_accessor(qw(file_mode dir_mode));
+__PACKAGE__->define_attr_accessor(0, qw(file_mode dir_mode));
 
 sub real_flush {
     my $this = shift;

@@ -27,7 +27,8 @@ use ControlPort;
 use Hook;
 our @ISA = 'HookTarget';
 use Tiarra::ShorthandConfMixin;
-use Tiarra::SharedMixin;
+use Tiarra::SharedMixin qw(shared shared_loop);
+use Tiarra::Utils;
 our $_shared_instance;
 
 BEGIN {
@@ -38,8 +39,6 @@ BEGIN {
 	# 使えない。
     }
 }
-
-*shared_loop = \&shared;
 
 sub _new {
     shift->new(Configuration->shared);
@@ -141,25 +140,17 @@ sub network {
     return wantarray ? () : undef;
 }
 
-sub default_network {
-    shift->_this->{default_network};
-}
+Tiarra::Utils->define_attr_getter(1, qw(default_network networks clients),
+				  [qw(multi_server_mode_p multi_server_mode)],
+				  [qw(_mod_manager mod_manager)]);
 
-sub networks {
-    shift->_this->{networks};
-}
+# クライアントから見た、現在のnick。
+# このnickは実際に使われているnickとは異なっている場合がある。
+# すなわち、希望のnickが既に使われていた場合である。
+Tiarra::Utils->define_attr_getter(1, qw(current_nick));
 
-sub networks_list {
-    values %{shift->_this->{networks}};
-}
-
-sub clients {
-    shift->_this->{clients};
-}
-
-sub clients_list {
-    @{shift->_this->{clients}};
-}
+sub networks_list { values %{shift->networks}; }
+sub clients_list { @{shift->clients}; }
 
 sub channel {
     # $ch_long: ネットワーク名修飾付きチャンネル名
@@ -174,13 +165,6 @@ sub channel {
     }
 
     $network->channel($ch_short);
-}
-
-sub current_nick {
-    # クライアントから見た、現在のnick。
-    # このnickは実際に使われているnickとは異なっている場合がある。
-    # すなわち、希望のnickが既に使われていた場合である。
-    shift->_this->{current_nick};
 }
 
 sub set_current_nick {
@@ -202,10 +186,6 @@ sub change_nick {
     }
 }
 
-sub multi_server_mode_p {
-    shift->_this->{multi_server_mode};
-}
-
 sub find_io_with_socket {
     my ($class_or_this,$sock) = @_;
     my $this = $class_or_this->_this;
@@ -221,7 +201,6 @@ sub find_io_with_socket {
 }
 
 sub _runloop { shift->_this; }
-sub _mod_manager { shift->_this->{mod_manager}; }
 
 sub sysmsg_prefix {
     my ($class_or_this,$purpose,$category) = @_;

@@ -30,6 +30,9 @@ use strict;
 use warnings;
 use UNIVERSAL;
 use Carp;
+use Tiarra::Utils;
+Tiarra::Utils->define_attr_getter(0, qw(creator sock));
+*socket = \&sock;
 
 use SelfLoader;
 1;
@@ -39,7 +42,7 @@ sub new {
     my ($class,%args) = @_;
     
     my $this = bless {
-	socket => undef,
+	sock => undef,
 	read => undef,
 	write => undef,
 	wanttowrite => undef,
@@ -51,7 +54,7 @@ sub new {
 	if (ref $args{Socket} &&
 	    UNIVERSAL::isa($args{Socket},'IO::Socket')) {
 
-	    $this->{socket} = $args{Socket};
+	    $this->{sock} = $args{Socket};
 	}
 	else {
 	    croak "ExternalSocket->new, Arg{Socket} was illegal reference: ".ref($args{Socket})."\n";
@@ -76,16 +79,6 @@ sub new {
     }
 
     $this;
-}
-
-sub creator {
-    shift->{creator};
-}
-
-*socket = \&sock;
-sub sock {
-    # このExternalSocketが保持しているソケットを返す。
-    shift->{socket};
 }
 
 sub install {

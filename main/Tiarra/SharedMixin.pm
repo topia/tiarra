@@ -7,12 +7,14 @@
 package Tiarra::SharedMixin;
 use strict;
 use warnings;
+use Tiarra::Utils;
+use base qw(Tiarra::Utils);
 our $ExportLevel = 0;
 
+
 # usage:
-#  use Tiarra::SharedMixin;
+#  use Tiarra::SharedMixin qw(shared shared_module);
 #  our $_shared_instance; # optional, but useful for documentation.
-#  *shared_module = \&shared; # alias
 #  sub _new {
 #      my $class = shift;
 #      my ($this) = {};
@@ -32,31 +34,34 @@ sub import {
     my $pkg = shift;
     my $call_pkg = caller($ExportLevel);
     my $instance_name = $call_pkg.'::_shared_instance';
+    if ($#_ != 0) {
+	push(@_, 'shared');
+    }
+    my @funcnames = @_;
 
     no strict 'refs';
-    *{$call_pkg.'::shared'} = sub {
-	if (!defined ${$instance_name}) {
+
+    $pkg->define_function(
+	$call_pkg,
+	sub {
 	    my $class = shift;
 	    ${$instance_name} = $call_pkg->_new(@_);
+	    $pkg->define_function(
+		$call_pkg,
+		sub () { ${$instance_name} },
+		@funcnames);
 	    eval {
 		# safe initialize with ->shared.
 		${$instance_name}->_initialize(@_);
 	    };
-	}
-	${$instance_name};
-    };
-    *{$call_pkg.'::_this'} = \&_this;
-}
+	    ${$instance_name};
+	},
+	@funcnames);
 
-sub _this {
-    my $class_or_this = shift;
-
-    if (!ref($class_or_this)) {
-	# fetch shared
-	$class_or_this = $class_or_this->shared;
-    }
-
-    return $class_or_this;
+    $pkg->define_function(
+	$call_pkg,
+	\&Tiarra::Utils::_this,
+	'_this');
 }
 
 1;

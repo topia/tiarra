@@ -43,7 +43,7 @@ sub new {
     $this->{header_fetched} = undef;
 
     $this->{reply} = {Header => {}, Content => ''};
-    
+
     $this;
 }
 
@@ -88,19 +88,19 @@ sub start {
     }
 
     # ヘッダにHostが含まれていなければ追加。
-    if (!$this->{Header}{Host}) {
-	$this->{Header}{Host} = $host;
+    if (!$this->{header}{Host}) {
+	$this->{header}{Host} = $host;
     }
 
     # ホスト名にポートが含まれていたら分解。
     my $port = 80;
-    if ($host =~ s/:(\d+)//) {
+    if ($host =~ s/:(\d+)$//) {
 	$port = $1;
     }
 
     # 接続
-    $this->{socket} = LinedINETSocket->new("\x0a")->connect($host, $port);
-    if (!$this->{socket}) {
+    $this->{socket} = LinedINETSocket->new->connect($host, $port);
+    if (!defined $this->{socket}) {
 	# 接続不可能
 	croak "Failed to connect: $host:$port";
     }
@@ -118,7 +118,7 @@ sub start {
 
     # リクエストを発行し、フックをかけて終了。
     my @request = (
-	"$this->{method} $this->{url} HTTP/1.0",
+	"$this->{method} $path HTTP/1.0",
 	do {
 	    map {
 		"$_: ".$this->{header}{$_}

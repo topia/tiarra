@@ -8,6 +8,8 @@ use warnings;
 use base qw(Module);
 use Mask;
 use Multicast;
+use Tiarra::Utils;
+my $utils = Tiarra::Utils->shared;
 
 sub PART_SHIELD_EXPIRE_TIME (){5 * 60;}
 
@@ -17,28 +19,18 @@ sub new {
     $this;
 }
 
-sub _yesno {
-    my ($this, $value, $default) = @_;
-
-    return $default || 0 if (!defined $value);
-    return 0 if ($value =~ /[fn]/); # false/no
-    return 1 if ($value =~ /[ty]/); # true/yes
-    return 1 if ($value); # ¿ôÃÍÈ½Äê
-    return 0;
-}
-
 sub message_io_hook {
     my ($this,$msg,$io,$type) = @_;
 
     if ($io->isa('IrcIO::Client') &&
 	    $this->is_cotton($io)) {
-	if ($this->_yesno($this->config->use_part_shield) &&
+	if ($utils->cond_yesno($this->config->use_part_shield) &&
 		$type eq 'in' &&
 		    $msg->command eq 'PART' &&
 			Multicast::channel_p($msg->param(0)) &&
 				!defined $msg->param(1)) {
 	    my ($chan_short, $network_name) = Multicast::detach($msg->param(0));
-	    my $network = RunLoop->shared_loop->network($network_name);
+	    my $network = $this->_runloop->network($network_name);
 	    if (defined $network) {
 		my $expire = $network->remark(__PACKAGE__.'/part-shield/expire');
 		my $remark = $io->remark(__PACKAGE__.'/part-shield/'.$network_name);
