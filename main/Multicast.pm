@@ -149,7 +149,7 @@ sub _MODE_from_server {
     @{$message->params} = map( global_to_local($_,$sender) ,@{$message->params});
 
     my $target = $message->params->[0];
-    unless (nick_p($target)) {
+    if (channel_p($target)) {
 	# nick(つまり自分)の場合はそのままクライアントに配布。
 	# この場合はチャンネルなので、ネットワーク名を付加。
 	$message->params->[0] = attach($target,$sender->network_name);
@@ -198,7 +198,7 @@ sub _NOTICE_from_server {
     $message->nick(global_to_local($message->nick,$sender));
 
     my $target = $message->params->[0];
-    unless (nick_p($target)) {
+    if (channel_p($target)) {
 	# nick(つまり自分)の場合はそのままクライアントに配布。
 	# この場合はチャンネルなので、ネットワーク名を付加。
 	$message->params->[0] = attach($target,$sender->network_name);
@@ -660,14 +660,17 @@ sub distribute_to_servers {
 
 sub nick_p {
     # 文字列がnickとして許される形式であるかどうかを真偽値で返す。
+    # これはクライアントで送るのを許されているか返すだけであって、
+    # サーバから送られてくる nick の判定に使ってはいけない。
     my $str = detach(shift);
     my $nicklen = shift;
     return undef unless length($str) &&
 	(!defined $nicklen || (length($str) <= $nicklen));
 
+    # and irc2.11 permits specially '0'.
     my $first_char = '[a-zA-Z_\[\]\\\`\^\{\}\|]';
     my $remaining_char = '[0-9a-zA-Z_\-\[\]\\\`\^\{\}\|]';
-    return $str =~ /^${first_char}${remaining_char}*$/;
+    return ($str =~ /^${first_char}${remaining_char}*$/ || $str eq '0');
 }
 
 sub channel_p {
