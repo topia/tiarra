@@ -255,7 +255,9 @@ sub _write {
 		    };
 		    # 新たなファイルハンドルを生成。
 		    $cached_elem = $make_writer->();
-		    $cached_elem->register;
+		    if (defined $cached_elem) {
+			$cached_elem->register;
+		    }
 		    return $cached_elem;
 		}
 	    }
@@ -278,6 +280,10 @@ sub _write {
 	$writer->reserve(
 	    Unicode::Japanese->new("$header $line\n",'utf8')->conv(
 		$this->config->charset || 'jis'));
+    } else {
+	# XXX: do warn with properly frequency
+	#RunLoop->shared_loop->notify_warn("can't write to $concrete_fpath: ".
+	#				      "$header $line");
     }
 }
 
