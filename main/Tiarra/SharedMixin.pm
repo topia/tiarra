@@ -7,8 +7,7 @@
 package Tiarra::SharedMixin;
 use strict;
 use warnings;
-use Tiarra::Utils::DefineHelper;
-use base qw(Tiarra::Utils::DefineHelper);
+use base qw(Tiarra::Utils);
 our $ExportLevel = 0;
 
 # usage:
@@ -65,7 +64,7 @@ sub import {
 
     $pkg->define_function(
 	$call_pkg,
-	\&Tiarra::Utils::Core::_this,
+	$pkg->can('_this'),
 	'_this');
 }
 
