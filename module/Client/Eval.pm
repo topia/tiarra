@@ -59,21 +59,20 @@ sub message_arrived {
 }
 
 # useful functions to call from eval
-sub network { return runloop()->network(shift); }
-sub runloop { return RunLoop->shared_loop; }
-sub conf { return Configuration->shared_conf; }
+sub runloop { return RunLoop->shared; }
+sub network { return runloop->network(shift); }
+sub conf { return Configuration->shared; }
 sub module_manager { return ModuleManager->shared_manager; }
-sub module { return module_manager()->get(shift); }
-sub shutdown { return ::shutdown(); }
+sub module { return module_manager->get(shift); }
+sub shutdown { return ::shutdown; }
 sub reload {
-    Timer->new(
-	After => 0,
-	Code => sub {
-	    ReloadTrigger->reload_conf_if_updated;
-	    ReloadTrigger->reload_mods_if_updated;
-	}
-       )->install;
+    ReloadTrigger->_install_reload_timer;
     return undef;
+}
+sub reload_mod {
+    my $name = shift;
+    delete $INC{$name};
+    require $name;
 }
 
 1;

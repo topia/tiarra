@@ -51,13 +51,7 @@ sub message_arrived {
     }
     if ($do_reload) {
 	# 必要ならリロードを実行。
-	Timer->new(
-	    After => 0,
-	    Code => sub {
-		ReloadTrigger->reload_conf_if_updated;
-		ReloadTrigger->reload_mods_if_updated;
-	    }
-	   )->install;
+	ReloadTrigger->_install_reload_timer;
 	return undef;
     }
     return $msg;
