@@ -147,7 +147,7 @@ sub _connect_try_next {
 	my $methodname = '_try_connect_' . $this->{connecting}->{type};
 	$this->$methodname;
     } else {
-	$this->_connect_error;
+	$this->_connect_error('all dead');
 	if ($this->retry_int) {
 	    $this->{timer} = Timer->new(
 		After => $this->retry_int,
