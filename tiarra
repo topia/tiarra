@@ -123,6 +123,14 @@ if (&find_option('version')) {
 if (&find_option('debug')) {
     eval q(sub debug_printmsg{printmsg('debug: '.shift)});
     eval q(sub debug_mode{1;});
+    $SIG{__WARN__} = sub {
+	use Carp;
+	::printmsg(Carp::longmess(@_));
+    };
+    $SIG{__DIE__} = sub {
+	use Carp;
+	die(Carp::longmess(@_));
+    }
 } else {
     eval q(sub debug_printmsg{});
     eval q(sub debug_mode{0;});
