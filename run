@@ -6,6 +6,10 @@ THISDIR="${THISDIR-$(dirname $0)}"
 [ "0${DEBUG}" -ge 1 ] && echo "${THISDIR}/main: start"
 [ "0${DEBUG}" -ge 2 ] && echo "${THISDIR}/main: read tiarrarc"
 [ -f "${THISDIR}/.tiarrarc" ] && . "${THISDIR}/.tiarrarc"
+if [ -f "${THISDIR}/.tiarrarc-once" ]; then
+  . "${THISDIR}/.tiarrarc-once"
+  rm -f "${THISDIR}/.tiarrarc-once"
+fi
 
 WORKDIR=${WORKDIR:-$(dirname $0)}
 if [ -z "${TOPDIR}" ]; then
