@@ -37,6 +37,10 @@ use Carp;
 use Unicode::Japanese;
 use Data::Dumper;
 
+# constants
+use constant MAX_PARAMS => 14;
+
+# variable indices
 use constant PREFIX  => 0;
 use constant COMMAND => 1;
 use constant PARAMS  => 2;
@@ -162,12 +166,7 @@ sub _parse {
 
 	if ($this->[COMMAND]) {
 	    # commandはもう設定済み。次はパラメータだ。
-	    if ($this->[PARAMS]) {
-		push @{$this->[PARAMS]},$value;
-	    }
-	    else {
-		$this->[PARAMS] = [$value];
-	    }
+	    $this->push($value);
 	}
 	else {
 	    # まだコマンドが設定されていない。
@@ -330,11 +329,13 @@ sub command {
 
 sub params {
     croak "Parameter specified to params(). You must mistaked with param().\n" if (@_ > 1);
-    $_[0]->[PARAMS];
+    my $this = shift;
+    $this->[PARAMS] = [] if !defined $this->[PARAMS];
+    $this->[PARAMS];
 }
 
 sub n_params {
-    scalar @{$_[0]->[PARAMS]||[]};
+    scalar @{shift->params};
 }
 
 sub param {
@@ -344,6 +345,15 @@ sub param {
 	$this->[PARAMS]->[$index] = $new_value;
     }
     $this->[PARAMS]->[$index];
+}
+
+sub push {
+    my $this = shift;
+    CORE::push(@{$this->params}, @_);
+}
+
+sub pop {
+    CORE::pop(@{shift->params});
 }
 
 sub remark {
