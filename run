@@ -3,8 +3,8 @@
 # copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
 
 THISDIR="${THISDIR-$(dirname $0)}"
-[ "${DEBUG}" -ge 1 ] && echo "${THISDIR}/main: start"
-[ "${DEBUG}" -ge 2 ] && echo "${THISDIR}/main: read tiarrarc"
+[ "0${DEBUG}" -ge 1 ] && echo "${THISDIR}/main: start"
+[ "0${DEBUG}" -ge 2 ] && echo "${THISDIR}/main: read tiarrarc"
 [ -f "${THISDIR}/.tiarrarc" ] && . "${THISDIR}/.tiarrarc"
 
 WORKDIR=${WORKDIR:-$(dirname $0)}

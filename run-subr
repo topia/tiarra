@@ -3,8 +3,8 @@
 # copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
 
 THISDIR="${THISDIR-$(dirname $0)}"
-[ "${DEBUG}" -ge 1 ] && echo "${THISDIR}/subr: start"
-[ "${DEBUG}" -ge 2 ] && echo "${THISDIR}/subr: read tiarrarc"
+[ "0${DEBUG}" -ge 1 ] && echo "${THISDIR}/subr: start"
+[ "0${DEBUG}" -ge 2 ] && echo "${THISDIR}/subr: read tiarrarc"
 [ -f "${THISDIR}/.tiarrarc" ] && . "${THISDIR}/.tiarrarc"
 
 # override
