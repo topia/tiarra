@@ -131,7 +131,7 @@ sub quote {
 sub make_text {
     my $this = shift;
     my @ctcps = map {
-	"\x01" . $this->quote($_) . "x01";
+	"\x01" . $this->quote($_) . "\x01";
     } @_;
     return wantarray ? @ctcps : join('', @ctcps);
 }
