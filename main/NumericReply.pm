@@ -33,6 +33,9 @@ BEGIN {
 
 	 # irc2.11.x
 	 RPL_HELLO            020
+	 RPL_YOURID           042
+	 RPL_SAVENICK         043
+
 
 	 RPL_NONE             300
 	 RPL_AWAY             301
@@ -67,9 +70,14 @@ BEGIN {
 	 RPL_NOTOPIC          331
 	 RPL_TOPIC            332
 	 RPL_TOPICWHOTIME     333
+	 RPL_TOPIC_WHO_TIME   333
 
 	 RPL_INVITING         341
 	 RPL_SUMMONING        342
+
+	 # irc2.11
+	 RPL_REOPLIST         344
+	 RPL_ENDOFREOPLIST    345
 
 	 RPL_INVITELIST       346
 	 RPL_ENDOFINVITELIST  347
