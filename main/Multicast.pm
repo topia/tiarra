@@ -200,6 +200,11 @@ sub _WHOIS_from_client {
     # ローカルnickにWHOISしたら、全ネットワークのnickを表示する
     if (($message->command eq 'WHOIS' || $message->command eq 'WHO') &&
 	$message->param(0) eq $local_nick) {
+	$sender->send_message(
+	    new IRCMessage(Prefix => 'tiarra',
+			   Command => 'NOTICE',
+			   Params => [$local_nick,
+				      "*** Your local nick is currently '$local_nick'."]));
 	map {
 	    # ローカルnickとグローバルnickが食い違っていたらその旨を伝える。
 	    # 接続しているネットワーク名を全部表示する
@@ -208,9 +213,9 @@ sub _WHOIS_from_client {
 	    if ($global_nick ne $local_nick) {
 		$sender->send_message(
 		    new IRCMessage(Prefix => 'tiarra',
-				 Command => 'NOTICE',
-				 Params => [$local_nick,
-					   "*** Your global nick in $network_name is currently '$global_nick'."]));
+				   Command => 'NOTICE',
+				   Params => [$local_nick,
+					      "*** Your global nick in $network_name is currently '$global_nick'."]));
 	    } else {
 		$sender->send_message(
 		    new IRCMessage(Prefix => 'tiarra',
@@ -218,7 +223,7 @@ sub _WHOIS_from_client {
 				 Params => [$local_nick,
 					   "*** Your global nick in $network_name is same as local nick."]));
 	    }
-	} values %{$runloop->networks};
+	} $runloop->networks_list;
     }
 
     ($message->params->[0],$to) = detatch($message->params->[0]);
