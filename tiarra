@@ -10,42 +10,77 @@
 require 5.006;
 use strict;
 use warnings;
-BEGIN {
-    use File::Basename;
-    use File::Spec;
-    my $add_inc = sub {
-	foreach my $path (@_) {
-	    unshift(@INC,
-		    map{ File::Spec->catdir($path, $_); } qw(main module));
+use File::Basename;
+use File::Spec;
+use Carp;
+
+sub follow_link {
+    my ($file, $max_count, $die_on_max) = @_;
+
+    $max_count = 40 unless defined $max_count;
+    my ($count, @path) = 0, ();
+    push(@path, $file);
+    while (-l $file) {
+	$file = File::Spec->rel2abs(readlink($file), dirname($file));
+	push(@path, $file);
+	if (++$count >= $max_count) {
+	    if ($die_on_max) {
+		carp 'Too many levels of symbolic links';
+	    } else {
+		last;
+	    }
 	}
-    };
+    }
+    return @path;
+}
+
+BEGIN {
     # untaint
     $0 =~ /^(.+)$/;
     my $self = $1;
 
-    $add_inc->(File::Spec->rel2abs(map dirname($_), (readlink($self), $self)))
-	if (-l $self);
-    $add_inc->(dirname($self), ".");
+    foreach my $path (map dirname($_), reverse follow_link($1)) {
+	unshift(@INC,
+		map{ File::Spec->catdir($path, $_); } qw(main module));
+    }
 }
+
+# optional modules
+our $threads_is_enabled;
+our $ipv6_is_enabled;
+our $time_hires_is_enabled;
+BEGIN {
+    eval q{
+	use threads;
+    };
+    $threads_is_enabled = ($@ ? 0 : 1);
+
+    eval q{
+	use IO::Socket::INET6;
+    };
+    $ipv6_is_enabled = ($@ ? 0 : 1);
+
+    eval q{
+	use Time::HiRes ();
+    };
+    $time_hires_is_enabled = ($@ ? 0 : 1);
+}
+
 use Configuration;
 use RunLoop;
 use ModuleManager;
 use ReloadTrigger;
 use IO::Handle;
-my $conf_file = '';
-my $quiet = 0;
-my $no_fork = 0;
-my $terminated = 0;
-
+our $terminated = 0;
 
 # version はバージョン番号
-my $version = '0';
+our $version = '0';
 
 # based はベースにしている Tiarra のバージョン(パッケージまたは fork 時用)
-my $based_version = '';
+our $based_version = '';
 
 # short は短いバージョン番号。(CTCP-Version の返答に使われる)
-my $short_version = '';
+our $short_version = '';
 
 
 # オリジナル(based_version が未定義)ならば ChangeLog を検索する。
@@ -55,35 +90,30 @@ $short_version ||= $version;
 
 &install_signal_handlers;
 
-&check_whether_ipv6_enabled;
-
 sub check_changelog {
     use IO::File;
     my $seek_offset = -300;
     my $changelog = 'ChangeLog';
 
-    # get changelog path
-    if ($0 =~ /^(.*)[\\\/][^\\\/]*$/) {
-	$changelog = $1 . '/' . $changelog;
-    } else {
-	$changelog = './' . $changelog;
-    }
+    foreach my $file (follow_link($0)) {
+	my $path = File::Spec->catfile(dirname($file), $changelog);
+	my $fh = IO::File->new($path, 'r');
+	if (defined $fh) {
+	    my $revision = undef;
+	    my $date = undef;
 
-    my $fh = IO::File->new($changelog, 'r');
-    if (defined $fh) {
-	my $revision = undef;
-	my $date = undef;
-
-	$fh->seek($seek_offset, 2);
-	foreach my $line (<$fh>) {
-	    if ($line =~ /\$\QRevision:\E ([\d.]+) \$/) {
-		$revision = $1;
-	    } elsif ($line =~ /\$\QDate:\E ([\d\/]+) [\d:]+ \$/) {
-		$date = $1;
+	    $fh->seek($seek_offset, 2);
+	    foreach (<$fh>) {
+		if (/\$\QRevision:\E ([\d.]+) \$/) {
+		    $revision = $1;
+		} elsif (/\$\QDate:\E ([\d\/]+) [\d:]+ \$/) {
+		    $date = $1;
+		}
 	    }
+	    $version .= '+cvs-' . $revision if defined $revision;
+	    $version .= '(' . $date . ')' if defined $date;
+	    return;
 	}
-	$version .= '+cvs-' . $revision if defined $revision;
-	$version .= '(' . $date . ')' if defined $date;
     }
 }
 
@@ -159,118 +189,116 @@ sub find_options {
     } @ARGV;
 }
 
-if (&find_option('help')) {
-    &help;
-    exit;
-} elsif (&find_option('version')) {
-    print join("\n",get_credit()) . "\n";
-    exit;
-} elsif (&find_option('dumpversion')) {
-    print $version . "\n";
-    exit;
-} elsif (&find_option('make-password')) {
-    &make_password;
-    exit;
-}
-
-if (&find_option('debug')) {
-    eval q(sub debug_printmsg{printmsg('debug: '.shift)});
-    eval q(sub debug_mode{1;});
-    $SIG{__WARN__} = sub {
-	use Carp;
-	::printmsg(Carp::longmess(@_));
-    };
-    $SIG{__DIE__} = sub {
-	use Carp;
-	die @_ if $_[0] =~ /^[Cc]ouldn't connect/;
-	die(Carp::longmess(@_));
-    }
-} else {
-    eval q(sub debug_printmsg{});
-    eval q(sub debug_mode{0;});
-}
-
-foreach my $pp_define (&find_options(qr/D(.+?)/)) {
-    &Configuration::Preprocessor::initial_define(@$pp_define);
-}
-
-$conf_file = &find_option('config');
-if (!defined $conf_file) {
-    if (!-t STDIN) {
-	$conf_file = undef; # STDINから読む場合はundefを入れておく。
-    } elsif (-f 'tiarra.conf') {
-	$conf_file = 'tiarra.conf';
-    } else {
+sub main {
+    if (&find_option('help')) {
 	&help;
-	exit;
+	return 0;
+    } elsif (&find_option('version')) {
+	print join("\n",get_credit()) . "\n";
+	return 0;
+    } elsif (&find_option('dumpversion')) {
+	print $version . "\n";
+	return 0;
+    } elsif (&find_option('make-password')) {
+	&make_password;
+	return 0;
     }
-}
 
-$quiet = &find_option('quiet');
-$no_fork = &find_option('no-fork');
-
-my $load_config = sub {
-    local($|) = 1;
-
-    if (defined $conf_file) {
-	print "Reading configuration from ${conf_file}... ";
+    if (&find_option('debug')) {
+	eval q(sub debug_printmsg{printmsg('debug: '.shift)});
+	eval q(sub debug_mode{1;});
+	$SIG{__WARN__} = sub {
+	    ::printmsg(Carp::longmess(@_));
+	};
+	$SIG{__DIE__} = sub {
+	    die @_ if $_[0] =~ /^[Cc]ouldn't connect/;
+	    die(Carp::longmess(@_));
+	}
     } else {
-	$conf_file = IO::Handle->new->fdopen(fileno(STDIN),'r');
-	print "Reading configuration from stdin... ";
+	eval q(sub debug_printmsg{});
+	eval q(sub debug_mode{0;});
     }
 
-    eval {
-	Configuration::shared_conf->load($conf_file);
-    }; if ($@) {
-	die "ERROR: $@\n";
+    foreach my $pp_define (&find_options(qr/D(.+?)/)) {
+	&Configuration::Preprocessor::initial_define(@$pp_define);
+    }
+
+    my $conf_file = &find_option('config');
+    if (!defined $conf_file) {
+	if (!-t STDIN) {
+	    $conf_file = undef; # STDINから読む場合はundefを入れておく。
+	} elsif (-f 'tiarra.conf') {
+	    $conf_file = 'tiarra.conf';
+	} else {
+	    &help;
+	    return 2;
+	}
+    }
+
+    my $quiet = &find_option('quiet');
+    my $no_fork = &find_option('no-fork');
+
+    my $load_config = sub {
+	local($|) = 1;
+
+	if (defined $conf_file) {
+	    print "Reading configuration from ${conf_file}... ";
+	} else {
+	    $conf_file = IO::Handle->new->fdopen(fileno(STDIN),'r');
+	    print "Reading configuration from stdin... ";
+	}
+
+	eval {
+	    Configuration->shared_conf->load($conf_file);
+	}; if ($@) {
+	    die "ERROR: $@\n";
+	} else {
+	    print "ok\n";
+	}
+    };
+
+    my $start_runloop = sub {
+	eval {
+	    RunLoop::shared_loop->run;
+	}; if ($@) {
+	    die "Tiarra aborted: $@\n";
+	}
+    };
+
+    my $boot = sub  {
+	foreach my $line (get_credit()) {
+	    print $line,"\n";
+	}
+	print "\n";
+	$load_config->();
+	ModuleManager->shared; # 準備させる
+	$start_runloop->();
+    };
+
+    # quietモードならSTDIN, STDOUT, STDERRを閉じる。
+    # config の read の関連(STDIN)で boot の寸前に。
+    if ($quiet) {
+	close STDIN;
+	close STDOUT;
+	close STDERR;
+	#open(STDOUT,"> /dev/null");
+	#open(STDERR,"> /dev/null");
+    }
+
+    # quietモードであり、且つno-forkオプションが指定されなかったらfork。
+    if ($quiet && !$no_fork) {
+	my $child_pid = fork;
+	if ($child_pid == 0) {
+	    # 子プロセス
+	    $boot->();
+	} elsif (!defined $child_pid) {
+	    print "Tiarra: fork() failed.\n";
+	}
     } else {
-	print "ok\n";
-    }
-};
-
-my $start_runloop = sub {
-    eval {
-	RunLoop::shared_loop->run;
-    }; if ($@) {
-	die "Tiarra aborted: $@\n";
-    }
-};
-
-my $boot = sub  {
-    foreach my $line (get_credit()) {
-	print $line,"\n";
-    }
-    print "\n";
-    $load_config->();
-    ModuleManager->shared; # 準備させる
-    $start_runloop->();
-};
-
-# quietモードならSTDIN, STDOUT, STDERRを閉じる。
-# config の read の関連(STDIN)で boot の寸前に。
-if ($quiet) {
-    close STDIN;
-    close STDOUT;
-    close STDERR;
-    #open(STDOUT,"> /dev/null");
-    #open(STDERR,"> /dev/null");
-}
-
-# quietモードであり、且つno-forkオプションが指定されなかったらfork。
-if ($quiet && !$no_fork) {
-    my $child_pid = fork;
-    if ($child_pid == 0) {
-	# 子プロセス
 	$boot->();
-    } elsif (!defined $child_pid) {
-	print "Tiarra: fork() failed.\n";
     }
-} else {
-    $boot->();
+    return 0;
 }
-exit;
-
-
 
 sub printmsg {
     # 文字コードはUTF-8でなければならない。
@@ -351,15 +379,9 @@ sub shutdown {
     }
 }
 
-our $ipv6_is_enabled;
-sub check_whether_ipv6_enabled {
-    eval q{
-	use IO::Socket::INET6;
-    };
-    $ipv6_is_enabled = ($@ ? 0 : 1);
-}
+# 外部から呼べるオプションモジュールの存在チェック。
+sub ipv6_enabled { $ipv6_is_enabled; }
+sub threads_enabled { $threads_is_enabled; }
+sub time_hires_is_enabled { $time_hires_is_enabled; }
 
-sub ipv6_enabled {
-    # 外部から呼んで良い。IPv6が有効かどうかを真偽値で返す。
-    $ipv6_is_enabled;
-}
+exit main();
