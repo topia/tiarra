@@ -1,3 +1,31 @@
+2004-03-07  Topia  <topia@clovery.jp>
+
+	* tiarra:
+	  - untaint を行うようにした。
+
+	* main/Configuration.pm:
+	  - 呼び出す関数名を間違えていた bug を修正。
+
+	* main/Mask.pm:
+	  - untaint を行うようにした。
+
+	* main/Multicast.pm:
+	  - ERR_NOTONCHANNEL, ERR_NOSUCHCHANNEL を *_sent に追加。
+
+	* main/IrcIO/Server.pm:
+	  - nick 変更の prefix category を nick::system にした。
+	  - _START_WHOIS_REPLY を呼ぶときに defined check をしてない bug
+	    を修正。
+
+	* module/Client/Cache.pm:
+	  - destruct を追加。
+	  - ChannelInfo につける remark にパッケージ名をつけて、
+	    他のモジュールとかぶらないようにした。
+
+	* module/Client/Eval.pm:
+	  - untaint を行うようにした。
+	  - 複数行の出力をちゃんと処理するようにした。
+
 2004-02-23  Topia  <topia@clovery.jp>
 
 	* module/Debug/RawLog.pm:
@@ -1416,7 +1444,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.133 2004/02/23 08:27:11 topia Exp $
+#       Id: $Id: ChangeLog,v 1.134 2004/03/07 10:34:19 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2004/02/23 08:27:11 $
-# Revision: $Revision: 1.133 $
+#     Date: $Date: 2004/03/07 10:34:19 $
+# Revision: $Revision: 1.134 $

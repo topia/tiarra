@@ -1,3 +1,8 @@
+2004-03-07  Topia  <topia@clovery.jp>
+
+	* 全般
+	   - taint check モードで動作するようになりました(多分)。
+
 2004-02-23  Topia  <topia@clovery.jp>
 
 	* Debug::RawLog.pm
