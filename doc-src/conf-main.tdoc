@@ -25,7 +25,7 @@ name: Tiarra the "Aeon"
 # どのようなユーザーモードでログインするか。+iwや+iのように指定する。
 # 省略された場合はユーザーモードを特に設定しない。
 -user-mode: +i
-  
+
 # Tiarraへの接続を許可するホスト名を表わすマスク。
 # 制限をしないのであれば"*"を指定するか省略する。
 client-allowed: *
@@ -56,21 +56,21 @@ tiarra-password: xl7cflIcH9AwE
 # また、非UNIX環境ではそもそもUNIXドメインソケットが利用可能でないため、
 # そのような場合にもこの機能は無効となる。
 -control-socket-name: test
-  
+
 # IRCサーバーから送られる文字のコードと、IRCサーバーへ送る文字のコード
 # どちらも省略された場合はjis。
 server-in-encoding: jis
 server-out-encoding: jis
-  
+
 # クライアントから受け取る文字のコードと、クライアントへ伝える文字のコード
 # どちらも省略された場合はjis。
 client-in-encoding: jis
 client-out-encoding: jis
-  
+
 # Tiarraは標準出力に様々なメッセージを出力するが、その文字コードを指定する。省略時にはeucとなる。
 # ただしtiarra.confのパースが完了するまでは文字コードの変換は行なわれない(つまりこの設定が有効にならない)ことに注意して下さい。
 stdout-encoding: euc
-  
+
 # Tiarraはエラーメッセージを標準出力に出力するが、その時に接続しているクライアントがあればクライアントにもNOTICEで送る事が出来る。
 # この値を1にすると、その機能が有効になる。省略するか0を指定するとこの機能は無効になる。
 notice-error-messages: 1
@@ -170,14 +170,14 @@ multi-server-mode: 1
 # 複数のネットワークに接続したい場合は多重定義して下さい。
 name: ircnet
 name: 2ch
-  
+
 # 通常Tiarraではチャンネル名を「#Tiarra@ircnet」のように表現します。
 # これはネットワークircnet内の#Tiarraというチャンネルを表わします。
 # @以降は省略可能ですが、省略された場合のデフォルトのネットワーク名をここで指定します。
 # 省略した場合は最も始めに定義されたnameがデフォルトになります。
 # (そしてnameが一つも無かった場合はmainがデフォルトになります)
-default: ircnet
-  
+-default: ircnet
+
 # 上に述べた通り、デフォルトではTiarraはチャンネル名とネットワーク名を@で区切ります。
 # この区切り文字は任意の文字に変更する事が出来ます。省略された場合は@になります。
 channel-network-separator: @
