@@ -66,11 +66,11 @@ sub classify_modules {
     if (defined($_ = $classify_modules_CACHE)) {
 	return $_;
     }
-    
+
     my $classified = {}; # {グループ名 => [それに含まれるモジュールのDocPod]}
     my $classify = sub {
 	my $doc = shift;
-	
+
 	my $groupname = do {
 	    if ($doc->pkg_name =~ m/^(.+?)::/) {
 		$1;
@@ -79,7 +79,7 @@ sub classify_modules {
 		'';
 	    }
 	};
-	
+
 	my $vec = $classified->{$groupname};
 	if (!defined $vec) {
 	    $vec = $classified->{$groupname} = [];
@@ -104,8 +104,8 @@ sub classify_modules {
 
     # ソート
     foreach (keys %$classified) {
-	@{$classified->{$_}} = 
-	    map { $_->[1] } 
+	@{$classified->{$_}} =
+	    map { $_->[1] }
 		sort { $a->[0] cmp $b->[0] }
 		    map { [$_->pkg_name, $_]; } @{$classified->{$_}};
     }
@@ -163,7 +163,7 @@ sub makehtml_mods {
 	    #   }<br />
 	    # </p>
 	    my $html = ''; # 文字コードはUTF-8
-	    
+
 	    my @lines = split /\n/,$docpod->content;
 	    for (my $i = 0; $i < @lines; $i++) {
 		my $line = $lines[$i];
@@ -178,10 +178,10 @@ sub makehtml_mods {
 			if ($lines[$i] =~ m/^\s*#/) {
 			    # これはブロックの続き。
 			    (my $stripped = $lines[$i]) =~ s/^\s*#//;
-			    
+
 			    # タブは4つのスペースに変換。この動作は後で修正するかも知れない。
 			    $stripped =~ s/\t/    /g;
-			    
+
 			    push @group,$stripped;
 			}
 			else {
@@ -189,7 +189,7 @@ sub makehtml_mods {
 			    last; # ここで終わり
 			}
 		    }
-		    
+
 		    # 共通する先頭のスペースを除去。すなわち各行について先頭のスペースの個数を数え、
 		    # その最小値を削るべきスペースの数とする。
 		    my $spaces_to_remove;
@@ -288,7 +288,7 @@ sub makehtml_mods_toc {
 		 'module/',
 		 $groupname eq '' ? 'UNCLASSIFIED' : $groupname,
 		 '.html');
-	
+
 	$t->toc_group->expand(
 	    group_path => $unijp->set($group_path)->$html_charset,
 	    group_name => $unijp->set($groupname)->$html_charset,
