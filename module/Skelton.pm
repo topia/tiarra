@@ -28,11 +28,11 @@ sub destruct {
 }
 
 sub message_arrived {
-    my ($this,$message,$sender) = @_;
+    my ($this,$msg,$sender) = @_;
     # サーバーまたはクライアントからメッセージが来た時に呼ばれる。
     # 戻り値はIRCMessageまたはその配列またはundef。
     #
-    # $message :
+    # $msg :
     #    内容: IRCMessageオブジェクト
     #    サーバーから、またはクライアントから送られてきたメッセージ。
     #    モジュールはこのオブジェクトをそのまま返しても良いし、
@@ -46,11 +46,11 @@ sub message_arrived {
     # サーバー→クライアントの流れでも、Prefixを持たないメッセージを
     # 流しても構わない。逆に言えば、そのようなメッセージが来ても
     # 問題が起こらないようにモジュールを設計しなければならない。
-    return $message;
+    return $msg;
 }
 ## Auto::Utils::generate_reply_closures を使う場合。
 # sub message_arrived {
-#     my ($this,$message,$sender) = @_;
+#     my ($this,$msg,$sender) = @_;
 #     my @result = ($msg);
 # 
 #     if ($msg->command eq 'PRIVMSG') {
