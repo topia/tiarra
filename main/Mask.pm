@@ -275,6 +275,7 @@ sub compile {
 sub _split {
     # ',' でわけられたマスクを配列にする。
     my $mask = shift;
+    return () if !defined $mask;
 
     return map {
 	s/\\,/,/g;
