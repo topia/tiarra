@@ -37,7 +37,7 @@ sub cond_yesno {
     shift; # drop
     my ($value, $default) = @_;
 
-    return $default || 0 unless defined $value;
+    return $default unless defined $value;
     return 0 if ($value =~ /[fn]/i); # false/no
     return 1 if ($value =~ /[ty]/i); # true/yes
     return 1 if ($value); # ¿ôÃÍÈ½Äê
