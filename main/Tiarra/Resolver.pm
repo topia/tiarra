@@ -51,9 +51,9 @@ my $dataclass = 'Tiarra::Resolver::QueueData';
 
 our $use_threads;
 BEGIN {
-    my $threads_is_enabled = eval { ::threads_enabled };
-    if (defined $threads_is_enabled) {
-	$use_threads = $threads_is_enabled;
+    my $threads_enabled = eval { ::threads_enabled };
+    if (defined $threads_enabled) {
+	$use_threads = $threads_enabled;
     } else {
 	# あがいても仕方ないと思うが試してみる。
 	eval q{
