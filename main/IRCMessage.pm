@@ -208,7 +208,7 @@ sub _parse {
     # 解釈結果の正当性をチェック。
     # commandが無かったらdie。
     unless ($this->[COMMAND]) {
-	die "IRCMessage parsed unvalid one, which doesn't have command.\n  $line\n";
+	die "IRCMessage parsed invalid one, which doesn't have command.\n  $line\n";
     }
 }
 
