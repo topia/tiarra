@@ -284,7 +284,6 @@ sub _makeconf {
 	}
 	$result .= ' '.$pod->pkg_name." {\n";
     }
-    
 
     # infoヘッダの内容を出力。無ければエラー。
     # ただしinfo-is-omittedが定義されていて真であれば出力しない。
@@ -308,10 +307,10 @@ sub _makeconf {
     my @lines = split /\n/,$pod->content;
     for (my $i = 0; $i < @lines; $i++) {
 	my $line = $lines[$i];
-	
+
 	my $error = sub {
 	    my $errstr = shift;
-	    
+
 	    # 前後5行と共にエラー行を示す。
 	    my $region_lines = 5;
 	    my $begin = $i - $region_lines;
