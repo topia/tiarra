@@ -38,7 +38,8 @@ sub decode($$;$)
 		if ($esc_0212) {
 		    # JIS X 0212-1990
 		    # FIXME
-		    $ret .= join '', '[JISX0212:', unpack('H*', $chunk), ']';
+		    #$ret .= join '', '[JISX0212:', unpack('H*', $chunk), ']';
+		    $ret .= Encode::decode('jis0212-raw', $chunk);
 		} elsif ($esc_kana) {
 		    # 0201 kana on G0
 		    $chunk =~ s/(.)/pack('C', unpack('C', $1) | 0x80)/eog;
@@ -73,6 +74,7 @@ sub encode($$;$)
 {
     my ($obj, $utf8, $chk) = @_;
     $utf8 =~ s/\x{301c}/\x{ff5e}/g; # reverse soldius
+    $utf8 =~ s/\x{2212}/\x{ff0d}/g; #
     my $str = Encode::encode('cp932', $utf8, FB_PERLQQ) ;
     my $ret = '';
     Encode::_utf8_off($ret);
