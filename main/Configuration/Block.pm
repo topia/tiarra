@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Block.pm,v 1.9 2003/09/20 11:06:18 admin Exp $
+# $Id: Block.pm,v 1.10 2003/10/24 06:12:29 admin Exp $
 # -----------------------------------------------------------------------------
 package Configuration::Block;
 use strict;
@@ -25,6 +25,13 @@ use Unicode::Japanese;
 # $block->foo('random');
 # パラメータfooに複数の定義があれば、そのうちの一つをランダムに返す。
 # 一つも無ければundefを返す。
+#
+# $block->foo_bar('block');
+# $block->get('foo-bar', 'block');
+# パラメータ"foo-bar"の値が未定義である場合、undef値の代わりに
+# 空のConfiguration::Blockを返す。
+# 定義されている場合、その値がブロックであればそれを返すが、
+# そうでなければ "foo-bar: その値" の要素を持ったブロックを生成し、それを返す。
 #
 # $block->get('foo_bar');
 # $block->get('foo_bar','all');
@@ -137,7 +144,10 @@ sub get {
 	# そのような値は定義されていない。
 	if ($option && $option eq 'all') {
 	    return ();
-	}	
+	}
+	elsif ($option and $option eq 'block') {
+	    return Configuration::Block->new($key);
+	}
 	else {
 	    return undef;
 	}
@@ -162,6 +172,16 @@ sub get {
 	}
 	else {
 	    return $this->eval_code($value);
+	}
+    }
+    elsif ($option and $option eq 'block') {
+	if (ref($value) and UNIVERSAL::isa($value, 'Configuration::Block')) {
+	    return $value;
+	}
+	else {
+	    my $tmp_block = Configuration::Block->new($key);
+	    $tmp_block->set($key, $value);
+	    return $tmp_block;
 	}
     }
     else {

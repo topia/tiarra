@@ -1,3 +1,20 @@
+2003-10-25  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/IRCMessage.pm (serialize):
+	最後のパラメータが空文字列だった場合、コロンを残さない為に
+	シリアライズ後のパラメタが減ってしまう問題を解決。
+
+	* main/IrcIO/Server.pm (_receive_while_logging_in):
+	サーバーがERRORを返した時、その内容でdieするように。
+
+2003-10-24  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/Configuration/Block.pm:
+	$block->foo_bar('block') とした時、戻り値が常にブロックとなる。
+	未定義であれば空のブロックを、既定義かつ値がブロックであれば
+	そのブロックを、既定義かつ値がブロックでなければキーと値のペアを
+	一つだけ含むブロックを生成して返す。
+
 2003-10-19  Topia  <topia@clovery.jp>
 
 	* HACKING:
@@ -991,7 +1008,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.110 2003/10/19 12:30:23 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2003/10/19 12:30:23 $
-# Revision: $Revision: 1.110 $
+#       Id: $Id: ChangeLog,v 1.113 2003/10/24 15:57:48 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2003/10/24 15:57:48 $
+# Revision: $Revision: 1.113 $
