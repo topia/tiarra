@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Client.pm,v 1.25 2004/02/23 02:46:18 topia Exp $
+# $Id: Client.pm,v 1.26 2004/02/23 05:41:21 topia Exp $
 # -----------------------------------------------------------------------------
 # IrcIO::Clientはクライアントからの接続を受け、
 # IRCメッセージをやり取りするクラスです。
@@ -240,7 +240,6 @@ sub _receive_while_logging_in {
 		my $network_name = $_->network_name;
 		my $global_nick = $_->current_nick;
 		if ($global_nick ne $current_nick) {
-		    #$send_message->('NOTICE', "*** Your global nick in $network_name is currently '$global_nick'.");
 		    $this->send_message(
 			new IRCMessage(
 			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
