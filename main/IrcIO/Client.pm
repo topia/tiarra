@@ -181,13 +181,14 @@ sub _receive_while_logging_in {
     if ($this->{nick} ne '' && $this->{username} ne '') {
 	# general/tiarra-passwordを取得
 	my $valid_password = Configuration->shared_conf->general->tiarra_password;
+	my $prefix = Configuration->shared->general->sysmsg_prefix;
 	if (defined $valid_password && $valid_password ne '' &&
 	    ! Crypt::check($this->{pass_received},$valid_password)) {
 	    # パスワードが正しくない。
 	    ::printmsg("Refused login of ".$this->fullname_from_client." because of bad password.");
 
 	    $this->send_message(
-		new IRCMessage(Prefix => 'tiarra',
+		new IRCMessage(Prefix => $prefix,
 			       Command => '464',
 			       Params => [$this->{nick},'Password incorrect']));
 	    $this->send_message(
@@ -208,7 +209,7 @@ sub _receive_while_logging_in {
 	    $this->{logging_in} = 0;
 
 	    $this->send_message(
-		new IRCMessage(Prefix => 'tiarra',
+		new IRCMessage(Prefix => $prefix,
 			       Command => '001',
 			       Params => [$this->{nick},'Welcome to the Internet Relay Network '.$this->fullname_from_client]));
 
@@ -221,32 +222,35 @@ sub _receive_while_logging_in {
 				   Param => $current_nick));
 	    }
 
+	    my $send_message = sub {
+		my ($command, @params) = @_;
+		$this->send_message(
+		    new IRCMessage(
+			Prefix => $prefix,
+			Command => $command,
+			Params => [$current_nick,
+				   @params],
+		       ));
+	    };
+
 	    map {
 		# ローカルnickとグローバルnickが食い違っていたらその旨を伝える。
 		# 接続しているネットワーク名を全部表示する
 		my $network_name = $_->network_name;
 		my $global_nick = $_->current_nick;
 		if ($global_nick ne $current_nick) {
-		    $this->send_message(
-			new IRCMessage(Prefix => 'tiarra',
-				       Command => 'NOTICE',
-				       Params => [$current_nick,
-						  "*** Your global nick in $network_name is currently '$global_nick'."]));
+		    $send_message->('NOTICE', "*** Your global nick in $network_name is currently '$global_nick'.");
 		} else {
-		    $this->send_message(
-			new IRCMessage(Prefix => 'tiarra',
-				       Command => 'NOTICE',
-				       Params => [$current_nick,
-						  "*** Your global nick in $network_name is same as local nick."]));
+		    $send_message->('NOTICE', "*** Your global nick in $network_name is same as local nick.");
 		}
 	    } values %{RunLoop->shared_loop->networks};
 
+	    $send_message->('002', "Your host is $prefix, running version ".::version());
+	    $send_message->('375', "- $prefix Message of the Day -");
 	    foreach my $line (main::get_credit()) {
-		$this->send_message(
-		    new IRCMessage(Prefix => 'tiarra',
-				   Command => '002',
-				   Params => [$current_nick,$line]));
+		$send_message->('372', "- ".$line);
 	    }
+	    $send_message->('376', "End of MOTD command.");
 
 	    # joinしている全てのチャンネルの情報をクライアント送る。
 	    $this->inform_joinning_channels;
@@ -290,7 +294,7 @@ sub _receive_after_logged_in {
 	    } else {
 		$this->send_message(
 		    new IRCMessage(
-			Prefix => 'tiarra',
+			Prefix => Configuration->shared->general->sysmsg_prefix,
 			Command => '432',
 			Params => [RunLoop->shared_loop->current_nick,
 				   $msg->params->[0],
@@ -301,7 +305,7 @@ sub _receive_after_logged_in {
 	} else {
 	    $this->send_message(
 		new IRCMessage(
-		    Prefix => 'tiarra',
+		    Prefix => Configuration->shared->general->sysmsg_prefix,
 		    Command => '431',
 		    Params => [RunLoop->shared_loop->current_nick,
 			       'No nickname given']));

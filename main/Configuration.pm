@@ -186,6 +186,7 @@ my $defaults = {
 	'client-in-encoding' => 'jis',
 	'client-out-encoding' => 'jis',
 	'stdout-encoding' => 'euc',
+	'sysmsg-prefix' => 'tiarra',
     },
     networks => {
 	'name' => 'main',

@@ -11,6 +11,7 @@ use Tools::DateConvert;
 use Log::Logger;
 use IRCMessage;
 use Mask;
+use Configuration;
 
 sub new {
     my $class = shift;
@@ -44,6 +45,7 @@ sub client_attached {
     foreach my $elem (@{$this->{priv_log}}) {
 	$client->send_message(
 	    IRCMessage->new(
+		Prefix => Configuration->shared->general->sysmsg_prefix,
 		Command => 'NOTICE',
 		Params => [$local_nick,$elem->[1]])); # $elem->[0]¤Ï¾ï¤Ë'priv'
     }
@@ -60,7 +62,7 @@ sub client_attached {
 			    $elem->[0] : $ch->name;
 		    $client->send_message(
 			IRCMessage->new(
-			    Prefix => 'Tiarra',
+			    Prefix => Configuration->shared->general->sysmsg_prefix,
 			    Command => 'NOTICE',
 			    Params => [$ch_name,$elem->[1]]));
 		}

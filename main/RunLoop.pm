@@ -382,7 +382,7 @@ sub _action_message_for_each {
 	$this->_rejoin_all_channels($network);
 
 	my $msg = IRCMessage->new(
-	    Prefix => 'Tiarra',
+	    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
 	    Command => 'NOTICE',
 	    Params => ['', # チャンネル名は後で設定。
 		       '*** The connection has been revived between '.$network->network_name.'.']);
@@ -397,7 +397,7 @@ sub _action_message_for_each {
     }
     elsif ($event eq 'disconnected') {
 	my $msg = IRCMessage->new(
-	    Prefix => 'Tiarra',
+	    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
 	    Command => 'NOTICE',
 	    Params => ['', # チャンネル名は後で設定。
 		       '*** The connection has been broken between '.$network->network_name.'.']);
@@ -1186,6 +1186,7 @@ sub notify_msg {
 	    $this->broadcast_to_clients(
 		map {
 		    IRCMessage->new(
+			Prefix => Configuration->shared_conf->general->sysmsg_prefix,
 			Command => 'NOTICE',
 			Params => [$this->current_nick,
 				   "*** $_"]);

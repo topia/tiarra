@@ -12,6 +12,7 @@ use Multicast;
 use Timer;
 use BulletinBoard;
 use Mask;
+use Configuration;
 
 sub new {
     my $class = shift;
@@ -70,6 +71,7 @@ sub notify_list_of_frost_channels {
 	# Êó¹ð
 	RunLoop->shared->broadcast_to_clients(
 	    IRCMessage->new(
+		Prefix => Configuration->shared_conf->general->sysmsg_prefix,
 		Command => 'NOTICE',
 		Params => [
 		    RunLoop->shared->current_nick,
@@ -88,6 +90,7 @@ sub message_arrived {
 	    my $notice = shift;
 	    RunLoop->shared->broadcast_to_clients(
 		IRCMessage->new(
+		    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
 		    Command => 'NOTICE',
 		    Params => [
 			RunLoop->shared->current_nick,

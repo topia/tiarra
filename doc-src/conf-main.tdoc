@@ -101,6 +101,11 @@ chanmask-mode: tiarra
 # デフォルトは、IPv4のはINADDR_ANY、IPv6のはin6addr_anyになります。
 -ipv4-bind-addr: 0.0.0.0
 -ipv6-bind-addr: ::0
+
+# tiarra が、 001 や 002 や、 recent log を送信するときなどに使う prefix
+# を指定します。 hostname や fqdn っぽいものを指定すると良いかもしれません。
+# デフォルトは tiarra です。普通変える必要はありません。
+-sysmsg-prefix: tiarra
 =cut
 
 * networks
