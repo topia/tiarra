@@ -150,7 +150,7 @@ sub send {
   }
 
   #my $bytes_sent = $this->{sock}->send($this->{sendbuf}) || 0;
-  my $bytes_sent = $this->{sock}->syswrite($this->{sendbuf}) || 0;
+  my $bytes_sent = $this->{sock}->syswrite($this->{sendbuf}, length($this->{sendbuf})) || 0;
   substr($this->{sendbuf}, 0, $bytes_sent) = '';
 
   if ($this->{disconnect_after_writing} &&
