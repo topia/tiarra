@@ -1105,7 +1105,8 @@ sub terminate {
     map { $_->finalize($message) } $this->networks_list('even-if-not-connected');
     map { $this->close_client($_, $message) } $this->clients_list;
     if (defined $this->{tiarra_server_socket}) {
-	$this->{tiarra_server_socket}->shutdown(2);
+	#buggy, close on final
+	#$this->{tiarra_server_socket}->shutdown(2);
     }
 }
 
