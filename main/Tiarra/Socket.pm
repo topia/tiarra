@@ -262,7 +262,7 @@ sub destination {
 
     $this->repr_destination(
 	host => $this->host,
-	addr => $this->{connecting}->{host},
+	addr => $this->{connecting}->{addr},
 	port => $this->get_first_defined(
 	    $this->{connecting}->{port},
 	    $this->port),
