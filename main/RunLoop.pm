@@ -83,6 +83,7 @@ sub _new {
 
 	multi_server_mode => 1, # マルチサーバーモードに入っているか否か
 
+	default_network => undef, # デフォルトのネットワーク名
 	networks => {}, # ネットワーク名 → IrcIO::Server
 	disconnected_networks => {}, # 切断されたネットワーク。
 	terminated_networks => {}, # 終了したネットワーク。
@@ -128,6 +129,10 @@ sub network {
 	return wantarray ? ($network, $genre) : $network;
     }
     return wantarray ? () : undef;
+}
+
+sub default_network {
+    shift->{default_network};
 }
 
 sub networks {
@@ -515,12 +520,20 @@ sub update_networks {
     my $do_cleanup_closed_links_after = 0;
     my $host_tried = {}; # {接続を試みたホスト名 => 1}
 
+    $this->{default_network} = $this->_conf_networks->default;
+
     # マルチサーバーモードでなければ、@net_namesの要素は一つに限られるべき。
     # そうでなければ警告を出し、先頭のものだけを残して後は捨てる。
-    if (!$this->{multi_server_mode} && @net_names > 1) {
-	$this->notify_warn("In single server mode, Tiarra will connect to just a one network; `".
-			     $net_names[0]."'");
-	@net_names = $net_names[0];
+    if (!$this->{multi_server_mode}) {
+	if (@net_names > 1) {
+	    $this->notify_warn(
+		"In single server mode, Tiarra will connect to just a one network; `".
+		    $net_names[0]."'");
+	    @net_names = $net_names[0];
+	}
+	if (@net_names > 0) {
+	    $this->{default_network} = $net_names[0];
+	}
     }
 
     my ($net_conf, $network, $genre);
