@@ -74,18 +74,14 @@ sub message_arrived {
 		    my $rate_rand = int(rand() * hex('0xffffffff')) % 100;
 		    if ($rate_rand < ($block->{rate} || 100)) {
 			my $reply_str = $block->{database}->get_value() || undef;
-			map {
-			    $reply_anywhere->($_, 'message' => $reply_str);
-			} @{$block->{format}};
+			$reply_anywhere->($block->{format}, 'message' => $reply_str);
 		    }
 		}
 	    } elsif (Mask::match_deep($block->{count_query}, $msg->param(1))) {
 		if (Mask::match_deep_chan($block->{mask}, $msg->prefix, $get_full_ch_name->())) {
 		    # 登録数を求める
 		    my $count = $block->{database}->length();
-		    map {
-			$reply_anywhere->($_, 'count' => $count);
-		    } @{$block->{count_format}};
+		    $reply_anywhere->($block->{count_format}, 'count' => $count);
 		}
 	    } else {
 		my $msg_from_modifier_p = sub {
@@ -100,9 +96,7 @@ sub message_arrived {
 			# この人は変更を許可されている。
 			if ($param ne '') {
 			    $block->{database}->add_value($param);
-			    map {
-				$reply_anywhere->($_, 'message' => $param);
-			    } @{$block->{added_format}};
+			    $reply_anywhere->($block->{added_format}, 'message' => $param);
 			}
 		    }
 		} elsif (Mask::match_deep($block->{remove}, $keyword) &&
@@ -110,9 +104,7 @@ sub message_arrived {
 		    # 発言の削除
 		    # この人は削除を許可されている。
 		    my $count = $block->{database}->del_value($param);
-		    map {
-			$reply_anywhere->($_, 'message' => $param, 'count' => $count);
-		    } @{$block->{removed_format}};
+		    $reply_anywhere->($block->{removed_format}, 'message' => $param, 'count' => $count);
 		}
 	    }
 	}

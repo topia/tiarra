@@ -64,7 +64,7 @@ sub message_arrived {
 	    if (Mask::match_deep_chan([$this->config->init_mask('all')],
 				      $msg->prefix, $get_full_ch_name->())) {
 		$this->{safe}->reinit;
-		map { $reply_anywhere->($_) } $this->config->init_format('all');
+		$reply_anywhere->([$this->config->init_format('all')]);
 		return $return_value->();
 	    }
 	}

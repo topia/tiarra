@@ -39,6 +39,7 @@ sub message_arrived {
 	       );
 	    do {
 		local($Data::Dumper::Terse) = 1;
+		local($Data::Dumper::Purity) = 1;
 		map {
 		    my $new = $message->clone;
 		    $new->param(1, $_);

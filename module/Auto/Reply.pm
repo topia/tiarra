@@ -72,9 +72,7 @@ sub message_arrived {
 		if (Mask::match_deep_chan($block->{mask}, $msg->prefix, $get_full_ch_name->())) {
 		    # 登録数を求める
 		    my $count = scalar $block->{database}->keys;
-		    map {
-			$reply_anywhere->($_, 'count' => $count);
-		    } @{$block->{count_format}};
+		    $reply_anywhere->($block->{count_format}, 'count' => $count);
 		}
 		return $return_value->();
 	    }
@@ -95,9 +93,9 @@ sub message_arrived {
 		    # 一致する反応をリストする
 		    foreach my $key (_search($block, $tail, $block->{max_reply})) {
 			foreach my $message (@{$block->{database}->get_array($key)}) {
-			    map {
-				$reply_anywhere->($_, 'key' => $key, 'message' => $message);
-			    } @{$block->{reply_format}};
+			    $reply_anywhere->($block->{reply_format},
+					      'key' => $key,
+					      'message' => $message);
 			}
 		    }
 		    return $return_value->();
@@ -111,9 +109,7 @@ sub message_arrived {
 			# この人は変更を許可されている。
 			if (defined $key && defined $param) {
 			    $block->{database}->add_value($key, $param);
-			    map {
-				$reply_anywhere->($_, 'key' => $key, 'message' => $param);
-			    } @{$block->{added_format}};
+			    $reply_anywhere->($block->{added_format}, 'key' => $key, 'message' => $param);
 			}
 			return $return_value->();
 		    } elsif (Mask::match_deep($block->{remove}, $keyword)) {
@@ -121,13 +117,11 @@ sub message_arrived {
 			# この人は削除を許可されている。
 			if (defined $key) {
 			    my $count = $block->{database}->del_value($key, $param);
-			    map {
-				$reply_anywhere->(
-				    $_,
-				    'key' => $key,
-				    'message' => $param,
-				    'count' => $count);
-			    } @{$block->{removed_format}};
+			    $reply_anywhere->(
+				$block->{removed_format},
+				'key' => $key,
+				'message' => $param,
+				'count' => $count);
 			}
 			return $return_value->();
 		    }
