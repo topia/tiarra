@@ -20,6 +20,9 @@ use base qw(Tiarra::Utils::DefineHelper);
 #     Tiarra::Utils->define_enum(qw(enum1 enum2 enum3...);
 #   }
 
+# this module is deprecated.
+# please use enum.pm instead.
+
 sub import {
     my $pkg = shift;
     my @args = @_;
