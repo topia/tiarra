@@ -162,7 +162,9 @@ sub message_arrived {
 			$message->param(2, $p->username);
 			$message->param(3, $p->userhost);
 			$message->param(4, $p->server);
-			$message->param(5, $p->nick);
+			$message->param(5,
+					Multicast::global_to_local($p->nick,
+								   $network));
 			$message->param(6,
 					(length($p->away) ? 'G' : 'H') .
 					    $p_ch->priv_symbol);
