@@ -5,7 +5,7 @@
 # This is free software; you can redistribute it and/or modify it
 #   under the same terms as Perl itself.
 # -----------------------------------------------------------------------------
-# $Id: tiarra,v 1.29 2003/11/17 01:27:19 topia Exp $
+# $Id: tiarra,v 1.30 2004/01/22 17:39:21 admin Exp $
 # -----------------------------------------------------------------------------
 require 5.006;
 use strict;
@@ -82,6 +82,8 @@ sub help {
     print "  --quiet          don't output any messages to stdout and stderr\n";
     print "  --no-fork        don't move to background when started in quiet mode\n";
     print "  --debug          show debug infomation\n";
+    print "  --make-password  prompt you a password to encrypt.\n";
+    print "                   *Tiarra doesn't do its normal work with this option*\n";
     print "   -D<symbol>[=<string>]\n";
     print "                   treat as `\@define <symbol> <string>' is in the conf\n";
     print "\n";
@@ -91,6 +93,22 @@ sub help {
     print "      cat tiarra.conf | sed -e 's/Tiarra/arraiT/g' | ./tiarra --quiet\n";
     print "      gunzip -c tiarra.conf.gz | ./tiarra\n";
     print "\n";
+}
+
+sub make_password {
+    eval 'use Crypt;';
+    print "Tiarra encrypts your raw password to use it for config file.\n";
+    print "\n";
+
+    my $password = &find_option('make-password');
+    if ($password eq "1") {
+	eval 'use Term::ReadLine;';
+	my $term = Term::ReadLine->new('tiarra');
+	$password = $term->readline("Please enter raw password: ");
+	print "\n";
+    }
+    print Crypt::encrypt($password)." is your encoded password.\n";
+    print "Use this for the general/tiarra-password entry.\n";
 }
 
 sub find_option {
@@ -133,22 +151,8 @@ if (&find_option('help')) {
 } elsif (&find_option('dumpversion')) {
     print $version . "\n";
     exit;
-} elsif (my $password = &find_option('make-password')) {
-    use Crypt;
-    if ($password eq 1) {
-	use Term::ReadLine;
-
-	$| = 1; # autoflush
-	print "This tool encrypts your raw password for conf file of the Tiarra.\n";
-	print "\n";
-
-	my $term = Term::ReadLine->new('tiarra');
-	$password = $term->readline("Please enter raw password: ");
-
-	print "\n";
-    }
-    print Crypt::encrypt($password)." is your encoded password.\n";
-    print "Use this for the general/tiarra-password entry.\n";
+} elsif (&find_option('make-password')) {
+    &make_password;
     exit;
 }
 

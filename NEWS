@@ -1,3 +1,10 @@
+2004-01-23  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra: 起動時オプション --make-password 追加。
+	make-passwordの機能をtiarra本体に移した。
+	
+	* make-password: 削除
+
 2003-11-17  Topia  <topia@clovery.jp>
 
 	* Log::Channel
