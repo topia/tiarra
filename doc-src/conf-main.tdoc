@@ -188,6 +188,16 @@ action-when-disconnected: message-for-each
 # 1なら必ず通知し、0なら変更後のnickがローカルnick(クライアントが見る事の出来るnick)と違っている場合のみ通知する。
 # デフォルトは0です。
 always-notify-new-nick: 0
+
+fixed-channels {
+  # Tiarra がクライアント接続時にチャンネル情報を送る順番を指定する。
+  # マッチしなかったチャンネルについては最後にまとめて
+  # (順番がごちゃごちゃになって)送られてきます。
+  channel: #てすとちゃんねる@ircnet
+  channel: #てすと@localserver
+  channel: *@localserver
+  channel: *@localserver:*.jp
+}
 =cut
 
 
