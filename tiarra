@@ -208,14 +208,6 @@ if (!defined $conf_file) {
 $quiet = &find_option('quiet');
 $no_fork = &find_option('no-fork');
 
-# quietモードならSTDOUTとSTDERRを閉じる。
-if ($quiet) {
-    close STDOUT;
-    close STDERR;
-    #open(STDOUT,"> /dev/null");
-    #open(STDERR,"> /dev/null");
-}
-
 my $load_config = sub {
     local($|) = 1;
 
@@ -254,6 +246,16 @@ my $boot = sub  {
     ModuleManager->shared; # 準備させる
     $start_runloop->();
 };
+
+# quietモードならSTDOUTとSTDERRを閉じる。
+# STDIN の close と config の read の関連で boot の寸前に。
+if ($quiet) {
+    close STDIN;
+    close STDOUT;
+    close STDERR;
+    #open(STDOUT,"> /dev/null");
+    #open(STDERR,"> /dev/null");
+}
 
 # quietモードであり、且つno-forkオプションが指定されなかったらfork。
 if ($quiet && !$no_fork) {
