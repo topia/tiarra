@@ -1033,8 +1033,7 @@ sub run {
 		last;
 	    } else {
 		++$this->{terminating};
-		#if ($this->{terminating} >= 400) {
-		if ($this->{terminating} >= 10) {
+		if ($this->{terminating} >= 400) {
 		    # quit loop でそんなに回るとは思えない。
 		    $this->notify_error(
 			"very long terminating loop!".
