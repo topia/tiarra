@@ -23,7 +23,9 @@ sub message_arrived {
 		# die handler
 		local $SIG{__DIE__} = sub { $err = $_[0]; };
 		no strict;
-		$ret = eval($method);
+		# untaint
+		$method =~ /\A(.*)\z/s;
+		$ret = eval($1);
 	    };
 
 	    my $message = IRCMessage->new(
@@ -39,9 +41,9 @@ sub message_arrived {
 		    $new->param(1, $_);
 		    $sender->send_message($new);
 		} (
-		    'method: '.Dumper($method),
-		    'result: '.Dumper($ret),
-		    'error: '.$err,
+		    (split /\n/, 'method: '.Dumper($method)),
+		    (split /\n/, 'result: '.Dumper($ret)),
+		    (split /\n/, 'error: '.$err),
 		   );
 		return undef;
 	    };
