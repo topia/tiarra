@@ -53,6 +53,14 @@ sub message_arrived {
     return $msg;
 }
 
+# useful functions to call from eval
+sub network {
+    return runloop->network(shift);
+}
+
+sub runloop {
+    return RunLoop->shared_loop;
+}
 1;
 =pod
 info: クライアントから Perl 式を実行できるようにする。
