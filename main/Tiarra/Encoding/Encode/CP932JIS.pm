@@ -1,5 +1,7 @@
-package Tiarra::Encoding::CP932JIS;
+package Tiarra::Encoding::Encode::CP932JIS;
 use strict;
+use warnings;
+sub DEBUG () { 0 }
 
 our $VERSION = '1.0';
 
@@ -17,8 +19,9 @@ use Encode::CJKConstants qw(:all);
 #
 # decode is identical for all 2022 variants
 #
-my $re_scan_jis = qr{
-   (?:($RE{JIS_0212})|($RE{JIS_0208})|($RE{ISO_ASC})|($RE{JIS_KANA}))([^\e]*)
+our $re_scan_jis = qr{
+   (?:($RE{JIS_0212})|($RE{JIS_0208})|($RE{ISO_ASC})|($RE{JIS_KANA}))
+   ([^\e]*)
 }x;
 
 sub decode($$;$)
@@ -34,33 +37,32 @@ sub decode($$;$)
 	    # parse si/so
 	    $chunk =~ s/\x0e(.+)\x0f/pack('C*', map $_ | 0x80, unpack('C*', $1))/eg;
 
-	    if (!$esc_asc) {
-		if ($esc_0212) {
-		    # JIS X 0212-1990
-		    # FIXME
-		    #$ret .= join '', '[JISX0212:', unpack('H*', $chunk), ']';
-		    $ret .= Encode::decode('jis0212-raw', $chunk);
-		} elsif ($esc_kana) {
-		    # 0201 kana on G0
-		    $chunk =~ s/(.)/pack('C', unpack('C', $1) | 0x80)/eog;
-		    $ret .= Encode::decode('cp932', $chunk, FB_PERLQQ);
-		} elsif ($esc_0208) {
-		    # s1 = ((j1 - 1) >> 1) + ((j1 <= 0x5e) ? 0x71 : 0xb1);
-		    # s2 = j2 + ((j1 & 1) ? ((j2 < 0x60) ? 0x1f : 0x20) : 0x7e);
-		    my ($j1, $j2);
-		    $chunk =~ s{(.{2})}{
-			($j1, $j2) = unpack('C*', $1);
+	    if ($esc_asc) {
+		$ret .= Encode::decode('cp932', $chunk, FB_PERLQQ);
+	    } elsif ($esc_0212) {
+		# JIS X 0212-1990
+		# FIXME
+		#$ret .= join '', '[JISX0212:', unpack('H*', $chunk), ']';
+		$ret .= Encode::decode('jis0212-raw', $chunk, FB_PERLQQ);
+	    } elsif ($esc_kana) {
+		# 0201 kana on G0
+		$chunk =~ s/(.)/pack('C', unpack('C', $1) | 0x80)/eog;
+		$ret .= Encode::decode('cp932', $chunk, FB_PERLQQ);
+	    } elsif ($esc_0208) {
+		# s1 = ((j1 - 1) >> 1) + ((j1 <= 0x5e) ? 0x71 : 0xb1);
+		# s2 = j2 + ((j1 & 1) ? ((j2 < 0x60) ? 0x1f : 0x20) : 0x7e);
+		my ($j1, $j2);
+		$chunk =~ s{(.{2})}{
+		    ($j1, $j2) = unpack('C*', $1);
 		    pack('C*',
 			 (($j1 - 1) >> 1) + (($j1 <= 0x5e) ? 0x71 : 0xb1),
 			 $j2 + (($j1 & 1) ? (($j2 < 0x60) ? 0x1f : 0x20) : 0x7e));
-		    }exog;
-		    $ret .= Encode::decode('cp932', $chunk, FB_PERLQQ);
-		}
-	    } else {
-		$ret .= Encode::decode('cp932', $chunk);
+		}exog;
+		$ret .= Encode::decode('cp932', $chunk, FB_PERLQQ);
 	    }
 	} elsif ($str =~ s/\A(\e?[^\e]+)//s) {
-	    $ret .= Encode::decode('cp932', $1);
+	    my $str = $1;
+	    $ret .= Encode::decode('cp932', $str, FB_PERLQQ);
 	}
     }
     return $ret;
@@ -100,7 +102,7 @@ sub encode($$;$)
 			     $s2 - 0x1f - ($s2 >= 0x7f ? 1 : 0) - ($s2 >= 0x9f ? 0x5e : 0));
 	    }
 	} elsif ($str =~ s/\A([\xa1-\xdf]+)//s) {
-	    $startmode->('0218', $ESC{JIS_0208});
+	    $startmode->('0201', $ESC{JIS_0201});
 	    foreach (split //, $1) {
 		#$ret .= unpack('H*', $_);
 		$ret .= $_;
