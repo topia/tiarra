@@ -244,7 +244,7 @@ sub serialize {
 
     if ($this->[PARAMS]) {
 	my $unicode = new Unicode::Japanese;
-	my $n_params = scalar @{$this->[PARAMS]};
+	my $n_params = scalar @{$this->[PARAMS]||[]};
 	for (my $i = 0;$i < $n_params;$i++) {
 	    if ($i == $n_params - 1) {
 		# 最後のパラメタなら頭にコロンを付けて後にはスペースを置かない。
@@ -316,7 +316,7 @@ sub params {
 }
 
 sub n_params {
-    scalar @{$_[0]->[PARAMS]};
+    scalar @{$_[0]->[PARAMS]||[]};
 }
 
 sub param {
