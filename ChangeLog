@@ -1,3 +1,13 @@
+2003-11-08  Topia  <topia@clovery.jp>
+
+	* module/Log/Recent.pm (client_attached): bugfix/need reload.
+	single-server-mode 時に、送信チャンネル名から network-suffix
+	をはずす。
+
+	* main/RunLoop.pm (run): bugfix/need reboot.
+	single-server-mode 時に、クライアントから送られて来るメッセージに
+	network-suffix を付けるようにした。
+
 2003-10-25  phonohawk  <phonohawk@lycos.co.uk>
 
 	* main/IRCMessage.pm (serialize):
@@ -1008,7 +1018,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.113 2003/10/24 15:57:48 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2003/10/24 15:57:48 $
-# Revision: $Revision: 1.113 $
+#       Id: $Id: ChangeLog,v 1.114 2003/11/08 06:12:56 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2003/11/08 06:12:56 $
+# Revision: $Revision: 1.114 $

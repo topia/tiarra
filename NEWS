@@ -1,3 +1,9 @@
+2003-11-08  Topia  <topia@clovery.jp>
+
+	* single-server-mode の bugfix です。
+	single-server-mode を使う予定が無い場合は再起動は不要です。
+	single-server-mode を使っている方は、アップデートして再起動して下さい。
+
 2003-10-16  phonohawk  <phonohawk@lycos.co.uk>
 
 	* System::Raw
