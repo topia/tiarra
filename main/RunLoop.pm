@@ -119,6 +119,8 @@ sub new {
 	},
        )->install(undef, $this->_conf);
 
+    $this->{default_network} = $this->_conf_networks->default;
+
     $this;
 }
 
