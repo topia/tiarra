@@ -12,6 +12,7 @@ use warnings;
 use Carp;
 use Tiarra::Utils;
 use RunLoop;
+use Socket;
 our $is_winsock = $^O =~ /^MSWin32/;
 utils->define_attr_getter(0, qw(sock installed));
 utils->define_attr_accessor(0, qw(name),
@@ -111,6 +112,35 @@ sub uninstall {
     $this->runloop->uninstall_socket($this);
     $this->_installed(0);
     $this;
+}
+
+sub errno {
+    my $this = shift;
+
+    if (!defined $this->sock) {
+	croak "already detached; can't fetch errno!";
+    }
+
+    my $errno = $this->sock->sockopt(SO_ERROR);
+    if ($errno == 0 || $errno == -1) {
+	$errno = undef;
+    }
+    return $errno;
+}
+
+sub errmsg {
+    my $this = shift;
+    my $errno = $this->errno;
+    my $msg = undef;
+
+    if (defined $errno) {
+	$msg = $this->sock_errno_to_msg($errno, @_);
+    }
+    if (wantarray) {
+	($msg, $errno);
+    } else {
+	$msg;
+    }
 }
 
 sub _should_define {
@@ -251,12 +281,14 @@ Tiarra::Socket - Tiarra RunLoop based Socket Handler Base Class
  $socket->shutdown(2);
  $socket->detach;
  $socket->close;
+ $errno = $socket->errno;
+ $msg = $socket->errmsg( [$additional_msg] );
  $type = Tiarra::Socket->probe_type_by_class($sock);
  $type = Tiarra::Socket->probe_type_by_addr($addr);
  Tiarra::Socket->repr_type( $type );
  Tiarra::Socket->repr_destination( [datas] );
  $is_winsock = Tiarra::Socket->_is_winsock;
- Tiarra::Socket->sock_errno_to_msg($errno[, $additional_msg]);
+ $msg = Tiarra::Socket->sock_errno_to_msg($errno[, $additional_msg]);
 
 =item make subclass of L<Tiarra::Socket>
 
@@ -332,6 +364,19 @@ return sock attached to socket
 =item C<< ->installed >>
 
 return true if socket installed to runloop
+
+=item C<< ->errno >>
+
+return socket errno with sockopt(and clear status).
+if errno not set, return undef.
+
+=item C<< ->errmsg( [MESSAGE] ) >>
+
+return socket error message with msg.
+on array context, return $errno as 2nd item, also.
+
+(implement likes
+C<< $this->sock_errno_to_msg($this->errno, [MESSAGE] ) >>.)
 
 =back
 
