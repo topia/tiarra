@@ -357,7 +357,7 @@ sub _try_connect_socket {
 	    if ($subject eq 'sock') {
 		$this->_attach;
 	    } elsif ($subject eq 'error') {
-		$this->_connect_error;
+		$this->_connect_error($obj);
 	    } elsif ($subject eq 'warn') {
 		$this->_connect_warn($obj);
 	    }
@@ -389,7 +389,7 @@ sub _attach {
 sub _connect_error {
     my ($this, $msg) = @_;
 
-    $this->printmsg("Couldn't connect to ".$this->destination."\n");
+    $this->printmsg("Couldn't connect to ".$this->destination.": $msg\n");
     $this->_connect_try_next;
 }
 
