@@ -136,8 +136,14 @@ sub execute {
     unless ($package_of_caller->isa('RunLoop')) {
 	croak "Only RunLoop may call method execute of Timer.\n";
     }
-    
-    $this->{code}->($this);
+
+    eval {
+	$this->{code}->($this);
+    }; if ($@) {
+	$this->notify_error(
+	    "Exception in Timer.\n".
+		"   $@");
+    }
 
     if (defined $this->{interval}) {
 	$this->{fire_time} += $this->{interval};
