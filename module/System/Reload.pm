@@ -8,6 +8,8 @@ use base qw(Module);
 use ReloadTrigger;
 use Timer;
 use Configuration;
+use Mask;
+use RunLoop;
 
 sub new {
     my $class = shift;
@@ -33,20 +35,28 @@ sub destruct {
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
+    my $do_reload = 0;
+
     # クライアントの発言か？
     if ($sender->isa('IrcIO::Client')) {
 	# コマンド名は一致してるか？
-	if ($msg->command eq uc($this->config->command)) {
-	    # 必要ならリロードを実行。
-	    Timer->new(
-		After => 0,
-		Code => sub {
-		    ReloadTrigger->reload_conf_if_updated;
-		    ReloadTrigger->reload_mods_if_updated;
-		}
-	       )->install;
-	    return undef;
+	if (Mask::match($this->config->broadcast_command,$msg->command)) {
+	    RunLoop->shared_loop->broadcast_to_servers($msg->clone);
+	    $do_reload = 1;
+	} elsif (Mask::match($this->config->broadcast_command,$msg->command)) {
+	    $do_reload = 1;
 	}
+    }
+    if ($do_reload) {
+	# 必要ならリロードを実行。
+	Timer->new(
+	    After => 0,
+	    Code => sub {
+		ReloadTrigger->reload_conf_if_updated;
+		ReloadTrigger->reload_mods_if_updated;
+	    }
+	   )->install;
+	return undef;
     }
     return $msg;
 }
@@ -61,6 +71,9 @@ default: on
 # この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された
 # コマンド名を設定すべきではありません。
 command: load
+
+# command と同じですが、サーバにもブロードキャストします。
+-broadcast-command: load-all
 
 # confファイルをリロードしたときに通知します。
 # モジュールの設定が変更されていた場合は、ここでの設定にかかわらず、
