@@ -77,10 +77,10 @@ sub message_arrived {
 	    my ($chan_short, $network_name) = Multicast::detach($chan_long);
 	    my $network = RunLoop->shared_loop->network($network_name);
 	    unless (defined $network) {
-		RunLoop->shared_loop->notify_warn(
+		::debug_printmsg(
 		    __PACKAGE__.': "'.$network_name.
 			'" network is not found in tiarra.'
-		       ) if ::debug_mode;
+		       );
 		last;
 	    }
 	    my $ch = $network->channel($chan_short);
@@ -120,10 +120,10 @@ sub message_arrived {
 	    my ($chan_short, $network_name) = Multicast::detach($chan_long);
 	    my $network = RunLoop->shared_loop->network($network_name);
 	    unless (defined $network) {
-		RunLoop->shared_loop->notify_warn(
+		::debug_printmsg(
 		    __PACKAGE__.': "'.$network_name.
 			'" network is not found in tiarra.'
-		       ) if ::debug_mode;
+		       );
 		last;
 	    }
 	    my $ch = $network->channel($chan_short);
@@ -155,9 +155,6 @@ sub message_arrived {
 			if (!$p->username || !$p->userhost ||
 				!$p->realname || !$p->server) {
 			    # データ不足。あきらめる。
-			    RunLoop->shared_loop->notify_warn(
-				__PACKAGE__.': cache data not enough: '.$p->info.
-				    ' on '.$p->server.' in '.$chan_long) if ::debug_mode;
 			    die 'cache data not enough';
 			}
 
