@@ -77,62 +77,65 @@ sub sendto_channel_closure {
     $extra_callbacks = [] unless defined $extra_callbacks;
 
     return sub {
-	my ($str,%extra_replaces) = @_;
-	return if !defined $str;
-	my $msg_to_send = IRCMessage->new(
-	    Command => $command,
-	    Params => ['',	# 後で設定
-		       ($use_alias ? Auto::AliasDB->shared->stdreplace_add(
-			   $msg->prefix || $sender->fullname,
-			   $str,
-			   $extra_callbacks,
-			   $msg,
-			   $sender,
-			   %extra_replaces)
-			    : $str)]);
-	my ($rawname, $network_name, $specified_network) = Multicast::detach($sendto);
-	my $get_network_name = sub {
-	    $specified_network ? $network_name :
-		Configuration->shared_conf->networks->default;
-	};
-	my $sendto_client = Multicast::attach_for_client($rawname, $network_name);
-	if (!defined $sender) {
-	    # 鯖にはチャンネル名にネットワーク名を付けない。
-	    my $for_server = $msg_to_send->clone;
-	    $sender = RunLoop->shared_loop->network($get_network_name->());
-	    if (defined $sender) {
+	my ($line,%extra_replaces) = @_;
+	return if !defined $line;
+	foreach my $str ((ref($line) eq 'ARRAY') ? @$line : $line) {
+	    my $msg_to_send = IRCMessage->new(
+		Command => $command,
+		Params => ['',	# 後で設定
+			   ($use_alias ? Auto::AliasDB->shared->stdreplace_add(
+			       $msg->prefix || $sender->fullname,
+			       $str,
+			       $extra_callbacks,
+			       $msg,
+			       $sender,
+			       %extra_replaces)
+				: $str)]);
+	    my ($rawname, $network_name, $specified_network) =
+		Multicast::detach($sendto);
+	    my $get_network_name = sub {
+		$specified_network ? $network_name :
+		    Configuration->shared_conf->networks->default;
+	    };
+	    my $sendto_client = Multicast::attach_for_client($rawname, $network_name);
+	    if (!defined $sender) {
+		# 鯖にはチャンネル名にネットワーク名を付けない。
+		my $for_server = $msg_to_send->clone;
+		$sender = RunLoop->shared_loop->network($get_network_name->());
+		if (defined $sender) {
+		    $for_server->param(0, $rawname);
+		    $sender->send_message($for_server);
+		}
+
+		# クライアントにはチャンネル名にネットワーク名を付ける。
+	    # また、クライアントに送られる時にはPrefixがそのユーザーに設定されるよう註釈を付ける。
+		my $for_client = $msg_to_send->clone;
+		$for_client->param(0, $sendto_client);
+		$for_client->remark('fill-prefix-when-sending-to-client',1);
+		RunLoop->shared_loop->broadcast_to_clients($for_client);
+	    } elsif ($sender->isa('IrcIO::Server')) {
+		# 鯖にはチャンネル名にネットワーク名を付けない。
+		my $for_server = $msg_to_send->clone;
 		$for_server->param(0, $rawname);
 		$sender->send_message($for_server);
+
+		# クライアントにはチャンネル名にネットワーク名を付ける。
+		# また、クライアントに送られる時にはPrefixがそのユーザーに設定されるよう註釈を付ける。
+		my $for_client = $msg_to_send->clone;
+		$for_client->param(0, $sendto_client);
+		$for_client->remark('fill-prefix-when-sending-to-client',1);
+		push @$result,$for_client;
+	    } elsif ($sender->isa('IrcIO::Client')) {
+		# チャンネル名にネットワーク名を付ける。
+		my $for_server = $msg_to_send->clone;
+		$for_server->param(0, $sendto);
+		push @$result,$for_server;
+
+		my $for_client = $msg_to_send->clone;
+		$for_client->prefix($sender->fullname);
+		$for_client->param(0, $sendto_client);
+		$sender->send_message($for_client);
 	    }
-
-	    # クライアントにはチャンネル名にネットワーク名を付ける。
-	    # また、クライアントに送られる時にはPrefixがそのユーザーに設定されるよう註釈を付ける。
-	    my $for_client = $msg_to_send->clone;
-	    $for_client->param(0, $sendto_client);
-	    $for_client->remark('fill-prefix-when-sending-to-client',1);
-	    RunLoop->shared_loop->broadcast_to_clients($for_client);
-	} elsif ($sender->isa('IrcIO::Server')) {
-	    # 鯖にはチャンネル名にネットワーク名を付けない。
-	    my $for_server = $msg_to_send->clone;
-	    $for_server->param(0, $rawname);
-	    $sender->send_message($for_server);
-
-	    # クライアントにはチャンネル名にネットワーク名を付ける。
-	    # また、クライアントに送られる時にはPrefixがそのユーザーに設定されるよう註釈を付ける。
-	    my $for_client = $msg_to_send->clone;
-	    $for_client->param(0, $sendto_client);
-	    $for_client->remark('fill-prefix-when-sending-to-client',1);
-	    push @$result,$for_client;
-	} elsif ($sender->isa('IrcIO::Client')) {
-	    # チャンネル名にネットワーク名を付ける。
-	    my $for_server = $msg_to_send->clone;
-	    $for_server->param(0, $sendto);
-	    push @$result,$for_server;
-
-	    my $for_client = $msg_to_send->clone;
-	    $for_client->prefix($sender->fullname);
-	    $for_client->param(0, $sendto_client);
-	    $sender->send_message($for_client);
 	}
     };
 }
@@ -182,11 +185,11 @@ sub generate_reply_closures {
     $ch_place = 0 unless defined $ch_place;
 
     my $raw_ch_name = get_raw_ch_name($msg, $ch_place);
-    my $get_raw_ch_name = sub {
+    my $get_raw_ch_name = sub () {
 	$raw_ch_name;
     };
     my $full_ch_name = get_full_ch_name($msg, $ch_place);
-    my $get_full_ch_name = sub {
+    my $get_full_ch_name = sub () {
 	$full_ch_name;
     };
     my $reply = sub {
@@ -194,19 +197,21 @@ sub generate_reply_closures {
 			       $use_alias, $extra_callbacks)->(@_, 'channel' => $raw_ch_name);
     };
     my $reply_as_priv = sub {
-	my ($str, %extra_replaces) = @_;
-	return if !defined $str;
-	$sender->send_message(IRCMessage->new(
-	    Command => 'NOTICE',
-	    Params => [$msg->nick,
-		       ($use_alias ? Auto::AliasDB->shared->stdreplace_add(
-			   $msg->prefix,
-			   $str,
-			   $extra_callbacks,
-			   $msg,
-			   $sender,
-			   %extra_replaces)
-			    : $str)]));
+	my ($line,%extra_replaces) = @_;
+	return if !defined $line;
+	foreach my $str ((ref($line) eq 'ARRAY') ? @$line : $line) {
+	    $sender->send_message(IRCMessage->new(
+		Command => 'NOTICE',
+		Params => [$msg->nick,
+			   ($use_alias ? Auto::AliasDB->shared->stdreplace_add(
+			       $msg->prefix,
+			       $str,
+			       $extra_callbacks,
+			       $msg,
+			       $sender,
+			       %extra_replaces)
+				: $str)]));
+	}
     };
     my $reply_anywhere = sub {
 	if (defined($raw_ch_name) && Multicast::nick_p($raw_ch_name)) {
