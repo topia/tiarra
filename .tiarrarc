@@ -1,0 +1,6 @@
+#!/bin/sh
+# $Id$
+# copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
+
+PERL=${PERL:-/usr/opt/bin/perl}
+PERLARG=${PERLARG:--wt}

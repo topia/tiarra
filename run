@@ -17,8 +17,8 @@ if [ -z "${TOPDIR}" ]; then
 else
   TOPDIR="${TOPDIR}/.."
 fi
-PERL=${PERL:-/usr/opt/bin/perl}
-PERLARG=${PERLARG:--wt}
+PERL=${PERL:-/usr/bin/perl}
+PERLARG=${PERLARG:--w}
 TIARRA=${TIARRA:-${TOPDIR}/tiarra}
 CONF=${CONF:-tiarra.conf}
 REDIR_STDOUT=${REDIR_STDOUT:-errlog.stdout}
