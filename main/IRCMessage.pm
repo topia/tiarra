@@ -37,6 +37,20 @@ use Carp;
 use Unicode::Japanese;
 use Data::Dumper;
 
+our $use_time_hires;
+BEGIN {
+    my $time_hires_is_enabled = eval('::time_hires_is_enabled');
+    if (defined $time_hires_is_enabled) {
+	$use_time_hires = $time_hires_is_enabled;
+    } else {
+	# Time::HiResは使えるか？
+	eval q{
+	    use Time::HiRes ();
+	};
+	$use_time_hires = ($@ ? 0 : 1);
+    }
+}
+
 # constants
 use constant MAX_PARAMS => 14;
 
@@ -66,7 +80,7 @@ sub new {
 
     $obj->[REMARKS] = undef;
 
-    $obj->[TIME] = CORE::time();
+    $obj->[TIME] = $use_time_hires ? Time::HiRes::time : CORE::time;
 
     if (exists $args{'Line'}) {
 	$args{'Line'} =~ s/\x0d\x0a$//s; # 行末のcrlfは消去。
@@ -297,7 +311,10 @@ sub length {
 
 sub prefix {
     my ($this,$new_val) = @_;
-    $this->[PREFIX] = $new_val if defined($new_val);
+    if (defined $new_val) {
+	$this->[PREFIX] = $new_val;
+	$this->_parse_prefix;
+    }
     $this->[PREFIX];
 }
 
