@@ -10,19 +10,18 @@ use warnings;
 use Tiarra::DefineEnumMixin qw(PARENT DATA);
 use Tiarra::Utils;
 use overload
-    '%{}' => 'data',
-    'bool' => sub () { %{shift->data} };
-my $utils = Tiarra::Utils->shared;
+    '%{}' => sub { shift->data },
+    'bool' => sub { %{shift->data} };
 
-$utils->define_array_attr_accessor(0, 'parent');
-$utils->define_array_attr_getter(0, 'data');
+utils->define_array_attr_accessor(0, 'parent');
+utils->define_array_attr_getter(0, 'data');
 
 sub new {
     my ($class, $parent, $data) = @_;
 
     my $this = [];
     $this->[PARENT] = $parent;
-    $this->[DATA] = $utils->get_first_defined($data, {});
+    $this->[DATA] = utils->get_first_defined($data, {});
     bless $this, $class;
     $this;
 }
@@ -36,6 +35,33 @@ sub clone {
     my $this = shift;
     # shallow copy
     ref($this)->new(undef, {%{$this->data}});
+}
+
+sub equals {
+    my ($this, $target) = @_;
+
+    $this->with_session(
+	sub {
+	    $target->with_session(
+		sub {
+		    map {
+			return 0 if $this->$_ != $target->$_;
+		    } qw(keys values);
+		    my ($key, $value);
+		    my ($values, $target_values);
+		    while (($key, $values) = each %$this) {
+			$target_values = $target->get_array($key);
+			return 0 unless defined $target_values;
+			return 0 unless @$values != @$target_values;
+			$target_values = [@$target_values]; # clone
+			foreach $value (sort @$values) {
+			    if ($value ne shift(@$target_values)) {
+				return 0;
+			    }
+			}
+		    }
+		})});
+    return 1;
 }
 
 sub set_modified {
@@ -93,6 +119,23 @@ sub get_array {
 	});
 }
 
+sub add_hash {
+    my ($this, %hash) = @_;
+    my $retval = 1;
+
+    $this->with_session(
+	sub {
+	    map {
+		my $value = $hash{$_};
+		if (ref($value) ne 'ARRAY') {
+		    $value = [$value];
+		}
+		$retval &= $this->add_array($_, @$value) ? 1 : 0;
+	    } CORE::keys %hash;
+	});
+    return $retval;
+}
+
 sub add_array {
     # 成功すれば 1(true) が返る。
     # 不正なキーのため失敗した場合は 0(false) が返る。
@@ -127,7 +170,7 @@ sub del_array {
 		    my $item;
 		    @$data = grep {
 			$item = $_;
-			!($utils->get_first_defined(
+			!(utils->get_first_defined(
 			    map {
 				$item eq $_ ? 1 : undef;
 			    } @values))
