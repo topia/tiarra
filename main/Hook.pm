@@ -42,21 +42,32 @@ use strict;
 use warnings;
 use Carp;
 use UNIVERSAL;
+use Tiarra::Utils;
+my $utils = Tiarra::Utils->shared;
 
 sub new {
-    my ($class, $code) = @_;
+    my $class = shift;
+    #my ($class, $code) = @_;
+    my $name = shift;
+    my $code = shift;
+    if (!defined $name) {
+	croak $class."->new, Arg[0] was undef.\n";
+    }
+    if (ref($name) eq 'CODE' && !defined($code)) {
+	$code = $name;
+	$name = Tiarra::Utils->simple_caller_formatter('hook registered');
+    }
+
     my $this = {
 	target => undef,
 	target_package_name => undef,
 	hook_name => undef,
 
+	name => $name,
 	code => $code,
     };
 
-    if (!defined $code) {
-	croak $class."->new, Arg[0] was undef.\n";
-    }
-    elsif (ref($code) ne 'CODE') {
+    if (ref($code) ne 'CODE') {
 	croak $class."->new, Arg[0] was bad type.\n";
     }
 
@@ -89,8 +100,8 @@ sub install {
 
     do {
 	no strict;
-	
-	local *symtable = eval "\*${\ref($this)}::";
+
+	my %symtable = %{ref($this).'::'};
 	if (!defined $hook_name) {
 	    # @HOOK_NAME_CANDIDATESの個数は1つか？
 	    # それとも$HOOK_NAME_DEFAULTは定義されているか？
@@ -104,7 +115,7 @@ sub install {
 		croak ref($this)."->install, you can't omit the hook name.\n";
 	    }
 	}
-	
+
 	# $hook_nameは本当にフック名として許されているか？
 	if (!{map {$_ => 1} @{$symtable{HOOK_NAME_CANDIDATES}}}->{$hook_name}) {
 	    croak ref($this)."->install, hook `$hook_name' is not available.\n";
@@ -155,7 +166,10 @@ sub call {
 
     my ($caller_pkg) = caller(2);
     if ($caller_pkg->isa(ref $this->{target})) {
-	$this->{code}->($this, @args);
+	$utils->do_with_errmsg("Hook: $this->{target}/$this->{hook_name}($this->{name})",
+			       sub {
+				   $this->{code}->($this, @args);
+			       });
     }
     else {
 	croak "Only ${\ref($this->{target})} can call ${\ref($this)}->call\n".
@@ -215,7 +229,7 @@ sub call_hooks {
 	eval {
 	    $hook->call(@args);
 	}; if ($@) {
-	    die ref($this)."->call_hooks, exception occured: $@\n";
+	    RunLoop->notify_error(ref($this)."->call_hooks, exception occured:\n$@");
 	}
     }
 }
