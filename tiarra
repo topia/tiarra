@@ -49,33 +49,10 @@ BEGIN {
 }
 
 # optional modules
-our $threads_is_enabled;
-our $ipv6_is_enabled;
-our $time_hires_is_enabled;
-BEGIN {
-    # 5.005 threading model は安定度に疑問がある上あまりサポートされていない
-    # ので使わない。
-    eval q{
-	use threads;
-	use threads::shared;
-    };
-    $threads_is_enabled = ($@ ? 0 : 1);
-
-    eval q{
-	use IO::Socket::INET6;
-    };
-    $ipv6_is_enabled = ($@ ? 0 : 1);
-
-    eval q{
-	use Time::HiRes ();
-    };
-    $time_hires_is_enabled = ($@ ? 0 : 1);
-
-    # 外部から呼べるオプションモジュールの存在チェック。
-    sub ipv6_enabled { $ipv6_is_enabled; }
-    sub threads_enabled { $threads_is_enabled; }
-    sub time_hires_is_enabled { $time_hires_is_enabled; }
-}
+use Tiarra::OptionalModules;
+# 外部から呼べるオプションモジュールの存在チェック。
+# (過去互換)
+sub ipv6_enabled { Tiarra::OptionalModules->ipv6; }
 
 use Tiarra::Resolver; # early initialization
 use Configuration;
