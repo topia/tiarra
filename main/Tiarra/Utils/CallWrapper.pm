@@ -122,6 +122,7 @@ sub new {
 
 sub DESTROY {
     my $this = shift;
+    local $@; # FIXME: we can't know ensure _die_...
     $this->do_with_errmsg('ensure', $this);
 }
 
