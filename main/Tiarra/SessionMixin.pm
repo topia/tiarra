@@ -24,14 +24,12 @@ BEGIN {
 	};
 	$use_threads = ($@ ? 0 : 1);
     }
-    if ($use_threads) {
-	eval 'use Thread::Queue;';
-    }
 }
 
 
 # usage:
 #  use Tiarra::SessionMixin;
+#  use base qw(SessionMixin);
 #  sub new {
 #    ...
 #    $this->_session_init;
@@ -55,7 +53,7 @@ sub session_name {
 	$this->{session_name});
 }
 
-sub session_start {
+sub __session_start {
     my $this = shift;
     if ($this->session_level == 1) {
 	carp 'this object already started...';
@@ -66,7 +64,7 @@ sub session_start {
     1;
 }
 
-sub session_finish {
+sub __session_finish {
     my $this = shift;
     if ($this->session_level == 0) {
 	carp 'this object already finished!';
@@ -82,7 +80,7 @@ sub with_session {
     my ($this, $closure) = @_;
     my $wantarray = wantarray;
     my $level = $this->session_level;
-    $this->session_start unless $level;
+    $this->__session_start unless $level;
     lock $this->{lock} if $use_threads;
     $this->do_with_ensure(
 	sub {
@@ -93,7 +91,7 @@ sub with_session {
 		}
 	       );
 	},
-	sub { $this->session_finish unless $level; });
+	sub { $this->__session_finish unless $level; });
 }
 
 sub define_session_wrap {
