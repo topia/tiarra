@@ -279,7 +279,7 @@ sub _update_send_selector {
     # どうもこの動作が怪しい。無理に再利用しなくても良いような気がする。
     my $sel = $this->{send_selector} = IO::Select->new;
     foreach my $io (values %{$this->{networks}}) {
-    	if ($io->need_to_send) {
+	if ($io->need_to_send) {
 	    $sel->add($io->sock);
 	}
     }
@@ -852,13 +852,13 @@ sub run {
 	limit => 100,
 	minimum_to_reset => 2,
 	interval => 10,
-	
+
 	count => 0,
 	last_warned => 0,
     };
     my $zerotime_warn = sub {
 	my $elapsed = shift;
-	
+
 	if ($elapsed == 0) {
 	    $zerotime->{count}++;
 	    if ($zerotime->{count} >= $zerotime->{limit}) {
@@ -875,7 +875,7 @@ sub run {
 	    $zerotime->{count} = 0;
 	}
     };
-    
+
     while (1) {
 	# 処理の流れ
 	#
@@ -943,11 +943,11 @@ sub run {
 				last;
 			    }
 			}
-			
+
 			if (!defined $msg) {
 			    next;
 			}
-			
+
 			if ($io->isa("IrcIO::Server")) {
 			    # このメッセージがPONGであればpong-drop-counterを見る。
 			    if ($msg->command eq 'PONG') {
@@ -978,8 +978,12 @@ sub run {
 				} @$filtered_messages);
 			}
 			else {
+			    # シングルサーバーモードなら、メッセージをMulticastのフィルタに通す。
+			    my @received_messages =
+				(!$this->{multi_server_mode}) ? Multicast::from_server_to_client($msg,$io) : $msg;
+
 			    # モジュールを通す。
-			    my $filtered_messages = $this->_apply_filters([$msg],$io);		    
+			    my $filtered_messages = $this->_apply_filters(\@received_messages,$io);
 			    # 対象となる鯖に送る。
 			    # NOTICE及びPRIVMSGは返答が返ってこないので、同時にこれ以外のクライアントに転送する。
 			    # 註釈do-not-send-to-servers => 1が付いているメッセージはここで破棄する。
@@ -987,7 +991,7 @@ sub run {
 				if ($msg->remark('do-not-send-to-servers')) {
 				    next;
 				}
-				
+
 				my $cmd = $msg->command;
 				if ($cmd eq 'PRIVMSG' || $cmd eq 'NOTICE') {
 				    my $new_msg = undef; # 本当に必要になったら作る。
@@ -1002,7 +1006,7 @@ sub run {
 					}
 				    }
 				}
-				
+
 				Multicast::from_client_to_server($msg,$io);
 			    }
 			}
