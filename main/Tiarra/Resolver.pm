@@ -84,6 +84,7 @@ BEGIN {
     } else {
 	# dummy
 	sub NI_NUMERICHOST () { undef; }
+	sub NI_NAMEREQD () { undef; }
     }
 }
 
