@@ -805,8 +805,8 @@ sub _RPL_WHOISUSER {
 	$p->username($msg->param(2));
 	$p->userhost($msg->param(3));
 	$p->realname($msg->param(5));
+	$this->_START_WHOIS_REPLY($p);
     }
-    $this->_START_WHOIS_REPLY($p);
 }
 
 sub _START_WHOIS_REPLY {
