@@ -7,7 +7,6 @@ use warnings;
 use base qw(Module);
 use Mask;
 use Multicast;
-use IRCMessage;
 use Timer;
 
 sub new {
@@ -107,7 +106,7 @@ sub prepare_timer {
 		    }
 		    while (my ($ch_short,$nicks) = each %$channels) {
 			$server->send_message(
-			    IRCMessage->new(
+			    $this->construct_irc_message(
 				Command => 'MODE',
 				Params => [$ch_short,
 					   '+'.('o' x @$nicks),

@@ -31,7 +31,7 @@ sub message_arrived {
 	    if (!defined $last || time - $last > ($this->config->interval || 3)) {
 		# 前回のCTCP反応から一定時間以上経過している。
 		my $reply = CTCP::make(
-		    'VERSION Tiarra:'.::version.':perl '.$Config{version}.' on '.$Config{archname},
+		    'VERSION Tiarra:'.::version().':perl '.$Config{version}.' on '.$Config{archname},
 		    scalar Multicast::detach($msg->nick)
 		);
 		$sender->send_message($reply);

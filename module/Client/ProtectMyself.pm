@@ -7,7 +7,6 @@ use strict;
 use warnings;
 use base qw(Module);
 use Multicast;
-use IRCMessage;
 use Auto::AliasDB;
 use Tiarra::Utils;
 
@@ -81,7 +80,7 @@ sub message_io_hook {
 	}
 	if (@affected) {
 	    my $aliasdb = Auto::AliasDB->shared;
-	    my $msg_skel = IRCMessage->new(
+	    my $msg_skel = $this->construct_irc_message(
 		Prefix => $runloop->sysmsg_prefix(qw(system fake::system)),
 		Command => 'NOTICE',
 		Params => [undef, undef]);

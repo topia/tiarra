@@ -8,7 +8,6 @@ use base qw(Module);
 use Module::Use qw(Tools::DateConvert Log::Logger);
 use Tools::DateConvert;
 use Log::Logger;
-use IRCMessage;
 use Mask;
 
 sub new {
@@ -34,7 +33,7 @@ sub new {
 	    if (defined $vec) {
 		foreach my $elem (@$vec) {
 		    $client->send_message(
-			IRCMessage->new(
+			$this->construct_irc_message(
 			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(channel log)),
 			    Command => 'NOTICE',
 			    Params => [$ch_name,$elem->[1]]));
@@ -66,7 +65,7 @@ sub client_attached {
     my $local_nick = RunLoop->shared->current_nick;
     foreach my $elem (@{$this->{priv_log}}) {
 	$client->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv log)),
 		Command => 'NOTICE',
 		Params => [$local_nick,$elem->[1]])); # $elem->[0]¤Ï¾ï¤Ë'priv'
@@ -84,7 +83,7 @@ sub client_attached {
 #			RunLoop->shared->multi_server_mode_p ?
 #			    $elem->[0] : $ch->name;
 #		    $client->send_message(
-#			IRCMessage->new(
+#			$this->construct_irc_message(
 #			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(channel log)),
 #			    Command => 'NOTICE',
 #			    Params => [$ch_name,$elem->[1]]));

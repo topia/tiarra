@@ -43,7 +43,7 @@ sub message_arrived {
 	    } elsif ($msg->param(0) eq $runloop->current_nick) {
 	    } else {
 		$sender->send_message(
-		    IRCMessage->new(
+		    $this->construct_irc_message(
 			Prefix => $msg->param(0).'!'.$sender->username.'@'.
 			    $sender->client_host,
 			Command => 'NICK',

@@ -20,7 +20,7 @@ sub message_arrived {
 	    defined $cmd) {
 	    # 実行。
 	    $sender->send_message(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Line => $cmd,
 		    Encoding => 'utf8'));
 	}
@@ -39,7 +39,7 @@ default: off
 
 # 構文: + <nick> <IRC Message>
 # <nick>は反応するbotのnickを表すマスク。
-# <IRCMessage>はサーバーに向けて発行するIRCメッセージ。
+# <Tiarra::IRC::Message>はサーバーに向けて発行するIRCメッセージ。
 #
 # 例:
 # + hoge NICK [hoge]

@@ -6,12 +6,11 @@ use strict;
 use warnings;
 use base qw(Module);
 use Multicast;
-use IRCMessage;
 
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
-    $this->{macros} = $this->hash; # コマンド => ARRAY<動作(IRCMessage)>
+    $this->{macros} = $this->hash; # コマンド => ARRAY<動作(Tiarra::IRC::Message)>
     $this;
 }
 
@@ -22,7 +21,7 @@ sub hash {
 	my ($command,$action) = (m/^(.+?)\s+(.+)$/);
 	$command = uc($command);
 	
-	my $action_msg = IRCMessage->new(
+	my $action_msg = $this->construct_irc_message(
 	    Line => $action,
 	    Encoding => 'utf8');
 	my $array = $macros->{$command};

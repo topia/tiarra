@@ -26,7 +26,7 @@ sub new {
     # got_elist => +e(略
     # got_Ilist => +I(略
     # got_oper => 既にPART->JOINしているかどうか。
-    # cmd_buf => ARRAY<IRCMessage>
+    # cmd_buf => ARRAY<Tiarra::IRC::Message>
     $this;
 }
 
@@ -139,7 +139,7 @@ sub rejoin {
     
     # TOPICを覚える。
     if ($ch->topic ne '') {
-	push @{$session->{cmd_buf}},IRCMessage->new(
+	push @{$session->{cmd_buf}},$this->construct_irc_message(
 	    Command => 'TOPIC',
 	    Params => [$ch_name,$ch->topic]);
     }
@@ -147,13 +147,13 @@ sub rejoin {
     # 必要ならMODE #channel実行。
     #if ($ch->remarks('switches-are-known')) {
     #	$session->{got_mode} = 1;
-    #	push @{$session->{cmd_buf}},IRCMessage->new(
+    #	push @{$session->{cmd_buf}},$this->construct_irc_message(
     #	    Command => 'MODE',
     #}
     # やっぱりやめ。面倒。防衛BOTとして使いたかったらこんなモジュール使わないこと。
     #else {
     	$server->send_message(
-    	    IRCMessage->new(
+    	    $this->construct_irc_message(
 		Command => 'MODE',
 		Param => $ch_name));
     #}
@@ -162,7 +162,7 @@ sub rejoin {
     if ($this->config->save_lists) {
 	foreach (qw/+e +b +I/) {
 	    $server->send_message(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Command => 'MODE',
 		    Params => [$ch_name,$_]));
 	}
@@ -186,7 +186,7 @@ sub part_and_join {
     $session->{got_oper} = 1;
     foreach (qw/PART JOIN/) {
 	$session->{server}->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Command => $_,
 		Param => $session->{ch_shortname}));
     }
@@ -223,7 +223,7 @@ sub session_work {
 		push @masks,$list->[$i+1] if $i+1 < $list_size;
 		push @masks,$list->[$i+2] if $i+2 < $list_size;
 		
-		push @{$session->{cmd_buf}},IRCMessage->new(
+		push @{$session->{cmd_buf}},$this->construct_irc_message(
 		    Command => 'MODE',
 		    Params => [$session->{ch_shortname},
 			       '+'.($type x scalar(@masks)),
@@ -242,7 +242,7 @@ sub session_work {
 	    my ($params, @params) = $ch->mode_string;
 	    if (length($params) > 1) {
 		# 設定すべきモードがある。
-		push @{$session->{cmd_buf}},IRCMessage->new(
+		push @{$session->{cmd_buf}},$this->construct_irc_message(
 		    Command => 'MODE',
 		    Params => [$session->{ch_shortname},
 			       $params,

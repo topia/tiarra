@@ -26,7 +26,7 @@ sub message_arrived {
 	if (Mask::match_deep_chan([$this->config->mask('all')], $msg->prefix, $get_ch_name->())) {
 	  # match.
 	  $sender->
-	    send_message(IRCMessage->new(
+	    send_message($this->construct_irc_message(
 					 Command => 'JOIN',
 					 Params => [$get_ch_name->()]
 					));

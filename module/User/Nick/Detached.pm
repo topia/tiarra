@@ -7,7 +7,6 @@ package User::Nick::Detached;
 use strict;
 use warnings;
 use base qw(Module);
-use IRCMessage;
 use RunLoop;
 
 sub client_attached {
@@ -15,7 +14,7 @@ sub client_attached {
     # クライアントが接続されたという事は、
     # 少なくとも一つ以上のクライアントが存在するに決まっている。
     RunLoop->shared->broadcast_to_servers(
-	IRCMessage->new(
+	$this->construct_irc_message(
 	    Command => 'NICK',
 	    Param => RunLoop->shared->current_nick));
 }
@@ -27,7 +26,7 @@ sub client_detached {
 	defined $this->config->detached) {
 
 	RunLoop->shared->broadcast_to_servers(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Command => 'NICK',
 		Param => $this->config->detached));
     }
@@ -40,7 +39,7 @@ sub connected_to_server {
 	defined $this->config->detached) {
 	
 	$server->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Command => 'NICK',
 		Param => $this->config->detached));
     }

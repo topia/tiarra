@@ -7,8 +7,8 @@ use warnings;
 use Module::Use qw(Auto::AliasDB);
 use Auto::AliasDB;
 use Multicast;
-use IRCMessage;
 use RunLoop;
+use base qw(Tiarra::IRC::NewMessageMixin);
 
 # get_ch_name は get_raw_ch_name のエイリアス(過去互換のため)
 *get_ch_name = \&get_raw_ch_name;
@@ -80,7 +80,7 @@ sub sendto_channel_closure {
 	my ($line,%extra_replaces) = @_;
 	return if !defined $line;
 	foreach my $str ((ref($line) eq 'ARRAY') ? @$line : $line) {
-	    my $msg_to_send = IRCMessage->new(
+	    my $msg_to_send = __PACKAGE__->construct_irc_message(
 		Command => $command,
 		Params => ['',	# 後で設定
 			   ($use_alias ? Auto::AliasDB->shared->stdreplace_add(
@@ -200,7 +200,7 @@ sub generate_reply_closures {
 	my ($line,%extra_replaces) = @_;
 	return if !defined $line;
 	foreach my $str ((ref($line) eq 'ARRAY') ? @$line : $line) {
-	    $sender->send_message(IRCMessage->new(
+	    $sender->send_message(__PACKAGE__->construct_irc_message(
 		Command => 'NOTICE',
 		Params => [$msg->nick,
 			   ($use_alias ? Auto::AliasDB->shared->stdreplace_add(

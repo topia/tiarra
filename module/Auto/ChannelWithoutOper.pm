@@ -6,7 +6,6 @@ use strict;
 use warnings;
 use base qw(Module);
 use Multicast;
-use IRCMessage;
 
 sub new {
     my $class = shift;
@@ -28,7 +27,7 @@ sub message_arrived {
 
     my $notify = sub {
 	my ($ch_long,$ch_short,$str) = @_;
-	my $msg_to_send = IRCMessage->new(
+	my $msg_to_send = $this->construct_irc_message(
 	    Command => 'NOTICE',
 	    Params => ['',$str]); # チャンネル名は後で設定
 	# 鯖にはネットワーク名を付けない。

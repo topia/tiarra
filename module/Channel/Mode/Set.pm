@@ -59,7 +59,7 @@ sub set_modes {
 	if (Mask::match($ch_mask,$ch_fullname)) {
 	    foreach my $mode (split /,/,$modes) {
 		$sender->send_message(
-		    IRCMessage->new(
+		    $this->construct_irc_message(
 			Command => 'MODE',
 			Params => [$ch_plainname,$mode]));
 	    }

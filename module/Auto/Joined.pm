@@ -8,7 +8,6 @@ use base qw(Module);
 use Module::Use qw(Auto::Utils);
 use Auto::Utils;
 use Multicast;
-use IRCMessage;
 
 sub new {
     my $class = shift;

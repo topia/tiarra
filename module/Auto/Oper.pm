@@ -24,7 +24,7 @@ sub message_arrived {
 	= Auto::Utils::generate_reply_closures($msg,$sender,\@result);
 
     my $op = sub {
-	$sender->send_message(IRCMessage->new(
+	$sender->send_message($this->construct_irc_message(
 				  Command => 'MODE',
 				  Params => [$get_raw_ch_name->(),'+o',$msg->nick]));
     };

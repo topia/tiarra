@@ -24,13 +24,13 @@ sub message_io_hook {
 		    my $global_nick = $_->current_nick;
 		    if ($global_nick ne $local_nick) {
 			$io->send_message(
-			    new IRCMessage(Prefix => $prefix,
+			    $this->construct_irc_message(Prefix => $prefix,
 					   Command => 'NOTICE',
 					   Params => [$local_nick,
 						      "*** Your global nick in $network_name is currently '$global_nick'."]));
 		    } else {
 			$io->send_message(
-			    new IRCMessage(Prefix => $prefix,
+			    $this->construct_irc_message(Prefix => $prefix,
 					   Command => 'NOTICE',
 					   Params => [$local_nick,
 						      "*** Your global nick in $network_name is same as local nick."]));
@@ -54,7 +54,7 @@ sub client_attached {
 	    my $global_nick = $_->current_nick;
 	    if ($global_nick eq $current_nick) {
 		$client->send_message(
-		    new IRCMessage(
+		    $this->construct_irc_message(
 			Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 			Command => 'NOTICE',
 			Params => [$current_nick,

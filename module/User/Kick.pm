@@ -4,10 +4,9 @@
 package User::Kick;
 use strict;
 use warnings;
-use base qw/Module/;
+use base qw(Module);
 use Mask;
 use Multicast;
-use IRCMessage;
 use Timer;
 
 sub new {
@@ -39,7 +38,7 @@ sub message_arrived {
 		Mask::match_deep_chan([$this->config->mask('all')],$msg->prefix,$ch_full)) {
 		# kickキューに入れる。
 		$this->enqueue(
-		    $sender->network_name, IRCMessage->new(
+		    $sender->network_name, $this->construct_irc_message(
 			Command => 'KICK',
 			Params => [$ch_short,
 				   $msg->nick,

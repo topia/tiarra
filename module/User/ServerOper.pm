@@ -5,7 +5,6 @@ package User::ServerOper;
 use strict;
 use warnings;
 use base qw(Module);
-use IRCMessage;
 
 sub new {
     my $class = shift;
@@ -26,7 +25,7 @@ sub connected_to_server {
     my $oper = $this->{table}->{$server->network_name};
     if (defined $oper) {
 	$server->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Command => 'OPER',
 		Params => [$oper->[0],$oper->[1]]));
     }

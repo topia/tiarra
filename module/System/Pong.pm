@@ -28,7 +28,7 @@ sub message_arrived {
 	if ($message->n_params < 1) {
 	    # これを送りつけてきたサーバー/クライアントにエラーを返す。
 	    $sender->send_message(
-		new IRCMessage(
+		$this->construct_irc_message(
 		    Prefix => $prefix,
 		    Command => ERR_NOORIGIN,
 		    Params => [
@@ -45,7 +45,7 @@ sub message_arrived {
 	    }
 	    # これを送りつけてきたサーバー/クライアントにPONGを送り返す。
 	    $sender->send_message(
-		new IRCMessage(
+		$this->construct_irc_message(
 		    Prefix => $prefix,
 		    Command => 'PONG',
 		    Params => [

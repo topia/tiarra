@@ -15,7 +15,7 @@ sub message_arrived {
 	# 最低限パラメタは二つ必要。
 	if ($msg->n_params < 2) {
 	    $sender->send_message(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(system)),
 		    Command => ERR_NEEDMOREPARAMS,
 		    Params => [
@@ -28,7 +28,7 @@ sub message_arrived {
 	    my $target = $msg->param(0);
 	    
 	    # メッセージ再構築
-	    my $raw_msg = IRCMessage->new(
+	    my $raw_msg = $this->construct_irc_message(
 		Line => join(' ', @{$msg->params}[1 .. ($msg->n_params - 1)]),
 		Encoding => 'utf8',
 	       );
@@ -43,7 +43,7 @@ sub message_arrived {
 	    }
 	    if (!$sent) {
 		$sender->send_message(
-		    IRCMessage->new(
+		    $this->construct_irc_message(
 			Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 			Command => 'NOTICE',
 			Params => [

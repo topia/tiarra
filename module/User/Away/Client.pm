@@ -6,14 +6,13 @@ use strict;
 use warnings;
 use base qw(Module);
 use RunLoop;
-use IRCMessage;
 
 sub client_attached {
     my ($this,$client) = @_;
     # クライアントが接続されたという事は、
     # 少なくとも一つ以上のクライアントが存在するに決まっている。
     RunLoop->shared->broadcast_to_servers(
-	IRCMessage->new(
+	$this->construct_irc_message(
 	    Command => 'AWAY'));
 }
 
@@ -24,7 +23,7 @@ sub client_detached {
 	defined $this->config->away) {
 	
 	RunLoop->shared->broadcast_to_servers(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Command => 'AWAY',
 		Param => $this->config->away));
     }
@@ -37,7 +36,7 @@ sub connected_to_server {
 	defined $this->config->away) {
 	
 	$server->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Command => 'AWAY',
 		Param => $this->config->away));
     }

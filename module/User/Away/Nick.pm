@@ -6,7 +6,6 @@ use strict;
 use warnings;
 use base qw(Module);
 use Mask;
-use IRCMessage;
 use Multicast;
 
 sub message_arrived {
@@ -35,7 +34,7 @@ sub message_arrived {
 sub set_away {
     my ($this,$msg,$away_str) = @_;
     $this->away($msg,
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Command => 'AWAY',
 		    Param => $away_str));
 }
@@ -43,7 +42,7 @@ sub set_away {
 sub unset_away {
     my ($this,$msg) = @_;
     $this->away($msg,
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Command => 'AWAY'));
 }
 

@@ -7,7 +7,7 @@
 package Channel::Freeze;
 use strict;
 use warnings;
-use base qw/Module/;
+use base qw(Module);
 use Multicast;
 use Timer;
 use BulletinBoard;
@@ -69,7 +69,7 @@ sub notify_list_of_frost_channels {
 	
 	# Êó¹ð
 	RunLoop->shared->broadcast_to_clients(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [
@@ -88,7 +88,7 @@ sub message_arrived {
 	my $notify = sub {
 	    my $notice = shift;
 	    RunLoop->shared->broadcast_to_clients(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 		    Command => 'NOTICE',
 		    Params => [

@@ -10,7 +10,7 @@ use Multicast;
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
-    $this->{buffer} = []; # [IrcIO::Server,IRCMessage]
+    $this->{buffer} = []; # [IrcIO::Server,Tiarra::IRC::Message]
     $this->{timer} = undef; # Timer：必要な時だけ使われる。
     $this;
 }
@@ -33,7 +33,7 @@ sub message_arrived {
 	foreach (split /,/,$msg->param(0)) {
 	    my $ch_shortname = Multicast::detatch($_);
 	    my $entry = [$sender,
-			 IRCMessage->new(
+			 $this->construct_irc_message(
 			     Command => 'MODE',
 			     Param => $ch_shortname)];
 	    push @{$this->{buffer}},$entry;

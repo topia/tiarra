@@ -23,7 +23,7 @@ sub message_arrived {
 	    }
 
 	    $sender->send_message(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Command => 'JOIN',
 		    Params => \@params));
 	}

@@ -70,7 +70,7 @@ sub connected_to_server {
 		    }
 		    splice @$session,0,$msg_per_trigger;
 		    $server->send_message(
-			IRCMessage->new(
+			$this->construct_irc_message(
 			    Command => 'JOIN',
 			    Params => [join(',', @param_chan), join(',', @param_key)]));
 		}

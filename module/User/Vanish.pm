@@ -258,7 +258,7 @@ sub cmd_MODE {
 
 	# パラメタ再構成の結果、一つも無くなったら、このメッセージは破棄。
 	if (@params > 1) {
-	    $msg = IRCMessage->new(
+	    $msg = $this->construct_irc_message(
 		Prefix => $msg->prefix,
 		Command => $msg->command,
 		Params => \@params);

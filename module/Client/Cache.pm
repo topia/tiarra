@@ -25,7 +25,7 @@ sub new {
 		    $this->_yesno($this->config->use_mode_cache)) {
 		# 送信できる場合は強制的に送信してみる
 		my $remark = $client->remark('mode-cache-state') || {};
-		_send_mode_cache($client,$ch_name,$ch);
+		$this->_send_mode_cache($client,$ch_name,$ch);
 		$remark->{
 		    Multicast::attach($ch->name, $network)
 		       }->[MODE_CACHE_FORCE_SENDED] = 1;
@@ -155,9 +155,9 @@ sub message_arrived {
 		my $remark = $sender->remark('mode-cache-state') || {};
 		my $ch_remark = $remark->{$info{chan_long}};
 		if (!$ch_remark->[MODE_CACHE_SENDED]) {
-		    _send_mode_cache($sender,
-				     $info{chan_send},
-				     $info{ch})
+		    $this->_send_mode_cache($sender,
+					    $info{chan_send},
+					    $info{ch})
 			if (!$ch_remark->[MODE_CACHE_FORCE_SENDED]);
 		    $ch_remark->[MODE_CACHE_SENDED] = 1;
 		    $sender->remark('mode-cache-state', $remark);
@@ -185,7 +185,7 @@ sub message_arrived {
 	    if (!exists $remark->{$info{chan_long}}) {
 		# cache がそろっているかわからないため、
 		# とりあえず作ってみて、足りなかったらあきらめる。
-		my $message_tmpl = IRCMessage->new(
+		my $message_tmpl = $this->construct_irc_message(
 		    Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
 		    Command => RPL_WHOREPLY,
 		    Params => [
@@ -255,10 +255,10 @@ sub message_arrived {
 
 
 sub _send_mode_cache {
-    my ($sendto,$ch_name,$ch) = @_;
+    my ($this,$sendto,$ch_name,$ch) = @_;
 
     $sendto->send_message(
-	IRCMessage->new(
+	$this->construct_irc_message(
 	    Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
 	    Command => RPL_CHANNELMODEIS,
 	    Params => [
@@ -273,7 +273,7 @@ sub _send_mode_cache {
        );
     if (defined $ch->remark('creation-time')) {
 	$sendto->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
 		Command => RPL_CREATIONTIME,
 		Params => [

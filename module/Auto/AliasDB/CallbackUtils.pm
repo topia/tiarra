@@ -11,6 +11,7 @@ use Carp;
 use RunLoop;
 use Multicast;
 use Tiarra::SharedMixin;
+use base qw(Tiarra::IRC::NewMessageMixin);
 our $_shared_instance;
 
 sub _new {
@@ -269,7 +270,7 @@ sub register_Nick_setMode {
     my ($ch_name) = $msg->param(0);
     return $callbacks if (Multicast::nick_p($ch_name)); #priv
     $ch_name = scalar(Multicast::detatch($ch_name));
-    my $irc_message = IRCMessage->new(
+    my $irc_message = __PACKAGE__->shared->construct_irc_message(
 	Command => 'MODE',
 	Params => [$ch_name,
 		   '',		#set later

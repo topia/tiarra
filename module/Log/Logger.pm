@@ -16,7 +16,7 @@ sub new {
     # exceptions:
     #   特定のメッセージのログ文字列化をオーバーライドする
     #   'S_PRIVMSG'等。
-    #   引数は(IRCMessage,IrcIO)、戻り値は[チャンネル名,ログ文字列]の配列
+    #   引数は(Tiarra::IRC::Message,IrcIO)、戻り値は[チャンネル名,ログ文字列]の配列
     my $this = {
 	enstringed => $enstringed_callback,
 	exception_object => $exception_object,

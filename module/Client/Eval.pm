@@ -34,7 +34,7 @@ sub message_arrived {
 	    };
 	    $err = $@;
 
-	    my $message = IRCMessage->new(
+	    my $message = $this->construct_irc_message(
 		Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [RunLoop->shared_loop->current_nick,
@@ -87,7 +87,7 @@ sub network { return runloop->network(shift); }
 sub conf { return Configuration->shared; }
 sub module_manager { return ModuleManager->shared_manager; }
 sub module { return module_manager->get(shift); }
-sub shutdown { return ::shutdown; }
+sub shutdown { return ::shutdown(); }
 sub reload {
     ReloadTrigger->_install_reload_timer;
     return undef;
