@@ -24,7 +24,7 @@ our $_shared_instance;
 sub setfile {
     # クラスメソッド。
     my ($fpath,$charset) = @_;
-    $_shared = Auto::AliasDB->_new($fpath,$charset);
+    $_shared_instance = Auto::AliasDB->_new($fpath,$charset);
 }
 
 sub _new {

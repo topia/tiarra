@@ -10,17 +10,10 @@
 package Tools::MailSend;
 use strict;
 use warnings;
+use Tiarra::SharedMixin;
 use Module::Use qw(Tools::MailSend::EachServer);
 use Tools::MailSend::EachServer;
-our $_shared;
-
-sub shared {
-  if (!defined $_shared) {
-    $_shared = Tools::MailSend->_new;
-  }
-
-  return $_shared;
-}
+our $_shared_instance;
 
 sub _new {
   my ($class) = @_;
