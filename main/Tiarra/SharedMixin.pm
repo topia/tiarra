@@ -36,10 +36,11 @@ sub import {
     no strict 'refs';
     *{$call_pkg.'::shared'} = sub {
 	if (!defined ${$instance_name}) {
-	    ${$instance_name} = $call_pkg->_new;
+	    my $class = shift;
+	    ${$instance_name} = $call_pkg->_new(@_);
 	    eval {
 		# safe initialize with ->shared.
-		${$instance_name}->_initialize;
+		${$instance_name}->_initialize(@_);
 	    };
 	}
 	${$instance_name};
