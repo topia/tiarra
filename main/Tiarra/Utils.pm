@@ -235,6 +235,15 @@ sub get_package {
     (caller($caller_level + 1 + $ExportLevel))[0];
 }
 
+sub simple_caller_formatter {
+    my $pkg = shift;
+    my $msg = $pkg->get_first_defined(shift, 'called');
+    my $caller_level = shift || 0;
+
+    sprintf('%s at %s line %s', $msg,
+	    (caller($caller_level + 1 + $ExportLevel))[1,2]);
+}
+
 # utilities
 
 sub cond_yesno {
@@ -265,9 +274,16 @@ sub get_first_defined {
     return ();
 }
 
-sub _wantarrays_to_types {
+sub _wantarray_to_type {
     shift; # drop
-    map {
+
+    grep {
+	if (!wantarray) {
+	    return $_;
+	} else {
+	    $_;
+	}
+    } map {
 	if (!defined $_) {
 	    'void';
 	} elsif (!$_) {
@@ -277,11 +293,6 @@ sub _wantarrays_to_types {
 	}
     } @_;
 }
-
-sub _wantarray_to_type {
-    (shift->_wantarrays_to_types(@_))[0];
-}
-
 sub call_with_wantarray {
     my $class_or_this = shift;
     my ($wantarray, $closure, @args) = @_;
@@ -305,25 +316,84 @@ sub call_with_wantarray {
 }
 
 sub do_with_ensure {
-    my $class_or_this = shift;
+    my $pkg = shift;
     my ($closure, $ensure, @args) = @_;
     my $retval;
-    my $type = $class_or_this->_wantarray_to_type(wantarray);
+    my $type = $pkg->_wantarray_to_type(wantarray);
 
-    eval {
+    do {
+	my $die = $pkg->sighandler_or_default('die');
+	local $SIG{__DIE__} = sub {
+	    local $SIG{__DIE__} = $die;
+	    if (!$^S) {
+		# outside eval (FIXME, but without false-positive die)
+		$pkg->do_with_errmsg('ensure/die',
+				     $ensure, undef, @_);
+	    }
+	    die(@_);
+	};
 	$retval = [$closure->(@args)];
     };
-    my $error = $@;
-    $ensure->($retval, $error);
-    if ($error) {
-	croak $error;
+    $pkg->do_with_errmsg('ensure',
+			 $ensure, $retval);
+    if ($type eq 'scalar') {
+	return $retval->[0];
     } else {
-	if ($type eq 'scalar') {
-	    return $retval->[0];
-	} else {
-	    return @$retval;
+	return @$retval;
+    }
+}
+
+sub sighandler_or_default {
+    my ($pkg, $name, $func) = @_;
+
+    $name = "__\U$name\E__" if $name =~ /^(die|warn)$/i;
+    if (!defined $func) {
+	if ($name =~ /^__(DIE|WARN)__$/) {
+	    no strict 'refs';
+	    $func = \&{"CORE::GLOBAL::\L$1\E"};
 	}
     }
+
+    my $value = $SIG{$name};
+    $value = $func if !defined $value || length($value) == 0 ||
+	$value =~ /^DEFAULT$/i;
+    if (ref($value) ne 'CODE') {
+	no strict 'refs';
+	$value = \&{$value};
+    }
+    $value;
+}
+
+sub _add_lf {
+    my $pkg = shift;
+
+    my $str = join('', $pkg->to_str(@_));
+    if ($str !~ /\n\z/) {
+	"$str\n";
+    } else {
+	$str;
+    }
+}
+
+sub do_with_errmsg {
+    my $pkg = shift;
+    my ($name, $closure, @args) = @_;
+
+    my $str = "    inside $name;\n";
+    do {
+	no strict 'refs';
+	local ($SIG{__WARN__}, $SIG{__DIE__}) =
+	    (map {
+		my $signame = "__\U$_\E__";
+		my $handler = $pkg->sighandler_or_default($_, 'DEFAULT');
+		sub {
+		    $handler->($pkg->_add_lf(@_).$str);
+		};
+	    } qw(warn die));
+
+	$closure->(@args);
+    };
+
 }
 
 1;
