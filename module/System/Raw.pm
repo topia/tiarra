@@ -6,6 +6,7 @@ use strict;
 use warnings;
 use base qw(Module);
 use Mask;
+use Configuration;
 
 sub message_arrived {
     my ($this, $msg, $sender) = @_;
@@ -15,6 +16,7 @@ sub message_arrived {
 	if ($msg->n_params < 2) {
 	    $sender->send_message(
 		IRCMessage->new(
+		    Prefix => Configuration->shared->general->sysmsg_prefix,
 		    Command => 'NOTICE',
 		    Params => [
 			RunLoop->shared->current_nick,
@@ -42,6 +44,7 @@ sub message_arrived {
 	    if (!$sent) {
 		$sender->send_message(
 		    IRCMessage->new(
+			Prefix => Configuration->shared->general->sysmsg_prefix,
 			Command => 'NOTICE',
 			Params => [
 			   RunLoop->shared->current_nick, 
