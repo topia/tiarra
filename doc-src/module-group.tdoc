@@ -16,7 +16,19 @@ description: 自動反応
 package Channel;
 =pod
 description: チャンネルに対する操作
+=cut
+
+* Client
+package Client;
 =pod
+description: クライアントとの入出力
+=cut
+
+* Debug
+package Debug;
+=pod
+description: Tiarraや、Tiarraモジュールのデバッグ用
+=cut
 
 * Log
 package Log;
