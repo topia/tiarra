@@ -39,7 +39,7 @@ sub disconnect_after_writing {
 sub disconnect {
     my $this = shift;
 
-    $this->sock->shutdown(2) if defined($this->sock);
+    $this->sock->shutdown(2);
     $this->uninstall if $this->installed;
     $this->detach;
 }
@@ -127,18 +127,20 @@ sub flush {
     my $this = shift;
 
     return undef unless $this->connected;
+
     my ($select) = IO::Select->new($this->sock);
 
-    if ($this->connected) {
-	if ($this->want_to_write && $select->can_write(0)) {
-	    $this->write;
-	}
+    if ($this->want_to_write && $select->can_write(0)) {
+	$this->write;
+    }
 
-	if ($select->can_read(0)) {
-	    $this->read;
-	}
+    return undef unless $this->connected;
+
+    if ($select->can_read(0)) {
+	$this->read;
     }
 
     return 1;
 }
+
 1;
