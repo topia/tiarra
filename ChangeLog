@@ -1,3 +1,10 @@
+2004-01-23  Topia  <topia@clovery.jp>
+
+	* tiarra: $0 自体が symlink だったときに、@INC に symlink 先の
+	main/module を含めるようにした。
+	カレントディレクトリ・$0 のディレクトリは常に含むようにした。
+	(make_password): --make-password=password を可能にした。
+
 2004-01-23  phonohawk  <phonohawk@lycos.co.uk>
 
 	* tiarra: 起動時オプション --make-password 追加。
@@ -1080,7 +1087,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.123 2004/01/22 17:39:22 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2004/01/22 17:39:22 $
-# Revision: $Revision: 1.123 $
+#       Id: $Id: ChangeLog,v 1.124 2004/01/22 19:13:45 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2004/01/22 19:13:45 $
+# Revision: $Revision: 1.124 $
