@@ -40,6 +40,7 @@ sub parse {
 package Tiarra::Resolver;
 use strict;
 use warnings;
+use Tiarra::OptionalModules;
 use Tiarra::SharedMixin;
 use Tiarra::WrapMainLoop;
 use Tiarra::TerminateManager;
@@ -48,37 +49,15 @@ use Carp;
 use Net::hostent;
 use Tiarra::DefineEnumMixin qw(QUERY_HOST QUERY_ADDR);
 my $dataclass = 'Tiarra::Resolver::QueueData';
-
 our $use_threads;
-BEGIN {
-    my $threads_enabled = eval { ::threads_enabled };
-    if (defined $threads_enabled) {
-	$use_threads = $threads_enabled;
-    } else {
-	# あがいても仕方ないと思うが試してみる。
-	eval q{
-	    use threads;
-	    use threads::shared;
-	};
-	$use_threads = ($@ ? 0 : 1);
-    }
-    if ($use_threads) {
-	eval 'use Thread::Queue;';
-    }
-}
-
 our $use_ipv6;
 BEGIN {
-    my $ipv6_is_enabled = eval { ::ipv6_enabled };
-    if (defined $ipv6_is_enabled) {
-	$use_ipv6 = $ipv6_is_enabled;
-    } else {
-	# 試してみる。
-	eval q{
-	    use IO::Socket::INET6;
-	};
-	$use_ipv6 = ($@ ? 0 : 1);
+    $use_threads = Tiarra::OptionalModules->threads;
+    if ($use_threads) {
+	eval 'use Thread::Queue';
     }
+
+    $use_ipv6 = Tiarra::OptionalModules->ipv6;
     if ($use_ipv6) {
 	eval 'use Socket6;';
     } else {

@@ -7,25 +7,11 @@
 package Tiarra::SessionMixin;
 use strict;
 use warnings;
+use Tiarra::OptionalModules;
 use Tiarra::Utils;
 use Carp;
 use base qw(Tiarra::Utils);
-
-our $use_threads;
-BEGIN {
-    my $threads_enabled = eval { &::threads_enabled };
-    if (defined $threads_enabled) {
-	$use_threads = $threads_enabled;
-    } else {
-	# あがいても仕方ないと思うが試してみる。
-	eval q{
-	    use threads;
-	    use threads::shared;
-	};
-	$use_threads = ($@ ? 0 : 1);
-    }
-}
-
+our $use_threads = Tiarra::OptionalModules->threads;
 
 # usage:
 #  use Tiarra::SessionMixin;
