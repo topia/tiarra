@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Clovery: tiarra/test/inflate-test.perl,v 1.1 2003/02/09 19:54:43 topia Exp $
+# $Id$
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 
 # This perl script for testing System::Inflate module.

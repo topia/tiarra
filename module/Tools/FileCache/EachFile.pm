@@ -1,5 +1,7 @@
 # -*- cperl -*-
-# $Clovery: tiarra/module/Tools/FileCache/EachFile.pm,v 1.3 2003/07/24 03:03:29 topia Exp $
+# -----------------------------------------------------------------------------
+# $Id$
+# -----------------------------------------------------------------------------
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 package Tools::FileCache::EachFile;
 use strict;

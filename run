@@ -1,4 +1,5 @@
 #!/bin/sh
+# $Id$
 
 WORKDIR=${WORKDIR:-$(dirname $0)}
 [ -f "${WORKDIR}/.tiarrarc" ] && . "${WORKDIR}/.tiarrarc"

@@ -1,5 +1,7 @@
 # -*- cperl -*-
-# $Clovery: tiarra/module/Channel/Join/Invite.pm,v 1.1 2003/03/23 06:12:33 topia Exp $
+# -----------------------------------------------------------------------------
+# $Id$
+# -----------------------------------------------------------------------------
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 package Channel::Join::Invite;
 use strict;

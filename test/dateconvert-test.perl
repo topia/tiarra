@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Clovery: tiarra/test/dateconvert-test.perl,v 1.2 2003/07/27 06:51:35 topia Exp $
+# $Id$
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 
 # This perl script for testing System::DateConvert module.

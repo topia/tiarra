@@ -1,5 +1,7 @@
 # -*- cperl -*-
-# $Clovery: tiarra/module/Tools/LinedDB.pm,v 1.2 2003/03/17 07:18:25 topia Exp $
+# -----------------------------------------------------------------------------
+# $Id$
+# -----------------------------------------------------------------------------
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 package Tools::LinedDB;
 use strict;

@@ -1,5 +1,5 @@
 # -*- cperl -*-
-# $Id: GroupDB.pm,v 1.6 2003/09/25 13:16:00 topia Exp $
+# $Id$
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 
 # エイリアスのように、HashをレコードとしたDBを管理する。

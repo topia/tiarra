@@ -1,5 +1,7 @@
 # -*- cperl -*-
-# $Clovery: tiarra/module/System/Inflate/Zlib.pm,v 1.1 2003/02/09 18:54:26 topia Exp $
+# -----------------------------------------------------------------------------
+# $Id$
+# -----------------------------------------------------------------------------
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 package System::Inflate::Zlib;
 use strict;

@@ -1,5 +1,7 @@
 # -*- cperl -*-
-# $Clovery: tiarra/module/System/Inflate.pm,v 1.2 2003/02/09 18:53:38 topia Exp $
+# -----------------------------------------------------------------------------
+# $Id$
+# -----------------------------------------------------------------------------
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 package System::Inflate;
 use strict;

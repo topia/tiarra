@@ -1,9 +1,8 @@
 # -*- cperl -*-
 # -----------------------------------------------------------------------------
-# $Id: Calc.pm,v 1.2 2003/08/24 18:21:13 topia Exp $
+# $Id$
 # -----------------------------------------------------------------------------
-# $Clovery: tiarra/module/Auto/Calc.pm,v 1.2 2003/08/24 18:21:13 topia Exp $
-# copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
+# copyright (C) 2003-2004 Topia <topia@clovery.jp>. all rights reserved.
 package Auto::Calc::Share;
 use strict;
 use warnings;

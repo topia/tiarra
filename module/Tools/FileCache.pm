@@ -1,6 +1,6 @@
 # -*- cperl -*-
 # Tools::FileCache, Data shared file cache service.
-# $Id: FileCache.pm,v 1.3 2003/09/25 13:16:00 topia Exp $
+# $Id$
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 package Tools::FileCache;
 use strict;

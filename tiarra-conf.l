@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Package: EDITOR -*-
 
-;; $Id: tiarra-conf.l,v 1.1 2003/05/21 04:17:25 admin Exp $
+;; $Id$
 
 ;;tiarra-conf.l (tiarra-conf.el�̈ڐA)
 ;;Copyright (C) 2003 Noboruhi

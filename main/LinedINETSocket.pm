@@ -1,5 +1,5 @@
 # -*- cperl -*-
-# $Id: LinedINETSocket.pm,v 1.8 2004/03/27 10:41:17 admin Exp $
+# $Id$
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 # this module based IrcIO.pm, thanks phonohawk!
 package LinedINETSocket;

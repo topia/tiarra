@@ -1,5 +1,7 @@
 # -*- cperl -*-
-# $Clovery: tiarra/module/Auto/Reply.pm,v 1.4 2003/07/27 07:32:51 topia Exp $
+# -----------------------------------------------------------------------------
+# $Id$
+# -----------------------------------------------------------------------------
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 package Auto::Reply;
 use strict;

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: GetVersion.pm,v 1.1 2004/06/19 09:33:43 topia Exp $
+# $Id$
 # -----------------------------------------------------------------------------
 # copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
 package Client::GetVersion;

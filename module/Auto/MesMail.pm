@@ -1,5 +1,6 @@
-# -*- cperl -*-
-# $Clovery: tiarra/module/Auto/MesMail.pm,v 1.7 2003/07/27 07:24:44 topia Exp $
+# -----------------------------------------------------------------------------
+# $Id$
+# -----------------------------------------------------------------------------
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 package Auto::MesMail;
 use strict;

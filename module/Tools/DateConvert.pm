@@ -1,10 +1,9 @@
 # -----------------------------------------------------------------------------
-# $Id: DateConvert.pm,v 1.2 2003/07/31 07:34:14 topia Exp $
+# $Id$
 # -----------------------------------------------------------------------------
 # これはTiarraモジュールではありません。
 # %Yや%mなどを置換する機能を提供します。
 # -----------------------------------------------------------------------------
-# $Clovery: tiarra/module/Tools/DateConvert.pm,v 1.4 2003/07/24 02:59:30 topia Exp $
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 
 # This module is supports POSIX strftime; based NetBSD libc strftime.

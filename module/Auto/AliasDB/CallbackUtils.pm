@@ -1,5 +1,6 @@
-# -*- cperl -*-
-# $Clovery: tiarra/module/Auto/AliasDB/CallbackUtils.pm,v 1.12 2003/03/23 06:07:51 topia Exp $
+# -----------------------------------------------------------------------------
+# $Id$
+# -----------------------------------------------------------------------------
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
 
 package Auto::AliasDB::CallbackUtils;
