@@ -367,7 +367,8 @@ my $server_sent = {
 	map {
 	    (NumericReply::fetch_number($_), $sub);
 	} ((map {"RPL_$_"}
-		((map { ("$_", "ENDOF$_"); } qw(INVITELIST EXCEPTLIST BANLIST)),
+		((map { ("$_", "ENDOF$_"); } map {$_.'LIST'}
+		      qw(INVITE EXCEPT BAN REOP)),
 		 (map {"ENDOF$_"} qw(WHO NAMES)),
 		 qw(LIST CHANNELMODEIS NOTOPIC TOPIC TOPICWHOTIME),
 		 qw(CREATIONTIME))),
