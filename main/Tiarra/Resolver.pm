@@ -225,7 +225,7 @@ sub _resolve {
 	    while (scalar(@res) >= 5) {
 		# check proto,... etc
 		(undef, undef, undef, $saddr, undef, @res) = @res;
-		$addr = getnameinfo($saddr, NI_NUMERICHOST);
+		($addr, undef) = getnameinfo($saddr, NI_NUMERICHOST);
 		if (defined $addr && !$addrs{$addr}) {
 		    $addrs{$addr} = 1;
 		    push(@addrs, $addr);
@@ -257,7 +257,7 @@ sub _resolve {
 	    while (scalar(@res) >= 5) {
 		# check proto,... etc
 		(undef, undef, undef, $saddr, undef, @res) = @res;
-		$host = getnameinfo($saddr, NI_NAMEREQD);
+		($host, undef) = getnameinfo($saddr, NI_NAMEREQD);
 		if (defined $host && !$hosts{$host}) {
 		    $hosts{$host} = 1;
 		    push(@hosts, $host);
