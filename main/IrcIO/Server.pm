@@ -375,8 +375,8 @@ sub attach {
 
     $this->SUPER::attach($connector->sock);
     $this->{connecting} = undef;
-    $this->{server_addr} = $connector->addr;
-    $this->{proto} = $connector->type_name;
+    $this->{server_addr} = $connector->current_addr;
+    $this->{proto} = $connector->current_type;
     $this->state_connected(1);
 
     $this->_send_connection_messages;
