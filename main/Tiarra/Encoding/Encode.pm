@@ -93,7 +93,7 @@ sub getcode {
 		return wantarray ? ($enc->name, $enc) : $enc->name;
 	    }
 	}
-	return wantarray ? (undef, $enc, @other) : undef;
+	return wantarray ? ('unknown', $enc, @other) : 'unknown';
     }
 }
 sub h2z {
@@ -176,7 +176,7 @@ sub set {
 	    @codes = split(/\s*,\s*/, $code);
 	}
 	my ($enc, @enc_others) = $this->getcode($str, @codes);
-	if (defined $enc) {
+	if (defined $enc && $enc ne 'unknown') {
 	    $code = $enc;
 	} else {
 	    $enc = shift @enc_others;

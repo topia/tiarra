@@ -18,6 +18,10 @@ sub getcode {
     my $str = shift;
     my @encodings = (@_ ? @_ : @default_probe_encodings);
     my $guess = $this->{unijp}->getcode($str);
+
+    # really unknown encoding.
+    return $guess if $guess eq 'unknown';
+
     # getcodeで検出された文字コードでencodingsに指定されているものがあれば採用。
     # 無ければencodingsの一番最初を採用する。 (UTF-8をSJISと認識したりするため。)
     $guess = ((grep {$guess eq $_} @encodings), @encodings)[0];
@@ -37,6 +41,7 @@ sub set {
 	if ($code =~ /,/) {
 	    # comma seperated guess-list
 	    $code = $this->getcode($str, split(/\s*,\s*/, $code));
+	    $code = 'binary' if $code eq 'unknown';
 	}
 
 	if (ref($str) && !overload::Method($str,'""')) {
