@@ -49,7 +49,7 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
   - BulletinBoard(main/BulletinBoard.pm)
     ここで紹介する関数は、全て BulletinBoard->shared->function(...) と呼んで下さい。
     + set($key, $value)		掲示板に $key という名前で値 $value をセットします。
-    				$value を __PACKAGE__."/key" という名前にすれば
+    				$key を __PACKAGE__."/key" という名前にすれば
 				被りにくいと思います。
     + get($key)			$key でセットした値を得ます。
     + keys			BulletinBoard が保持しているテーブルを返します。
