@@ -35,6 +35,7 @@ use strict;
 use warnings;
 use Carp;
 use Unicode::Japanese;
+use Data::Dumper;
 
 use constant PREFIX  => 0;
 use constant COMMAND => 1;
@@ -114,9 +115,14 @@ sub new {
 }
 
 sub clone {
-    my $this = shift;
-    my @new = @$this;
-    bless \@new => ref($this);
+    my ($this, %args) = @_;
+    if ($args{deep}) {
+	eval
+	    Data::Dumper->new([$this])->Terse(1)->Deepcopy(1)->Purity(1)->Dump;
+    } else {
+	my @new = @$this;
+	bless \@new => ref($this);
+    }
 }
 
 sub _parse {
