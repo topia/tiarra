@@ -9,7 +9,6 @@ package Module;
 use strict;
 use warnings;
 use Carp;
-use RunLoop;
 use Tiarra::ShorthandConfMixin;
 use Tiarra::Utils;
 # our @USES = ();
