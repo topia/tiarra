@@ -18,7 +18,8 @@ sub new {
     my ($class) = @_;
     my $this = $class->SUPER::new;
     $this->{safe} = Safe->new();
-    $this->{safe}->permit_only(qw(:base_core atan2 sin cos exp sqrt log exp pack unpack));
+    $this->{safe}->permit_only(qw(:base_core :base_math :base_orig),
+			       qw(sort pack unpack));
 
     return $this;
 }
@@ -42,13 +43,14 @@ sub message_arrived {
 
 	# request
 	if (Mask::match_deep([$this->config->request('all')], $keyword)) {
-	    if (Mask::match_deep_chan([$this->config->mask('all')], $msg->prefix, $get_full_ch_name->())) {
+	    if (Mask::match_deep_chan([$this->config->mask('all')],
+				      $msg->prefix, $get_full_ch_name->())) {
 		my ($ret, $err);
 		do {
 		    # disable warning
 		    local $SIG{__WARN__} = sub { };
 		    # die handler
-		    local $SIG{__DIE__} = sub { $err = $_[0] };
+		    local $SIG{__DIE__} = sub { $err = $_[0]; };
 		    no strict;
 		    $ret = $this->{safe}->reval($method);
 		};
@@ -79,10 +81,25 @@ sub message_arrived {
 		};
 
 		if ($err) {
-		    if ($err) {
-			$err =~ s/ +at \(eval \d+\) line \d+//;
+		    $err =~ s/ +at \(eval \d+\) line \d+//;
+		    my $format = undef;
+		    # format の個別化 (elapsed min: 5)
+		    my $error_name = $err;
+		    if ($this->config->error_name_formatter) {
+			
 		    }
-		    $reply->([$this->config->error_format('all')]);
+		    $error_name =~ s/'.+' (trapped by operation mask)/$1/;
+		    $error_name =~ s/(Undefined subroutine) \&.+ (called)/$1 $2/;
+		    $error_name =~ tr/ _/-/;
+		    $error_name =~ tr/'`//d;
+		    $error_name =~ s/\.$//;
+		    $error_name =~ s/-+$//;
+		    $error_name =~ tr/[A-Z]/[a-z]/;
+		    ::debug_printmsg("error_name: $error_name");
+
+		    $format = [$this->config->error_format('all')]
+			unless defined $format;
+		    $reply->($format);
 		} else {
 		    $reply->([$this->config->reply_format('all')]);
 		}
@@ -95,3 +112,25 @@ sub message_arrived {
 }
 
 1;
+=pod
+info: Perlの式を計算させるモジュール。
+default: off
+
+# 反応する発言を指定します。
+request: 計算
+
+# 使用を許可する人&チャンネルのマスク。
+# 例はTiarraモード時。 [default: なし]
+mask: * +*!*@*
+# [plum-mode] mask: +*!*@*
+
+# 結果が未定義だったときに置き換えられる文字列。省略されると undef 。
+-undef: (未定義)
+
+# 正常に計算できたときのフォーマット
+reply-format: 
+
+# エラーが起きたときのフォーマット
+error-format: 
+
+=cut

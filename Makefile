@@ -10,5 +10,8 @@ all:
 update:
 	cvs -z 5 -q up -dP
 
-diff:
+checkdiff:
 	diff -rub -I Clovery: -I Id: -x CVS -x .svn ../vendor/cvs/master .
+
+diff:
+	diff -ru -I Clovery: -I Id: -x CVS -x .svn ../vendor/cvs/master .
