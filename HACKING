@@ -7,6 +7,9 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
 * 注意すべき事項
   - Tiarra はシングルスレッドです。時間がかかる処理をそのままやってはいけません。
     Timer や Hook, ソケット入出力なら ExternalSocket を使って少しずつ処理してください。
+  - conf の変更が起きると、モジュールはインスタンスごと再初期化されます。
+    設定変更後にも必要なデータは、適切なオブジェクトの remark か、 BulletinBoard に
+    書いてください。
 
 * 良く使うモジュール/関数
   - Mask(main/Mask.pm)
@@ -33,7 +36,7 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
     + channel($str)	チャンネルを探す。
       ネットワーク名付きのチャンネル名が引数です。無ければ undef を返します。
     + broadcast_to_clients(@messages)	 メッセージを全てのクライアントに送信する。
-    * notify_msg($str)		全てのクライアントと、 STDOUT にメッセージを通知します。
+    + notify_msg($str)		全てのクライアントと、 STDOUT にメッセージを通知します。
     + notify_error($str)	notify_msg を使ってエラーを通知します。
     + notify_warn($str)		notify_msg を使って警告を通知します。
 
@@ -43,6 +46,43 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
     + ::debug_mode()		デバッグモードなら 1 を返します。
     + ::ipv6_enabled()		IPv6 が有効なら 1 を返します。
 
+  - BulletinBoard(main/BulletinBoard.pm)
+    ここで紹介する関数は、全て BulletinBoard->shared->function(...) と呼んで下さい。
+    + set($key, $value)		掲示板に $key という名前で値 $value をセットします。
+    				$value を __PACKAGE__."/key" という名前にすれば
+				被りにくいと思います。
+    + get($key)			$key でセットした値を得ます。
+    + keys			BulletinBoard が保持しているテーブルを返します。
+    				この内容を変更すると、当然 BulletinBoard の内容も変わります。
+
   - Auto::Utils(module/Auto/Utils.pm)
     + generate_reply_closures(...)	一般的な自動反応をするのに有用なクロージャを生成する。
       一般的な使い方は Skelton.pm に書いておきました。
+
+* remark のあるオブジェクト
+  remark 機能の存在するオブジェクトと、(あるなら)広く使われている既定の remark を挙げます。
+  - IrcIO::Client
+  - IrcIO::Server
+    + 情報取得系
+      * server_hops		自分のつながっている server と、あるサーバの hop 数の対応を
+				(情報が得られたときに)記録しています。
+  - IRCMessage
+    + 情報取得系
+      * affected-channels	NICK や QUIT などの全チャンネルに波及するメッセージのときに
+				影響を受けたチャンネルが設定されていることがあります。
+      * old-topic		TOPIC 時に一つ前のトピックが設定されています。
+    + 動作設定系
+      * fill-prefix-when-sending-to-client
+				クライアントに送信するときに prefix (Tiarra が 001(RPL_WELCOME)
+				で返したもの) を補完します。
+      * do-not-send-to-clients	このメッセージを(ほかのモジュールで処理する可能性があるために
+				残すけれど)クライアントには送信しないようにします。
+      * do-not-send-to-servers	do-not-send-to-clients と同じような理由で、サーバに送信しない
+				ようにします。
+  - ChannelInfo
+    + 情報取得系
+      * kicked-out		そのチャンネルから蹴り出されている(すでにそのチャンネルに
+				いない)かどうか。
+      * switches-are-known	チャンネルモードを取得済みかどうか。
+  - PersonInChannel
+  - PersonalInfo
