@@ -4,3 +4,5 @@
 
 PERL=${PERL:-/usr/opt/bin/perl}
 PERLARG=${PERLARG:--wt}
+TIARRAARG="${TIARRAARG} '-D@@TOPDIR@@=${TOPDIR}'"
+TIARRAARG="${TIARRAARG} '-D@@COMMONDIR@@=${TOPDIR}/common'"
