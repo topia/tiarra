@@ -19,10 +19,6 @@ our $ExportLevel = 0;
 #         });
 # in define_*s' wrapper function.
 
-# can't use; because this module referred by SharedMixin.
-#use Tiarra::SharedMixin;
-
-
 # all function is class method.
 # please use package->method(...);
 # maybe all functions can use with Tiarra::Utils->...
@@ -60,23 +56,29 @@ sub _generate_attr_closure {
     my $attr = shift;
     # outside parentheses for context
     my $str = join('',
-	      '(sub',
-	      ({
-		  accessor => ' : lvalue',
-		  getter   => '',
-	      }->{$type}),
-	      ' {',
-	      ({
-		  accessor => ' my $this = shift',
-		  getter   => ' shift',
-	      }->{$type}),
-	      ($class_method_p ? '->_this' : ''),
-	      ({
-		  accessor => "; \$this->$attr = shift if \$#_ >= 0; \$this",
-		  getter   => '',
-	      }->{$type}),
-	      "->$attr;",
-	      ' })');
+		   '(sub',
+		   ({
+		       accessor => ' : lvalue',
+		       getter   => '',
+		   }->{$type}),
+		   ' {',
+		   ' die "too many args" if $#_ >= ',
+		   ({
+		       accessor => '2',
+		       getter   => '1',
+		   }->{$type}),
+		   ';',
+		   ({
+		       accessor => ' my $this = shift',
+		       getter   => ' shift',
+		   }->{$type}),
+		   ($class_method_p ? '->_this' : ''),
+		   ({
+		       accessor => "; \$this->$attr = shift if \$#_ >= 0; \$this",
+		       getter   => '',
+		   }->{$type}),
+		   "->$attr;",
+		   ' })');
     no strict 'refs';
     no warnings;
     eval $str;
