@@ -5,10 +5,13 @@
 # copyright (C) 2003-2004 Topia <topia@clovery.jp>. all rights reserved.
 package Auto::Calc::Share;
 use strict;
+our $__export = [qw(pi pie e frac)];
+sub export () { $__export }
 
-sub pi () { 3.141592653589793238; }
-sub pie () { pi(); }
-sub e () { exp(1); }
+sub pi () { 3.141592653589793238 }
+sub pie () { pi }
+sub e () { exp(1) }
+sub frac ($) { $_[0] - int($_[0]) }
 
 package Auto::Calc;
 use strict;
@@ -33,7 +36,8 @@ sub new {
     if (!$this->config->permit_sub) {
 	$this->{safe}->deny(qw(leavesub));
     }
-    $this->{safe}->share_from(__PACKAGE__.'::Share', [qw(pi pie e)]);
+    my $pkg = __PACKAGE__.'::Share';
+    $this->{safe}->share_from($pkg, $pkg->export);
 
     return $this;
 }
