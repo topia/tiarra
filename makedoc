@@ -41,15 +41,20 @@ sub makeconf {
     }
 
     # module下の.pmを検索
+    my @modules;
     find(sub {
 	if (-f $_ && $_ =~ m/\.pm$/) {
-	    my @confs = DocParser::Module->new($_)->makeconf;
-	    foreach my $conf (@confs) {
-		print $conf->[0]." : ".$unijp->set($conf->[1])->$stdout_charset."\n";
-		$t->modules->add(module => $unijp->set($conf->[2])->$conf_charset);
-	    }
+	    push @modules, $File::Find::name;
 	}
     },'module');
+
+    map {
+	my @confs = DocParser::Module->new($_)->makeconf;
+	foreach my $conf (@confs) {
+	    print $conf->[0]." : ".$unijp->set($conf->[1])->$stdout_charset."\n";
+	    $t->modules->add(module => $unijp->set($conf->[2])->$conf_charset);
+	}
+    } sort @modules;
 
     my $fh = IO::File->new($conf_output,'w');
     $fh->print($t->str);
@@ -96,6 +101,14 @@ sub classify_modules {
 	    $classify->($doc) if defined $doc;
 	}
     },'module');
+
+    # ソート
+    foreach (keys %$classified) {
+	@{$classified->{$_}} = 
+	    map { $_->[1] } 
+		sort { $a->[0] cmp $b->[0] }
+		    map { [$_->pkg_name, $_]; } @{$classified->{$_}};
+    }
 
     $classify_modules_CACHE = $classified;
     $classified;
@@ -259,6 +272,9 @@ sub makehtml_mods_toc {
 		'';
 	    }
 	};
+	if ($description eq '') {
+	    warn "group $groupname don't have description.";
+	}
 
 	my $unijp = Unicode::Japanese->new;
 
