@@ -61,10 +61,11 @@ sub message_arrived {
 		    map {
 			if (defined($$_)) {
 			    # 汚染の除去
-			    $$_ =~ tr/\t\n/ /;
-			    $$_ =~ tr/\x00-\x1f//;
+			    $$_ =~ tr/\t\x0a\x0d/ /;
+			    $$_ =~ tr/\x00-\x19//d;
 			    $$_ =~ s/^\s+//;
 			    $$_ =~ s/\s+$//;
+			    $$_ =~ s/\s{2,}/ /;
 			} else {
 			    $$_ = $this->config->undef || 'undef';
 			}
@@ -128,9 +129,9 @@ mask: * +*!*@*
 -undef: (未定義)
 
 # 正常に計算できたときのフォーマット
-reply-format: 
+reply-format: test
 
 # エラーが起きたときのフォーマット
-error-format: 
+error-format: test
 
 =cut
