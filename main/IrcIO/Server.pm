@@ -355,7 +355,7 @@ sub _try_connect_socket {
 	    my ($subject, $socket, $obj) = @_;
 
 	    if ($subject eq 'sock') {
-		$this->_attach;
+		$this->_attach($obj);
 	    } elsif ($subject eq 'error') {
 		$this->_connect_error($obj);
 	    } elsif ($subject eq 'warn') {
@@ -367,16 +367,13 @@ sub _try_connect_socket {
 }
 
 sub _attach {
-    my ($this) = @_;
+    my ($this, $connector) = @_;
 
     $this->{connecting} = undef;
-    if ($this->_connect_interrupted) {
-	return $this->disconnect;
-    }
-    $this->{sock} = $this->{connector}->sock;
+    $this->{sock} = $connector->sock;
     $this->{sock}->autoflush(1);
-    $this->{server_addr} = $this->{connector}->host;
-    $this->{proto} = $this->{connector}->type_name;
+    $this->{server_addr} = $connector->host;
+    $this->{proto} = $connector->type_name;
     $this->{connected} = 1;
     $this->state_connected(1);
 
