@@ -438,6 +438,7 @@ sub _receive_after_logged_in {
 		    my $old_nick = $msg->nick;
 		    RunLoop->shared_loop->broadcast_to_clients(
 			IRCMessage->new(
+			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 			    Command => 'NOTICE',
 			    Params => [$local_nick,
 				       "*** Your global nick in ".
@@ -975,11 +976,11 @@ sub _RPL_CHANNELMODEIS {
     my $ch = $this->{channels}->{$msg->param(1)};
     if (defined $ch) {
 	$ch->remarks('switches-are-known',1);
-    }
 
-    # switches と parameters は必ず得られると仮定して、クリア処理を行う
-    $ch->switches(undef, undef, 'clear');
-    $ch->parameters(undef, undef, 'clear');
+	# switches と parameters は必ず得られると仮定して、クリア処理を行う
+	$ch->switches(undef, undef, 'clear');
+	$ch->parameters(undef, undef, 'clear');
+    }
 
     # 鯖がMODEを実行したことにして、_MODEに処理を代行させる。
     my @args = @{$msg->params};
@@ -1003,6 +1004,7 @@ sub _set_to_next_nick {
 	    Param => $next_nick));
     RunLoop->shared_loop->broadcast_to_clients(
 	new IRCMessage(
+	    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 	    Command => 'NOTICE',
 	    Params => [RunLoop->shared_loop->current_nick,$msg_for_user]));
     main::printmsg($msg_for_user);
