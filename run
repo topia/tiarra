@@ -23,7 +23,23 @@ TIARRA=${TIARRA:-${TOPDIR}/tiarra}
 CONF=${CONF:-tiarra.conf}
 REDIR_STDOUT=${REDIR_STDOUT:-errlog.stdout}
 REDIR_STDERR=${REDIR_STDERR:-errlog.stderr}
+REDIR_STDIN=${REDIR_STDIN:-&-}
 DAEMON_MODE=${DAEMON_MODE:-yes}
+
+
+cmd_line='${PERL} ${PERLARG}'
+cmd_line="${cmd_line} "'${TIARRA} --config="${CONF}"'
+cmd_line="${cmd_line} "' "$@"'
+[ "X${REDIR_STDOUT}" = "X-" ] || cmd_line="${cmd_line} >>${REDIR_STDOUT}"
+[ "X${REDIR_STDERR}" = "X-" ] || cmd_line="${cmd_line} 2>>${REDIR_STDERR}"
+[ "X${REDIR_STDIN}" = "X-" ] || cmd_line="${cmd_line} <${REDIR_STDIN}"
+
+if [ "X${DAEMON_MODE}" = "Xyes" ]; then
+  cmd_line="${cmd_line} &"
+else
+  cmd_line="exec ${cmd_line}"
+fi
+
 
 if [ \! -z "${DEBUG}" ]; then
   echo "    configuration"
@@ -35,12 +51,11 @@ if [ \! -z "${DEBUG}" ]; then
   echo "extra  : $@"
   echo "stdout : ${REDIR_STDOUT}"
   echo "stderr : ${REDIR_STDERR}"
+  echo "stdin  : ${REDIR_STDIN}"
   echo "daemon : ${DAEMON_MODE}"
+  echo "cmdline:"
+  echo "    ${cmd_line}"
 else
   cd "${WORKDIR}"
-  if [ "X${DAEMON_MODE}" = "Xyes" ]; then
-    ${PERL} ${PERLARG} ${TIARRA} "--config=${CONF}" "$@" >>"${REDIR_STDOUT}" 2>>"${REDIR_STDERR}" <&- &
-  else
-    exec ${PERL} ${PERLARG} ${TIARRA} "--config=${CONF}" "$@" >>"${REDIR_STDOUT}" 2>>"${REDIR_STDERR}" <&-
-  fi
+  eval "${cmd_line}"
 fi
