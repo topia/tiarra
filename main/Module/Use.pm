@@ -16,7 +16,7 @@ sub import {
     my ($caller_pkg) = caller;
 
     # use元の@USEに@modulesを設定。これは到達可能性のトレースに用いられる。
-    eval qq{ \@${caller_pkg}::USE = \@modules; };
+    eval qq{ push(\@${caller_pkg}::USE, \@modules); };
 
     # use先のUSEDにuse元のクラス名を追加。これはサブモジュール更新時の影響範囲の特定に用いられる。
     foreach (@modules) {
