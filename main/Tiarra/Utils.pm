@@ -14,6 +14,13 @@ use Tiarra::Utils::DefineHelper;
 use base qw(Tiarra::Utils::DefineHelper);
 use Tiarra::Utils::CallWrapper;
 use base qw(Tiarra::Utils::CallWrapper);
+use Exporter;
+use base qw(Exporter);
+our @EXPORT = qw(utils);
+
+sub utils {
+    __PACKAGE__->shared;
+}
 
 sub simple_caller_formatter {
     my $pkg = shift;
