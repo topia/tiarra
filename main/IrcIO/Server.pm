@@ -152,7 +152,7 @@ sub fullname {
     $_[0]->{current_nick}.'!'.$_[0]->{user_shortname}.'@'.$_[0]->{server_host};
 }
 
-sub config_or_default {
+sub config_local_or_general {
     my ($this, $base, $general_prefix, $local_prefix, $default) = @_;
 
     foreach ([$this->config, $local_prefix],
@@ -173,9 +173,9 @@ sub reload_config {
     $this->{server_host} = $conf->host;
     $this->{server_port} = $conf->port;
     $this->{server_password} = $conf->password;
-    $this->{initial_nick} = $this->config_or_default('nick'); # ログイン時に設定するnick。
-    $this->{user_shortname} = $this->config_or_default('user');
-    $this->{user_realname} = $this->config_or_default('name');
+    $this->{initial_nick} = $this->config_local_or_general('nick'); # ログイン時に設定するnick。
+    $this->{user_shortname} = $this->config_local_or_general('user');
+    $this->{user_realname} = $this->config_local_or_general('name');
     $this->{prefer_socket_types} = [qw(ipv6 ipv4)];
 }
 
@@ -328,8 +328,8 @@ sub _try_connect_ipv4 {
 
     my %additional;
     my $ipv4_bind_addr =
-	$this->config_or_default('ipv4-bind-addr') ||
-	    $this->config_or_default('bind-addr'); # 下は過去互換性の為に残す。
+	$this->config_local_or_general('ipv4-bind-addr') ||
+	    $this->config_local_or_general('bind-addr'); # 下は過去互換性の為に残す。
     if (defined $ipv4_bind_addr) {
 	$additional{bind_addr} = $ipv4_bind_addr;
     }
@@ -340,7 +340,7 @@ sub _try_connect_ipv6 {
     my ($this, $conn_struct) = @_;
 
     my %additional;
-    my $ipv6_bind_addr = $this->config_or_default('ipv6-bind-addr');
+    my $ipv6_bind_addr = $this->config_local_or_general('ipv6-bind-addr');
     if (defined $ipv6_bind_addr) {
 	$additional{bind_addr} = $ipv6_bind_addr;
     }
@@ -530,12 +530,12 @@ sub send_message {
 
     $this->SUPER::send_message(
 	$msg,
-	$this->config_or_default('out-encoding', 'server-'));
+	$this->config_local_or_general('out-encoding', 'server-'));
 }
 
 sub read {
     my $this = shift;
-    $this->SUPER::read($this->config_or_default('in-encoding', 'server-'));
+    $this->SUPER::read($this->config_local_or_general('in-encoding', 'server-'));
 
     # 接続が切れたら、各モジュールとRunLoopへ通知
     if (!$this->connected) {
