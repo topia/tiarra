@@ -319,21 +319,22 @@ sub reload_modules_if_modified {
 
 	    my $trace;
 	    $trace = sub {
-		my $modname = shift;
+		my ($modname, $depth) = @_;
+		++$depth;
 		no strict 'refs';
 		# このモジュールに%USEDは定義されているか？
 		my $USED = \%{$modname.'::USED'};
 		if (defined $USED) {
 		    # USEDの全ての要素に対し再帰的にマークを付ける。
 		    foreach my $used_elem (keys %$USED) {
-			$mods_to_be_reloaded->{$used_elem} = 1;
+			$mods_to_be_reloaded->{$used_elem} = $depth;
 			$show_msg->("$used_elem will be reloaded because of modification of $modname");
-			$trace->($used_elem);
+			$trace->($used_elem, $depth);
 		    }
 		}
 	    };
 
-	    $trace->($modname);
+	    $trace->($modname, 1);
 	}
     };
 
@@ -351,7 +352,10 @@ sub reload_modules_if_modified {
 
 	# マークされたモジュールをリロードするが、それが$mod2indexに登録されていたら
 	# インスタンスを作り直す。
-	foreach my $modname (keys %$mods_to_be_reloaded) {
+	foreach my $modname (map { $_->[0] }
+				 sort { $a->[1] <=> $b->[1] }
+				     map { [$_, $mods_to_be_reloaded->{$_}]; }
+					 keys %$mods_to_be_reloaded) {
 	    my $idx = $mod2index->{$modname};
 	    if (defined $idx) {
 		eval {
@@ -499,8 +503,8 @@ sub _unload {
     no strict;
     my(%stab) = %{$modname.'::'};
     my %shelter = map {
-	if ($_ =~ /::$/ &&
-		$_ !~ /^(SUPER)::$/ && $_ !~ /^::(ISA|ISA::CACHE)::$/) {
+	if (/::$/ &&
+		!/^(SUPER)::$/ && !/^::(ISA|ISA::CACHE)::$/) {
 	    ($_, $stab{$_});
 	} else {
 	    ();
