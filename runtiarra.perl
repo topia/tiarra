@@ -13,7 +13,6 @@ if ($0 =~ /^(.*)[\\\/][^\\\/]*$/) {
     $incpath = '.';
 }
 
-exec $^X, "$incpath/tiarra", @ARGV;
-#exec $^X, "-w", "$incpath/tiarra", @ARGV;
+exec $^X, "-w", "$incpath/tiarra", @ARGV;
 #exec $^X, "-w", "-I$incpath/main", "-I$incpath/module", "$incpath/tiarra", @ARGV;
 #exec $^X, "-w", "-d:DProf", "-I$incpath/main", "-I$incpath/module", "$incpath/tiarra", @ARGV;
