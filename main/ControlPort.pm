@@ -24,7 +24,6 @@ use strict;
 use warnings;
 use Carp;
 use IO::Dir;
-use LinedINETSocket;
 use ExternalSocket;
 use Unicode::Japanese;
 use RunLoop;
@@ -33,6 +32,8 @@ use RunLoop;
 #use SelfLoader;
 #1;
 #__DATA__
+
+sub TIARRA_CONTROL_ROOT () { '/tmp/tiarra-control'; }
 
 sub new {
     my ($class,$sockname) = @_;
@@ -44,10 +45,11 @@ sub new {
 	# 使えない。
 	die "Tiarra control socket is not available for this environment.\n";
     }
-    
+
     my $this = {
 	sockname => $sockname,
-	server_sock => undef, # LinedINETSocket
+	filename => TIARRA_CONTROL_ROOT.'/'.$sockname,
+	server_sock => undef, # ExternalSocket
 	clients => [], # ControlPort::Session
 	session_handle_hook => undef, # RunLoop::Hook
     };
@@ -59,23 +61,23 @@ sub new {
 
 sub open {
     my $this = shift;
-    my $sockname = $this->{sockname};
+    my $filename = $this->{filename};
 
     # ディレクトリ/tmp/tiarra-controlが無ければ作る。
-    if (!-d '/tmp/tiarra-control') {
-	mkdir '/tmp/tiarra-control' or die "Couldn't make directory /tmp/tiarra-control\n";
+    if (!-d TIARRA_CONTROL_ROOT) {
+	mkdir TIARRA_CONTROL_ROOT or die 'Couldn\'t make directory '.TIARRA_CONTROL_ROOT;
     }
 
     # リスニング用ソケットを開く。
     my $sock = IO::Socket::UNIX->new(
 	Type => &SOCK_STREAM,
-	Local => "/tmp/tiarra-control/$sockname",
+	Local => $filename,
 	Listen => 1);
     if (!defined $sock) {
-	die "Couldn't make socket /tmp/tiarra-control/$sockname\n";
+	die "Couldn't make socket $filename: $!";
     }
     # パーミッションを700に。
-    chmod 0700,"/tmp/tiarra-control/$sockname";
+    chmod 0700, $filename;
     $this->{server_sock} =
 	ExternalSocket->new(
 	    Socket => $sock,
@@ -91,23 +93,25 @@ sub open {
 
     # セッションハンドル用のフックをかける。
     $this->{session_handle_hook} =
-	RunLoop::Hook->new(sub {
-	    # セッション処理
-	    foreach my $client (@{$this->{clients}}) {
-		$client->main;
-	    }
-	    # 終了したセッションを削除
-	    @{$this->{clients}} = grep {
-		$_->is_alive;
-	    } @{$this->{clients}};
-	})->install;
+	RunLoop::Hook->new(
+	    'ControlPort Session Handler',
+	    sub {
+		# セッション処理
+		foreach my $client (@{$this->{clients}}) {
+		    $client->main;
+		}
+		# 終了したセッションを削除
+		@{$this->{clients}} = grep {
+		    $_->is_alive;
+		} @{$this->{clients}};
+	    })->install;
 
     $this;
 }
 
 sub DESTROY {
     my $this = shift;
-    
+
     # 切断
     if (defined $this->{server_sock}) {
 	eval {
@@ -116,20 +120,10 @@ sub DESTROY {
     }
 
     # このソケットファイルを削除
-    unlink "/tmp/tiarra-control/$this->{sockname}";
+    unlink $this->{filename};
 
-    # /tmp/tiarra-controlディレクトリにソケットが一つも無くなったら、このディレクトリも消す。
-    my $dh = IO::Dir->new('/tmp/tiarra-control');
-    my $sock_exists;
-    while (defined $dh && defined ($_ = $dh->read)) {
-	if (-S "/tmp/tiarra-control/$_") {
-	    $sock_exists = 1;
-	    last;
-	}
-    }
-    if (!$sock_exists) {
-	rmdir '/tmp/tiarra-control';
-    }
+    # ディレクトリにソケットが一つも無くなったら、このディレクトリも消える。
+    rmdir TIARRA_CONTROL_ROOT;
 
     $this;
 }
@@ -137,31 +131,33 @@ sub DESTROY {
 package ControlPort::Session;
 use strict;
 use warnings;
+use Tiarra::Socket::Lined;
+use base qw(Tiarra::Socket::Lined);
 
 sub new {
     # $sock: IO::Socket
     my ($class,$sock) = @_;
-    my $this = {
-	sock => LinedINETSocket->new->attach($sock),
-	method => undef, # GETまたはNOTIFY
-	module => undef, # Log::Channelなど。'::'はメインプログラムを表す。
-	header => undef, # {key => value}
-	input_is_frost => 0, # これ以上の入力を無視するか？
-    };
+    my $this = $class->SUPER::new(name => 'ControlPort::Session');
+    $this->{method} = undef; # GETまたはNOTIFY
+    $this->{module} = undef; # Log::Channelなど。'::'はメインプログラムを表す。
+    $this->{header} = undef; # {key => value}
+    $this->{input_is_frost} = 0; # これ以上の入力を無視するか？
     bless $this,$class;
+    $this->attach($sock);
+    $this->install;
 }
 
 sub main {
     my $this = shift;
 
-    while (defined($_ = $this->{sock}->pop_queue)) {
+    while (defined($_ = $this->pop_queue)) {
 	s/^\s*|\s*$//g;
 	my $line = $_;
 
 	if ($this->{input_is_frost}) {
 	    last;
 	}
-	
+
 	if (defined $this->{header}) {
 	    # $this->{header}が存在するということは、最初のリクエスト行はもう受け取った。
 	    if ($line eq '') {
@@ -203,27 +199,27 @@ sub reply {
     # $header: {key => value} 省略可。文字コードはUTF-8。SenderとCharsetは不要。
     my ($this,$code,$str,$header) = @_;
 
-    $this->{sock}->send_reserve("TIARRACONTROL/1.0 $code $str");
-    $this->{sock}->send_reserve('Sender: Tiarra #'.&::version);
+    $this->append_line("TIARRACONTROL/1.0 $code $str");
+    $this->append_line('Sender: Tiarra #'.&::version);
     my $unijp = Unicode::Japanese->new;
     if (defined $header) {
 	while (my ($key,$value) = each %$header) {
-	    $this->{sock}->send_reserve($unijp->set("$key: $value")->conv($this->charset));
+	    $this->append_line($unijp->set("$key: $value")->conv($this->charset));
 	}
     }
-    $this->{sock}->send_reserve('Charset: '.$this->long_charset);
-    $this->{sock}->send_reserve('');
-    $this->{sock}->disconnect_after_writing;
+    $this->append_line('Charset: '.$this->long_charset);
+    $this->append_line('');
+    $this->disconnect_after_writing;
 }
 
 sub charset {
     # リクエストで受け取ったCharsetから、Unicode::Japaneseエンコーディング名を返す。
     my $this = shift;
-    
+
     if (!defined $this->{header}) {
 	return 'utf8';
     }
-    
+
     my $charset = $this->{header}->{Charset};
     if (!defined $charset) {
 	return 'utf8';
@@ -251,7 +247,7 @@ sub long_charset {
 }
 
 sub is_alive {
-    shift->{sock}->connected;
+    shift->connected;
 }
 
 sub respond {
@@ -304,6 +300,8 @@ package ControlPort::Packet;
 use strict;
 use warnings;
 our $AUTOLOAD;
+use Tiarra::Utils ();
+Tiarra::Utils->define_attr_getter(0, qw(table));
 
 sub new {
     my $class = shift;
@@ -311,10 +309,6 @@ sub new {
 	table => {}, # {key => value}
     };
     bless $this,$class;
-}
-
-sub table {
-    shift->{table};
 }
 
 sub AUTOLOAD {
@@ -334,6 +328,8 @@ package ControlPort::Request;
 use strict;
 use warnings;
 use base qw(ControlPort::Packet);
+use Tiarra::Utils ();
+Tiarra::Utils->define_attr_getter(0, qw(method module));
 
 sub new {
     my ($class,$method,$module) = @_;
@@ -343,18 +339,12 @@ sub new {
     $this;
 }
 
-sub method {
-    shift->{method};
-}
-
-sub module {
-    shift->{module};
-}
-
 package ControlPort::Reply;
 use strict;
 use warnings;
 use base qw(ControlPort::Packet);
+use Tiarra::Utils ();
+Tiarra::Utils->define_attr_getter(0, qw(code status));
 
 sub new {
     # $code: 204など
@@ -364,14 +354,6 @@ sub new {
     $this->{code} = $code;
     $this->{status} = $status;
     $this;
-}
-
-sub code {
-    shift->{code};
-}
-
-sub status {
-    shift->{status};
 }
 
 1;
