@@ -3,10 +3,12 @@
 WORKDIR=${WORKDIR:-$(dirname $0)}
 [ -f "${WORKDIR}/.tiarrarc" ] && . "${WORKDIR}/.tiarrarc"
 TOPDIR=${TOPDIR:-.}
+PERL=${PERL:-/usr/opt/bin/perl}
+PERLARG=${PERLARG:--wt}
 TIARRA=${TIARRA:-${TOPDIR}/tiarra}
 CONF=${CONF:-tiarra.conf}
 REDIR_STDOUT=${REDIR_STDOUT:-errlog.stdout}
 REDIR_STDERR=${REDIR_STDERR:-errlog.stderr}
 
 cd "${WORKDIR}"
-${TIARRA} "--config=${CONF}" "$@" >> "${REDIR_STDOUT}" 2>> "${REDIR_STDERR}" <&- &
+${PERL} ${PERLARG} ${TIARRA} "--config=${CONF}" "$@" >> "${REDIR_STDOUT}" 2>> "${REDIR_STDERR}" <&- &
