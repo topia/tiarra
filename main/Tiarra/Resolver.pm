@@ -83,8 +83,8 @@ BEGIN {
 	eval 'use Socket6;';
     } else {
 	# dummy
-	sub NI_NUMERICHOST () { undef; }
-	sub NI_NAMEREQD () { undef; }
+	*NI_NUMERICHOST = sub () { undef; }
+	*NI_NAMEREQD = sub () { undef; }
     }
 }
 
