@@ -23,6 +23,7 @@ our %encoding_names = ( # please specify _Encode.pm's canonical_ name.
     utf16 => 'UTF-16',
     jis => (find_encoding('cp932-jis') ? 'cp932-jis' : '7bit-jis'),
     euc => 'euc-jp',
+    binary => 'utf8',
 );
 
 our @default_probe_encodings =
