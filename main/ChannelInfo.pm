@@ -13,12 +13,11 @@ our $AUTOLOAD;
 
 sub new {
     # nameに鯖名まで付けないように注意。#channel@ircnetはNG。
-    my ($class,$name,$network_name) = @_;    
+    my ($class,$name,$network_name) = @_;
     my $obj = {
 	name => $name,
 	network_name => $network_name,
 	topic => '',
-	topic => undef,
 	topic_who => undef,
 	topic_time => undef,
 	names => undef, # hash; nick => PersonInChannel
