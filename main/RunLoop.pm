@@ -1166,7 +1166,7 @@ sub apply_filters {
 	if (scalar(@$source) == 0) {
 	    return $source;
 	}
-	
+
 	foreach my $src (@$source) {
 	    my @reply = ();
 	    # 実行
@@ -1174,14 +1174,16 @@ sub apply_filters {
 		@reply = $mod->$method($src, @extra_args);
 	    }; if ($@) {
 		my $modname = ref($mod);
+		my $error = $@;
 		# ブラックリストに入れておく
 		$this->_mod_manager->add_to_blacklist($modname);
 		$this->notify_error(
 		    "Exception in ".$modname.".\n".
 			"This module added to blacklist!\n".
 			    "The message was '".$src->serialize."'.\n".
-				"   $@");
+				"   $error");
 		$this->_mod_manager->remove_from_blacklist($modname);
+		@reply = ($src);
 	    }
 	    
 	    if (defined $reply[0]) {
@@ -1273,6 +1275,6 @@ FunctionalVariable::tie(
     FETCH => sub {
 	$HOOK_TARGET_NAME->shared_loop;
     },
-   );
+   ) unless defined $HOOK_TARGET_DEFAULT;
 
 1;
