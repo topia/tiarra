@@ -10,8 +10,15 @@ all:
 update:
 	cvs -z 5 -q up -dP
 
+DIFF_PATH :=
+VENDOR_MASTER := ../vendor/cvs/master
+VENDOR_WORKING := ../vendor/cvs/working
+
 checkdiff:
-	diff -rub -I Clovery: -I Id: -x CVS -x .svn ../vendor/cvs/master .
+	-diff -rub -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
 
 diff:
-	diff -ru -I Clovery: -I Id: -x CVS -x .svn ../vendor/cvs/master .
+	-diff -ru -I Clovery: -I Id: -x CVS -x .svn $(VENDOR_MASTER)/$(DIFF_PATH) ./$(DIFF_PATH)
+
+working:
+	cp ./$(DIFF_PATH) $(VENDOR_WORKING)/$(DIFF_PATH)
