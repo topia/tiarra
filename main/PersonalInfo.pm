@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: PersonalInfo.pm,v 1.7 2003/09/22 18:02:06 admin Exp $
+# $Id: PersonalInfo.pm,v 1.8 2003/09/28 05:15:22 admin Exp $
 # -----------------------------------------------------------------------------
 # nick,username,userhost等を持つ個人情報保持クラス。
 # このオブジェクトはIrcIO::Serverが管理する。
@@ -19,6 +19,7 @@ use constant USERNAME => 1;
 use constant USERHOST => 2;
 use constant REALNAME => 3;
 use constant SERVER   => 4;
+use constant REMARK   => 5;
 
 sub new {
     my ($class,%args) = @_;
@@ -35,6 +36,7 @@ sub new {
     $obj->[USERHOST] = $def_or_null->($args{UserHost});
     $obj->[REALNAME] = $def_or_null->($args{RealName});
     $obj->[SERVER] = $def_or_null->($args{Server});
+    $obj->[REMARK] = undef; # HASH
 
     $obj;
 }
@@ -60,6 +62,17 @@ BEGIN {
 	    }
 	};
     }
+}
+
+sub remark {
+    my ($this, $key, $value) = @_;
+    if (defined($value) or @_ >= 3) {
+	$this->[REMARK] ||= {};
+	$this->[REMARK]{$key} = $value;
+    }
+
+    $this->[REMARK] ?
+      $this->[REMARK]{$key} : undef;
 }
 
 

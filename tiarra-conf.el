@@ -1,6 +1,6 @@
 ;; -*- emacs-lisp -*-
 ;; ----------------------------------------------------------------------------
-;; $Id: tiarra-conf.el,v 1.4 2003/07/17 09:20:12 admin Exp $
+;; $Id: tiarra-conf.el,v 1.5 2003/09/28 05:15:22 admin Exp $
 ;; ----------------------------------------------------------------------------
 ;; tiarra.conf編集用モード。
 ;; ----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ Turning on tiarra-conf-mode runs the normal hook `tiarra-conf-mode-hook'."
   (setq mode-name "Tiarra-Conf")
   (setq major-mode 'tiarra-conf-mode)
 
-  ; フォントロックの設定
+  ;; フォントロックの設定
   (make-local-variable 'font-lock-defaults)
   (setq tiarra-conf-font-lock-keywords
 	(list '("^[\t ]*#.*$"
@@ -62,6 +62,22 @@ Turning on tiarra-conf-mode runs the normal hook `tiarra-conf-mode-hook'."
 	      '("^[\t ]*[^{}\n]+"
 		. font-lock-function-name-face))) ; ブロック名
   (setq font-lock-defaults '(tiarra-conf-font-lock-keywords t))
+
+  ;; mmm-modeの設定
+  (if (featurep 'mmm-auto)
+      (progn
+	(mmm-add-group
+	 'embedding-in-tconf
+	 '((pre-in-tconf
+	    :submode perl
+	    :front   "%PRE{"
+	    :back    "}ERP%")
+	   (code-in-tconf
+	    :submode perl
+	    :front   "%CODE{"
+	    :back    "}EDOC%")))
+	(setq mmm-classes 'embedding-in-tconf)
+	(mmm-mode-on)))
   
   (run-hooks 'tiarra-conf-mode-hook))
 
@@ -80,9 +96,9 @@ Turning on tiarra-conf-mode runs the normal hook `tiarra-conf-mode-hook'."
 トークンが無ければnilを返す。"
   (catch 'tiarra-conf-next-token
     ;; まずは空白とコメントを飛ばす。
-    ;; @文も%PREも飛ばす。
+    ;; @文も%PREも%CODEも飛ばす。
     ;; ……しかし「最小一致」の使へないElisp-Regexで
-    ;; だうやつて%PREに一致させたものだか分からない。
+    ;; どうやつて%PREに一致させたものだか分からない。
     ;; 助けて。
     (or (re-search-forward "^\\([\n\t ]\\|#.*\\|@.*\\)*" nil t 1)
 	(throw 'tiarra-conf-next-token nil))

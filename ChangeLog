@@ -1,3 +1,17 @@
+2003-09-28  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra-conf.el:
+	mmm-modeがインストールされていて、(require 'mmm-mode)または
+	(require 'mmm-auto)されている場合に、tiarra-conf用の設定を
+	行った後、それを有効にする。
+
+	mmm-modeのサイトは次のURLに。
+	http://mmm-mode.sourceforge.net/
+
+	* main/PersonalInfo.pm (remark):
+	追加。
+	これを保存するためのhashは、必要になった時まで作られない。
+
 2003-09-26  Topia  <topia@clovery.jp>
 
 	* tiarra:
@@ -928,7 +942,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.104 2003/09/26 12:07:12 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2003/09/26 12:07:12 $
-# Revision: $Revision: 1.104 $
+#       Id: $Id: ChangeLog,v 1.105 2003/09/28 05:15:22 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2003/09/28 05:15:22 $
+# Revision: $Revision: 1.105 $

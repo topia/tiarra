@@ -1,3 +1,13 @@
+2003-09-28  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra-conf.el:
+	mmm-modeがインストールされていて、(require 'mmm-mode)または
+	(require 'mmm-auto)されている場合に、tiarra-conf用の設定を
+	行った後、それを有効にする。
+
+	mmm-modeのサイトは次のURLに。
+	http://mmm-mode.sourceforge.net/
+
 2003-09-25  Topia  <topia@clovery.jp>
 
 	* このバージョン以前の Tiarra には、
