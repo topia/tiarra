@@ -11,6 +11,7 @@ use Carp;
 use Encode qw/find_encoding/;
 use Encode::Guess; # for getcode
 use Encode::JP::H2Z; # for h2zKana, z2hKana
+use Tiarra::OptionalModules;
 use base qw(Tiarra::Encoding);
 
 our %encoding_names = ( # please specify _Encode.pm's canonical_ name.
@@ -162,8 +163,11 @@ sub set {
 
     if (defined $encode && defined $str) {
 	if ($encode eq 'base64') {
-	    require MIME::Base64 || croak 'Couldn\'t load MIME::Base64.';
-	    $str = MIME::Base64::decode($str);
+	    # if you have perl-bundled encode, also have mime-base64.
+	    # (see Module::CoreList)
+	    Tiarra::OptionalModules->check('base64') or
+		    croak 'Couldn\'t load MIME::Base64.';
+	    $str = MIME::Base64::decode($str, '');
 	}
     }
 
@@ -204,8 +208,11 @@ sub conv {
 
     if (defined $encode && defined $str) {
 	if ($encode eq 'base64') {
-	    require MIME::Base64 || croak 'Couldn\'t load MIME::Base64.';
-	    $str = MIME::Base64::encode($str);
+	    # if you have perl-bundled encode, also have mime-base64.
+	    # (see Module::CoreList)
+	    Tiarra::OptionalModules->check('base64') or
+		    croak 'Couldn\'t load MIME::Base64.';
+	    $str = MIME::Base64::encode($str, '');
 	}
     }
     return $str;
