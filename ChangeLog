@@ -1,3 +1,27 @@
+2003-09-26  Topia  <topia@clovery.jp>
+
+	* tiarra:
+	--debug 時に warn と die に長いスタックトレースを表示する。
+
+	* main/ChannelInfo.pm:
+	topic_who と topic_time を追加。
+	エラーメッセージのミスを修正。
+
+	* main/Multicast.pm:
+	RPL_TOPICWHOTIME の追加。
+	hijack_local_to_global 時のフォールバック条件を訂正。
+
+	* main/IrcIO/Client.pm:
+	431 No nickname given の実装。
+	multi-server-mode でないときには nick 関連の特殊処理をしないように。
+	RPL_TOPICWHOTIME の実装。
+
+	* main/IrcIO/Server.pm:
+	437 nick/channel is temporarily unavailable に対応。
+	multi-server-mode でないときには nick 関連の特殊処理をしないように。
+	RPL_TOPICWHOTIME の実装。
+	9文字以上のnickが来たときに、可能な限り必要以上短くしないように。
+
 2003-09-25  Topia  <topia@clovery.jp>
 
 	* tiarra:
@@ -904,7 +928,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.103 2003/09/25 13:15:59 topia Exp $
+#       Id: $Id: ChangeLog,v 1.104 2003/09/26 12:07:12 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2003/09/25 13:15:59 $
-# Revision: $Revision: 1.103 $
+#     Date: $Date: 2003/09/26 12:07:12 $
+# Revision: $Revision: 1.104 $
