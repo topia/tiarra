@@ -27,16 +27,24 @@ sub getcode {
 sub set {
     my $this = shift;
     my $str = shift;
+    my $code = shift;
 
     if (!exists $this->{unijp}) {
 	$this->{unijp} = Unicode::Japanese->new;
     }
 
-    if (ref($str) && !overload::Method($str,'""')) {
-	croak "string neither scalar nor stringifiable";
+    if (defined $str) {
+	if ($code =~ /,/) {
+	    # comma seperated guess-list
+	    $code = $this->getcode($str, split(/\s*,\s*/, $code));
+	}
+
+	if (ref($str) && !overload::Method($str,'""')) {
+	    croak "string neither scalar nor stringifiable";
+	}
+	# do stringify force to avoid bug on unijp <= 0.26
+	$this->{unijp}->set("$str", $code, @_);
     }
-    # do stringify force to avoid bug on unijp <= 0.26
-    $this->{unijp}->set("$str", @_);
     $this;
 }
 

@@ -162,8 +162,13 @@ sub set {
 
     if (!defined $code) {
 	$code = 'utf8';
-    } elsif ($code eq 'auto') {
-	my ($enc, @enc_others) = $this->getcode($str);
+    } elsif ($code eq 'auto' || $code =~ /,/) {
+	my @encodings = ();
+	if ($code =~ /,/) {
+	    # comma seperated guess-list
+	    @encodings = split(/\s*,\s*/, $code);
+	}
+	my ($enc, @enc_others) = $this->getcode($str, @encodings);
 	if (defined $enc) {
 	    $code = $enc;
 	} else {
