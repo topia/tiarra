@@ -5,7 +5,7 @@
 # This is free software; you can redistribute it and/or modify it
 #   under the same terms as Perl itself.
 # -----------------------------------------------------------------------------
-# $Id: tiarra,v 1.28 2003/11/16 19:04:39 topia Exp $
+# $Id: tiarra,v 1.29 2003/11/17 01:27:19 topia Exp $
 # -----------------------------------------------------------------------------
 require 5.006;
 use strict;
@@ -16,12 +16,25 @@ use RunLoop;
 use ModuleManager;
 use ReloadTrigger;
 use IO::Handle;
-my $version = '0';
 my $conf_file = '';
 my $quiet = 0;
 my $no_fork = 0;
 
-&check_changelog;
+
+# version はバージョン番号
+my $version = '0';
+
+# based はベースにしている Tiarra のバージョン(パッケージまたは fork 時用)
+my $based_version = '';
+
+# short は短いバージョン番号。(CTCP-Version の返答に使われる)
+my $short_version = '';
+
+
+# オリジナル(based_version が未定義)ならば ChangeLog を検索する。
+&check_changelog unless $based_version;
+# short_version が未定義なら version の値を使う。
+$short_version ||= $version;
 
 &install_signal_handlers;
 
@@ -63,8 +76,8 @@ sub help {
     print "\n";
     print "options:\n";
     print "  --help           print this message\n";
-    print "  --dumpversion    print version\n";
     print "  --version        print version infomation\n";
+    print "  --dumpversion    print version\n";
     print "  --config=<file>  tiarra configuration file; default is 'tiarra.conf'\n";
     print "  --quiet          don't output any messages to stdout and stderr\n";
     print "  --no-fork        don't move to background when started in quiet mode\n";
@@ -118,7 +131,7 @@ if (&find_option('help')) {
     print join("\n",get_credit()) . "\n";
     exit;
 } elsif (&find_option('dumpversion')) {
-    print &version . "\n";
+    print $version . "\n";
     exit;
 }
 
@@ -241,11 +254,16 @@ sub printmsg {
 }
 
 sub version {
-    $version;
+    $short_version;
 }
 
 sub get_credit {
-    return ("- T i a r r a - :::version #${version}:::",
+    return (
+	(!$based_version ?
+	     "- T i a r r a - :::version #${version}:::" :
+		 ("- T i a r r a - :::version ${version}:::",
+		  "                    based #${based_version}")
+	    ),
 	    "Copyright (c) 2002-2003 phonohawk. All rights reserved.",
 	    "This is free software; you can redistribute it and/or modify it",
 	    "  under the same terms as Perl itself.");

@@ -1,5 +1,8 @@
 2003-11-17  Topia  <topia@clovery.jp>
 
+	* tiarra: enhancement.
+	パッケージ用にいくつかのバージョン変数を追加した。
+
 	* module/Log/Channel.pm: enhancement/need reload.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F23%2F%2Fpatch-1>
 	デフォルトのログファイルパーミッションを 644 から 600 にした。
@@ -1055,7 +1058,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.119 2003/11/16 19:04:39 topia Exp $
+#       Id: $Id: ChangeLog,v 1.120 2003/11/17 01:27:19 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2003/11/16 19:04:39 $
-# Revision: $Revision: 1.119 $
+#     Date: $Date: 2003/11/17 01:27:19 $
+# Revision: $Revision: 1.120 $
