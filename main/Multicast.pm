@@ -13,6 +13,7 @@ use warnings;
 use Configuration;
 use Carp;
 use NumericReply;
+use base qw(Tiarra::IRC::NewMessageMixin);
 my $runloop = undef; # デフォルトのRunLoopのキャッシュ。
 my $separator = ''; # セパレータ記号のキャッシュ。これらはcast_messageが呼ばれる度に更新される。
 
@@ -23,12 +24,10 @@ sub _ISON_from_client {
 
     while (my ($network_name,$params) = each %$networks) {
 	my $network = $runloop->networks->{$network_name};
-	@$params = map( local_to_global($_,$network) ,@$params);
-
-	forward_to_server(new IRCMessage(
-			      Command => $message->command,
-			      Params => $params),
-			  $network_name);
+	my $msg = $message->clone;
+	@{$msg->params} = map { local_to_global($_,$network) } @$params;
+	$msg->remark('real-generator',  __PACKAGE__);
+	forward_to_server($msg, $network_name);
     }
 }
 
@@ -71,10 +70,7 @@ sub _JOIN_from_client {
     if ($message->params->[0] eq '0') {
 	# 0は特殊。
 	# 全てのサーバーにJOIN 0を送る。
-	distribute_to_servers(
-	    new IRCMessage(
-		Command => 'JOIN',
-		Param => '0'));
+	distribute_to_servers($message->clone);
     }
     else {
 	my @targets = split(/,/,$message->params->[0]);
@@ -222,7 +218,7 @@ sub _WHOIS_from_client {
 	$message->param(0) eq $global_nick &&
 	$local_nick ne $global_nick) {
 	$sender->send_message(
-	    new IRCMessage(
+	    __PACKAGE__->construct_irc_message(
 		Prefix => $runloop->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [$local_nick,
@@ -469,7 +465,7 @@ sub from_server_to_client {
     my ($message, $sender) = @_;
     &_update_cache;
     # server -> clientの流れでは、一つのメッセージが複数に分割される事は無い。
-    # この関数は一つのIRCMessageを返す。
+    # この関数は一つのTiarra::IRC::Messageを返す。
 
     if ($message->command =~ /^\d+$/) {
 	# ニューメリックリプライの0番目のパラメタは全てnick。

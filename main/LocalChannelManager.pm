@@ -14,6 +14,8 @@ use strict;
 use warnings;
 use Carp;
 use Tiarra::SharedMixin;
+use NumericReply;
+use base qw(Tiarra::IRC::NewMessageMixin);
 our $_shared_instance;
 
 sub _new {
@@ -64,7 +66,7 @@ sub registered_p {
 }
 
 sub message_arrived {
-    # IRCMessageまたはundefを返す。
+    # Tiarra::IRC::Messageまたはundefを返す。
     my ($class_or_this, $msg, $sender) = @_;
     my $this = $class_or_this->_this;
 
@@ -99,16 +101,16 @@ sub _JOIN {
 		my $local_nick = RunLoop->shared->current_nick;
 		# まずJOIN
 		$sender->send_message(
-		    IRCMessage->new(
+		    $this->construct_irc_message(
 			Prefix => $sender->fullname,
 			Command => 'JOIN',
 			Param => $ch_name));
 		# 次にRPL_TOPIC(あれば)
 		if ($topic ne '') {
 		    $sender->send_message(
-			IRCMessage->new(
+			$this->construct_irc_message(
 			    Prefix => 'Tiarra',
-			    Command => '332',
+			    Command => RPL_TOPIC,
 			    Params => [
 				$local_nick,
 				$ch_name,
@@ -117,18 +119,18 @@ sub _JOIN {
 		}
 		# 次にRPL_NAMREPLY。この本人だけ。
 		$sender->send_message(
-		    IRCMessage->new(
+		    $this->construct_irc_message(
 			Prefix => 'Tiarra',
-			Command => '353',
+			Command => RPL_NAMREPLY,
 			Params => [$local_nick,
 				   '=',
 				   $ch_name,
 				   $local_nick]));
-		# そしてRPL_ENOFNAMES
+		# そしてRPL_ENDOFNAMES
 		$sender->send_message(
-		    IRCMessage->new(
+		    $this->construct_irc_message(
 			Prefix => 'Tiarra',
-			Command => '366',
+			Command => RPL_ENDOFNAMES,
 			Params => [$local_nick,
 				   $ch_name,
 				   'End of NAMES list']));

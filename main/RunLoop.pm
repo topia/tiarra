@@ -24,6 +24,7 @@ use Timer;
 use ControlPort;
 use Hook;
 use base qw(HookTarget);
+use base qw(Tiarra::IRC::NewMessageMixin);
 use Tiarra::OptionalModules;
 use Tiarra::ShorthandConfMixin;
 use Tiarra::SharedMixin qw(shared shared_loop);
@@ -184,7 +185,7 @@ sub change_nick {
 
     foreach my $io ($this->networks_list) {
 	$io->send_message(
-	    new IRCMessage(
+	    $this->construct_irc_message(
 		Command => 'NICK',
 		Param => $new_nick));
     }
@@ -239,7 +240,7 @@ sub _multi_server_mode_changed {
 	'Multi server mode *'.($new ? 'enabled' : 'disabled').'*',
 	q{It looks as if you would part all channels, but it's just an illusion.}) {
 	$this->broadcast_to_clients(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Prefix => $this->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [$this->current_nick, $string]));
@@ -260,7 +261,7 @@ sub _multi_server_mode_changed {
 	sub {
 	    my ($network, $ch, $client) = @_;
 	    $client->send_message(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Prefix => $client->fullname,
 		    Command => 'PART',
 		    Params => [
@@ -285,7 +286,7 @@ sub _multi_server_mode_changed {
     my $global_nick = (($this->networks_list)[0])->current_nick;
     if ($global_nick ne $this->current_nick) {
 	$this->broadcast_to_clients(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Command => 'NICK',
 		Param => $global_nick,
 		Remarks => {'fill-prefix-when-sending-to-client' => 1
@@ -357,7 +358,7 @@ sub _action_part_and_join {
 	foreach my $client (@{$this->clients}) {
 	    foreach my $ch (values %{$network->channels}) {
 		$client->send_message(
-		    IRCMessage->new(
+		    $this->construct_irc_message(
 			Prefix => $client->fullname,
 			Command => 'PART',
 			Params => [Multicast::attach_for_client($ch->name,$network_name),
@@ -372,7 +373,7 @@ sub _action_one_message {
     if ($event eq 'connected') {
 	$this->_rejoin_all_channels($network);
 	$this->broadcast_to_clients(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Prefix => $this->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [$this->current_nick,
@@ -380,7 +381,7 @@ sub _action_one_message {
     }
     elsif ($event eq 'disconnected') {
 	$this->broadcast_to_clients(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Prefix => $this->sysmsg_prefix(qw(priv system)),
 		Command => 'NOTICE',
 		Params => [$this->current_nick,
@@ -393,7 +394,7 @@ sub _action_message_for_each {
     if ($event eq 'connected') {
 	$this->_rejoin_all_channels($network);
 
-	my $msg = IRCMessage->new(
+	my $msg = $this->construct_irc_message(
 	    Prefix => $this->sysmsg_prefix(qw(channel system)),
 	    Command => 'NOTICE',
 	    Params => ['', # チャンネル名は後で設定。
@@ -404,7 +405,7 @@ sub _action_message_for_each {
 	}
     }
     elsif ($event eq 'disconnected') {
-	my $msg = IRCMessage->new(
+	my $msg = $this->construct_irc_message(
 	    Prefix => $this->sysmsg_prefix(qw(channel system)),
 	    Command => 'NOTICE',
 	    Params => ['', # チャンネル名は後で設定。
@@ -447,7 +448,7 @@ sub _rejoin_all_channels {
 	    }
 	};
 	$network->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Command => 'JOIN',
 		Params => $params));
 	$buf_ch = $buf_key = '';
@@ -605,7 +606,7 @@ sub close_client {
     my ($class_or_this, $client, $message) = @_;
     my $this = $class_or_this->_this;
     $client->send_message(
-	IRCMessage->new(
+	$this->construct_irc_message(
 	    Command => 'ERROR',
 	    Param => 'Closing Link: ['.$client->fullname_from_client.
 		'] ('.$message.')',
@@ -811,7 +812,7 @@ sub run {
 	Code => sub {
 	    foreach my $network ($this->networks_list) {
 		$network->send_message(
-		    IRCMessage->new(
+		    $this->construct_irc_message(
 			Command => 'PING',
 			Param => $network->server_hostname));
 
@@ -866,10 +867,10 @@ sub run {
 	#
 	# 書きこみ可能なソケットを集めて、必要があれば書き込む。
 	# 次に読み込み可能なソケットを集めて、(読む必要は常にあるので)読む。
-	# 読んだ場合は通常IRCMessageの配列が返ってくるので、
+	# 読んだ場合は通常Tiarra::IRC::Messageの配列が返ってくるので、
 	# 必要な全てのプラグインに順番に通す。(プラグインはフィルターとして考える。)
 	# それがサーバーから読んだメッセージだったなら、プラグインを通した後、接続されている全てのクライアントにそれを転送する。
-	# クライアントが一つも接続されていなければ、そのIRCMessage群は捨てる。
+	# クライアントが一つも接続されていなければ、そのTiarra::IRC::Message群は捨てる。
 	# クライアントから読んだメッセージだったなら、プラグインを通した後、渡すべきサーバーに転送する。
 	#
 	# selectにおけるタイムアウトは次のようにする。
@@ -1110,7 +1111,7 @@ sub terminate {
 }
 
 sub broadcast_to_clients {
-    # IRCMessageをログイン中でない全てのクライアントに送信する。
+    # Tiarra::IRC::Messageをログイン中でない全てのクライアントに送信する。
     # fill-prefix-when-sending-to-clientという註釈が付いていたら、
     # Prefixをそのクライアントのfullnameに設定する。
     my ($class_or_this,@messages) = @_;
@@ -1154,7 +1155,7 @@ sub notify_modules {
 }
 
 sub apply_filters {
-    # @extra_args: モジュールに送られる第二引数以降。第一引数は常にIRCMessage。
+    # @extra_args: モジュールに送られる第二引数以降。第一引数は常にTiarra::IRC::Message。
     my ($this, $src_messages, $method, @extra_args) = @_;
 
     my $source = $src_messages;
@@ -1188,9 +1189,9 @@ sub apply_filters {
 	    
 	    if (defined $reply[0]) {
 		# 値が一つ以上返ってきた。
-		# 全てIRCMessageのオブジェクトなら良いが、そうでなければエラー。
+		# 全てTiarra::IRC::Messageのオブジェクトなら良いが、そうでなければエラー。
 		foreach my $msg_reply (@reply) {
-		    unless (UNIVERSAL::isa($msg_reply,'IRCMessage')) {
+		    unless (UNIVERSAL::isa($msg_reply,$this->irc_message_class)) {
 			$this->notify_error(
 			    "Reply of ".ref($mod)."::${method} contains illegal value.\n".
 			      "It is ".ref($msg_reply).".");
@@ -1243,7 +1244,7 @@ sub notify_msg {
 	if (@{$this->clients} > 0) {
 	    $this->broadcast_to_clients(
 		map {
-		    IRCMessage->new(
+		    $this->construct_irc_message(
 			Prefix => $this->sysmsg_prefix(qw(priv notify)),
 			Command => 'NOTICE',
 			Params => [$this->current_nick,

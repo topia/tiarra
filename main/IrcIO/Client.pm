@@ -8,7 +8,6 @@ package IrcIO::Client;
 use strict;
 use warnings;
 use Carp;
-use IrcIO;
 use base qw(IrcIO);
 use Crypt;
 use Multicast;
@@ -217,13 +216,13 @@ sub _receive_while_logging_in {
     }
     elsif ($command eq 'PING') {
 	$this->send_message(
-	    new IRCMessage(
+	    $this->construct_irc_message(
 		Command => 'PONG',
 		Param => $msg->param(0)));
     }
     elsif ($command eq 'QUIT') {
 	$this->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Command => 'ERROR',
 		Param => 'Closing Link: ['.$this->fullname_from_client.'] ()'));
 	$this->disconnect_after_writing;
@@ -239,11 +238,11 @@ sub _receive_while_logging_in {
 	    ::printmsg("Refused login of ".$this->fullname_from_client." because of bad password.");
 
 	    $this->send_message(
-		new IRCMessage(Prefix => $prefix,
+		$this->construct_irc_message(Prefix => $prefix,
 			       Command => ERR_PASSWDMISMATCH,
 			       Params => [$this->{nick},'Password incorrect']));
 	    $this->send_message(
-		new IRCMessage(Command => 'ERROR',
+		$this->construct_irc_message(Command => 'ERROR',
 			       Param => 'Closing Link: ['.$this->fullname_from_client.'] (Bad Password)'));
 		$this->disconnect_after_writing;
 	}
@@ -260,7 +259,7 @@ sub _receive_while_logging_in {
 	    $this->{logging_in} = 0;
 
 	    $this->send_message(
-		new IRCMessage(Prefix => $prefix,
+		$this->construct_irc_message(Prefix => $prefix,
 			       Command => RPL_WELCOME,
 			       Params => [$this->{nick},'Welcome to the Internet Relay Network '.$this->fullname_from_client]));
 
@@ -268,7 +267,7 @@ sub _receive_while_logging_in {
 	    if ($this->{nick} ne $current_nick) {
 		# クライアントが送ってきたnickとローカルのnickが食い違っているので正しいnickを教える。
 		$this->send_message(
-		    new IRCMessage(Prefix => $this->fullname_from_client,
+		    $this->construct_irc_message(Prefix => $this->fullname_from_client,
 				   Command => 'NICK',
 				   Param => $current_nick));
 	    }
@@ -276,7 +275,7 @@ sub _receive_while_logging_in {
 	    my $send_message = sub {
 		my ($command, @params) = @_;
 		$this->send_message(
-		    new IRCMessage(
+		    $this->construct_irc_message(
 			Prefix => $prefix,
 			Command => $command,
 			Params => [$current_nick,
@@ -290,7 +289,7 @@ sub _receive_while_logging_in {
 		my $global_nick = $_->current_nick;
 		if ($global_nick ne $current_nick) {
 		    $this->send_message(
-			new IRCMessage(
+			$this->construct_irc_message(
 			    Prefix => $this->_runloop->sysmsg_prefix(qw(priv system)),
 			    Command => 'NOTICE',
 			    Params => [$current_nick,
@@ -305,14 +304,14 @@ sub _receive_while_logging_in {
 
 		if (defined $network) {
 		    # send isupport
-		    my $msg_tmpl = IRCMessage->new(
+		    my $msg_tmpl = $this->construct_irc_message(
 			Prefix => $prefix,
 			Command => RPL_ISUPPORT,
 			Params => [$current_nick],
 		       );
 		    # last param is reserved for 'are supported...'
 		    # and first param for nick
-		    my $max_params = IRCMessage->MAX_PARAMS - 2;
+		    my $max_params = $this->irc_message_class->MAX_PARAMS - 2;
 		    my @params = ();
 		    my $length = 0;
 		    my $flush_msg = sub {
@@ -373,7 +372,7 @@ sub _receive_after_logged_in {
 		    if ($this->_runloop->multi_server_mode_p &&
 			    $this->_runloop->current_nick ne $rawnick) {
 			$this->_runloop->broadcast_to_clients(
-			    IRCMessage->new(
+			    $this->construct_irc_message(
 				Command => 'NICK',
 				Param => $rawnick,
 				Remarks => {'fill-prefix-when-sending-to-client' => 1}));
@@ -383,7 +382,7 @@ sub _receive_after_logged_in {
 		}
 	    } else {
 		$this->send_message(
-		    new IRCMessage(
+		    $this->construct_irc_message(
 			Prefix => $this->_runloop->sysmsg_prefix('system'),
 			Command => ERR_ERRONEOUSNICKNAME,
 			Params => [$this->_runloop->current_nick,
@@ -394,7 +393,7 @@ sub _receive_after_logged_in {
 	    }
 	} else {
 	    $this->send_message(
-		new IRCMessage(
+		$this->construct_irc_message(
 		    Prefix => $this->_runloop->sysmsg_prefix('system'),
 		    Command => ERR_NONICKNAMEGIVEN,
 		    Params => [$this->_runloop->current_nick,
@@ -408,7 +407,7 @@ sub _receive_after_logged_in {
 	$quit_message = '' unless defined $quit_message;
 
 	$this->send_message(
-	    new IRCMessage(Command => 'ERROR',
+	    $this->construct_irc_message(Command => 'ERROR',
 			   Param => 'Closing Link: '.$this->fullname('error').' ('.$quit_message.')'));
 	$this->disconnect_after_writing;
 
@@ -451,7 +450,7 @@ sub do_namreply {
     my $flush_enum_buffer = sub {
 	if ($nick_enumeration ne '') {
 	    $flush_func->(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Prefix => $this->fullname,
 		    Command => RPL_NAMREPLY,
 		    Params => [$this->_runloop->current_nick,
@@ -503,14 +502,14 @@ sub inform_joinning_channels {
 
 	# まずJOIN
 	$this->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Prefix => $this->fullname,
 		Command => 'JOIN',
 		Param => $ch_name));
 	# 次にRPL_TOPIC(あれば)
 	if ($ch->topic ne '') {
 	    $this->send_message(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Prefix => $this->fullname,
 		    Command => RPL_TOPIC,
 		    Params => [$local_nick,$ch_name,$ch->topic]));
@@ -518,7 +517,7 @@ sub inform_joinning_channels {
 	# 次にRPL_TOPICWHOTIME(あれば)
 	if (defined($ch->topic_who)) {
 	    $this->send_message(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Prefix => $this->fullname,
 		    Command => RPL_TOPICWHOTIME,
 		    Params => [$local_nick,$ch_name,$ch->topic_who,$ch->topic_time]));
@@ -531,7 +530,7 @@ sub inform_joinning_channels {
 	$this->do_namreply($ch, $network, undef, $flush_namreply);
 	# 最後にRPL_ENDOFNAMES
 	$this->send_message(
-	    IRCMessage->new(
+	    $this->construct_irc_message(
 		Prefix => $this->fullname,
 		Command => RPL_ENDOFNAMES,
 		Params => [$local_nick,$ch_name,'End of NAMES list']));

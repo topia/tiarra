@@ -258,10 +258,10 @@ sub compile {
 	return qr/(?!)/; # マッチしない正規表現
     }
 
-    my $regex = $mask;
-    $regex =~ s/(\W)/\\$1/g;
-    $regex =~ s/\\\?/\./g;
-    $regex =~ s/\\\*/\.\*/g;
+    my $regex = quotemeta($mask);
+    $regex =~ s/\\\?/./g;
+    $regex =~ s/\\\*/.*/g;
+    $regex =~ s/\\\#/\\d*/g;
     $regex = "^$regex\$";
     if ($consider_case) {
 	qr/$regex/;

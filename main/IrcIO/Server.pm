@@ -414,14 +414,14 @@ sub _send_connection_messages {
     # NICKが成功したかどうかは接続後のreceiveメソッドが判断する。
     my $server_password = $this->{server_password};
     if (defined $server_password && $server_password ne '') {
-	$this->send_message(new IRCMessage(
+	$this->send_message($this->construct_irc_message(
 	    Command => 'PASS',
 	    Param => $this->{server_password}));
     }
     if (!defined $this->{current_nick} || $this->{current_nick} eq '') {
 	$this->{current_nick} = $this->{initial_nick};
     }
-    $this->send_message(new IRCMessage(
+    $this->send_message($this->construct_irc_message(
 	Command => 'NICK',
 	Param => $this->{current_nick}));
 
@@ -439,7 +439,7 @@ sub _send_connection_messages {
 	    }
 	}
     }
-    $this->send_message(new IRCMessage(
+    $this->send_message($this->construct_irc_message(
 	Command => 'USER',
 	Params => [$this->{user_shortname},
 		   $usermode,
@@ -521,7 +521,7 @@ sub _cleanup {
 sub quit {
     my ($this, $msg) = @_;
     return $this->send_message(
-	IRCMessage->new(
+	$this->construct_irc_message(
 	    Command => 'QUIT',
 	    Param => $msg));
 }
@@ -535,7 +535,7 @@ sub send_message {
     elsif (!ref($msg)) {
 	croak "IrcIO::Server->send_message, Arg[1] was not ref.\n";
     }
-    elsif (!UNIVERSAL::isa($msg, 'IRCMessage')) {
+    elsif (!UNIVERSAL::isa($msg, $this->irc_message_class)) {
 	croak "IrcIO::Server->send_message, Arg[1] was bad ref: ".ref($msg)."\n";
     }
 
@@ -591,7 +591,7 @@ sub _receive_while_logging_in {
 	if (!$this->_runloop->multi_server_mode_p &&
 		$this->_runloop->current_nick ne $this->{current_nick}) {
 	    $this->_runloop->broadcast_to_clients(
-		IRCMessage->new(
+		$this->construct_irc_message(
 		    Command => 'NICK',
 		    Param => $first_msg->param(0),
 		    Remarks => {'fill-prefix-when-sending-to-client' => 1
@@ -630,7 +630,7 @@ sub _receive_while_logging_in {
     }
     elsif ($reply eq 'PING') {
 	$this->send_message(
-	    new IRCMessage(
+	    $this->construct_irc_message(
 		Command => 'PONG',
 		Param => $first_msg->param(0)));
     }
@@ -681,7 +681,7 @@ sub _receive_after_logged_in {
 
 		    my $old_nick = $msg->nick;
 		    $this->_runloop->broadcast_to_clients(
-			IRCMessage->new(
+			$this->construct_irc_message(
 			    Prefix => $this->_runloop->sysmsg_prefix(qw(priv nick::system)),
 			    Command => 'NOTICE',
 			    Params => [$local_nick,
@@ -1234,9 +1234,10 @@ sub _RPL_CHANNELMODEIS {
     @args = @args[1 .. $#args];
 
     $this->_MODE(
-	new IRCMessage(Prefix => $msg->prefix,
-		       Command => 'MODE',
-		       Params => \@args));
+	$this->construct_irc_message(
+	    Prefix => $msg->prefix,
+	    Command => 'MODE',
+	    Params => \@args));
 }
 
 sub _RPL_ISUPPORT {
@@ -1287,7 +1288,7 @@ sub _handle_fix_nick {
 	# 対応するエラーメッセージ付きの NOTICE に変換して、
 	# クライアントに投げます。
 
-	my $new_msg = IRCMessage->new(
+	my $new_msg = $this->construct_irc_message(
 	    Prefix => $this->_runloop->sysmsg_prefix(qw(priv nick::system)),
 	    Command => 'NOTICE',
 	    Params => [$this->_runloop->current_nick,
@@ -1313,11 +1314,11 @@ sub _set_to_next_nick {
 
     my $msg_for_user = "Nick $failed_nick was already in use in the ".$this->network_name.". Trying ".$next_nick."...";
     $this->send_message(
-	new IRCMessage(
+	$this->construct_irc_message(
 	    Command => 'NICK',
 	    Param => $next_nick));
     $this->_runloop->broadcast_to_clients(
-	new IRCMessage(
+	$this->construct_irc_message(
 	    Prefix => $this->_runloop->sysmsg_prefix(qw(priv nick::system)),
 	    Command => 'NOTICE',
 	    Params => [$this->_runloop->current_nick,$msg_for_user]));

@@ -8,13 +8,15 @@ use strict;
 use warnings;
 use Carp;
 use Configuration;
-use IRCMessage;
+use Tiarra::IRC::Message;
 use Exception;
 use Tiarra::ShorthandConfMixin;
 use Tiarra::Utils;
 use Tiarra::Socket::Buffered;
 use base qw(Tiarra::Socket::Buffered);
+use base qw(Tiarra::IRC::NewMessageMixin);
 utils->define_attr_getter(0, [qw(_runloop runloop)]);
+utils->define_proxy('_runloop', 0, qw(irc_message_class));
 
 sub new {
     my ($class, $runloop, %opts) = @_;
@@ -53,7 +55,7 @@ sub send_message {
     my ($this,$msg,$encoding) = @_;
     # データを送るように予約する。ソケットの送信の準備が整っていなくてもブロックしない。
 
-    # msgは生の文字列でも良いしIRCMessageのインスタンスでも良い。
+    # msgは生の文字列でも良いしTiarra::IRC::Messageのインスタンスでも良い。
     # 生の文字列を渡す時には、末尾にCRLFを付けてはならない。
     # また、生の文字列については文字コードの変換が行なわれない。
     my $data_to_send = '';
@@ -62,7 +64,7 @@ sub send_message {
 	# FIXME: warnすべきだろうか。
 	$data_to_send = "$msg\x0d\x0a";
     }
-    elsif ($msg->isa('IRCMessage')) {
+    elsif ($msg->isa($this->irc_message_class)) {
 	# message_io_hook
 	my $filtered = $this->_runloop->apply_filters(
 	    [$msg], 'message_io_hook', $this, 'out');
@@ -85,7 +87,7 @@ sub send_message {
 
 sub read {
     my ($this,$encoding) = @_;
-    # このメソッドはIRCメッセージを一行ずつ受け取り、IRCMessageのインスタンスをキューに溜めます。
+    # このメソッドはIRCメッセージを一行ずつ受け取り、Tiarra::IRC::Messageのインスタンスをキューに溜めます。
     # ソケットに読めるデータが来ていなかった場合、このメソッドは読めるようになるまで
     # 操作をブロックします。それがまずい場合は予めselectで読める事を確認しておいて下さい。
     # このメソッドを実行したことで始めてソケットが閉じられた事が分かった場合は、
@@ -113,8 +115,9 @@ sub read {
 	}
 
 	# message_io_hook
-	my $msg = IRCMessage->new(
-	    Line => $current_line, Encoding => $encoding);
+	my $msg = $this->construct_irc_message(
+	    Line => $current_line,
+	    Encoding => $encoding);
 	my $filtered = $this->_runloop->apply_filters(
 	    [$msg], 'message_io_hook', $this, 'in');
 

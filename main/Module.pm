@@ -11,6 +11,7 @@ use warnings;
 use Carp;
 use Tiarra::ShorthandConfMixin;
 use Tiarra::Utils;
+use base qw(Tiarra::IRC::NewMessageMixin);
 # our @USES = ();
 Tiarra::Utils->define_attr_getter(0, [qw(_runloop runloop)]);
 
@@ -25,7 +26,7 @@ sub new {
     # 引数は無し。
     bless {
 	runloop => $runloop,
-    },$class; # デフォルトではモジュールはフィールドを持たない。
+    },$class;
 }
 
 sub destruct {
@@ -40,10 +41,10 @@ sub destruct {
 sub message_arrived {
     my ($this,$message,$sender) = @_;
     # サーバーまたはクライアントからメッセージが来た時に呼ばれる。
-    # 戻り値はIRCMessageまたはその配列またはundef。
+    # 戻り値はTiarra::IRC::Messageまたはその配列またはundef。
     #
     # $message :
-    #    内容: IRCMessageオブジェクト
+    #    内容: Tiarra::IRC::Messageオブジェクト
     #    サーバーから、またはクライアントから送られてきたメッセージ。
     #    モジュールはこのオブジェクトをそのまま返しても良いし、
     #    改変して返しても良いし何も返さなくても良いし二つ以上返しても良い。
@@ -52,6 +53,10 @@ sub message_arrived {
     #    このメッセージを発したIrcIO。サーバーまたはクライアントである。
     #    メッセージがサーバーから来たのかクライアントから来たのかは
     #    $sender->isa('IrcIO::Server')などとすれば判定出来る。
+    #    この引数は現在処理しているメッセージ群の根拠サーバで、実際に
+    #    #message を作成したインスタンスは $message->generator に入る
+    #    (モジュールが生成した場合等入ってない場合もあるし、また
+    #     Multicast がメッセージを分けた場合でも generator は変化しない。)
     #
     # サーバー→クライアントの流れでも、Prefixを持たないメッセージを
     # 流しても構わない。逆に言えば、そのようなメッセージが来ても
@@ -112,7 +117,7 @@ sub message_io_hook {
     # 通常のモジュールはこのメソッドを実装する必要は無い。
     #
     # $message :
-    #    内容: IRCMessageオブジェクト
+    #    内容: Tiarra::IRC::Messageオブジェクト
     #         送受信されたメッセージ
     # $io :
     #    内容: IrcIO::Server又はIrcIO::Clientオブジェクト
