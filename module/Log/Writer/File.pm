@@ -30,7 +30,8 @@ sub _file {
 
     if (!defined $this->{file}) {
 	$this->mkdirs($this->path);
-	$this->{file} = IO::File->new($this->path,
+	$this->path =~ /^(.+)$/; # untaint
+	$this->{file} = IO::File->new($1,
 				      O_CREAT | O_APPEND | O_WRONLY,
 				      $this->file_mode);
     }
