@@ -1,3 +1,19 @@
+2004-05-09  Topia  <topia@clovery.jp>
+
+	* main/Multicast.pm:
+	(nick_p):
+	  - 省略可能な nicklen を引数に追加した。
+	(channel_p):
+	  - 省略可能な chantypes を引数に追加した。
+
+	* main/IrcIO/Server.pm:
+	  - isupport を remark からインスタンス変数に変更した。
+	(nick_p, channel_p):
+	  - 追加した。 ISUPPORT として NICKLEN, CHANTYPES が指定されていた
+	    場合にそれを使って検査する。
+	(_set_to_next_nick):
+	  - 簡略化した。
+
 2004-05-08  Topia  <topia@clovery.jp>
 
 	* HACKING:
@@ -1623,7 +1639,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.147 2004/05/08 08:11:30 topia Exp $
+#       Id: $Id: ChangeLog,v 1.148 2004/05/09 04:08:00 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2004/05/08 08:11:30 $
-# Revision: $Revision: 1.147 $
+#     Date: $Date: 2004/05/09 04:08:00 $
+# Revision: $Revision: 1.148 $
