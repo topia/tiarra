@@ -140,8 +140,10 @@ sub repr_destination {
     };
     $str .= utils->to_str($data{host});
     $str .= "($data{addr})" if defined $data{addr};
-    $append_as_delimiter->('/');
-    $str .= utils->to_str($data{port});
+    if (defined $data{port}) {
+	$append_as_delimiter->('/');
+	$str .= $data{port};
+    }
     if (defined $data{type}) {
 	$append_as_delimiter->(' (');
 	$str .= $class_or_this->repr_type($data{type}) .
