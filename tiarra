@@ -177,6 +177,7 @@ if (&find_option('debug')) {
     };
     $SIG{__DIE__} = sub {
 	use Carp;
+	die @_ if $_[0] =~ /^[Cc]ouldn't connect/;
 	die(Carp::longmess(@_));
     }
 } else {
