@@ -458,7 +458,7 @@ sub inform_joinning_channels {
 		'channel-info', $this, $ch_name, $network, $ch);
 	}; if ($@) {
 	    # エラーメッセージは表示するが、送信処理は続ける
-	    RunLoop->shared_loop->notify_error("__PACKAGE__ hook call error: $@");
+	    RunLoop->shared_loop->notify_error(__PACKAGE__." hook call error: $@");
 	}
     };
 

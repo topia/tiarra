@@ -55,15 +55,15 @@ sub message_io_hook {
 			defined $config->template && $config->template ne '') {
 		    my $template = Template->new($config->template);
 		    if (defined $template) {
-			$io->remark("__PACKAGE__/template", $template);
-			$io->remark("__PACKAGE__/config", $config);
+			$io->remark(__PACKAGE__."/template", $template);
+			$io->remark(__PACKAGE__."/config", $config);
 		    }
 		}
 	    }
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_LIST) {
-	    my $template = $io->remark("__PACKAGE__/template");
-	    my $config = $io->remark("__PACKAGE__/config");
+	    my $template = $io->remark(__PACKAGE__."/template");
+	    my $config = $io->remark(__PACKAGE__."/config");
 	    if (defined $template) {
 		if (Mask::match_array([
 		    Mask::array_or_default(
@@ -87,18 +87,18 @@ sub message_io_hook {
 			$template->channel->topic->add;
 		    }
 		    $template->channel->add;
-		    if (!defined $io->remark("__PACKAGE__/starttime")) {
-			$io->remark("__PACKAGE__/starttime", time());
+		    if (!defined $io->remark(__PACKAGE__."/starttime")) {
+			$io->remark(__PACKAGE__."/starttime", time());
 		    }
 		}
 	    }
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_LISTEND) {
 	    $io->remark('fetching-list', undef, 'delete');
-	    if ($io->remark("__PACKAGE__/template")) {
+	    if ($io->remark(__PACKAGE__."/template")) {
 		my $network = $this->_search_network($io->network_name);
-		my $template = $io->remark("__PACKAGE__/template");
-		my $config = $io->remark("__PACKAGE__/config");
+		my $template = $io->remark(__PACKAGE__."/template");
+		my $config = $io->remark(__PACKAGE__."/config");
 		if (defined $network && defined $template) {
 		    $template->expand(
 			fetch_starttime =>
@@ -106,7 +106,7 @@ sub message_io_hook {
 				$config->charset,
 				Tools::DateConvert::replace(
 				    $config->fetch_starttime || '',
-				    $io->remark("__PACKAGE__/starttime") || time,
+				    $io->remark(__PACKAGE__."/starttime") || time,
 				   )),
 			fetch_endtime =>
 			    $this->_output_filter(
@@ -129,9 +129,9 @@ sub message_io_hook {
 		    $fh->truncate($fh->tell);
 		    $fh->close;
 		}
-		$io->remark("__PACKAGE__/template", undef, 'delete');
-		$io->remark("__PACKAGE__/config", undef, 'delete');
-		$io->remark("__PACKAGE__/starttime", undef, 'delete');
+		$io->remark(__PACKAGE__."/template", undef, 'delete');
+		$io->remark(__PACKAGE__."/config", undef, 'delete');
+		$io->remark(__PACKAGE__."/starttime", undef, 'delete');
 	    }
 	}
     }

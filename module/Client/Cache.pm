@@ -1,6 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id: Cache.pm,v 1.8 2004/04/01 09:44:41 topia Exp $
 # -----------------------------------------------------------------------------
+# copyright (C) 2003-2004 Topia <topia@clovery.jp>. all rights reserved.
 package Client::Cache;
 use strict;
 use warnings;
@@ -41,8 +42,8 @@ sub destruct {
     # チャンネルについている remark を削除。
     foreach my $network (RunLoop->shared_loop->networks_list) {
 	foreach my $ch ($network->channels_list) {
-	    $ch->remark("__PACKAGE__/fetching-switches", undef, 'delete');
-	    $ch->remark("__PACKAGE__/fetching-who", undef, 'delete');
+	    $ch->remark(__PACKAGE__."/fetching-switches", undef, 'delete');
+	    $ch->remark(__PACKAGE__."/fetching-who", undef, 'delete');
 	}
     }
 
@@ -69,21 +70,21 @@ sub message_io_hook {
 			    !defined $msg->param(1)) {
 	    my $ch = $io->channel($msg->param(0));
 	    if (defined $ch) {
-		$ch->remark("__PACKAGE__/fetching-switches", 1);
+		$ch->remark(__PACKAGE__."/fetching-switches", 1);
 	    }
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_CHANNELMODEIS &&
 			 Multicast::channel_p($msg->param(1))) {
 	    my $ch = $io->channel($msg->param(1));
 	    if (defined $ch) {
-		$ch->remark("__PACKAGE__/fetching-switches", undef, 'delete');
+		$ch->remark(__PACKAGE__."/fetching-switches", undef, 'delete');
 	    }
 	} elsif ($type eq 'out' &&
 		     $msg->command eq 'WHO' &&
 			 Multicast::channel_p($msg->param(0))) {
 	    my $ch = $io->channel($msg->param(0));
 	    if (defined $ch) {
-		$ch->remark("__PACKAGE__/fetching-who", 1);
+		$ch->remark(__PACKAGE__."/fetching-who", 1);
 	    }
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_WHOREPLY &&
@@ -91,7 +92,7 @@ sub message_io_hook {
 	    # 処理の都合上、一つでも帰ってきた時点で取り消し。
 	    my $ch = $io->channel($msg->param(1));
 	    if (defined $ch) {
-		$ch->remark("__PACKAGE__/fetching-who", undef, 'delete');
+		$ch->remark(__PACKAGE__."/fetching-who", undef, 'delete');
 	    }
 	}
     }
@@ -148,7 +149,7 @@ sub message_arrived {
 		    return undef;
 		}
 	    } else {
-		if ($info{ch}->remark("__PACKAGE__/fetching-switches")) {
+		if ($info{ch}->remark(__PACKAGE__."/fetching-switches")) {
 		    # 取得しているクライアントがいるなら、今回は消す。
 		    return undef;
 		}
@@ -222,7 +223,7 @@ sub message_arrived {
 		    $sender->remark('who-cache-used', $remark);
 		    return undef;
 		} else {
-		    if ($info{ch}->remark("__PACKAGE__/fetching-who")) {
+		    if ($info{ch}->remark(__PACKAGE__."/fetching-who")) {
 			# 取得しているクライアントがいるなら、今回は消して便乗。
 			return undef;
 		    }

@@ -56,7 +56,7 @@ sub _init {
 	my ($dirname,$mask) = split /\s+/;
 	if (!defined($dirname) || $dirname eq '' ||
 	    !defined($mask) || $mask eq '') {
-	    die "Illegal definition in __PACKAGE__/channel : $_\n";
+	    die 'Illegal definition in '.__PACKAGE__."/channel : $_\n";
 	}
 	push @{$this->{channels}},[$dirname,$mask];
     }
