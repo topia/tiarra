@@ -1,3 +1,55 @@
+2004-07-29  Topia  <topia@clovery.jp>
+
+	* main/ModuleManager.pm:
+	  - ->notify_error(...) を ->notify_error->(...) と間違えていた
+	    ので修正。
+	(reload_modules_if_modified):
+	  - USED に対してメッセージは出しても実際にはリロードして
+	    いなかったので修正。
+	(_unload):
+	  - 自分でシンボルテーブルをクリアする代わりに、 Symbol::delete_package を
+	    使うようにした。ただしサブパッケージは退避している。
+
+	* main/Timer.pm:
+	(reset):
+	  - 追加。現在の時刻を元に fire_time を設定しなおす。
+
+	* main/Module/Use.pm:
+	(import):
+	  - @USE にそのまま設定する代わりに push をするようにした。
+
+	* module/Client/Eval.pm:
+	  - いくつか関数を追加。
+	    (conf, module_manager, module, shutdown, reload)
+
+	* module/System/NotifyIcon/Win32.pm:
+	  - 追加。タスクバーの通知領域にアイコンを表示し、コンソールの
+	    表示・非表示、 conf リロード、終了などができる。
+
+2004-07-24  Topia  <topia@clovery.jp>
+
+	* HACKING:
+	  - Auto::Utils::sendto_channel_closure の説明を追加。
+	  - remark の説明をいくつか追加。
+	  - Emacs で自動的に text-mode になるようにした。
+	    (Local variables)
+
+	* Makefile:
+	  - 間違っているコメントを削除した(etags/update もするし)。
+	  - ターゲット名を clean に変えた。
+	  - clean の一行目だけでも sh で通るようにした。
+
+	* main/ControlPort.pm:
+	  - SelfLoader が動作しない例の一つだった。修正もれ。
+	    コメントアウトして対処した。
+
+	* module/Auto/Utils.pm:
+	  - いくつか説明コメントを修正。
+	(sendto_channel_closure):
+	  - $sender が省略されれば自分で調査して送信する。
+	    ($sendto, $command) だけで呼べるようになった。
+	  - シングルサーバモード時の処理をしていなかったので修正。
+
 2004-07-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Auto/Reply.pm,
@@ -1759,7 +1811,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.156 2004/07/09 02:34:12 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2004/07/09 02:34:12 $
-# Revision: $Revision: 1.156 $
+#       Id: $Id: ChangeLog,v 1.157 2004/07/29 06:23:47 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2004/07/29 06:23:47 $
+# Revision: $Revision: 1.157 $

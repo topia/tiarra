@@ -1,9 +1,7 @@
 # -----------------------------------------------------------------------------
-# Makefile which deletes all backup files made by Emacs.
+# $Id: Makefile,v 1.5 2004/07/29 06:23:47 topia Exp $
 # -----------------------------------------------------------------------------
-# $Id: Makefile,v 1.4 2004/03/13 07:17:33 admin Exp $
-# -----------------------------------------------------------------------------
-all:
+clean:
 	find . -name \*\~ -print0 | xargs -0 rm -f
 	-zsh -c 'etags tiarra tiarra-conf.el tiarra-conf.l main/**/*.pm module/**/*.pm'
 

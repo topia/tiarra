@@ -1,3 +1,9 @@
+2004-07-29  Topia  <topia@clovery.jp>
+
+	* System::NotifyIcon::Win32
+	  - 追加。タスクバーの通知領域にアイコンを表示し、コンソールの
+	    表示・非表示、 conf リロード、終了などができます。
+
 2004-07-09  Topia  <topia@clovery.jp>
 
 	* System::Reload
