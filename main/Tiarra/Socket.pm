@@ -120,34 +120,46 @@ sub want_to_write { shift->_should_define }
 sub write { shift->_should_define }
 sub read { shift->_should_define }
 
+# class method
+
 sub repr_destination {
     my ($class_or_this, %data) = @_;
 
     if (!defined $data{host} && defined $data{addr}) {
 	$data{host} = $data{addr};
+	delete $data{addr};
+    }
+    if (defined $data{host} && defined $data{addr} &&
+	    $data{host} eq $data{addr}) {
+	delete $data{addr};
     }
 
     my $str = '';
-    # $put(str,%host%$if($not($strcmp(%host%,%addr%)),'('%addr%')'))
-    # $if($get(str),$puts(str_started,1))
-    # $put(str,$if($or($get(str_started),%port%),/)%port)
-    # $if($get(str),$puts(str_started,1))
-    # $put(str,$if(%type%,
-    # $if($get(str_started),' (')
-    # %type%
-    # $if($get(str_started),' (')))
-    $str = join('/',
-		join('',
-		     utils->get_first_defined($data{host}),
-		     ((defined $data{addr} && $data{host} ne $data{addr}) ?
-			  "($data{addr})" : '')),
-		utils->get_first_defined($data{port}));
-    if (length $str) {
-	$str .= " ($data{type})" if defined $data{type};
-    } else {
-	$str .= utils->to_str($data{type});
+    my $append_as_delimiter = sub {
+	$str .= shift if length $str;
+    };
+    $str .= utils->to_str($data{host});
+    $str .= "($data{addr})" if defined $data{addr};
+    $append_as_delimiter->('/');
+    $str .= utils->to_str($data{port});
+    if (defined $data{type}) {
+	$append_as_delimiter->(' (');
+	$str .= $class_or_this->repr_type($data{type}) .
+	    (length $str ? ')' : '');
     }
     $str;
+}
+
+sub repr_type {
+    my ($class_or_this, $type) = @_;
+
+    if ($type =~ /^ipv(\d+)$/i) {
+	return "IPv$1";
+    } elsif ($type =~ /^unix$/i) {
+	return "Unix";
+    } else {
+	return "Unknown: $type";
+    }
 }
 
 sub probe_type_by_class {
@@ -164,7 +176,21 @@ sub probe_type_by_class {
     } map {
 	substr($_->[0],0,0) = 'IO::Socket::';
 	$_;
-    } ([qw(UNIX Unix)], [qw(INET6 IPv6)], [qw(INET IPv4)]);
+    } ([qw(INET ipv4)], [qw(INET6 ipv6)], [qw(UNIX unix)]);
+}
+
+sub probe_type_by_addr {
+    my ($class_or_this, $addr) = @_;
+
+    if ($addr =~ m/^(?:\d+\.){3}\d+$/) {
+	return 'ipv4';
+    } elsif ($addr =~ m/^[0-9a-fA-F:]+$/) {
+	return 'ipv6';
+    } else {
+	# maybe
+	return 'unix';
+    }
+
 }
 
 sub _increment_caller {

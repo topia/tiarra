@@ -74,20 +74,14 @@ sub _connect_stage {
 
     my %addrs_by_types;
 
-    if ($entry->answer_status eq $entry->ANSWER_OK) {
-	foreach my $addr (@{$entry->answer_data}) {
-	    if ($addr =~ m/^(?:\d+\.){3}\d+$/) {
-		push (@{$addrs_by_types{ipv4}}, $addr);
-	    } elsif ($addr =~ m/^[0-9a-fA-F:]+$/) {
-		push (@{$addrs_by_types{ipv6}}, $addr);
-	    } else {
-		# maybe
-		push (@{$addrs_by_types{unix}}, $addr);
-	    }
-	}
-    } else {
+    if ($entry->answer_status ne $entry->ANSWER_OK) {
 	$this->_connect_error("couldn't resolve hostname");
 	return undef; # end
+    }
+
+    foreach my $addr (@{$entry->answer_data}) {
+	push (@{$addrs_by_types{$this->probe_type_by_addr($addr)}},
+	      $addr);
     }
 
     foreach my $sock_type (@{$this->prefer}) {
@@ -127,20 +121,11 @@ sub _connect_try_next {
 sub _try_connect_ipv4 {
     my $this = shift;
 
-    my %additional = ();
-    if (defined $this->{bind_addr}) {
-	$additional{LocalAddr} = $this->{bind_addr};
-    }
-    $this->_try_connect_tcp('IO::Socket::INET', %additional);
+    $this->_try_connect_tcp('IO::Socket::INET');
 }
 
 sub _try_connect_ipv6 {
     my $this = shift;
-
-    my %additional;
-    if (defined $this->{bind_addr}) {
-	$additional{LocalAddr} = $this->{bind_addr};
-    }
 
     if (!Tiarra::OptionalModules->ipv6) {
 	$this->_error(
@@ -149,7 +134,7 @@ sub _try_connect_ipv6 {
 		    qq{Use IPv4 or install Socket6 or IO::Socket::INET6 if possible.\n});
     }
 
-    $this->_try_connect_tcp('IO::Socket::INET6', %additional);
+    $this->_try_connect_tcp('IO::Socket::INET6');
 }
 
 sub _try_connect_tcp {
@@ -157,8 +142,11 @@ sub _try_connect_tcp {
 
     $this->_try_connect_io_socket(
 	@_,
+	(defined $this->{bind_addr} ?
+	     (LocalAddr => $this->{bind_addr}) : ()),
 	PeerAddr => $this->{connecting}->{addr},
 	PeerPort => $this->{connecting}->{port},
+	Blocking => 0,
 	Proto => 'tcp');
 }
 
@@ -236,21 +224,7 @@ sub destination {
 	port => utils->get_first_defined(
 	    $this->{connecting}->{port},
 	    $this->port),
-	type => $this->type_name);
-}
-
-sub type_name {
-    my $this = shift;
-    my $type = $this->{connecting}->{type};
-    if (!defined $type) {
-	return undef;
-    } elsif ($type =~ /^ipv(\d)+$/) {
-	return "IPv$1";
-    } elsif ($type =~ /^unix$/) {
-	return "UNIX";
-    } else {
-	return "unknown: $type";
-    }
+	type => $this->{connecting}->{type});
 }
 
 sub _error {
