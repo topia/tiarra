@@ -363,6 +363,7 @@ sub _action_one_message {
 	$this->_rejoin_all_channels($network);
 	$this->broadcast_to_clients(
 	    IRCMessage->new(
+		Prefix => Configuration->shared_conf->general->sysmsg_prefix,
 		Command => 'NOTICE',
 		Params => [$this->current_nick,
 			   '*** The connection has been revived between '.$network->network_name.'.']));
@@ -370,6 +371,7 @@ sub _action_one_message {
     elsif ($event eq 'disconnected') {
 	$this->broadcast_to_clients(
 	    IRCMessage->new(
+		Prefix => Configuration->shared_conf->general->sysmsg_prefix,
 		Command => 'NOTICE',
 		Params => [$this->current_nick,
 			   '*** The connection has been broken between '.$network->network_name.'.']));
