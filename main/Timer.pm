@@ -140,7 +140,7 @@ sub execute {
     eval {
 	$this->{code}->($this);
     }; if ($@) {
-	$this->notify_error(
+	RunLoop->shared_loop->notify_error(
 	    "Exception in Timer.\n".
 		"   $@");
     }
