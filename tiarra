@@ -118,7 +118,7 @@ sub check_changelog {
 
 	    (my $svndir = dirname($file)) =~ s/'/'\''/;
 	    my $svnversion = `svnversion -n '$svndir'`;
-	    $version .= '+svn-' . $svnversion if defined $svnversion;
+	    $version .= '+svn-' . $svnversion if $? == 0 && defined $svnversion;
 	    return;
 	}
     }
