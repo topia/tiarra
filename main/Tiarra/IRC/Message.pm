@@ -35,7 +35,6 @@ use strict;
 use warnings;
 use Carp;
 use overload;
-use Data::Dumper;
 use Tiarra::OptionalModules;
 use Tiarra::Utils;
 use Tiarra::IRC::Prefix;
@@ -128,6 +127,7 @@ sub clone {
     my ($this, %args) = @_;
     if ($args{deep}) {
 	# inhibits generator deep clone.
+	reuire Data::Dumper;
 	my $obj = $this->clone;
 	$obj->generator(undef);
 	$obj = eval(Data::Dumper->new([$obj])->Terse(1)
@@ -139,6 +139,7 @@ sub clone {
 	# do not clone raw_params. this behavior is by design.
 	# (we want to handle _raw_params by outside.
 	#  if you want, please re-constract or use deep => 1.)
+	$new[PREFIX] = $this->[PREFIX]->clone if defined $this->[PREFIX];
 	$new[PARAMS] = [@{$this->[PARAMS]}] if defined $this->[PARAMS];
 	$new[REMARKS] = {%{$this->[REMARKS]}} if defined $this->[REMARKS];
 	bless \@new => ref($this);
