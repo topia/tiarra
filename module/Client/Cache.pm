@@ -147,10 +147,7 @@ sub message_arrived {
 			    !defined $msg->param(1)) {
 	    my %info = $fetch_channel_info->($msg->param(0));
 	    unless (defined $info{network}){
-		::debug_printmsg(
-		    __PACKAGE__.': "'.$info{network_name}.
-			'" network is not found in tiarra.'
-		       );
+		# network not found. maybe disconnected
 		last;
 	    }
 	    last if !defined $info{ch};
@@ -180,10 +177,7 @@ sub message_arrived {
 			 Multicast::channel_p($msg->param(0))) {
 	    my %info = $fetch_channel_info->($msg->param(0));
 	    unless (defined $info{network}){
-		::debug_printmsg(
-		    __PACKAGE__.': "'.$info{network_name}.
-			'" network is not found in tiarra.'
-		       );
+		# network not found. maybe disconnected
 		last;
 	    }
 	    last if !defined $info{ch};
