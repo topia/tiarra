@@ -31,8 +31,7 @@ sub message_io_hook {
     my ($this,$msg,$io,$type) = @_;
 
     if ($io->isa('IrcIO::Client') &&
-	    $this->is_cotton($io) &&
-		!$this->_yesno($io->option('no-cotton'))) {
+	    $this->is_cotton($io)) {
 	if ($this->_yesno($this->config->use_part_shield) &&
 		$type eq 'in' &&
 		    $msg->command eq 'PART' &&
@@ -86,7 +85,6 @@ sub is_cotton {
 info: Cotton の行うおかしな動作のいくつかを無視する
 default: off
 
-# クライアントオプションの no-cotton を指定すれば動きません。
 # 該当クライアントのオプション client-type に cotton や unknown と指定するか、
 # Client::GetVersion を利用してクライアントのバージョンを取得するように
 # してください。
