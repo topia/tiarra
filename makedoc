@@ -14,7 +14,7 @@ my $unijp_init = Unicode::Japanese->new;
 
 my $conf_output = 'sample.conf';
 
-my $stdout_charset = 'euc';
+my $stdout_charset = 'utf8';
 my $conf_charset = 'euc';
 my $html_charset = 'euc';
 
