@@ -47,8 +47,13 @@ sub message_io_hook {
 
     $conf_entry .= '-' . $type;
 
-    if ($this->config->get($conf_entry)) {
+    # break with last
+    while (1) {
+	last if (($message->command =~ /^P[IO]NG$/) &&
+		     $this->config->ignore_ping);
+	last unless ($this->config->get($conf_entry));
 	::printmsg($prefix . $message->serialize());
+	last;
     }
 
     return $message;
@@ -63,14 +68,17 @@ default: off
 # 0 または省略で表示しない。 1 で表示する。
 
 # サーバからの入力
-enable-server-in: 0
+enable-server-in: 1
 
 # サーバへの出力
-enable-server-out: 0
+enable-server-out: 1
 
 # クライアントからの入力
-enable-client-in: 1
+enable-client-in: 0
 
 # クライアントへの出力
-enable-client-out: 1
+enable-client-out: 0
+
+# PING/PONG を無視する
+ignore-ping: 1
 =cut
