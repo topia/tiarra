@@ -75,7 +75,7 @@ sub message_arrived {
       }
     }
   }
-  return $msg;
+  return @result;
 }
 
 1;
