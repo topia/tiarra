@@ -84,5 +84,6 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
       * kicked-out		そのチャンネルから蹴り出されている(すでにそのチャンネルに
 				いない)かどうか。
       * switches-are-known	チャンネルモードを取得済みかどうか。
+      * creation-time		RPL_CREATIONTIME が返した値。
   - PersonInChannel
   - PersonalInfo
