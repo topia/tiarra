@@ -1,6 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id: Alias.pm,v 1.10 2004/02/23 02:46:19 topia Exp $
 # -----------------------------------------------------------------------------
+# copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
 package Log::ChannelList;
 use strict;
 use warnings;
@@ -17,7 +18,6 @@ use Module::Use qw(Tools::DateConvert);
 sub new {
   my $class = shift;
   my $this = $class->SUPER::new;
-  $this->{timer} = undef;
   $this->{networks} = [];
   $this->{unijp} = Unicode::Japanese->new;
 
