@@ -13,6 +13,8 @@ use ModuleManager;
 sub reload_conf_if_updated {
     # confファイルが更新されていたらリロードし、
     # Tiarra内のそれぞれのクラスにconfの更新を通知する。
+    # モジュール側で更新された場合になにかの処理をするには、
+    # Configuration::Hook の reloaded を使ってください。
     if (Configuration->shared_conf->check_if_updated) {
 	Configuration->shared_conf->load;
 	RunLoop->shared_loop->update_networks;
