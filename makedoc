@@ -171,10 +171,6 @@ sub makehtml_mods {
 		if ($line eq '') {
 		    #$html .= "<br />\n";
 		}
-		elsif ($line =~ m/^-?(.+?)\s*:\s*(.+)$/) {
-		    my ($key,$value) = ($1,$2);
-		    $html .= qq{<span class="key">$key</span>:<span class="value">$value</span><br />\n};
-		}
 		elsif ($line =~ m/^\s*#/) {
 		    # グループ作成
 		    my @group;
@@ -227,6 +223,15 @@ sub makehtml_mods {
 				      "$_<br />\n";
 				  } @group);
 		    $html .= qq{</p>\n};
+		}
+		elsif ($line =~ m/^-?(.+?)\s*:\s*(.+)$/) {
+		    my ($key,$value) = ($1,$2);
+		    $html .= qq{<span class="key">$key</span>:<span class="value">$value</span><br />\n};
+		} elsif ($line =~ m/^(.+?)\s*{\s*$/) {
+		    $html .= qq{<span class="key">$1</span>\n};
+		    $html .= qq{<div class="block">\n};
+		} elsif ($line =~ m/^}\s*$/) {
+		    $html .= qq{</div>\n};
 		}
 	    }
 
