@@ -243,12 +243,17 @@ sub _receive_while_logging_in {
 		    #$send_message->('NOTICE', "*** Your global nick in $network_name is currently '$global_nick'.");
 		    $this->send_message(
 			new IRCMessage(
-			    Prefix => Runloop->shared_loop->sysmsg_prefix(qw(priv system)),
+			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
 			    Command => 'NOTICE',
 			    Params => [$current_nick,
 				       "*** Your global nick in $network_name is currently '$global_nick'."]));
 		} else {
-		    $send_message->('NOTICE', "*** Your global nick in $network_name is same as local nick.");
+		    $this->send_message(
+			new IRCMessage(
+			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv system)),
+			    Command => 'NOTICE',
+			    Params => [$current_nick,
+				       "*** Your global nick in $network_name is same as local nick."]));
 		}
 	    } values %{RunLoop->shared_loop->networks};
 	    
