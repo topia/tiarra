@@ -99,7 +99,7 @@ sub connect {
 	    eval {
 		$this->_connect_stage(@_);
 	    }; if ($@) {
-		$this->_connect_error("internal error");
+		$this->_connect_error("internal error: $@");
 	    }
 	});
     $this;
