@@ -298,7 +298,7 @@ sub do_with_ensure {
 	$retval = [$closure->(@args)];
     };
     my $error = $@;
-    $ensure->();
+    $ensure->($retval, $error);
     if ($error) {
 	die $error;
     } else {
