@@ -40,14 +40,14 @@ use Tiarra::OptionalModules;
 use Tiarra::Utils;
 use Tiarra::IRC::Prefix;
 use Tiarra::Encoding;
-use enum qw(PREFIX COMMAND PARAMS REMARKS TIME RAW_PARAMS);
+use enum qw(PREFIX COMMAND PARAMS REMARKS TIME RAW_PARAMS GENERATOR);
 
 # constants
 use constant MAX_MIDDLES => 14;
 use constant MAX_PARAMS => MAX_MIDDLES + 1;
 # max params = (middles[14] + trailing[1]) = 15
 
-utils->define_array_attr_accessor(0, qw(time));
+utils->define_array_attr_accessor(0, qw(time generator));
 utils->define_array_attr_translate_accessor(
     0, sub {
 	my ($from, $to) = @_;
@@ -68,6 +68,8 @@ sub new {
 	Time::HiRes::time() : CORE::time();
 
     $obj->[RAW_PARAMS] = undef;
+
+    $obj->[GENERATOR] = undef;
 
     if (exists $args{'Line'}) {
 	$args{'Line'} =~ s/\x0d\x0a$//s; # 行末のcrlfは消去。
@@ -115,6 +117,9 @@ sub new {
     }
     if (exists $args{'Remarks'}) {
 	$obj->[REMARKS] = {%{$args{'Remarks'}}};
+    }
+    if (exists $args{'Generator'}) {
+	$obj->generator($args{'Generator'});
     }
     $obj;
 }
