@@ -41,7 +41,7 @@ use Tiarra::Utils;
 use Tiarra::ModifiedFlagMixin;
 use Tiarra::SessionMixin;
 use base qw(Tiarra::SessionMixin);
-my $utils = Tiarra::Utils->shared;
+use base qw(Tiarra::Utils);
 
 sub new {
     # コンストラクタ
@@ -82,7 +82,7 @@ sub new {
 	ignore_proc => $ignore_proc || sub { $_[0] =~ /^\s*#/; },
 	cleanup_queued => undef,
 
-	caller_name => $utils->simple_caller_formatter('GroupDB registered'),
+	caller_name => $class->simple_caller_formatter('GroupDB registered'),
 	database => undef, # ARRAY<HASH*>
 	# <キー SCALAR,値の集合 ARRAY<SCALAR>>
     };
@@ -93,10 +93,10 @@ sub new {
     $this->_load;
 }
 
-$utils->define_attr_accessor(0,
-			     qw(time fpath charset),
-			     qw(primary_key split_primary),
-			     qw(cleanup_queued));
+__PACKAGE__->define_attr_accessor(0,
+				  qw(time fpath charset),
+				  qw(primary_key split_primary),
+				  qw(cleanup_queued));
 __PACKAGE__->define_session_wrap(0,
 				 qw(checkupdate synchronize cleanup));
 
@@ -153,6 +153,12 @@ sub _load {
     return $this;
 }
 
+sub _match {
+    my ($this, $value, $str) = @_;
+
+    Mask::match_array($value, $str, 1, $this->{use_re}, 0);
+}
+
 sub _check_primary_key {
     my $this = shift;
 
@@ -165,6 +171,13 @@ sub _check_no_primary_key {
 
     croak "primary_key defined; can't use this method."
 	if defined $this->primary_key;
+}
+
+sub _check_primary_key_dups {
+    my ($this, @values) = @_;
+
+    $this->_check_primary_key;
+    defined $this->find_group_with_primary([@values]);
 }
 
 sub _checkupdate {
@@ -234,7 +247,7 @@ sub find_group_with_primary {
     my ($this, $value) = @_;
 
     $this->_check_primary_key;
-    return $this->find_group([$this->primary_key], \$value);
+    return $this->find_group($this->primary_key, $value);
 }
 
 sub find_group {
@@ -282,8 +295,7 @@ sub find_groups {
 	    foreach my $group (@{$this->{database}}) {
 		foreach my $key (@$keys) {
 		    foreach my $value (@$values) {
-			if (Mask::match_array($group->get_array($key), $value, 1,
-					      $this->{use_re}, 0)) {
+			if ($this->_match($group->get_array($key), $value)) {
 			    #match.
 			    push(@ret, $group);
 			    if (defined($count) && ($count <= scalar(@ret))) {
@@ -304,27 +316,34 @@ sub new_group {
 
     if (!@primary_key_values && defined $this->primary_key) {
 	croak 'primary_key_values not defined! please pass value';
+	if ($this->_check_primary_key_dups(@primary_key_values)) {
+	    return undef;
+	}
     } elsif (@primary_key_values && !defined $this->primary_key) {
 	carp 'primary_key_values defined! ignore value...';
 	@primary_key_values = ();
     }
-    my $group = Tools::Hash->new($this, {
-	(@primary_key_values) ?
-	    ($this->primary_key => [@primary_key_values]) :
-		()
-	       });
     $this->with_session(
 	sub {
+	    my $group;
+	    if (@primary_key_values) {
+		$group = Tools::Hash->new($this, {
+		    $this->primary_key => [@primary_key_values],
+		});
+	    } else {
+		$group = Tools::Hash->new($this);
+		$this->queue_cleanup;
+	    }
 	    push @{$this->{database}}, $group;
 	    $this->set_modified;
+	    $group;
 	});
-
-    return $group;
 }
 
 sub add_group {
     # データベースにグループを追加する。
     # 常に成功し 1(true) が返る。
+    # sanity check が足りないので new_group を使うことを推奨します。
 
     # key に space が含まれないかチェックすべきだが、とりあえずはしていない。
     my ($this, @groups) = @_;
@@ -343,10 +362,21 @@ sub add_group {
     return 1;
 }
 
-sub add_array {
-    my ($this, $group, $key, @values) = @_;
+sub del_group {
+    # データベースからグループを削除する。
+    # グループを空にしてクリーンアップにまかせます。
 
-    $group->add_array($key, @values);
+    my ($this, @groups) = @_;
+    $this->with_session(
+	sub {
+	    foreach my $group (@groups) {
+		foreach ($group->keys) {
+		    $group->del_key($_);
+		}
+	    }
+	});
+
+    return 1;
 }
 
 sub add_array_with_primary {
@@ -358,37 +388,28 @@ sub add_array_with_primary {
 	    # 追加。あるか？
 	    my $group = $this->find_group_with_primary($primary);
 
+	    # primary_key の値に重複ができないかチェック。
+	    if ($key eq $this->primary_key &&
+		    $this->_check_primary_key_dups(@values)) {
+		return 0;
+	    }
+
 	    if (defined $group) {
 		# found.
 		return $group->add_array($key, @values);
 	    } else {
-		# 無かった場合、primary_keyだけは追加が許される。
-		if ($key eq $this->primary_key) {
-		    # primary_key の値と @values が一致するかチェック。
-		    if (Mask::match_array([@values], $primary, 1, $this->{use_re}, 0)) {
-			$this->new_group(@values);
-			$this->set_modified;
-			# added
-			return 1;
-		    }
+		# 1. 無かった場合、primary_keyだけは追加が許される。
+		# 2. primary_key の値と @values が一致するかチェック。
+		if ($key eq $this->primary_key &&
+			$this->_match([@values], $primary)) {
+		    $this->new_group(@values);
+		    $this->set_modified;
+		    # added
+		    return 1;
 		}
 	    }
 	    # not added
 	    return 0;
-	});
-}
-
-sub del_array {
-    my ($this, $group, $key, @values) = @_;
-
-    $utils->do_with_ensure(
-	sub {
-	    $group->del_array($key, @values);
-	},
-	sub {
-	    if ($key eq $this->primary_key) {
-		$this->queue_cleanup;
-	    }
 	});
 }
 
@@ -402,32 +423,38 @@ sub del_array_with_primary {
 	    my $group = $this->find_group_with_primary($primary);
 
 	    if (defined $group) {
-		return $group->del_value($key, @values);
+		return $group->del_array($key, @values);
 	    }
 	    # not deleted
 	    return 0;
 	});
 }
 
-*add_value = \&add_array;
 *add_value_with_primary = \&add_array_with_primary;
-*del_value = \&del_array;
 *del_value_with_primary = \&del_array_with_primary;
 
 sub _cleanup {
-    # primary_keyが一つもないエイリアスを削除する。
     my $this = shift;
     my $force = shift || 0;
 
-    if (defined $this->primary_key) {
-	if ($this->cleanup_queued || $force) {
+    if ($this->cleanup_queued || $force) {
+	my $count = scalar @{$this->{database}};
+	if (defined $this->primary_key) {
+	    # primary_keyが一つもないエイリアスを削除する。
 	    @{$this->{database}} = grep {
 		my $primary = $_->{$this->primary_key};
 		defined $primary && @$primary > 0;
 	    } @{$this->{database}};
-	    $this->set_modified;
-	    $this->dequeue_cleanup;
+	} else {
+	    # 中身が空のエイリアスを削除する。
+	    @{$this->{database}} = grep {
+		$_->keys;
+	    } @{$this->{database}};
 	}
+	if ($count != (scalar @{$this->{database}})) {
+	    $this->set_modified;
+	}
+	$this->dequeue_cleanup;
     }
 }
 
@@ -442,7 +469,32 @@ sub _before_session_finish {
     $this->_synchronize;
 }
 
-# group misc functions
+# replace support functions
+sub replace_with_callbacks {
+    # マクロの置換を行なう。%optionalは置換に追加するキーと値の組みで、省略可。
+    # $callbacksはgroup/optionalで置換できなかった際に呼び出されるコールバック関数のリファレンス。
+    # optionalの値はSCALARでもARRAY<SCALAR>でも良い。
+    my ($this,$primary,$str,$callbacks,%optional) = @_;
+    my $main_table = $this->find_group_with_primary($primary) || {};
+    return Tools::HashTools::replace_recursive($str,[$main_table,\%optional],$callbacks);
+}
+
+# deprecated interfaces
+sub add_array {
+    my ($this, $group, $key, @values) = @_;
+
+    $group->add_array($key, @values);
+}
+
+sub del_array {
+    my ($this, $group, $key, @values) = @_;
+
+    $group->del_array($key, @values);
+}
+
+*add_value = \&add_array;
+*del_value = \&del_array;
+
 sub dup_group {
     # グループの複製を行います。
 
@@ -452,6 +504,7 @@ sub dup_group {
     return $group->clone;
 }
 
+# group misc functions
 sub concat_string_to_key {
     # prefix や suffix を group の key に付加します。
 
@@ -460,16 +513,10 @@ sub concat_string_to_key {
     # $prefix	: prefix 文字列 ('to.' とか 'from.' とか)
     # $suffix	: suffix 文字列
     my ($group, $prefix, $suffix) = @_;
-    my ($new_group) = {};
-
-    $prefix = '' unless defined($prefix);
-    $suffix = '' unless defined($suffix);
-
-    map {
-	$new_group->{$prefix . $_ . $suffix} = $group->{$_};
-    } keys(%$group);
-
-    return $new_group;
+    return $group->clone->manipulate_keyname(
+	prefix => $prefix,
+	suffix => $suffix,
+       );
 }
 
 sub get_value_random {
@@ -488,16 +535,6 @@ sub get_array {
     my ($group, $key) = @_;
 
     return $group->get_array($key);
-}
-
-# replace support functions
-sub replace_with_callbacks {
-    # マクロの置換を行なう。%optionalは置換に追加するキーと値の組みで、省略可。
-    # $callbacksはgroup/optionalで置換できなかった際に呼び出されるコールバック関数のリファレンス。
-    # optionalの値はSCALARでもARRAY<SCALAR>でも良い。
-    my ($this,$primary,$str,$callbacks,%optional) = @_;
-    my $main_table = $this->find_group_with_primary($primary) || {};
-    return Tools::HashTools::replace_recursive($str,[$main_table,\%optional],$callbacks);
 }
 
 1;
