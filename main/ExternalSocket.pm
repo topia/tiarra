@@ -23,6 +23,7 @@
 #             },
 #     Exception => sub {
 #               # ソケットに例外が発生したときに呼ばれるクロージャ。
+#               # 省略可能。
 #               my $this = shift;
 #               ::printmsg($this->errmsg('foo socket error'));
 #               $this->disconnect;
@@ -83,7 +84,8 @@ sub new {
 		croak "$this_func, Arg{$key} was illegal reference: ".ref($args{$key})."\n";
 	    }
 	}
-	else {
+	elsif ($key ne 'Exception') {
+	    # Exception is optional
 	    croak "$this_func, Arg{$key} not exists\n";
 	}
     }
@@ -162,7 +164,7 @@ sub exception {
     my $this = shift;
 
     $this->__check_caller;
-    $this->{exception}->($this);
+    $this->{exception}->($this) if defined $this->{exception};
 }
 
 1;
