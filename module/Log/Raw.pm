@@ -69,16 +69,6 @@ sub message_arrived {
 sub message_io_hook {
     my ($this,$message,$io,$type) = @_;
 
-    my $prefix  = sprintf '(%s) ', do {
-	if ($type eq 'in') {
-	    'recv';
-	} elsif ($type eq 'out') {
-	    'send';
-	} else {
-	    '----';
-	}
-    };
-
     # break with last
     while (1) {
 	last unless $io->server_p;
@@ -93,6 +83,16 @@ sub message_io_hook {
 	my $server = $io->network_name;
 	my $dirname = $this->_server_match($server);
 	if (defined $dirname) {
+	    my $prefix  = sprintf '(%s/%s) ', $server, do {
+		if ($type eq 'in') {
+		    'recv';
+		} elsif ($type eq 'out') {
+		    'send';
+		} else {
+		    '----';
+		}
+	    };
+
 	    my $charset = $this->config->charset;
 	    if ($msg->have_raw_params) {
 		$msg->encoding_params('binary');
