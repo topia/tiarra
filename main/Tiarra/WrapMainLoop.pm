@@ -7,15 +7,17 @@
 package Tiarra::WrapMainLoop;
 use strict;
 use warnings;
-use RunLoop;
 use Carp;
-use Timer;
 use Tiarra::Utils;
 my $utils = Tiarra::Utils->shared;
 $utils->define_attr_accessor(0,
 			     qw(installed name),
 			     map { ["_$_", $_] }
 				 qw(closure type interval object));
+
+# lazy load
+#use RunLoop;
+#use Timer;
 
 sub new {
     my ($class, %opt) = @_;
@@ -107,13 +109,21 @@ sub _install {
     croak "closure is not defined;"
 	unless defined $this->_closure;
     if ($this->_type eq 'timer') {
-	$this->_object(Timer->new(
-	    Name => 'WrapMainLoop: '.$this->name,
-	    Repeat => 1,
-	    Interval => $this->_interval,
-	    Code => $this->_closure)->install);
+	if (require Timer) {
+	    $this->_object(Timer->new(
+		Name => 'WrapMainLoop: '.$this->name,
+		Repeat => 1,
+		Interval => $this->_interval,
+		Code => $this->_closure)->install);
+	} else {
+	    die 'Timer cannot load';
+	}
     } elsif ($this->_type eq 'mainloop') {
-	$this->_object(RunLoop::Hook->new($this->_closure)->install('after-select'));
+	if (require RunLoop) {
+	    $this->_object(RunLoop::Hook->new($this->_closure)->install('after-select'));
+	} else {
+	    die 'RunLoop cannot load';
+	}
     } else {
 	die 'internal error! unknown type('.$this->_type.').';
     }
