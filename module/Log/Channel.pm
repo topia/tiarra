@@ -267,7 +267,9 @@ sub _write {
 		my $cached_elem =
 		    $this->{writer_cache}->{$channel} =
 			$make_writer->();
-		$cached_elem->register;
+		if (defined $cached_elem) {
+		    $cached_elem->register;
+		}
 		return $cached_elem;
 	    }
 	}
