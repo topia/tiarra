@@ -334,34 +334,38 @@ sub _makeconf {
 	    die "$errstr\n$list";
 	};
 
-	$result .= $indent . do {
+	$result .= do {
 	    if ($line eq '') {
 		'';
 	    }
-	    elsif ($line =~ m/^\s*#/) {
-		(my $stripped = $line) =~ s/^\s*//;
-		"$block_indent$stripped";
-	    }
-	    elsif ($line =~ m/^(.+?)\s*:\s*(.*)$/) {
-		my ($key,$value) = ($1,$2);
-		if ($key =~ s/^-//) {
-		    "$block_indent#$key: $value";
-		}
-		else {
-		    "$block_indent$key: $value";
-		}
-	    }
-	    elsif ($line =~ m/^(.+?)\s*{\s*$/) {
-		$_ = "$block_indent$1 {";
-		$block_indent .= ' ' x 2;
-		$_;
-	    }
-	    elsif ($line =~ m/^}\s*$/) {
-		substr($block_indent, 0, 2) = '';
-		"$block_indent}";
-	    }
 	    else {
-		$error->('illegal line');
+		$indent . do {
+		    if ($line =~ m/^\s*#/) {
+			(my $stripped = $line) =~ s/^\s*//;
+			"$block_indent$stripped";
+		    }
+		    elsif ($line =~ m/^(.+?)\s*:\s*(.*)$/) {
+			my ($key,$value) = ($1,$2);
+			if ($key =~ s/^-//) {
+			    "$block_indent#$key: $value";
+			}
+			else {
+			    "$block_indent$key: $value";
+			}
+		    }
+		    elsif ($line =~ m/^(.+?)\s*{\s*$/) {
+			$_ = "$block_indent$1 {";
+			$block_indent .= ' ' x 2;
+			$_;
+		    }
+		    elsif ($line =~ m/^}\s*$/) {
+			substr($block_indent, 0, 2) = '';
+			"$block_indent}";
+		    }
+		    else {
+			$error->('illegal line');
+		    }
+		};
 	    }
 	} . "\n";
     }
