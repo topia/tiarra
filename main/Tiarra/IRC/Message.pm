@@ -232,7 +232,7 @@ sub serialize {
 		# パラメタが空文字列であった場合は例外としてコロンを付ける。
 		# また、 remark/always-use-colon-on-last-param が付いていた場合も
 		# コロンを付ける。
-		$arg = $unicode->set($arg)->conv($encoding);
+		$arg = $unicode->from_to($arg, 'utf8', $encoding);
 		if (length($arg) > 0 and
 		      index($arg, ' ') == -1 and
 			index($arg, ':') != 0 and
@@ -247,7 +247,7 @@ sub serialize {
 	    else {
 		# 最後のパラメタでなければ後にスペースを置く。
 		# do stringify force to avoid bug on unijp
-		$result .= $unicode->set($arg)->conv($encoding).' ';
+		$result .= $unicode->from_to($arg, 'utf8', $encoding).' ';
 	    }
 	}
     }
@@ -359,9 +359,8 @@ sub encoding_params {
 	my $value = do {
 	    if (CORE::length ($value_raw) == 0) {
 		'';
-	    }
-	    else {
-		$unicode->set($value_raw,$encoding)->utf8;
+	    } else {
+		$unicode->from_to($value_raw,$encoding,'utf8');
 	    }
 	};
 	$this->push($value);
