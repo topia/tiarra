@@ -310,12 +310,13 @@ sub _generate_attr_hooked_closure {
 		   ($class_method_p ? '->_this' : ''),
 		   ';',
 		   ' if ($#_ >=0) {',
-		   "  \$this->$attr =",
-		   ({
-		       translate => '',
-		       notify => ' shift;',
-		   }->{$type}),
-		   " $update_hook;",
+		   (sub {
+			if ($type eq 'translate') {
+			    '  '.$update_hook->('shift', "\$this->$attr");
+			} elsif ($type eq 'notify') {
+			    "  \$this->$attr = shift; $update_hook;";
+			}
+		    }->($type)),
 		   ' }',
 		   " \$this->$attr;",
 		   ' })');
