@@ -78,9 +78,15 @@ sub S_JOIN {
 
 sub S_PART {
     my ($this,$msg,$sender) = @_;
-    [$msg->param(0),
-     sprintf('- %s from %s (%s)',
-	     $msg->nick,$msg->param(0),$msg->param(1))];
+    if (defined $msg->param(1)) {
+	[$msg->param(0),
+	 sprintf('- %s from %s (%s)',
+		 $msg->nick,$msg->param(0),$msg->param(1))];
+    } else {
+	[$msg->param(0),
+	 sprintf('- %s from %s',
+		 $msg->nick,$msg->param(0))];
+    }
 }
 
 sub S_KICK {
