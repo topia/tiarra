@@ -1,5 +1,5 @@
 -*- outline -*-
-$Id: module-group.tdoc,v 1.1 2003/08/04 09:29:21 admin Exp $
+$Id: module-group.tdoc,v 1.2 2004/02/23 02:46:18 topia Exp $
 
 各モジュールの分類名(= グループ名)と、その説明。
 グループ名とは、モジュール名のm/^(.+?)::/で与えられる部分を指す。

@@ -1,3 +1,33 @@
+2004-02-23  Topia  <topia@clovery.jp>
+
+	* sample.conf
+	  - 順序が変わっています。注意してください。
+	  - general/omit-sysmsg-prefix-when-possible 削除。
+	  - general/sysmsg-prefix-use-masks ブロック追加。
+
+	* Log::Recent
+	  - no-client-logs クライアントオプションが追加されました。
+	    クライアントオプションの使い方は、
+	    realname 部分に $no-client-logs=1$ を指定します。
+	    複数ある場合は $no-client-logs=1;a=1;...$ のように指定できます。
+
+	* 全般
+	  - クライアントとの接続時にチャンネルの送出順を指定する patch を
+	    暫定的に取り込みました。 network に fixed-channels ブロックを
+	    作り、中に channel をキー名としてマスクを列挙します。
+	    例:
+	      fixed-channels {
+	        channel: #てすとちゃんねる@ircnet
+	        channel: #てすと@localserver
+	        channel: *@localserver
+	        channel: *@localserver:*.jp
+	      }
+	    マッチしなかったチャンネルについては最後にまとめて
+	    (順番がごちゃごちゃになって)送られてきます。
+	    conf の設定場所は暫定です。変わる可能性があるので注意してください。
+	  - doc/ 以下に HTML でのドキュメントが生成されていますが、
+	    まだ未調整な部分も多くあるので、正確な記述は sample.conf を参照してください。
+
 2004-02-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Channel::Freeze

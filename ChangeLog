@@ -1,3 +1,147 @@
+2004-02-23  Topia  <topia@clovery.jp>
+
+	* makedoc:
+	  - sample.conf を出力するようにした。
+	  - 全体にわたってモジュール名のソートを行うようにした。
+	  - block 構文への暫定対応。
+	  - #key:value という *コメント* をきちんと認識していなかったのを fix
+	  - グループ名に説明が定義されていなかったときに警告を出すようにした。
+
+	* tiarra:
+	  - --enable-debug 時にも、 couldn't connect 関連のメッセージなら
+	    スタックトレースを省略するようにした。
+
+	* sample.conf:
+	  - TiarraDoc を使用するようになった。
+
+	* doc/module-toc.html, doc/module/*.html:
+	  - regen.
+
+	* doc-src/conf-main.tdoc:
+	  - general/omit-sysmsg-prefix-when-possible 削除。
+	  - general/sysmsg-prefix-use-masks ブロック追加。
+	  - 書かれていなかった networks/multi-server-mode の解説を
+	    sample.conf から持ってきて追加。
+	  - typo したままだった networks/channel-network-separator の
+	    コメントを sample.conf に従って修正。
+	  - ircnet/host を irc.nara.wide.ad.jp に変更。
+	    いまは停止しているのだが、復活を願うということで。
+
+	* doc-src/module-group.tdoc:
+	  - Channel の最後が typo していたのを修正。
+	  - Client, CTCP, Debug を追加。
+	    とはいえ Debug はまだ cvs repo. には存在していないが…。
+
+	* doc-src/sample.conf.in:
+	  - RCS Tag 'Id' を追加。
+
+	* main/Configuration.pm:
+	  - general/omit-sysmsg-prefix-when-possible のデフォルト値を消して、
+	    general/sysmsg-prefix-use-masks のデフォルトブロックを追加。
+	(_complete_table_with_defaults):
+	  - _complete_{table,block}_with_defaults に分割。
+	(_complete_table_with_defaults):
+	  - Block を使った実装に変更。
+	  - Configuration::Block->table の追加が必須。
+	(_complete_block_with_defaults):
+	  - block(hash_ref) と array_ref のデフォルト値に対応。
+
+	* main/ModuleManager.pm:
+	(update_modules):
+	  - %loaded_mods に古いモジュールが無かった場合は無視するようにした。
+	(_unload):
+	  - デバッグモード時でも、同じモジュールからの 11 以上の export は表示しない。
+
+	* main/Multicast.pm:
+	  - $server_sent, $client_sent: NumericReply 化。
+	    ERR_TOOMANYCHANNELS と RPL_WHOISCHANNELS を追加。
+	(_NJOIN_from_server, _RPL_NAMREPLY):
+	  - /[@+]/ が変数展開されているようなので /[\@+]/ に変更。
+	(_WHOIS_from_client):
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	(_{attach,detach}_RPL_WHOISCHANNELS):
+	  - 追加。 WHOIS で表示されるチャンネル名に network をつける。
+
+	* main/RunLoop.pm:
+	  - sysmsg_prefix を追加。
+	(_action_one_message, _action_message_for_each, notify_msg):
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+
+	* main/TiarraDoc.pm:
+	(_makeconf):
+	  - block への暫定対応。
+
+	* main/Configuration/Block.pm:
+	  - ->table を追加。
+	(eval_code):
+	  - original の typo を修正。
+
+	* main/IrcIO/Client.pm:
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	(inform_joinning_channels):
+	  - 暫定的に networks/fixed-channels ブロックに channel の mask を
+	    書くことで、送信順を指定できるようにしたが、 conf エントリ名が
+	    気に入らないため、名前が決まるまでは sample.conf に
+	    書かないことにする。
+
+	* main/IrcIO/Server.pm:
+	  - ->server_hostname を追加。 RPL_WELCOME(001) で送られてきた
+	    サーバ名を保持する。
+	  - サーバで nick 変更が起こったときに、以前の nick も表示するようにした。
+
+	* module/Auto/Reply.pm:
+	  - 返答時に mask をチェックするようにした。
+
+	* module/Channel/Freeze.pm:
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - 不要になった use Configuration; を削除。
+
+	* module/Client/Cache.pm:
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - WHO キャッシュ送信時において、 Multicast::global_to_local を
+	    使って nick を変換していなかった bug を修正。
+	  - 不要になった use Configuration; を削除。
+
+	* module/Client/Eval.pm:
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - 無用な remark('fill-prefix-when-sending-to-client') をなくした。
+
+	* module/Log/Recent.pm:
+	  - no-recent-logs クライアントオプションを追加。
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - 不要になった use Configuration; を削除。
+
+	* module/System/Pong.pm:
+	  - NumericReply 化。 ERR_NOORIGIN を返せるようにした。
+	  - PING もここで破棄するようにした。
+	(message_arrived):
+	  - $sender->server_hostname を使用して正確なホスト名に返す。
+
+	* module/System/Raw.pm:
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - NumericReply 化。 NOTICE の代わりに ERR_NEEDMOREPARAMS を返す。
+	  - 不要になった use Configuration; を削除。
+
+	* module/User/Ignore.pm:
+	  - sample conf の mask に例示用ドメインを使用するようにした。
+
+	* module/Auto/Alias.pm, module/Auto/Answer.pm,
+	module/Auto/ChannelWithoutOper.pm, module/Auto/Joined.pm,
+	module/Auto/MesMail.pm, module/Auto/Oper.pm,
+	module/Auto/Random.pm, module/Auto/Reply.pm,
+	module/Auto/Response.pm, module/CTCP/*.pm,
+	module/Channel/*.pm, module/Channel/Join/Invite.pm,
+	module/Channel/Join/Kicked.pm, module/Channel/Mode/*.pm,
+	module/Channel/Mode/Oper/Grant.pm, module/Log/Recent.pm,
+	module/System/Macro.pm, module/System/Pong.pm,
+	module/System/Raw.pm, module/System/RemoteControl.pm,
+	module/System/Shutdown.pm, module/User/Filter.pm,
+	module/User/ServerOper.pm, module/User/Vanish.pm,
+	module/User/Away/Client.pm, module/User/Away/Nick.pm,
+	module/User/Nick/Detached.pm:
+	  - TiarraDoc 化。 sample.conf から取ってきて一部まずいところは
+	    変更している。
+
 2004-02-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Channel/Freeze.pm:
@@ -1254,7 +1398,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.130 2004/02/20 18:09:13 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2004/02/20 18:09:13 $
-# Revision: $Revision: 1.130 $
+#       Id: $Id: ChangeLog,v 1.131 2004/02/23 02:46:17 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2004/02/23 02:46:17 $
+# Revision: $Revision: 1.131 $

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: ChannelWithoutOper.pm,v 1.2 2003/02/06 11:51:45 admin Exp $
+# $Id: ChannelWithoutOper.pm,v 1.3 2004/02/23 02:46:19 topia Exp $
 # -----------------------------------------------------------------------------
 package Auto::ChannelWithoutOper;
 use strict;
