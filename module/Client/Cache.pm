@@ -12,6 +12,8 @@ use NumericReply;
 
 sub MODE_CACHE_FORCE_SENDED (){0;}
 sub MODE_CACHE_SENDED (){1;}
+sub MODE_CACHE_EXPIRE_TIME (){5 * 60;}
+sub WHO_CACHE_EXPIRE_TIME (){5 * 60;}
 
 sub new {
     my $class = shift;
@@ -43,7 +45,9 @@ sub destruct {
     foreach my $network (RunLoop->shared_loop->networks_list) {
 	foreach my $ch ($network->channels_list) {
 	    $ch->remark(__PACKAGE__."/fetching-switches", undef, 'delete');
+	    $ch->remark(__PACKAGE__."/fetching-switches-expire", undef, 'delete');
 	    $ch->remark(__PACKAGE__."/fetching-who", undef, 'delete');
+	    $ch->remark(__PACKAGE__."/fetching-who-expire", undef, 'delete');
 	}
     }
 
@@ -71,6 +75,8 @@ sub message_io_hook {
 	    my $ch = $io->channel($msg->param(0));
 	    if (defined $ch) {
 		$ch->remark(__PACKAGE__."/fetching-switches", 1);
+		$ch->remark(__PACKAGE__."/fetching-switches-expire",
+			    time() + MODE_CACHE_EXPIRE_TIME);
 	    }
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_CHANNELMODEIS &&
@@ -78,6 +84,7 @@ sub message_io_hook {
 	    my $ch = $io->channel($msg->param(1));
 	    if (defined $ch) {
 		$ch->remark(__PACKAGE__."/fetching-switches", undef, 'delete');
+		$ch->remark(__PACKAGE__."/fetching-switches-expire", undef, 'delete');
 	    }
 	} elsif ($type eq 'out' &&
 		     $msg->command eq 'WHO' &&
@@ -85,6 +92,8 @@ sub message_io_hook {
 	    my $ch = $io->channel($msg->param(0));
 	    if (defined $ch) {
 		$ch->remark(__PACKAGE__."/fetching-who", 1);
+		$ch->remark(__PACKAGE__."/fetching-who-expire",
+			    time() + WHO_CACHE_EXPIRE_TIME);
 	    }
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_WHOREPLY &&
@@ -93,6 +102,7 @@ sub message_io_hook {
 	    my $ch = $io->channel($msg->param(1));
 	    if (defined $ch) {
 		$ch->remark(__PACKAGE__."/fetching-who", undef, 'delete');
+		$ch->remark(__PACKAGE__."/fetching-who-expire", undef, 'delete');
 	    }
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_ENDOFWHO &&
@@ -100,6 +110,7 @@ sub message_io_hook {
 	    my $ch = $io->channel($msg->param(1));
 	    if (defined $ch) {
 		$ch->remark(__PACKAGE__."/fetching-who", undef, 'delete');
+		$ch->remark(__PACKAGE__."/fetching-who-expire", undef, 'delete');
 	    }
 	}
     }
@@ -156,8 +167,10 @@ sub message_arrived {
 		    return undef;
 		}
 	    } else {
-		if ($info{ch}->remark(__PACKAGE__."/fetching-switches")) {
-		    # 取得しているクライアントがいるなら、今回は消す。
+		if ($info{ch}->remark(__PACKAGE__."/fetching-switches") &&
+			($info{ch}->remark(__PACKAGE__."/fetching-switches-expire") >= time())) {
+		    # 取得しているクライアントがいて、期限が切れてないなら、
+		    # 今回は消して便乗。
 		    return undef;
 		}
 		# 取得しにいってもらう。
@@ -230,8 +243,10 @@ sub message_arrived {
 		    $sender->remark('who-cache-used', $remark);
 		    return undef;
 		} else {
-		    if ($info{ch}->remark(__PACKAGE__."/fetching-who")) {
-			# 取得しているクライアントがいるなら、今回は消して便乗。
+		    if ($info{ch}->remark(__PACKAGE__."/fetching-who") &&
+			    ($info{ch}->remark(__PACKAGE__."/fetching-who-expire") >= time())) {
+			# 取得しているクライアントがいて、期限が切れてないなら、
+			# 今回は消して便乗。
 			return undef;
 		    }
 		    # 取得しにいってもらう。
