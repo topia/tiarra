@@ -16,6 +16,7 @@ our %modules = (
     'ipv6' => [qw(IO::Socket::INET6)],
     'time_hires' => [qw(Time::HiRes)],
     'unix_dom' => [qw(IO::Socket::UNIX)],
+    'encode' => [qw(Encode)],
    );
 
 sub _new {
@@ -58,9 +59,7 @@ sub check {
     return $this->{$name} if defined $this->{$name};
     die "module $name spec. not found" unless defined $modules{$name};
 
-    local $@;
-    eval join('', map { "use $_ ();" } @{$modules{$name}});
-    $this->{$name} = ($@ ? 0 : 1);
+    $this->{$name} = eval join(' && ', map { "require $_" } @{$modules{$name}}) . ';';
 }
 
 sub AUTOLOAD {
