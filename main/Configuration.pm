@@ -187,7 +187,11 @@ my $defaults = {
 	'client-out-encoding' => 'jis',
 	'stdout-encoding' => 'euc',
 	'sysmsg-prefix' => 'tiarra',
-	'omit-sysmsg-prefix-when-possible' => '1',
+	'sysmsg-prefix-use-masks' => {
+	    'system' => '*',
+	    'priv' => '',
+	    'channel' => '*',
+	},
     },
     networks => {
 	'name' => 'main',
@@ -200,52 +204,52 @@ my $defaults = {
 sub _complete_table_with_defaults {
     my ($blocks) = @_;
 
-    my $find_block = sub {
-	my $name = shift;
-	# 引数として与えられたブロックの中から、指定された名を持つものを探す。
-	# 見付からなければundefを返す。
-	foreach my $block (@$blocks) {
-	    if ($block->block_name eq $name) {
-		return $block;
-	    }
-	}
-	undef;
-    };    
-    my $copy_and_store_block = sub {
-	# nameはスカラー、blockはハッシュ。
-	my ($name,$table) = @_;
-	my $block = Configuration::Block->new($name);
-	while (my ($key,$value) = each %$table) {
-	    $block->add($key,$value);
-	}
-	push @$blocks,$block;
-    };
-
-    while (my ($default_block_name,$default_block) = each %{$defaults}) {
-	# このブロックは存在しているか？
-	unless (defined $find_block->($default_block_name)) {
-	    # ブロックごと省略されていたのでデフォルトのブロックをコピーして定義。
-	    $copy_and_store_block->($default_block_name,$default_block);
-	    next; # コピーしたので値の不足は考えなくて良い。
-	}
-	
-	while (my ($default_key,$default_value) = each %{$default_block}) {
-	    my $block = $find_block->($default_block_name);
-	    # この値は存在しているか？
-	    if (!defined $block->get($default_key)) {
-		# 値が省略されていたので値を定義。
-		$block->add($default_key,$default_value);
-	    }
-	}
-    }
+    my $root_block = Configuration::Block->new('ROOT');
+    map {
+	$root_block->set($_->block_name, $_);
+    } @$blocks;
+    _complete_block_with_defaults($root_block, $defaults);
 
     # networksのdefaultだけは別処理。
-    my $networks = $find_block->('networks');
+    my $networks = $root_block->networks;
     if (!defined $networks->default) {
 	$networks->set('default',$networks->name);
     }
+
+    @$blocks = values(%{$root_block->table});
+    $blocks;
 }
 
+sub _complete_block_with_defaults {
+    my ($blocks, $defaults) = @_;
+
+    while (my ($default_block_name,$default_block) = each %{$defaults}) {
+	# このブロックは存在しているか？
+	unless (defined $blocks->get($default_block_name)) {
+	    # ブロックごと省略されていたので空のブロックを定義。
+	    $blocks->set($default_block_name,
+			 Configuration::Block->new($default_block_name));
+	}
+	
+	my $block = $blocks->get($default_block_name);
+	my $must_check_child = {};
+	while (my ($default_key,$default_value) = each %{$default_block}) {
+	    if ((!ref($default_value)) ||
+		    (ref($default_value) eq 'ARRAY')) {
+		# この値は存在しているか？
+		if (!defined $block->get($default_key)) {
+		    # 値が省略されていたので値を定義。
+		    $block->set($default_key,$default_value);
+		}
+	    } elsif (ref($default_value) eq 'HASH') {
+		$must_check_child->{$default_key} = $default_value;
+	    }
+	}
+	if (values %$must_check_child) {
+	    _complete_block_with_defaults_recursive($block, $must_check_child);
+	}
+    }
+}
 
 my $required = {
     general => ['nick','user','name'],
