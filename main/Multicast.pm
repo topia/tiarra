@@ -194,7 +194,33 @@ sub _NJOIN_from_server {
 
 sub _WHOIS_from_client {
     my ($message,$sender) = @_;
+    my $local_nick = $runloop->current_nick;
     my $to;
+
+    # ローカルnickにWHOISしたら、全ネットワークのnickを表示する
+    if (($message->command eq 'WHOIS' || $message->command eq 'WHO') &&
+	$message->param(0) eq $local_nick) {
+	map {
+	    # ローカルnickとグローバルnickが食い違っていたらその旨を伝える。
+	    # 接続しているネットワーク名を全部表示する
+	    my $network_name = $_->network_name;
+	    my $global_nick = $_->current_nick;
+	    if ($global_nick ne $local_nick) {
+		$sender->send_message(
+		    new IRCMessage(Prefix => 'tiarra',
+				 Command => 'NOTICE',
+				 Params => [$local_nick,
+					   "*** Your global nick in $network_name is currently '$global_nick'."]));
+	    } else {
+		$sender->send_message(
+		    new IRCMessage(Prefix => 'tiarra',
+				 Command => 'NOTICE',
+				 Params => [$local_nick,
+					   "*** Your global nick in $network_name is same as local nick."]));
+	    }
+	} values %{$runloop->networks};
+    }
+
     ($message->params->[0],$to) = detatch($message->params->[0]);
 
     my $network = $runloop->networks->{$to};
@@ -202,7 +228,6 @@ sub _WHOIS_from_client {
 
     # ローカルnickと送信先のグローバルnickが異なっていたら、その旨をクライアントに報告する。
     # ただしWHOISの対象が自分だった場合のみ。
-    my $local_nick = $runloop->current_nick;
     my $global_nick = $network->current_nick;
     if (($message->command eq 'WHOIS' || $message->command eq 'WHO') &&
 	$message->param(0) eq $global_nick &&
@@ -420,7 +445,11 @@ sub _update_cache {
 	$default_network = $networks->default;
     }
     else {
-	$default_network = (RunLoop->shared->networks_list)[0]->network_name;
+	if (scalar RunLoop->shared->networks_list) {
+	    $default_network = (RunLoop->shared->networks_list)[0]->network_name;
+	} else {
+	    $default_network = $networks->default;
+	}
     }
 
     $separator = $networks->channel_network_separator;
