@@ -126,6 +126,8 @@ sub clone {
 	    Data::Dumper->new([$this])->Terse(1)->Deepcopy(1)->Purity(1)->Dump;
     } else {
 	my @new = @$this;
+	# do not clone raw_params. this behavior is by design.
+	# (we want to handle _raw_params by outside. please re-construct!)
 	$new[PARAMS] = [@{$this->[PARAMS]}] if defined $this->[PARAMS];
 	$new[REMARKS] = {%{$this->[REMARKS]}} if defined $this->[REMARKS];
 	bless \@new => ref($this);
