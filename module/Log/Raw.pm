@@ -96,16 +96,15 @@ sub message_io_hook {
 	    my $charset = do {
 		if ($io->can('out_encoding')) {
 		    $io->out_encoding;
+		} elsif ($msg->have_raw_params) {
+		    $msg->encoding_params('binary');
+		    'binary';
 		} else {
 		    $this->config->charset;
 		}
 	    };
-	    if ($msg->have_raw_params) {
-		$msg->encoding_params('binary');
-		$charset = 'binary';
-	    }
 	    $this->_write($server, $dirname, $msg->time, $prefix .
-			      $msg->serialize($this->config->charset));
+			      $msg->serialize($charset));
 	}
 	last;
     }
