@@ -9,8 +9,6 @@ package LinedINETSocket;
 use strict;
 use warnings;
 use IO::Socket::INET;
-use IO::Select;
-use RunLoop;
 use Tiarra::Utils;
 use Tiarra::Socket::Lined;
 use base qw(Tiarra::Socket::Lined);
@@ -46,9 +44,9 @@ sub connect {
 
     # ソケットを開く。開けなかったらundef。
     my $sock = new IO::Socket::INET(PeerAddr => $host,
-				    PeerPort => $port,
-				    Proto => 'tcp',
-				    Timeout => 5);
+				      PeerPort => $port,
+				      Proto => 'tcp',
+				      Timeout => 5);
     $this->attach($sock);
 }
 

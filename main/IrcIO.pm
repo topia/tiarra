@@ -7,7 +7,6 @@ package IrcIO;
 use strict;
 use warnings;
 use Carp;
-use IO::Socket::INET;
 use Configuration;
 use IRCMessage;
 use Exception;
