@@ -27,16 +27,11 @@ sub new {
 	    'S_PRIVMSG','C_PRIVMSG','S_NOTICE','C_NOTICE');
     $this->{hook} = IrcIO::Client::Hook->new(
 	sub {
-	    my ($hook, $client, $ch_name) = @_;
-	    my $ch = RunLoop->shared->channel($ch_name);
+	    my ($hook, $client, $ch_name, $network, $ch) = @_;
 	    # ログはあるか？
 	    my $vec = $ch->remarks('recent-log');
 	    if (defined $vec) {
-		my $ch_name;
 		foreach my $elem (@$vec) {
-		    $ch_name =
-			RunLoop->shared->multi_server_mode_p ?
-			    $elem->[0] : $ch->name;
 		    $client->send_message(
 			IRCMessage->new(
 			    Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(channel log)),

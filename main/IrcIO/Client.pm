@@ -451,6 +451,15 @@ sub inform_joinning_channels {
 		Prefix => $this->fullname,
 		Command => RPL_ENDOFNAMES,
 		Params => [$local_nick,$ch_name,'End of NAMES list']));
+
+	# channel-infoフックの引数は (IrcIO::Client, 送信用チャンネル名, ネットワーク, ChannelInfo)
+	eval {
+	    IrcIO::Client::HookTarget->shared->call(
+		'channel-info', $this, $ch_name, $network, $ch);
+	}; if ($@) {
+	    # エラーメッセージは表示するが、送信処理は続ける
+	    RunLoop->shared_loop->notify_error("__PACKAGE__ hook call error: $@");
+	}
     };
 
     my %channels = map {
@@ -470,9 +479,6 @@ sub inform_joinning_channels {
 	    my $ch_name = $_;
 	    if (Mask::match($mask, $ch_name)) {
 		$send_channelinfo->(@{$channels{$ch_name}});
-		# channel-infoフックの引数は (IrcIO::Client, チャンネル名)
-		IrcIO::Client::HookTarget->shared->call(
-		    'channel-info', $this, $ch_name);
 		delete $channels{$ch_name};
 		last;
 	    }
@@ -480,10 +486,8 @@ sub inform_joinning_channels {
     }
 
     # のこりを出力
-    while (my ($ch_name, $pair) = each %channels) {
-	$send_channelinfo->(@$pair);
-	IrcIO::Client::HookTarget->shared->call(
-	    'channel-info', $this, $ch_name);
+    foreach (values %channels) {
+	$send_channelinfo->(@$_);
     }
 }
 
