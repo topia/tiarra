@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Freeze.pm,v 1.2 2003/07/23 07:25:29 admin Exp $
+# $Id: Freeze.pm,v 1.3 2003/10/19 12:32:19 admin Exp $
 # -----------------------------------------------------------------------------
 # このモジュールは再起動しても凍結設定を失はないやうにする爲、
 # 設定をBulletinBoardのfrost-channelsに保存します。
@@ -23,7 +23,7 @@ sub new {
     $this;
 }
 
-sub DESTROY {
+sub destruct {
     my $this = shift;
     if (defined $this->{reminder_timer}) {
 	$this->{reminder_timer}->uninstall;
