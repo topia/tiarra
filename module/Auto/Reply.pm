@@ -14,8 +14,8 @@ use Tools::HashDB;
 use Mask;
 
 sub new {
-    my ($class) = @_;
-    my $this = $class->SUPER::new;
+    my $class = shift;
+    my $this = $class->SUPER::new(@_);
     $this->{config} = [];
 
     $this->_load;

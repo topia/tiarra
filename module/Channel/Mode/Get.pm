@@ -9,7 +9,7 @@ use Multicast;
 
 sub new {
     my $class = shift;
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
     $this->{buffer} = []; # [IrcIO::Server,IRCMessage]
     $this->{timer} = undef; # Timer：必要な時だけ使われる。
     $this;

@@ -11,7 +11,7 @@ use RunLoop;
 
 sub new {
     my $class = shift;
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
     $this->{servers} = {}; # servername => channellist
     # channellist : HASH
     #   shortname => チャンネルショートネーム

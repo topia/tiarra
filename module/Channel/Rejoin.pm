@@ -14,7 +14,7 @@ use NumericReply;
 
 sub new {
     my $class = shift;
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
     $this->{sessions} = {}; # チャンネルフルネーム => セッション情報
     # セッション情報 : HASH
     # ch_fullname => チャンネルフルネーム

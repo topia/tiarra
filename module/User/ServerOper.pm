@@ -9,7 +9,7 @@ use IRCMessage;
 
 sub new {
     my $class = shift;
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
     $this->{table} = do {
 	# ネットワーク名 => [オペレータ名,オペレータパスワード]
 	my %hash = map {

@@ -24,7 +24,7 @@ my $event_handler_prefix = 'Win32Event_';
 
 sub new {
     my $class = shift;
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
 
     # 日本語等を使うためには文字コード変換しないといけないと思います。
     # 気をつけてください。

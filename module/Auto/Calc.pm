@@ -22,8 +22,8 @@ use Symbol ();
 use Safe;
 
 sub new {
-    my ($class) = @_;
-    my $this = $class->SUPER::new;
+    my $class = shift;
+    my $this = $class->SUPER::new(@_);
     $this->{safe} = Safe->new(__PACKAGE__.'::Root');
     $this->{safe}->erase;
     $this->{safe}->permit_only(qw(:base_core :base_math :base_orig),

@@ -10,7 +10,7 @@ use IRCMessage;
 
 sub new {
     my $class = shift;
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
     $this->{macros} = $this->hash; # コマンド => ARRAY<動作(IRCMessage)>
     $this;
 }

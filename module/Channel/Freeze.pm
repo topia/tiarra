@@ -16,7 +16,7 @@ use Mask;
 sub new {
     my $class = shift;
     
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
     $this->{reminder_timer} = undef; # Timer
     $this->set_timer_if_required;
     

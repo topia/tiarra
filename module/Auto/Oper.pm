@@ -11,24 +11,24 @@ use Mask;
 use Multicast;
 
 sub new {
-  my $class = shift;
-  my $this = $class->SUPER::new;
-  $this;
+    my $class = shift;
+    my $this = $class->SUPER::new(@_);
+    $this;
 }
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
     my @result = ($msg);
-    
+
     my ($get_raw_ch_name,$reply,$reply_as_priv,$reply_anywhere,$get_full_ch_name)
 	= Auto::Utils::generate_reply_closures($msg,$sender,\@result);
-    
+
     my $op = sub {
 	$sender->send_message(IRCMessage->new(
 				  Command => 'MODE',
 				  Params => [$get_raw_ch_name->(),'+o',$msg->nick]));
     };
-    
+
     # 鯖からクライアントへのPRIVMSGで、かつrequestにマッチしているか？
     if ($sender->isa('IrcIO::Server') &&
 	$msg->command eq 'PRIVMSG' &&

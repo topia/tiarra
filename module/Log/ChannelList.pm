@@ -17,7 +17,7 @@ use Module::Use qw(Tools::DateConvert);
 
 sub new {
   my $class = shift;
-  my $this = $class->SUPER::new;
+  my $this = $class->SUPER::new(@_);
   $this->{networks} = [];
   $this->{unijp} = Unicode::Japanese->new;
 

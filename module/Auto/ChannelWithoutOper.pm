@@ -9,8 +9,8 @@ use Multicast;
 use IRCMessage;
 
 sub new {
-    my ($class) = @_;
-    my $this = $class->SUPER::new;
+    my $class = shift;
+    my $this = $class->SUPER::new(@_);
     $this->{last_message_time} = 0; # 最後にこのモジュールが発言した時刻。
     $this->{table} = do {
 	my %hash = map {

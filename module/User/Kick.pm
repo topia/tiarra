@@ -12,7 +12,7 @@ use Timer;
 
 sub new {
     my $class = shift;
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
     $this->{queue} = {}; # network name => [IRCmessage,...]
     $this->{timer} = undef; # queueが空でない時だけ必要になるTimer
     $this;

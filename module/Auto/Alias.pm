@@ -12,7 +12,7 @@ use Mask;
 
 sub new {
   my $class = shift;
-  my $this = $class->SUPER::new;
+  my $this = $class->SUPER::new(@_);
   Auto::AliasDB::setfile($this->config->alias,
 			 $this->config->alias_encoding);
   $this;

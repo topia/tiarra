@@ -13,7 +13,7 @@ use Mask;
 
 sub new {
     my $class = shift;
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
     # チャンネル管理の手間を省くため、チャンネルのログはChannelInfoのremarksに保存する。
     # privのログだけこのクラスで保持。
     $this->{priv_log} = []; # 中身は単なる文字列

@@ -15,8 +15,8 @@ use Mask;
 use Multicast;
 
 sub new {
-  my ($class) = @_;
-  my $this = $class->SUPER::new;
+  my $class = shift;
+  my $this = $class->SUPER::new(@_);
   $this->{database} = Tools::GroupDB->new($this->config->file, 'pattern', $this->config->charset, 1, 1);
 
   return $this;

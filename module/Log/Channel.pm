@@ -18,7 +18,7 @@ use Multicast;
 
 sub new {
     my $class = shift;
-    my $this = $class->SUPER::new;
+    my $this = $class->SUPER::new(@_);
     $this->{channels} = []; # 要素は[ディレクトリ名,マスク]
     $this->{matching_cache} = {}; # <チャンネル名,ファイル名>
     $this->{writer_cache} = {}; # <チャンネル名,Log::Writer>
