@@ -77,8 +77,8 @@ BEGIN {
     sub time_hires_is_enabled { $time_hires_is_enabled; }
 }
 
-use Configuration;
 use Tiarra::Resolver; # early initialization
+use Configuration;
 use RunLoop;
 use ModuleManager;
 use ReloadTrigger;
@@ -405,4 +405,6 @@ sub shutdown {
     }
 }
 
-exit main();
+my $exitval = main;
+Tiarra::TerminateManager->terminate('main');
+exit $exitval;
