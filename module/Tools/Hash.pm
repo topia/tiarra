@@ -34,12 +34,35 @@ sub values	{ CORE::values(%{shift->data}); }
 sub clone {
     my ($this, %args) = @_;
     if ($args{deep}) {
-	eval
-	    Data::Dumper->new([$this])->Terse(1)->Deepcopy(1)->Purity(1)->Dump;
+	ref($this)->new(undef,
+			eval(Data::Dumper->new([$this->data])
+				->Terse(1)->Deepcopy(1)->Purity(1)->Dump));
     } else {
 	# shallow copy
 	ref($this)->new(undef, {%{$this->data}});
     }
+}
+
+sub manipulate_keyname {
+    # this method update myself, please clone before.
+    my ($this, %opts) = @_;
+
+    $this->with_session(
+	sub {
+	    my ($new_data) = {};
+	    my $new_key;
+	    foreach my $key ($this->keys) {
+		$new_key = $key;
+		$new_key = $opts{prefix} . $new_key if defined $opts{prefix};
+		$new_key .= $opts{suffix} if defined $opts{suffix};
+		$new_key = $opts{code}->($new_key) if defined $opts{code};
+		$new_data->{$new_key} = $this->{$key};
+	    }
+	    $this->[DATA] = $new_data;
+	    $this->set_modified;
+	});
+
+    $this;
 }
 
 sub equals {
@@ -69,7 +92,16 @@ sub equals {
     return 1;
 }
 
-foreach (qw(set_modified queue_cleanup with_session)) {
+sub with_session {
+    my $this = shift;
+    if (defined $this->parent) {
+	$this->parent->with_session(@_);
+    } else {
+	shift->();
+    }
+}
+
+foreach (qw(set_modified queue_cleanup)) {
     eval "
     sub $_ \{
 	my \$this = shift;
