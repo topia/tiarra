@@ -374,21 +374,17 @@ sub _try_connect_socket {
 sub attach {
     my ($this, $connector) = @_;
 
-    if (defined $this->{connector}) {
-	$this->SUPER::attach($connector->sock);
-	$this->{connecting} = undef;
-	$this->{server_addr} = $connector->addr;
-	$this->{proto} = $connector->type_name;
-	$this->state_connected(1);
+    $this->SUPER::attach($connector->sock);
+    $this->{connecting} = undef;
+    $this->{server_addr} = $connector->addr;
+    $this->{proto} = $connector->type_name;
+    $this->state_connected(1);
 
-	$this->_send_connection_messages;
+    $this->_send_connection_messages;
 
-	$this->{connector} = undef;
-	$this->printmsg("Opened connection to ". $this->destination .".");
-	$this->install;
-    } else {
-	$this->die('connecter not defined.');
-    }
+    $this->{connector} = undef;
+    $this->printmsg("Opened connection to ". $this->destination .".");
+    $this->install;
     $this;
 }
 
