@@ -223,6 +223,7 @@ sub _receive_while_logging_in {
 
 	    map {
 		# ローカルnickとグローバルnickが食い違っていたらその旨を伝える。
+		# 接続しているネットワーク名を全部表示する
 		my $network_name = $_->network_name;
 		my $global_nick = $_->current_nick;
 		if ($global_nick ne $current_nick) {
@@ -236,7 +237,7 @@ sub _receive_while_logging_in {
 			new IRCMessage(Prefix => 'tiarra',
 				       Command => 'NOTICE',
 				       Params => [$current_nick,
-						  "*** tiarra is client of $network_name."])); ## FIXME
+						  "*** Your global nick in $network_name is same as local nick."]));
 		}
 	    } values %{RunLoop->shared_loop->networks};
 
