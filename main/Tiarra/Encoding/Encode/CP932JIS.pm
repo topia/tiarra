@@ -60,7 +60,7 @@ sub decode($$;$)
 		}exog;
 		$ret .= Encode::decode('cp932', $chunk, FB_PERLQQ);
 	    }
-	} elsif ($str =~ s/\A(\e?[^\e]+)//s) {
+	} elsif ($str =~ s/\A(\e?[^\e]*)//s) {
 	    my $str = $1;
 	    $ret .= Encode::decode('cp932', $str, FB_PERLQQ);
 	}
