@@ -16,7 +16,7 @@ sub message_arrived {
 	    # どうせクライアントへは送られないがメッセージ表示
 	    RunLoop->shared->notify_msg(
 		"System::Shutdown received shutdown command from client.");
-	    &::shutdown;
+	    ::shutdown(join(' ', @{$msg->params}));;
 	}
     }
     elsif ($sender->isa('IrcIO::Server')) {
@@ -24,17 +24,17 @@ sub message_arrived {
 	if (defined $msg->nick &&
 	    $msg->param(0) eq RunLoop->shared->current_nick &&
 	    ($msg->command eq 'PRIVMSG' || $msg->command eq 'NOTICE')) {
+	    my ($command, $message) = split(/\s+/, $msg->param(1));
 	    # 発言内容はmessageに完全一致しているか？
-	    if (defined $this->config->message &&
-		$msg->param(1) eq $this->config->message) {
+	    if (Mask::match_deep([$this->config->message('all')],
+				 $command)) {
 		# 発言者はmaskにマッチするか？
-		if (Mask::match(
-			join(',',$this->config->mask('all')),
-			$msg->prefix)) {
+		if (Mask::match_deep([$this->config->mask('all')],
+				     $msg->prefix)) {
 		    # どうせクライアントには送られないがメッセージ表示
 		    RunLoop->shared->notify_msg(
 			"System::Shutdown received shutdown command from ".$msg->prefix.".");
-		    ::shutdown(join(' ', @{$msg->params}));
+		    ::shutdown($message);
 		}
 	    }
 	}
