@@ -24,6 +24,7 @@ sub new {
     my $obj = $class->SUPER::new;
     $obj->{network_name} = $network_name;
     $obj->{current_nick} = ''; # 現在使用中のnick。ログインしていなければ空。
+    $obj->{server_hostname} = ''; # サーバが主張している hostname。こちらもログインしてなければ空。
     $obj->reload_config;
 
     $obj->{logged_in} = 0; # このサーバーへのログインに成功しているかどうか。
@@ -46,6 +47,10 @@ sub network_name {
 
 sub current_nick {
     shift->{current_nick};
+}
+
+sub server_hostname {
+    shift->{server_hostname};
 }
 
 sub channels {
@@ -357,6 +362,7 @@ sub _receive_while_logging_in {
     if ($reply eq RPL_WELCOME) {
 	# 成功した。
 	$this->{current_nick} = $first_msg->param(0);
+	$this->{server_hostname} = $first_msg->prefix;
 	if (!RunLoop->shared->multi_server_mode_p &&
 		RunLoop->shared_loop->current_nick ne $this->{current_nick}) {
 	    RunLoop->shared->broadcast_to_clients(
