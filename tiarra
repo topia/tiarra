@@ -50,8 +50,11 @@ our $threads_is_enabled;
 our $ipv6_is_enabled;
 our $time_hires_is_enabled;
 BEGIN {
+    # 5.005 threading model は安定度に疑問がある上あまりサポートされていない
+    # ので使わない。
     eval q{
 	use threads;
+	use threads::shared;
     };
     $threads_is_enabled = ($@ ? 0 : 1);
 
