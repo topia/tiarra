@@ -1,5 +1,19 @@
 2004-02-23  Topia  <topia@clovery.jp>
 
+	* main/IrcIO/Client.pm:
+	  - RunLoop を Runloop と typo していたのを修正。
+
+	* main/IrcIO/Server.pm:
+	(_received_after_logged_in, _set_to_next_nick):
+	  - sysmsg_prefix を使うようにした。
+	(_RPL_CHANNELMODEIS):
+	  - 存在しないチャンネルが対象だったときにエラーがでるという
+	    どうしようもないミスを修正。
+
+	* main/RunLoop.pm:
+	(_multi_server_mode_changed):
+	  - sysmsg_prefix を使うようにした。
+
 	* makedoc:
 	  - sample.conf を出力するようにした。
 	  - 全体にわたってモジュール名のソートを行うようにした。
@@ -1398,7 +1412,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.131 2004/02/23 02:46:17 topia Exp $
+#       Id: $Id: ChangeLog,v 1.132 2004/02/23 06:24:20 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2004/02/23 02:46:17 $
-# Revision: $Revision: 1.131 $
+#     Date: $Date: 2004/02/23 06:24:20 $
+# Revision: $Revision: 1.132 $
