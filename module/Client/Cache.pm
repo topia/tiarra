@@ -19,6 +19,21 @@ sub _yesno {
     return 0;
 }
 
+sub destruct {
+    my ($this) = shift;
+    # cleaning remarks
+
+    # チャンネルについている remark を削除。
+    foreach my $network (@{RunLoop->shared_loop->networks}) {
+	foreach my $ch (@{$network->channels}) {
+	    $ch->remark("__PACKAGE__/fetching-switches", undef, 'delete');
+	    $ch->remark("__PACKAGE__/fetching-who", undef, 'delete');
+	}
+    }
+
+    # クライアントについてるのは削除しない。
+}
+
 sub message_io_hook {
     my ($this,$msg,$io,$type) = @_;
 
@@ -29,21 +44,21 @@ sub message_io_hook {
 			    !defined $msg->param(1)) {
 	    my $ch = $io->channel($msg->param(0));
 	    if (defined $ch) {
-		$ch->remark('fetching-switches', 1);
+		$ch->remark("__PACKAGE__/fetching-switches", 1);
 	    }
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_CHANNELMODEIS &&
 			 Multicast::channel_p($msg->param(1))) {
 	    my $ch = $io->channel($msg->param(1));
 	    if (defined $ch) {
-		$ch->remark('fetching-switches', undef, 'delete');
+		$ch->remark("__PACKAGE__/fetching-switches", undef, 'delete');
 	    }
 	} elsif ($type eq 'out' &&
 		     $msg->command eq 'WHO' &&
 			 Multicast::channel_p($msg->param(0))) {
 	    my $ch = $io->channel($msg->param(0));
 	    if (defined $ch) {
-		$ch->remark('fetching-who', 1);
+		$ch->remark("__PACKAGE__/fetching-who", 1);
 	    }
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_WHOREPLY &&
@@ -51,7 +66,7 @@ sub message_io_hook {
 	    # 処理の都合上、一つでも帰ってきた時点で取り消し。
 	    my $ch = $io->channel($msg->param(1));
 	    if (defined $ch) {
-		$ch->remark('fetching-who', undef, 'delete');
+		$ch->remark("__PACKAGE__/fetching-who", undef, 'delete');
 	    }
 	}
     }
@@ -106,7 +121,7 @@ sub message_arrived {
 		    return undef;
 		}
 	    } else {
-		if ($ch->remark('fetching-switches')) {
+		if ($ch->remark("__PACKAGE__/fetching-switches")) {
 		    # 取得しているクライアントがいるなら、今回は消す。
 		    return undef;
 		}
@@ -138,9 +153,6 @@ sub message_arrived {
 			RunLoop->shared_loop->current_nick,
 			$chan_long,
 		       ],
-		    Remarks => {
-			'fill-prefix-when-sending-to-client' => 1,
-		    },
 		   );
 		my @messages;
 		eval {
@@ -186,7 +198,7 @@ sub message_arrived {
 		    $sender->remark('who-cache-used', $remark);
 		    return undef;
 		} else {
-		    if ($ch->remark('fetching-who')) {
+		    if ($ch->remark("__PACKAGE__/fetching-who")) {
 			# 取得しているクライアントがいるなら、今回は消して便乗。
 			return undef;
 		    }
