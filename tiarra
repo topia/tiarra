@@ -10,7 +10,21 @@
 require 5.006;
 use strict;
 use warnings;
-use lib (map{ (($0 =~ m%(.*[\\\/])[^\\\/]*$%)[0] || "").$_ } qw(main module));
+BEGIN {
+    my $add_inc = sub {
+	foreach my $path (@_) {
+	    unshift(@INC,
+		    map{ "$path/$_" } qw(main module));
+	}
+    };
+    my $dirname = sub {
+	($_[0] =~ m%(.*)[\\\/][^\\\/]*$%)[0];
+    };
+
+    
+    $add_inc->($dirname->(readlink($0))) if (-l $0);
+    $add_inc->($dirname->($0), ".");
+}
 use Configuration;
 use RunLoop;
 use ModuleManager;
