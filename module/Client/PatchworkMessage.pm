@@ -8,17 +8,27 @@ use warnings;
 use base qw(Module);
 use Mask;
 use Multicast;
+use NumericReply;
 use Module::Use qw(Client::Guess);
 use Client::Guess;
 
 sub message_io_hook {
     my ($this,$msg,$io,$type) = @_;
 
+    my $mark_as_need_colon = sub {
+	$msg->remark('always-use-colon-on-last-param', 1);
+    };
+
     if ($io->isa('IrcIO::Client')) {
 	if ($this->is_target('woolchat', $io)) {
 	    if ($type eq 'out' &&
 		    $msg->command eq 'NICK') {
-		$msg->remark('always-use-colon-on-last-param', 1);
+		$mark_as_need_colon->();
+	    }
+	} elsif ($this->is_target('xchat', $io)) {
+	    if ($type eq 'out' &&
+		    $msg->command eq RPL_WHOISUSER) {
+		$mark_as_need_colon->();
 	    }
 	}
     }
@@ -48,5 +58,12 @@ default: off
 #   待てません。該当クライアントのオプション client-type に woolchat と
 #   指定してください。実名欄に $client-type=woolchat$ と書けば OK です。
 enable-woolchat: 1
+
+# X-Chat:
+#  対応しているメッセージ:
+#   RPL_WHOISUSER(コロンが必須)
+#  説明:
+#   WHOIS の realname にスペースが入っていないと最初の一文字が削られます。
+enable-xchat: 1
 
 =cut
