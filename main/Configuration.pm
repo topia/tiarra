@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Configuration.pm,v 1.22 2004/02/14 11:48:18 topia Exp $
+# $Id: Configuration.pm,v 1.23 2004/02/20 18:09:12 admin Exp $
 # -----------------------------------------------------------------------------
 # このクラスはフック`reloaded'を用意します。
 # フック`reloaded'は、設定ファイルがリロードされた時に呼ばれます。
@@ -187,6 +187,7 @@ my $defaults = {
 	'client-out-encoding' => 'jis',
 	'stdout-encoding' => 'euc',
 	'sysmsg-prefix' => 'tiarra',
+	'omit-sysmsg-prefix-when-possible' => '1',
     },
     networks => {
 	'name' => 'main',

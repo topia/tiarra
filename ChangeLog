@@ -1,3 +1,23 @@
+2004-02-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* module/Channel/Freeze.pm:
+	freezeコマンドの引数は、これまでは完全なチャンネル名であったが、
+	これはマスクに変更。その時にJOINしている全てのチャンネルの中から
+	マスクに一致した全てのチャンネルを凍結する。
+
+	* sample.conf, doc-src/conf-main.tdoc:
+	設定 general/omit-sysmsg-prefix-when-possible 追加。
+	これが1である時、sysmsg-prefixはチャンネルに対してのメッセージ
+	でなければ省略する。デフォルトは1。
+
+	* main/Configuration.pm:
+	general/omit-sysmsg-prefix-when-possible のデフォルト値を追加。
+
+	* main/Multicast.pm, main/RunLoop.pm,
+	  main/IrcIO/Client.pm, module/Channel/Freeze.pm,
+	  main/Log/Recent.pm, module/System/Raw.pm:
+	omit-sysmsg-prefix-when-possibleを反映。
+
 2004-02-15  Topia  <topia@clovery.jp>
 
 	* module/Client/Cache.pm:
@@ -1234,7 +1254,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.129 2004/02/15 00:19:31 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2004/02/15 00:19:31 $
-# Revision: $Revision: 1.129 $
+#       Id: $Id: ChangeLog,v 1.130 2004/02/20 18:09:13 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2004/02/20 18:09:13 $
+# Revision: $Revision: 1.130 $

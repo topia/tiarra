@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Multicast.pm,v 1.20 2004/02/14 11:48:18 topia Exp $
+# $Id: Multicast.pm,v 1.21 2004/02/20 18:09:12 admin Exp $
 # -----------------------------------------------------------------------------
 # サーバーからクライアントにメッセージが流れるとき、このクラスはフィルタとして
 # ネットワーク名を付加します。
@@ -239,10 +239,18 @@ sub _WHOIS_from_client {
 	$message->param(0) eq $global_nick &&
 	$local_nick ne $global_nick) {
 	$sender->send_message(
-	    new IRCMessage(Prefix => Configuration->shared->general->sysmsg_prefix,
-			   Command => 'NOTICE',
-			   Params => [$local_nick,
-				      "*** Your global nick in $to is currently '$global_nick'."]));
+	    new IRCMessage(
+		do {
+		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+			();
+		    }
+		    else {
+			(Prefix => Configuration->shared->general->sysmsg_prefix);
+		    }
+		},
+		Command => 'NOTICE',
+		Params => [$local_nick,
+			   "*** Your global nick in $to is currently '$global_nick'."]));
     }
 
     forward_to_server($message,$to);

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Client.pm,v 1.23 2004/02/14 11:48:20 topia Exp $
+# $Id: Client.pm,v 1.24 2004/02/20 18:09:12 admin Exp $
 # -----------------------------------------------------------------------------
 # IrcIO::Clientはクライアントからの接続を受け、
 # IRCメッセージをやり取りするクラスです。
@@ -240,12 +240,25 @@ sub _receive_while_logging_in {
 		my $network_name = $_->network_name;
 		my $global_nick = $_->current_nick;
 		if ($global_nick ne $current_nick) {
-		    $send_message->('NOTICE', "*** Your global nick in $network_name is currently '$global_nick'.");
+		    #$send_message->('NOTICE', "*** Your global nick in $network_name is currently '$global_nick'.");
+		    $this->send_message(
+			new IRCMessage(
+			    do {
+				if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+				    ();
+				}
+				else {
+				    (Prefix => $prefix);
+				}
+			    },
+			    Command => 'NOTICE',
+			    Params => [$current_nick,
+				       "*** Your global nick in $network_name is currently '$global_nick'."]));
 		} else {
 		    $send_message->('NOTICE', "*** Your global nick in $network_name is same as local nick.");
 		}
 	    } values %{RunLoop->shared_loop->networks};
-
+	    
 	    $send_message->(RPL_YOURHOST, "Your host is $prefix, running version ".::version());
 	    $send_message->(RPL_MOTDSTART, "- $prefix Message of the Day -");
 	    foreach my $line (main::get_credit()) {

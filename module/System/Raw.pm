@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Raw.pm,v 1.2 2004/02/14 11:48:20 topia Exp $
+# $Id: Raw.pm,v 1.3 2004/02/20 18:09:11 admin Exp $
 # -----------------------------------------------------------------------------
 package System::Raw;
 use strict;
@@ -16,6 +16,14 @@ sub message_arrived {
 	if ($msg->n_params < 2) {
 	    $sender->send_message(
 		IRCMessage->new(
+		    do {
+			if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+			    ();
+			}
+			else {
+			    (Prefix => Configuration->shared_conf->general->sysmsg_prefix);
+			}
+		    },
 		    Prefix => Configuration->shared->general->sysmsg_prefix,
 		    Command => 'NOTICE',
 		    Params => [
@@ -44,7 +52,14 @@ sub message_arrived {
 	    if (!$sent) {
 		$sender->send_message(
 		    IRCMessage->new(
-			Prefix => Configuration->shared->general->sysmsg_prefix,
+			do {
+			    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+				();
+			    }
+			    else {
+				(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
+			    }
+			},
 			Command => 'NOTICE',
 			Params => [
 			   RunLoop->shared->current_nick, 

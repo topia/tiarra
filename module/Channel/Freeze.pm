@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
-# $Id: Freeze.pm,v 1.4 2004/02/14 11:48:20 topia Exp $
+# $Id: Freeze.pm,v 1.5 2004/02/20 18:09:12 admin Exp $
 # -----------------------------------------------------------------------------
-# このモジュールは再起動しても凍結設定を失はないやうにする爲、
+# このモジュールは再起動しても凍結設定を失なわないようにする為、
 # 設定をBulletinBoardのfrost-channelsに保存します。
 # -----------------------------------------------------------------------------
 package Channel::Freeze;
@@ -35,12 +35,12 @@ sub destruct {
 sub set_timer_if_required {
     my $this = shift;
     if (defined $this->{reminder_timer}) {
-	# 既にタイマーが入つてゐる。
+	# 既にタイマーが入っている。
 	return;
     }
 
     if (!$this->config->reminder_interval) {
-	# 報告しないやうに設定されてゐる。
+	# 報告しないやうに設定されている。
 	return;
     }
 
@@ -71,7 +71,14 @@ sub notify_list_of_frost_channels {
 	# 報告
 	RunLoop->shared->broadcast_to_clients(
 	    IRCMessage->new(
-		Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+		do {
+		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+			();
+		    }
+		    else {
+			(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
+		    }
+		},
 		Command => 'NOTICE',
 		Params => [
 		    RunLoop->shared->current_nick,
@@ -90,7 +97,14 @@ sub message_arrived {
 	    my $notice = shift;
 	    RunLoop->shared->broadcast_to_clients(
 		IRCMessage->new(
-		    Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+		    do {
+			if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+			    ();
+			}
+			else {
+			    (Prefix => Configuration->shared_conf->general->sysmsg_prefix);
+			}
+		    },
 		    Command => 'NOTICE',
 		    Params => [
 			RunLoop->shared->current_nick,
@@ -148,24 +162,15 @@ sub normalize {
 
 sub freeze {
     # 今囘のfreezeの呼出しでフリーズされたチャンネル名の配列を返す。
-    my ($this, $ch_full) = @_;
+    my ($this, $ch_mask) = @_;
 
-    if (!defined $ch_full) {
+    if (!defined $ch_mask) {
 	# リスト表示
 	$this->notify_list_of_frost_channels;
 	return ();
     }
 
-    if ($ch_full =~ m/,/) {
-	# カンマで分割して再歸。
-	return map {
-	    $this->freeze($_);
-	} split /\s*,\s*/,$ch_full;
-    }
-    
-    $ch_full = &normalize($ch_full);
-
-    if (defined $ch_full) {
+    if (defined $ch_mask) {
 	my $board = BulletinBoard->shared;
 	my $channels = $board->frost_channels;
 	
@@ -174,15 +179,26 @@ sub freeze {
 	    $channels = {}; # {フルチャンネル名 => 1}
 	    $board->frost_channels($channels);
 	}
-
-	if (!$channels->{$ch_full}) {
-	    $channels->{$ch_full} = 1;
+	
+	# 全てのサーバーの、全てのjoinしているチャンネルの中から、
+	# このマスクに該当するチャンネル名を探し、全てfreezeする。
+	my @ch_to_freeze;
+	foreach my $network (RunLoop->shared->networks_list) {
+	    foreach my $ch ($network->channels_list) {
+		my $longname = Multicast::attach($ch, $network);
+		if (Mask::match($ch_mask, $longname)) {
+		    if (!$channels->{$longname}) {
+			$channels->{$longname} = 1;
+			push @ch_to_freeze, $longname;
+		    }
+		}
+	    }
 	}
 
 	# 必要ならタイマー起動。
 	$this->set_timer_if_required;
 
-	return ($ch_full);
+	return @ch_to_freeze;
     }
     else {
 	return ();

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Recent.pm,v 1.7 2004/02/14 11:48:20 topia Exp $
+# $Id: Recent.pm,v 1.8 2004/02/20 18:09:12 admin Exp $
 # -----------------------------------------------------------------------------
 # Local: $Clovery: tiarra/module/Log/Recent.pm,v 1.5 2003/02/11 07:59:32 topia Exp $
 package Log::Recent;
@@ -47,7 +47,14 @@ sub client_attached {
     foreach my $elem (@{$this->{priv_log}}) {
 	$client->send_message(
 	    IRCMessage->new(
-		Prefix => Configuration->shared->general->sysmsg_prefix,
+		do {
+		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+			();
+		    }
+		    else {
+			(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
+		    }
+		},
 		Command => 'NOTICE',
 		Params => [$local_nick,$elem->[1]])); # $elem->[0]¤Ï¾ï¤Ë'priv'
     }

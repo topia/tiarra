@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: RunLoop.pm,v 1.51 2004/02/14 11:48:19 topia Exp $
+# $Id: RunLoop.pm,v 1.52 2004/02/20 18:09:12 admin Exp $
 # -----------------------------------------------------------------------------
 # このクラスはTiarraのメインループを実装します。
 # select()を実行し、サーバーやクライアントとのI/Oを行うのはこのクラスです。
@@ -363,7 +363,14 @@ sub _action_one_message {
 	$this->_rejoin_all_channels($network);
 	$this->broadcast_to_clients(
 	    IRCMessage->new(
-		Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+		do {
+		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+			();
+		    }
+		    else {
+			(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
+		    }
+		},
 		Command => 'NOTICE',
 		Params => [$this->current_nick,
 			   '*** The connection has been revived between '.$network->network_name.'.']));
@@ -371,7 +378,14 @@ sub _action_one_message {
     elsif ($event eq 'disconnected') {
 	$this->broadcast_to_clients(
 	    IRCMessage->new(
-		Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+		do {
+		    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+			();
+		    }
+		    else {
+			(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
+		    }
+		},
 		Command => 'NOTICE',
 		Params => [$this->current_nick,
 			   '*** The connection has been broken between '.$network->network_name.'.']));
@@ -1247,7 +1261,14 @@ sub notify_msg {
 	    $this->broadcast_to_clients(
 		map {
 		    IRCMessage->new(
-			Prefix => Configuration->shared_conf->general->sysmsg_prefix,
+			do {
+			    if (Configuration->shared->general->omit_sysmsg_prefix_when_possible) {
+				();
+			    }
+			    else {
+				(Prefix => Configuration->shared_conf->general->sysmsg_prefix);
+			    }
+			},
 			Command => 'NOTICE',
 			Params => [$this->current_nick,
 				   "*** $_"]);
