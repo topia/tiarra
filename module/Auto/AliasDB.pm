@@ -11,7 +11,6 @@ use strict;
 use warnings;
 use IO::File;
 use File::stat;
-use Unicode::Japanese;
 use Module::Use qw(Auto::AliasDB::CallbackUtils Tools::GroupDB);
 use Auto::AliasDB::CallbackUtils;
 use Tools::GroupDB;

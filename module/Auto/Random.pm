@@ -4,7 +4,6 @@
 package Auto::Random;
 use strict;
 use warnings;
-use Unicode::Japanese;
 use base qw(Module);
 use Module::Use qw(Auto::Utils Tools::FileCache);
 use Auto::Utils;
