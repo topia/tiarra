@@ -133,6 +133,23 @@ if (&find_option('help')) {
 } elsif (&find_option('dumpversion')) {
     print $version . "\n";
     exit;
+} elsif (my $password = &find_option('make-password')) {
+    use Crypt;
+    if ($password eq 1) {
+	use Term::ReadLine;
+
+	$| = 1; # autoflush
+	print "This tool encrypts your raw password for conf file of the Tiarra.\n";
+	print "\n";
+
+	my $term = Term::ReadLine->new('tiarra');
+	$password = $term->readline("Please enter raw password: ");
+
+	print "\n";
+    }
+    print Crypt::encrypt($password)." is your encoded password.\n";
+    print "Use this for the general/tiarra-password entry.\n";
+    exit;
 }
 
 if (&find_option('debug')) {
