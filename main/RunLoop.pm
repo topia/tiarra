@@ -160,6 +160,7 @@ sub current_nick {
 sub set_current_nick {
     my ($this,$new_nick) = @_;
     $this->{current_nick} = $new_nick;
+    $this->call_hooks('set-current-nick');
 }
 
 sub change_nick {
@@ -1065,8 +1066,7 @@ sub broadcast_to_servers {
 
 sub notify_modules {
     my ($this,$method,@args) = @_;
-    my $mods = ModuleManager->shared->get_modules;
-    foreach my $mod (@$mods) {
+    foreach my $mod (@{ModuleManager->shared_manager->get_modules}) {
 	eval {
 	    $mod->$method(@args);
 	}; if ($@) {
@@ -1080,11 +1080,10 @@ sub notify_modules {
 sub apply_filters {
     # @extra_args: モジュールに送られる第二引数以降。第一引数は常にIRCMessage。
     my ($this, $src_messages, $method, @extra_args) = @_;
-    my $mods = ModuleManager->shared_manager->get_modules;
 
     my $source = $src_messages;
     my $filtered = [];
-    foreach my $mod (@$mods) {
+    foreach my $mod (@{ModuleManager->shared_manager->get_modules}) {
 	# (普通ないはずだが) $mod が undef だったらこのモジュールをとばす。
 	next unless defined $mod;
 	# sourceが空だったらここで終わり。
@@ -1233,7 +1232,7 @@ use FunctionalVariable;
 use base 'Hook';
 
 our $HOOK_TARGET_NAME = 'RunLoop';
-our @HOOK_NAME_CANDIDATES = qw/before-select after-select/;
+our @HOOK_NAME_CANDIDATES = qw/before-select after-select set-current-nick/;
 our $HOOK_NAME_DEFAULT = 'after-select';
 our $HOOK_TARGET_DEFAULT;
 FunctionalVariable::tie(
