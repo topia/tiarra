@@ -16,6 +16,7 @@ use PersonalInfo;
 use PersonInChannel;
 use Configuration;
 use UNIVERSAL;
+use Multicast;
 
 sub new {
     my ($class,$network_name) = @_;
@@ -136,7 +137,7 @@ sub person {
 	$info->username($username);
 	$info->userhost($userhost);
 	$info->realname($realname);
-	$info->server($server);	
+	$info->server($server);
     }
     $info;
 }
@@ -175,7 +176,7 @@ sub connect {
     if (defined $ipv6_bind_addr) {
 	$additional_ipv6->{LocalAddr} = $ipv6_bind_addr;
     }
-    
+
     # ソケットを開く。開けなかったらdie。
     # 接続は次のようにして行なう。
     # 1. ホストがIPv4アドレスであれば、IPv4として接続を試みる。
@@ -237,7 +238,7 @@ sub connect {
     else {
 	die "Couldn't connect to $this->{destination}\n";
     }
-    
+
     # (PASS) -> NICK -> USERの順に送信し、中に入る。
     # NICKが成功したかどうかは接続後のreceiveメソッドが判断する。
     my $server_password = $this->{server_password};
@@ -278,7 +279,7 @@ sub connect {
 
 sub disconnect {
     my $this = shift;
-    
+
     $this->SUPER::disconnect;
     ::printmsg("Disconnected from $this->{destination}.");
 }
@@ -298,7 +299,7 @@ sub send_message {
 
     # 各モジュールへ通知
     RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'out');
-    
+
     $this->SUPER::send_message(
 	$msg,
 	Configuration->shared->get($this->{network_name})->out_encoding ||
@@ -321,14 +322,14 @@ sub receive {
 sub pop_queue {
     my ($this) = shift;
     my $msg = $this->SUPER::pop_queue;
-    
+
     # このメソッドはログインしていなければログインするが、
     # パスワードが違うなどで何度やり直してもログイン出来る見込みが無ければ
     # 接続を切ってからdieします。
     if (defined $msg) {
 	# 各モジュールに通知
 	RunLoop->shared->notify_modules('notification_of_message_io',$msg,$this,'in');
-	
+
 	# ログイン作業中か？
 	if ($this->{logged_in}) {
 	    # ログイン作業中でない。
@@ -343,7 +344,7 @@ sub pop_queue {
 
 sub _receive_while_logging_in {
     my ($this,$first_msg) = @_;
-    
+
     # まだログイン作業中であるのなら、ログインに成功したかどうかを
     # 最初に受け取った行が001(成功)か433(nick重複)かそれ以外かで判断する。
     my $reply = $first_msg->command;
@@ -371,7 +372,7 @@ sub _receive_while_logging_in {
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
     }
     elsif ($reply eq '437') {
-	# nick is temporarily unavailable
+	# nick/channel is temporarily unavailable(この場合は nick)
 	$this->_set_to_next_nick($first_msg->param(1));
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
     }
@@ -426,6 +427,15 @@ sub _receive_after_logged_in {
     elsif ($msg->command eq '433') {
 	# nickが既に使用中
 	if (RunLoop->shared->multi_server_mode_p) {
+	    $this->_set_to_next_nick($msg->param(1));
+
+	    # これもクライアントには伝えない。
+	    $msg = undef;
+	}
+    }
+    elsif ($msg->command eq '437') {
+	# nick/channel temporary unavaliable
+	if (Multicast::nick_p && RunLoop->shared->multi_server_mode_p) {
 	    $this->_set_to_next_nick($msg->param(1));
 
 	    # これもクライアントには伝えない。
@@ -549,7 +559,7 @@ sub _MODE {
     my $ch = $this->{channels}->{$msg->param(0)};
     if (defined $ch) {
 	my $n_params = @{$msg->params};
-	
+
 	my $plus = 0; # 現在評価中のモードが+なのか-なのか。
 	my $mode_char_pos = 1; # 現在評価中のmode characterの位置。
 	my $mode_param_offset = 0; # $mode_char_posから幾つの追加パラメタを拾ったか。
@@ -558,7 +568,7 @@ sub _MODE {
 	    $mode_param_offset++;
 	    return $msg->param($mode_char_pos + $mode_param_offset);
 	};
-	
+
 	for (;$mode_char_pos < $n_params;$mode_char_pos += $mode_param_offset + 1) {
 	    $mode_param_offset = 0; # これは毎回リセットする。
 	    foreach my $c (split //,$msg->param($mode_char_pos)) {
@@ -606,11 +616,11 @@ sub _MODE {
 
 sub _JOIN {
     my ($this,$msg) = @_;
-    
+
     map {
 	m/^([^\x07]+)(?:\x07(.*))?/;
 	my ($ch_name,$mode) = ($1,(defined $2 ? $2 : ''));
-	
+
 	my $ch = $this->{channels}->{$ch_name};
 	if (defined $ch) {
 	    # 知っているチャンネル。もしkickedフラグが立っていたらクリア。
@@ -639,7 +649,7 @@ sub _NJOIN {
     map {
 	m/^([@+]*)(.+)$/;
 	my ($mode,$nick) = ($1,$2);
-	
+
 	$ch->names($nick,
 		   new PersonInChannel(
 		       $this->person($nick),
@@ -662,8 +672,6 @@ sub _PART {
 		$ch->names($msg->nick,undef,'delete');
 	    }
 	}
-	
-	
     } split(/,/,$msg->param(0));
 
     # 全チャンネルを走査し、このnickを持つ人物が一人も居なくなつてゐたらpeopleからも消す。
@@ -752,13 +760,13 @@ sub _RPL_NAMREPLY {
 	# NAMREPLY受信中フラグを立てる
 	$this->{receiving_namreply}->{$msg->param(2)} = 1;
     }
-    
+
     if (defined $ch) {
 	# @なら+s,*なら+p、=ならそのどちらでもない事が確定している。
 	my $ch_property = $msg->param(1);
 	if ($ch_property eq '@') {
 	    $ch->switches('s',1);
-	    $ch->switches('p',undef,'delete');	   
+	    $ch->switches('p',undef,'delete');
 	}
 	elsif ($ch_property eq '*') {
 	    $ch->switches('s',undef,'delete');
@@ -768,11 +776,11 @@ sub _RPL_NAMREPLY {
 	    $ch->switches('s',undef,'delete');
 	    $ch->switches('p',undef,'delete');
 	}
-	
+
 	my @people = map {
 	    m/^([@\+]{0,2})(.+)$/;
 	    my ($mode,$nick) = ($1,$2);
-	    
+
 	    $ch->names($nick,
 		       new PersonInChannel(
 			   $this->person($nick),
@@ -809,7 +817,7 @@ sub _RPL_NOTOPIC {
     my ($this,$msg) = @_;
     my $ch = $this->{channels}->{$msg->param(1)};
     if (defined $ch) {
-	$ch->topic(undef);
+	$ch->topic('');
     }
 }
 
@@ -833,7 +841,7 @@ sub _RPL_TOPICWHOTIME {
 sub _RPL_INVITELIST {
     my ($this,$msg) = @_;
     my $ch = $this->{channels}->{$msg->param(1)};
-    
+
     my $receiving_invitelist = $this->{receiving_invitelist}->{$msg->param(1)};
     if (defined $receiving_invitelist &&
 	$receiving_invitelist == 1) {
@@ -842,7 +850,7 @@ sub _RPL_INVITELIST {
 	# INVITELIST受信中フラグを立てる
 	$this->{receiving_invitelist}->{$msg->param(1)} = 1;
     }
-    
+
     if (defined $ch) {
 	# 重複防止のため、一旦deleteしてからadd。
 	$ch->invitelist('delete',$msg->param(2));
@@ -867,7 +875,7 @@ sub _RPL_EXCEPTLIST {
 	# EXCEPTLIST受信中フラグを立てる
 	$this->{receiving_exceptlist}->{$msg->param(1)} = 1;
     }
-    
+
     if (defined $ch) {
 	# 重複防止のため、一旦deleteしてからadd。
 	$ch->exceptionlist('delete',$msg->param(2));
@@ -892,7 +900,7 @@ sub _RPL_BANLIST {
 	# BANLIST受信中フラグを立てる
 	$this->{receiving_banlist}->{$msg->param(1)} = 1;
     }
-    
+
     if (defined $ch) {
 	# 重複防止のため、一旦deleteしてからadd。
 	$ch->banlist('delete',$msg->param(2));
@@ -932,11 +940,11 @@ sub _RPL_CHANNELMODEIS {
     if (defined $ch) {
 	$ch->remarks('switches-are-known',1);
     }
-    
+
     # 鯖がMODEを実行したことにして、_MODEに処理を代行させる。
     my @args = @{$msg->params};
     @args = @args[1 .. $#args];
-    
+
     $this->_MODE(
 	new IRCMessage(Prefix => $msg->prefix,
 		       Command => 'MODE',
@@ -947,7 +955,7 @@ sub _set_to_next_nick {
     my ($this,$failed_nick) = @_;
     # failed_nickの次のnickを試します。nick重複でログインに失敗した時に使います。
     my $next_nick = modify_nick($failed_nick);
-    
+
     my $msg_for_user = "Nick $failed_nick was already in use in the ".$this->network_name.". Trying ".$next_nick."...";
     $this->send_message(
 	new IRCMessage(
@@ -975,13 +983,13 @@ sub modify_nick {
 	    $nick = substr($base,0,9 - length($next_num)) . $next_num;
 	}
     }
-    elsif ($nick =~ /_$/ && length($nick) == 9) {
+    elsif ($nick =~ /_$/ && length($nick) >= 9) {
 	# 最後の文字が_で、それ以上_を付けられない場合、それを0に。
 	$nick =~ s/_$/0/;
     }
     else {
 	# 最後に_を付ける。
-	if (length($nick) == 9) {
+	if (length($nick) >= 9) {
 	    $nick =~ s/.$/_/;
 	}
 	else {
