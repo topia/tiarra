@@ -10,7 +10,6 @@ use strict;
 use warnings;
 use Tiarra::SharedMixin;
 use Errno;
-use Tiarra::Utils;
 our %descriptions;
 
 sub _new {
