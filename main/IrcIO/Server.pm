@@ -17,6 +17,7 @@ use PersonInChannel;
 use Configuration;
 use UNIVERSAL;
 use Multicast;
+use NumericReply;
 
 sub new {
     my ($class,$network_name) = @_;
@@ -353,7 +354,7 @@ sub _receive_while_logging_in {
     # まだログイン作業中であるのなら、ログインに成功したかどうかを
     # 最初に受け取った行が001(成功)か433(nick重複)かそれ以外かで判断する。
     my $reply = $first_msg->command;
-    if ($reply eq '001') {
+    if ($reply eq RPL_WELCOME) {
 	# 成功した。
 	$this->{current_nick} = $first_msg->param(0);
 	if (!RunLoop->shared->multi_server_mode_p &&
@@ -382,12 +383,12 @@ sub _receive_while_logging_in {
 	}
 	$this->{new_connection} = undef;
     }
-    elsif ($reply eq '433') {
+    elsif ($reply eq ERR_NICKNAMEINUSE) {
 	# nick重複。
 	$this->_set_to_next_nick($first_msg->param(1));
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
     }
-    elsif ($reply eq '437') {
+    elsif ($reply eq ERR_UNAVAILRESOURCE) {
 	# nick/channel is temporarily unavailable(この場合は nick)
 	$this->_set_to_next_nick($first_msg->param(1));
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
@@ -442,7 +443,7 @@ sub _receive_after_logged_in {
 	}
 	$this->_NICK($msg);
     }
-    elsif ($msg->command eq '433') {
+    elsif ($msg->command eq ERR_NICKNAMEINUSE) {
 	# nickが既に使用中
 	if (RunLoop->shared->multi_server_mode_p) {
 	    $this->_set_to_next_nick($msg->param(1));
@@ -451,7 +452,7 @@ sub _receive_after_logged_in {
 	    $msg = undef;
 	}
     }
-    elsif ($msg->command eq '437') {
+    elsif ($msg->command eq ERR_UNAVAILRESOURCE) {
 	# nick/channel temporary unavaliable
 	if (Multicast::nick_p($msg->param(1)) && RunLoop->shared->multi_server_mode_p) {
 	    $this->_set_to_next_nick($msg->param(1));
@@ -482,50 +483,25 @@ sub _receive_after_logged_in {
     elsif ($msg->command eq 'TOPIC') {
 	$this->_TOPIC($msg);
     }
-    elsif ($msg->command eq '311') {
-	$this->_RPL_WHOISUSER($msg);
-    }
-    elsif ($msg->command eq '312') {
-	$this->_RPL_WHOISSERVER($msg);
-    }
-    elsif ($msg->command eq '324') {
-	$this->_RPL_CHANNELMODEIS($msg);
-    }
-    elsif ($msg->command eq '331') {
-	$this->_RPL_NOTOPIC($msg);
-    }
-    elsif ($msg->command eq '332') {
-	$this->_RPL_TOPIC($msg);
-    }
-    elsif ($msg->command eq '333') {
-	$this->_RPL_TOPICWHOTIME($msg);
-    }
-    elsif ($msg->command eq '346') {
-	$this->_RPL_INVITELIST($msg);
-    }
-    elsif ($msg->command eq '347') {
-	$this->_RPL_ENDOFINVITELIST($msg);
-    }
-    elsif ($msg->command eq '348') {
-	$this->_RPL_EXCEPTLIST($msg);
-    }
-    elsif ($msg->command eq '349') {
-	$this->_RPL_ENDOFEXCEPTLIST($msg);
-    }
-    elsif ($msg->command eq '352') {
-	$this->_RPL_WHOREPLY($msg);
-    }
-    elsif ($msg->command eq '353') {
-	$this->_RPL_NAMREPLY($msg);
-    }
-    elsif ($msg->command eq '366') {
-	$this->_RPL_ENDOFNAMES($msg);
-    }
-    elsif ($msg->command eq '367') {
-	$this->_RPL_BANLIST($msg);
-    }
-    elsif ($msg->command eq '368') {
-	$this->_RPL_ENDOFBANLIST($msg);
+    else {
+	my $name = NumericReply::fetch_name($msg->command);
+	if (defined $name) {
+	    foreach (
+		map("RPL_$_",
+		    qw(CHANNELMODEIS NOTOPIC TOPIC TOPICWHOTIME
+		       WHOREPLY NAMREPLY ENDOFNAMES
+		       WHOISUSER WHOISSERVER AWAY ENDOFWHOIS),
+		    map({("${_}LIST", "ENDOF${_}LIST");}
+			    qw(INVITE EXCEPT BAN)),
+		   )) {
+		if ($name eq $_) {
+		    no strict 'refs';
+		    my $funcname = "_$_";
+		    &$funcname($this, $msg); # $this->$funcname($msg)
+		    last;
+		}
+	    }
+	}
     }
     return $msg;
 }
@@ -821,6 +797,32 @@ sub _RPL_WHOISUSER {
 	$p->userhost($msg->param(3));
 	$p->realname($msg->param(5));
     }
+    $this->_START_WHOIS_REPLY($p);
+}
+
+sub _START_WHOIS_REPLY {
+    my ($this,$p) = @_;
+    $p->remark('wait-rpl_away', 1);
+}
+
+sub _RPL_ENDOFWHOIS {
+    my ($this,$msg) = @_;
+    my $p = $this->{people}->{$msg->param(1)};
+    if (defined $p) {
+	if ($p->remark('wait-rpl_away')) {
+	    $p->remark('wait-rpl_away', 0);
+	    $p->away('');
+	}
+    }
+}
+
+sub _RPL_AWAY {
+    my ($this,$msg) = @_;
+    my $p = $this->{people}->{$msg->param(1)};
+    if (defined $p) {
+	$p->remark('wait-rpl_away', 0);
+	$p->away($msg->param(2));
+    }
 }
 
 sub _RPL_WHOISSERVER {
@@ -938,7 +940,15 @@ sub _RPL_WHOREPLY {
 	$p->username($msg->param(2));
 	$p->userhost($msg->param(3));
 	$p->server($msg->param(4));
-	$p->realname((split / /,$msg->param(7))[1]);
+	$p->realname((split / /,$msg->param(7),2)[1]);
+	if ($msg->param(6) =~ /^G/) {
+	    $p->away('Gone.');
+	} else {
+	    $p->away('');
+	}
+	my $hops = $this->remark('server-hops') || {};
+	$hops->{$p->server} = (split / /,$msg->param(7),2)[0];
+	$this->remark('server-hops', $hops);
     }
 
     #use Data::Dumper;
@@ -958,6 +968,10 @@ sub _RPL_CHANNELMODEIS {
     if (defined $ch) {
 	$ch->remarks('switches-are-known',1);
     }
+
+    # switches と parameters は必ず得られると仮定して、クリア処理を行う
+    $ch->switches(undef, undef, 'clear');
+    $ch->parameters(undef, undef, 'clear');
 
     # 鯖がMODEを実行したことにして、_MODEに処理を代行させる。
     my @args = @{$msg->params};
