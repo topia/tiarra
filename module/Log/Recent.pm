@@ -75,7 +75,7 @@ sub client_attached {
 *C_NOTICE = \&PRIVMSG_or_NOTICE;
 sub PRIVMSG_or_NOTICE {
     my ($this,$msg,$sender) = @_;
-    my $target = Multicast::detatch($msg->param(0));
+    my $target = Multicast::detach($msg->param(0));
     my $is_priv = Multicast::nick_p($target);
     my $cmd = $msg->command;
 
