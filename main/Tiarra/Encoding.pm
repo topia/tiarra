@@ -38,6 +38,21 @@ sub new {
     }
 }
 
+sub from_to {
+    my $this = shift;
+    my $str = shift;
+    my $from_code = shift;
+    my $to_code = shift;
+
+    if ((defined $from_code && $from_code eq 'binary') ||
+	    (defined $to_code && $to_code eq 'binary')) {
+	$str;
+    } else {
+	$this->set($str, $from_code);
+	$this->conv($to_code);
+    }
+}
+
 sub _is_supported {
     my $retval = eval 'require ' . shift->_get_module_name(@_);
     warn $@ if $@;
