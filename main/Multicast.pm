@@ -12,6 +12,7 @@ use strict;
 use warnings;
 use Configuration;
 use Carp;
+use NumericReply;
 my $runloop = undef; # デフォルトのRunLoopのキャッシュ。
 my $default_network = ''; # デフォルトのネットワーク名のキャッシュ。
 my $separator = ''; # セパレータ記号のキャッシュ。これらはcast_messageが呼ばれる度に更新される。
@@ -188,7 +189,7 @@ sub _NJOIN_from_server {
     $message->param(0,attach($message->param(0),$sender->network_name));
     $message->param(1,
 		    join(',',
-			 map{ s/^([@+]*)(.+)$/$1.global_to_local($2,$sender)/e; $_; } split(/,/,$message->param(1))));
+			 map{ s/^([\@+]*)(.+)$/$1.global_to_local($2,$sender)/e; $_; } split(/,/,$message->param(1))));
     $message;
 }
 
@@ -292,8 +293,29 @@ sub _RPL_NAMREPLY {
     $message->params->[3] =
 	join(' ',
 	     map {
-		 s/^([@+]*)(.+)$/$1.global_to_local($2,$sender)/e; $_;
+		 s/^([\@+]*)(.+)$/$1.global_to_local($2,$sender)/e; $_;
 	     } split / /,$message->params->[3]);
+    $message;
+}
+
+sub _attach_RPL_WHOISCHANNELS {
+    my ($message,$sender) = @_;
+    $message->param(1,global_to_local($message->param(1),$sender));
+    $message->params->[2] =
+	join(' ',
+	     map {
+		 s/^([\@+]*)(.+)$/$1.attach($2, $sender->network_name)/e; $_;
+	     } split / /,$message->params->[2]);
+    $message;
+}
+
+sub _detach_RPL_WHOISCHANNELS {
+    my ($message,$sender) = @_;
+    $message->params->[2] =
+	join(' ',
+	     map {
+		 s/^([\@+]*)(.+)$/$1.detach($2)/e; $_;
+	     } split / /,$message->params->[2]);
     $message;
 }
 
@@ -355,35 +377,39 @@ my $server_sent = {
     'SQUERY' => \&_MODE_from_server, # 多分これは鯖からも来るだろうが、良く分からない。
     'TOPIC' => \&_MODE_from_server,
     'NJOIN' => \&_NJOIN_from_server,
-    '301' => _gen_g2l_translator(1), # AWAY
-    '302' => \&_RPL_USERHOST,
-    '303' => \&_RPL_ISON,
-    '311' => _gen_g2l_translator(1), # WHOISUSER
-    '312' => _gen_g2l_translator(1), # WHOISSERVER
-    '313' => _gen_g2l_translator(1), # WHOISOPERATOR
-    '317' => _gen_g2l_translator(1), # WHOISIDLE
-    '318' => _gen_g2l_translator(1), # ENDOFWHOIS
-    '319' => _gen_g2l_translator(1), # WHOISCHANNELS
-    '314' => _gen_g2l_translator(1), # WHOWASUSER
-    '369' => _gen_g2l_translator(1), # ENDOFWHOWAS
-    '322' => _gen_attach_translator(1), # LIST
-    '325' => \&_RPL_INVITING, # UNIQOPIS (INVITINGと同じ処理)
-    '324' => _gen_attach_translator(1), # CHANNELMODEIS
-    '331' => _gen_attach_translator(1), # NOTOPIC
-    '332' => _gen_attach_translator(1), # TOPIC
-    '333' => _gen_attach_translator(1), # TOPICWHOTIME
-    '341' => \&_RPL_INVITING,
-    '346' => _gen_attach_translator(1), # INVITELIST
-    '347' => _gen_attach_translator(1), # ENDOFINVITELIST
-    '348' => _gen_attach_translator(1), # EXCEPTLIST
-    '349' => _gen_attach_translator(1), # ENDOFEXCEPTLIST
-    '352' => \&_RPL_WHOREPLY,
-    '315' => _gen_attach_translator(1), # ENDOFWHO
-    '353' => \&_RPL_NAMREPLY,
-    '366' => _gen_attach_translator(1), # ENDOFNAMES
-    '367' => _gen_attach_translator(1), # BANLIST
-    '368' => _gen_attach_translator(1), # ENDOFBANLIST
+    (RPL_UNIQOPIS) => \&_RPL_INVITING, # UNIQOPIS (INVITINGと同じ処理)
     # TRACE系のリプライはTiarraは関知しない。少なくとも今のところは。
+    do {
+	my $sub = _gen_g2l_translator(1);
+	map {
+	    (NumericReply::fetch_number($_), $sub)
+	} (map {"RPL_$_"}
+	       ((map {"WHOIS$_"} qw(USER SERVER OPERATOR IDLE)),
+		(map {"ENDOF$_"} qw(WHOIS WHOWAS)),
+		qw(WHOWASUSER AWAY)))},
+    do {
+	my $sub = _gen_attach_translator(1);
+	map {
+	    (NumericReply::fetch_number($_), $sub);
+	} ((map {"RPL_$_"}
+		((map { ("$_", "ENDOF$_"); } qw(INVITELIST EXCEPTLIST BANLIST)),
+		 (map {"ENDOF$_"} qw(WHO NAMES)),
+		 qw(LIST CHANNELMODEIS NOTOPIC TOPIC TOPICWHOTIME))),
+	   qw(ERR_TOOMANYCHANNELS))},
+    do {
+	no strict 'refs';
+	map {
+	    my $funcname = "_$_";
+	    (NumericReply::fetch_number($_), \&$funcname)
+	} (map {"RPL_$_"}
+	       qw(USERHOST ISON INVITING WHOREPLY NAMREPLY))},
+    do {
+	no strict 'refs';
+	map {
+	    my $funcname = "_attach_$_";
+	    (NumericReply::fetch_number($_), \&$funcname)
+	} (map {"RPL_$_"}
+	       qw(WHOISCHANNELS))},
 };
 
 my $client_sent = {
@@ -433,23 +459,24 @@ my $client_sent = {
     'SERVER' => undef,
     'WALLOPS' => \&_MODE_from_client, # クライアントからWALLOPSを発行出来るのかどうかは知らないが…
     # 以下リプライ。これはdetach_network_nameの為だけにある。
-    '322' => _gen_detach_translator(1), # LIST
-    '325' => _gen_detach_translator(1), # UNIQOPIS (INVITINGと同じ処理)
-    '324' => _gen_detach_translator(1), # CHANNELMODEIS
-    '331' => _gen_detach_translator(1), # NOTOPIC
-    '332' => _gen_detach_translator(1), # TOPIC
-    '333' => _gen_detach_translator(1), # TOPICWHOTIME
-    '341' => _gen_detach_translator(1), # INVITING
-    '346' => _gen_detach_translator(1), # INVITELIST
-    '347' => _gen_detach_translator(1), # ENDOFINVITELIST
-    '348' => _gen_detach_translator(1), # EXCEPTLIST
-    '349' => _gen_detach_translator(1), # ENDOFEXCEPTLIST
-    '352' => _gen_detach_translator(1), # WHOREPLY
-    '315' => _gen_detach_translator(1), # ENDOFWHO
-    '353' => _gen_detach_translator(2), # NAMREPLY
-    '366' => _gen_detach_translator(1), # ENDOFNAMES
-    '367' => _gen_detach_translator(1), # BANLIST
-    '368' => _gen_detach_translator(1), # ENDOFBANLIST
+    (RPL_NAMREPLY) => _gen_detach_translator(2),
+    do {
+	my $sub = _gen_detach_translator(1);
+	map {
+	    (NumericReply::fetch_number($_), $sub)
+	} ((map {"RPL_$_"}
+		((map { ("$_", "ENDOF$_"); } qw(INVITELIST EXCEPTLIST BANLIST)),
+		 (map {"ENDOF$_"} qw(WHO NAMES)),
+		 qw(LIST CHANNELMODEIS NOTOPIC TOPIC TOPICWHOTIME),
+		 qw(INVITING UNIQOPIS WHOREPLY))),
+	   qw(ERR_TOOMANYCHANNELS))},
+    do {
+	no strict 'refs';
+	map {
+	    my $funcname = "_detach_$_";
+	    (NumericReply::fetch_number($_), \&$funcname)
+	} (map {"RPL_$_"}
+	       qw(WHOISCHANNELS))},
 };
 
 
