@@ -9,19 +9,31 @@ use Mask;
 use Multicast;
 use NumericReply;
 
-sub _yesno {
-    my ($this, $value, $default) = @_;
+sub MODE_CACHE_FORCE_SENDED (){0;}
+sub MODE_CACHE_SENDED (){1;}
 
-    return $default || 0 if (!defined $value);
-    return 0 if ($value =~ /[fn]/); # false/no
-    return 1 if ($value =~ /[ty]/); # true/yes
-    return 1 if ($value); # 数値判定
-    return 0;
+sub new {
+    my $class = shift;
+    my $this = $class->SUPER::new(@_);
+    $this->{hook} = IrcIO::Client::Hook->new(
+	sub {
+	    my ($hook, $client, $ch_name, $network, $ch) = @_;
+	    if ($ch->remark('switches-are-known')) {
+		# 送信できる場合は強制的に送信してみる
+		my $remark = $client->remark('mode-cache-state') || {};
+		_send_mode_cache($client,$ch_name,$ch);
+		$remark->{$ch_name}->[MODE_CACHE_FORCE_SENDED] = 1;
+		$client->remark('mode-cache-state', $remark);
+	    }
+	})->install('channel-info');
+    $this;
 }
 
 sub destruct {
     my ($this) = shift;
-    # cleaning remarks
+
+    # hook を解除
+    $this->{hook} and $this->{hook}->uninstall;
 
     # チャンネルについている remark を削除。
     foreach my $network (RunLoop->shared_loop->networks_list) {
@@ -32,6 +44,16 @@ sub destruct {
     }
 
     # クライアントについてるのは削除しない。
+}
+
+sub _yesno {
+    my ($this, $value, $default) = @_;
+
+    return $default || 0 if (!defined $value);
+    return 0 if ($value =~ /[fn]/); # false/no
+    return 1 if ($value =~ /[ty]/); # true/yes
+    return 1 if ($value); # 数値判定
+    return 0;
 }
 
 sub message_io_hook {
@@ -100,24 +122,13 @@ sub message_arrived {
 	    my $ch = $network->channel($chan_short);
 	    last if !defined $ch;
 	    if ($ch->remark('switches-are-known')) {
-		my $remark = $sender->remark('mode-cache-used') || {};
-		if (!exists $remark->{$chan_long}) {
-		    $sender->send_message(
-			IRCMessage->new(
-			    Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
-			    Command => RPL_CHANNELMODEIS,
-			    Params => [
-				RunLoop->shared_loop->current_nick,
-				$chan_long,
-				$ch->mode_string,
-			       ],
-			    Remarks => {
-				'fill-prefix-when-sending-to-client' => 1,
-			    },
-			   )
-		       );
-		    $remark->{$chan_long} = 1;
-		    $sender->remark('mode-cache-used', $remark);
+		my $remark = $sender->remark('mode-cache-state') || {};
+		if (!$remark->{$chan_long}->[MODE_CACHE_SENDED]) {
+		    _send_mode_cache($sender,$chan_long,$ch)
+			if (!$remark->{$chan_long}
+				->[MODE_CACHE_FORCE_SENDED]);
+		    $remark->{$chan_long}->[MODE_CACHE_SENDED] = 1;
+		    $sender->remark('mode-cache-state', $remark);
 		    return undef;
 		}
 	    } else {
@@ -210,6 +221,26 @@ sub message_arrived {
     }
 
     return $msg;
+}
+
+
+sub _send_mode_cache {
+    my ($sendto,$ch_name,$ch) = @_;
+
+    $sendto->send_message(
+	IRCMessage->new(
+	    Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
+	    Command => RPL_CHANNELMODEIS,
+	    Params => [
+		RunLoop->shared_loop->current_nick,
+		$ch_name,
+		$ch->mode_string,
+	       ],
+	    Remarks => {
+		'fill-prefix-when-sending-to-client' => 1,
+	    },
+	   )
+       );
 }
 
 1;
