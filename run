@@ -19,6 +19,7 @@ TIARRA=${TIARRA:-${TOPDIR}/tiarra}
 CONF=${CONF:-tiarra.conf}
 REDIR_STDOUT=${REDIR_STDOUT:-errlog.stdout}
 REDIR_STDERR=${REDIR_STDERR:-errlog.stderr}
+DAEMON_MODE=${DAEMON_MODE:-yes}
 
 if [ \! -z "${DEBUG}" ]; then
   echo "    configuration"
@@ -30,7 +31,12 @@ if [ \! -z "${DEBUG}" ]; then
   echo "extra  : $@"
   echo "stdout : ${REDIR_STDOUT}"
   echo "stderr : ${REDIR_STDERR}"
+  echo "daemon : ${DAEMON_MODE}"
 else
   cd "${WORKDIR}"
-  ${PERL} ${PERLARG} ${TIARRA} "--config=${CONF}" "$@" >>"${REDIR_STDOUT}" 2>>"${REDIR_STDERR}" <&- &
+  if [ "X${DAEMON_MODE}" = "Xyes" ]; then
+    ${PERL} ${PERLARG} ${TIARRA} "--config=${CONF}" "$@" >>"${REDIR_STDOUT}" 2>>"${REDIR_STDERR}" <&- &
+  else
+    exec ${PERL} ${PERLARG} ${TIARRA} "--config=${CONF}" "$@" >>"${REDIR_STDOUT}" 2>>"${REDIR_STDERR}" <&-
+  fi
 fi
