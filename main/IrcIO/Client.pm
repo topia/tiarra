@@ -31,22 +31,26 @@ sub new {
     my $this = $class->SUPER::new($runloop);
     $this->{sock} = $sock;
     $this->{connected} = 1;
-    my $addr = $sock->peerhost;
-    $this->{client_addr} = $addr;
-    $this->{client_host} = do {
-	my ($resolved, $host, $entry);
-	Tiarra::Resolver->paranoid_check($addr, sub {
-					     ($resolved, $host, $entry) = @_; }, 0);
-	$resolved ? $host : $addr;
-    };
-    $this->{client_host_repr} = $this->{client_host} .
-	($this->{client_addr} ne $this->{client_host} ?
-	     '('.$this->{client_addr}.')' : '');
     $this->{pass_received} = ''; # クライアントから受け取ったパスワード
     $this->{nick} = ''; # ログイン時にクライアントから受け取ったnick。変更されない。
     $this->{username} = ''; # 同username
     $this->{logging_in} = 1; # ログイン中なら1
     $this->{options} = {}; # クライアントが接続時に$key=value$で指定したオプション。
+    my $addr = $sock->peerhost;
+    $this->{client_host} = $this->{client_addr} = $addr;
+    Tiarra::Resolver->paranoid_check($addr, sub {
+					 $this->accept(@_);
+				     });
+    $this;
+}
+
+sub accept {
+    my ($this, $paranoid_ok, $host, $entry) = @_;
+
+    $this->{client_host} = $paranoid_ok ? $host : $this->{client_addr};
+    $this->{client_host_repr} = $this->{client_host} .
+	($this->{client_addr} ne $this->{client_host} ?
+	     '('.$this->{client_addr}.')' : '');
 
     # このホストからの接続は許可されているか？
     my $allowed_host = $this->_conf_general->client_allowed;
@@ -58,7 +62,7 @@ sub new {
 	}
     }
     ::printmsg("One client at ".$this->{client_host_repr}." connected to me.");
-    $this->_runloop->register_receive_socket($sock);
+    $this->_runloop->register_receive_socket($this->sock);
     $this;
 }
 
