@@ -14,7 +14,6 @@ use Configuration;
 use Carp;
 use NumericReply;
 my $runloop = undef; # デフォルトのRunLoopのキャッシュ。
-my $default_network = ''; # デフォルトのネットワーク名のキャッシュ。
 my $separator = ''; # セパレータ記号のキャッシュ。これらはcast_messageが呼ばれる度に更新される。
 
 sub _ISON_from_client {
@@ -140,7 +139,7 @@ sub _LIST_from_client {
 	}
     }
     else {
-	forward_to_server($message, $default_network);
+	forward_to_server($message, $runloop->default_network);
     }
 }
 
@@ -459,20 +458,8 @@ my $client_sent = {
 
 
 sub _update_cache {
-    my $networks = Configuration->shared_conf->networks;
-
-    if (RunLoop->shared->multi_server_mode_p) {
-	$default_network = $networks->default;
-    }
-    else {
-	if (scalar RunLoop->shared->networks_list) {
-	    $default_network = (RunLoop->shared->networks_list)[0]->network_name;
-	} else {
-	    $default_network = $networks->default;
-	}
-    }
-
-    $separator = $networks->channel_network_separator;
+    $separator = Configuration->shared_conf->
+	networks->channel_network_separator;
     $runloop = RunLoop->shared_loop;
 }
 
@@ -506,7 +493,7 @@ sub from_client_to_server {
     eval {
 	$client_sent->{$message->command}->($message, $sender);
     }; if ($@) {
-	forward_to_server($message,$default_network);
+	forward_to_server($message,$runloop->default_network);
     }
 }
 
@@ -524,7 +511,7 @@ sub detach_network_name {
     eval {
 	$client_sent->{$message->command}->($message, $sender);
     }; if ( !defined $result ) {
-	$hijack_forward_to_server->($message, $default_network);
+	$hijack_forward_to_server->($message, $runloop->default_network);
     }
     $result;
 }
@@ -561,9 +548,19 @@ sub detach {
 	}
     }
     else {
-	@result = ($str,$default_network,undef);
+	@result = ($str,$runloop->default_network,undef);
     }
     return wantarray ? @result : $result[0];
+}
+
+sub detach_for_client {
+    my ($str) = @_;
+
+    if (!$runloop->multi_server_mode_p) {
+	detach($str);
+    } else {
+	$str;
+    }
 }
 
 sub attach {
@@ -587,7 +584,7 @@ sub attach {
     my ($pkg_caller) = caller;
     _update_cache() unless $pkg_caller->isa('Multicast');
 
-    $network_name = $default_network if $network_name eq '';
+    $network_name = $runloop->default_network if $network_name eq '';
     if ((my $pos_colon = index($str,':')) != -1) {
 	# #さいたま:*.jp  →  #さいたま@taiyou:*.jp
 	$str =~ s/:/$separator.$network_name.':'/e;
