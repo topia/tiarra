@@ -43,7 +43,7 @@ sub message_arrived {
 	    my $ch_short = Multicast::detatch($ch_full);
 	    my $ch = $sender->channel($ch_short);
 	    my $myself = $ch->names($sender->current_nick);
-	    if ($myself->has_o && (!defined $mode || $mode !~ /o/)) {
+	    if (defined $myself && $myself->has_o && (!defined $mode || $mode !~ /o/)) {
 		if (Mask::match_deep_chan([$this->config->mask('all')],$msg->prefix,$ch_full)) {
 		    # waitで指定された秒数の経過後に、キューに入れる。
 		    # 同時にキュー消化タイマーを準備する。
