@@ -199,7 +199,7 @@ sub probe_type_by_addr {
 }
 
 sub sock_errno_to_msg {
-    my ($this, $errno) = @_;
+    my ($this, $errno, $msg) = @_;
 
     local $! = $errno;
     $errno = ($!+0);
@@ -212,7 +212,8 @@ sub sock_errno_to_msg {
 	    $errstr = $new_errstr;
 	}
     }
-    return "$errno: $errstr";
+    return ((defined $msg && length $msg) ? ($msg . ': ') : '' ) .
+	"$errno: $errstr";
 }
 
 sub _is_winsock {
