@@ -62,6 +62,33 @@ sub _parse_attr_define {
     }
 }
 
+sub _generate_attr_closure {
+    my $pkg = shift;
+    my $class_method_p = shift;
+    my $type = shift;
+    my $attr = shift;
+    # outside parentheses for context
+    my $str = join('',
+	      '(sub',
+	      ({
+		  accessor => ' : lvalue',
+		  getter   => '',
+	      }->{$type}),
+	      ' {',
+	      ({
+		  accessor => ' my $this = shift',
+		  getter   => ' shift',
+	      }->{$type}),
+	      ($class_method_p ? '->_this' : ''),
+	      ({
+		  accessor => "; \$this->$attr = shift if \$#_ >= 0; \$this",
+		  getter   => '',
+	      }->{$type}),
+	      "->$attr;",
+	      ' })');
+    eval $str;
+}
+
 sub define_attr_accessor {
     my $pkg = shift;
     my $class_method_p = shift;
@@ -70,16 +97,8 @@ sub define_attr_accessor {
 	my ($funcname, $valname) = @{$pkg->_parse_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    ($class_method_p ? sub : lvalue {
-		 my ($class_or_this, $value) = @_;
-		 my $this = $class_or_this->_this;
-		 $this->{$valname} = $value if $#_ >= 1;
-		 $this->{$valname};
-	     } : sub : lvalue {
-		 my ($this, $value) = @_;
-		 $this->{$valname} = $value if $#_ >= 1;
-		 $this->{$valname};
-	     }),
+	    $pkg->_generate_attr_closure($class_method_p, 'accessor',
+					 "{$valname}"),
 	    $funcname);
     }
     undef;
@@ -93,28 +112,8 @@ sub define_attr_getter {
 	my ($funcname, $valname) = @{$pkg->_parse_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    ($class_method_p ? sub {
-		 shift->_this->{$valname};
-	     } : sub {
-		 shift->{$valname};
-	     }),
-	    $funcname);
-    }
-}
-
-sub define_attr_setter {
-    my $pkg = shift;
-    my $class_method_p = shift;
-    my $call_pkg = $pkg->get_package;
-    foreach (@_) {
-	my ($funcname, $valname) = @{$pkg->_parse_attr_define($call_pkg, $_)};
-	$pkg->define_function(
-	    $call_pkg,
-	    ($class_method_p ? sub {
-		 shift->_this->{$valname} = shift;
-	     } : sub {
-		 shift->{$valname} = shift;
-	     }),
+	    $pkg->_generate_attr_closure($class_method_p, 'getter',
+					 "{$valname}"),
 	    $funcname);
     }
 }
@@ -143,16 +142,8 @@ sub define_array_attr_accessor {
 	    @{$pkg->_parse_array_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    ($class_method_p ? sub : lvalue {
-		 my ($class_or_this, $value) = @_;
-		 my $this = $class_or_this->_this;
-		 $this->[$index] = $value if $#_ >= 1;
-		 $this->[$index];
-	     } : sub : lvalue {
-		 my ($this, $value) = @_;
-		 $this->[$index] = $value if $#_ >= 1;
-		 $this->[$index];
-	     }),
+	    $pkg->_generate_attr_closure($class_method_p, 'accessor',
+					 "[$index]"),
 	    $funcname);
     }
     undef;
@@ -167,29 +158,32 @@ sub define_array_attr_getter {
 	    @{$pkg->_parse_array_attr_define($call_pkg, $_)};
 	$pkg->define_function(
 	    $call_pkg,
-	    ($class_method_p ? sub {
-		 shift->_this->[$index];
-	     } : sub {
-		 shift->[$index];
-	     }),
+	    $pkg->_generate_attr_closure($class_method_p, 'getter',
+					 "[$index]"),
 	    $funcname);
     }
 }
 
-sub define_array_attr_setter {
+sub define_attr_enum_accessor {
     my $pkg = shift;
-    my $class_method_p = shift;
-    my $call_pkg = $pkg->get_package;
+    my $attr_name = shift;
+    my $match_type = shift || 'eq';
     foreach (@_) {
-	my ($funcname, $index) =
-	    @{$pkg->_parse_array_attr_define($call_pkg, $_)};
+	my ($funcname, $value);
+	if (ref($_) eq 'ARRAY') {
+	    $funcname = $_->[0];
+	    $value = $_->[1];
+	} else {
+	    $funcname = $attr_name . '_' . $_;
+	    $value = $_;
+	}
 	$pkg->define_function(
-	    $call_pkg,
-	    ($class_method_p ? sub {
-		 shift->_this->[$index] = shift;
-	     } : sub {
-		 shift->[$index] = shift;
-	     }),
+	    $pkg->get_package,
+	    eval 'sub {
+		 my $this = shift;
+		 $this->$attr_name($value) if defined shift;
+		 $this->$attr_name '.$match_type.' $value;
+	     }',
 	    $funcname);
     }
 }
