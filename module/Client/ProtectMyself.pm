@@ -106,12 +106,11 @@ sub message_io_hook {
 	    @affected = $msg->param(0);
 	}
 	if (@affected) {
-	    my $new_msg;
 	    $msg_tmpl->prefix(
 		$runloop->sysmsg_prefix(qw(system fake::system)));
 	    $msg_tmpl->command('NOTICE');
 	    return map {
-		$new_msg = $msg_tmpl->clone;
+		my $new_msg = $msg_tmpl->clone;
 		$new_msg->param(0, $_);
 		$new_msg;
 	    } @affected;
