@@ -272,10 +272,8 @@ sub find_groups {
     my (@ret);
 
     ($keys, $values) = map {
-	if (!ref($_)) {
+	if (!ref($_) || ref($_) ne 'ARRAY') {
 	    [$_];
-	} elsif (ref($_) eq 'SCALAR') {
-	    [$$_];
 	} else {
 	    $_;
 	}
