@@ -473,11 +473,17 @@ sub _interrupt {
 }
 
 sub disconnect {
-    my $this = shift;
+    my ($this, $genre, $errno, @params) = @_;
 
     $this->_cleanup;
-    $this->SUPER::disconnect;
-    $this->printmsg("Disconnected from ".$this->destination.".");
+    $this->SUPER::disconnect($genre, $errno, @params);
+    if (defined $errno) {
+	$this->printmsg($this->sock_errno_to_msg(
+	    $errno,
+	    "Disconnected from ".$this->destination.": $genre error"));
+    } else {
+	$this->printmsg("Disconnected from ".$this->destination.".");
+    }
     if ($this->state_reconnecting || $this->state_connected) {
 	$this->state_reconnecting(1);
 	$this->reload_config;

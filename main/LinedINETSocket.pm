@@ -25,16 +25,30 @@ __DATA__
 # newでeolを指定することによって、
 # CRLF,LF,CR,またはNULLなど、さまざまな行終端文字が使用できます。
 # 省略した場合はCRLFを使用します。
+# callback を指定すると disconnect 時に callback method が呼ばれます。
+# $callback->($genre, $errno), $genre は read, write, exception, eof, もしくは
+# undef で、 eof や undef の時には errno はありません。
 
 sub new {
-    my ($class, $eol) = @_;
+    my ($class, $eol, $callback) = @_;
 
     my $this = $class->SUPER::new(
 	_caller => 1,
 	_subject => 'lined-inet-socket',
 	eol => $eol,
        );
+    $this->{disconnect_callback} = $callback
+	if defined ref($callback) &&
+	    ref($callback) eq 'CODE';
     $this;
+}
+
+sub disconnect {
+    my ($this, $errno, $genre, @params) = @_;
+    $this->SUPER::disconnect($errno, $genre, @params);
+    if (defined $this->{disconnect_callback}) {
+	$this->{disconnect_callback}->($errno, $genre);
+    }
 }
 
 sub connect {
@@ -44,9 +58,9 @@ sub connect {
 
     # ソケットを開く。開けなかったらundef。
     my $sock = new IO::Socket::INET(PeerAddr => $host,
-				      PeerPort => $port,
-				      Proto => 'tcp',
-				      Timeout => 5);
+				    PeerPort => $port,
+				    Proto => 'tcp',
+				    Timeout => 5);
     $this->attach($sock);
 }
 

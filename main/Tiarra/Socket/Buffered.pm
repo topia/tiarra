@@ -37,7 +37,7 @@ sub disconnect_after_writing {
 }
 
 sub disconnect {
-    my $this = shift;
+    my ($this, $errno, $genre, @params) = @_;
 
     $this->uninstall if $this->installed;
     $this->close;
@@ -92,12 +92,17 @@ sub write {
 	die "write : socket is not connected.\n";
     }
 
-    my $bytes_sent = $this->sock->syswrite($this->sendbuf, $this->write_length) || 0;
-    substr($this->sendbuf, 0, $bytes_sent) = '';
+    my $bytes_sent = $this->sock->syswrite($this->sendbuf, $this->write_length);
+    if (defined $bytes_sent) {
+	substr($this->sendbuf, 0, $bytes_sent) = '';
 
-    if ($this->{disconnect_after_writing} &&
-	    !$this->want_to_write) {
-	$this->disconnect;
+	if ($this->{disconnect_after_writing} &&
+		!$this->want_to_write) {
+	    $this->disconnect;
+	}
+    } else {
+	# write error
+	$this->handle_io_error('write', $!);
     }
 }
 
@@ -113,13 +118,36 @@ sub read {
     }
 
     my $recvbuf = '';
-    $this->sock->sysread($recvbuf,4096); # とりあえず最大で4096バイトを読む
-    if ($recvbuf eq '') {
-	# ソケットが閉じられていた。
-	$this->disconnect;
+    my $retval = $this->sock->sysread($recvbuf,4096); # とりあえず最大で4096バイトを読む
+    if (defined $retval) {
+	if ($retval == 0) {
+	    # EOF
+	    $this->disconnect('eof');
+	} else {
+	    $this->recvbuf .= $recvbuf;
+	}
     } else {
-	$this->recvbuf .= $recvbuf;
+	# read error
+	$this->handle_io_error('read', $!);
     }
+}
+
+sub handle_io_error {
+    my ($this, $genre, $errno) = @_;
+
+    local $! = $errno;
+    if ($!{EWOULDBLOCK} || $!{EINPROGRESS} || $!{EALREADY} || $!{ENOBUFS}) {
+	$this->runloop->notify_warn($this->sock_errno_to_msg($errno, "$genre error"));
+    } else {
+	# maybe couldn't continue
+	$this->disconnect($genre, $errno);
+    }
+}
+
+sub exception {
+    my $this = shift;
+
+    $this->handle_io_error('exception', $this->errno);
 }
 
 sub flush {

@@ -67,6 +67,19 @@ sub accept {
     $this;
 }
 
+sub disconnect {
+    my ($this, $genre, $errno, @params) = @_;
+
+    $this->SUPER::disconnect($genre, $errno, @params);
+    if (defined $errno) {
+	::printmsg($this->sock_errno_to_msg(
+	    $errno,
+	    "Disconnected Client from ".$this->{client_host_repr}.": $genre error"));
+    } else {
+	::printmsg("Disconnected Client from ".$this->{client_host_repr}.".");
+    }
+}
+
 sub fullname {
     # このクライアントをtiarraから見たnick!username@userhostの形式で表現する。
     my ($this,$type) = @_;

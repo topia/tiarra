@@ -108,13 +108,7 @@ sub new {
 
     $this->{conf_reloaded_hook} = Configuration::Hook->new(
 	sub {
-	    # マルチサーバーモードのOn/Offが変わったか？
-	    my $old = $this->{multi_server_mode} ? 1 : 0;
-	    my $new = $this->_conf_networks->multi_server_mode ? 1 : 0;
-	    if ($old != $new) {
-		# 変わった
-		$this->_multi_server_mode_changed;
-	    }
+	    $this->_config_changed(0);
 	},
        )->install(undef, $this->_conf);
 
@@ -215,6 +209,24 @@ sub sysmsg_prefix {
 	$this->_conf_general->sysmsg_prefix;
     } else {
 	undef
+    }
+}
+
+
+sub _config_changed {
+    my ($this, $init) = @_;
+
+    my ($old, $new);
+    # マルチサーバーモードのOn/Offが変わったか？
+    $old = $this->{multi_server_mode};
+    $new = utils->cond_yesno($this->_conf_networks->multi_server_mode);
+    if ($old != $new) {
+	# 変わった
+	if ($init) {
+	    $this->{multi_server_mode} = $new;
+	} else {
+	    $this->_multi_server_mode_changed;
+	}
     }
 }
 
@@ -326,8 +338,8 @@ sub _cleanup_closed_link {
     for (my $i = 0; $i < @{$this->{clients}}; $i++) {
 	my $io = $this->{clients}->[$i];
 	unless ($io->connected) {
-	    ::printmsg("Connection with ".$io->fullname." has been closed.");
-	    $this->unregister_receive_socket($io->sock);
+	    #::printmsg("Connection with ".$io->fullname." has been closed.");
+	    #$this->unregister_receive_socket($io->sock);
 	    splice @{$this->{clients}},$i,1;
 	    $i--;
 	}
@@ -719,9 +731,8 @@ sub run {
     my $this = shift->_this;
     my $conf_general = $this->_conf_general;
 
-    # マルチサーバーモード
-    $this->{multi_server_mode} =
-	$this->_conf_networks->multi_server_mode;
+    # config から初期化
+    $this->_config_changed(1);
 
     # FIXME: only shared
     $this->{mod_manager} =
