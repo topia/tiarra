@@ -47,6 +47,7 @@ tiarra-port: 6667
 
 # Tiarraにクライアントが接続する際に要求するパスワードをcryptした文字列。
 # 空の文字列が指定されたり省略された場合はパスワードを要求しない。
+# crypt は ./tiarra --make-password で行えます。
 tiarra-password: xl7cflIcH9AwE
 
 # 外部プログラムからtiarraをコントロールする為のUNIXドメインソケットの名前。
