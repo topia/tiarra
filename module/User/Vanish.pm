@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Vanish.pm,v 1.5 2004/02/23 02:46:20 topia Exp $
+# $Id: Vanish.pm,v 1.6 2004/07/09 02:34:11 admin Exp $
 # -----------------------------------------------------------------------------
 package User::Vanish;
 use strict;
@@ -160,7 +160,7 @@ sub cmd_TOPIC {
     my ($this,$msg,$sender) = @_;
     if ($this->target_of_vanish_p($msg->prefix,$msg->param(0))) {
 	if ($this->config->drop_topic_by_target) {
-	    $msg->prefix('HIDDEN!HIDDEN@HIDDEN.BY.USER.BANISH');
+	    $msg->prefix('HIDDEN!HIDDEN@HIDDEN.BY.USER.VANISH');
 	}
     }
     $msg;
@@ -275,7 +275,7 @@ sub cmd_KICK {
 
     if ($this->target_of_vanish_p($msg->prefix,$msg->param(0))) {
 	if ($this->config->drop_kick_by_target) {
-	    $msg->prefix('HIDDEN!HIDDEN@HIDDEN.BY.USER.BANISH');
+	    $msg->prefix('HIDDEN!HIDDEN@HIDDEN.BY.USER.VANISH');
 	}
     }
 
@@ -316,7 +316,7 @@ drop-mode-by-target: 1
 drop-mode-switch-for-target: 1
 
 # Vanish対象が発行したKICKを消去するかどうか。デフォルトで0。
-# 本当に消すのではなく、"HIDDEN!HIDDEN@HIDDEN"がKICKを実行した事にする。
+# 本当に消すのではなく、"HIDDEN!HIDDEN@HIDDEN.BY.USER.VANISH"がKICKを実行した事にする。
 drop-kick-by-target: 1
 
 # Vanish対象を対象とするKICKを消去するかどうか。デフォルトで0。

@@ -1,3 +1,10 @@
+2004-07-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* module/Auto/Reply.pm,
+	  module/User/ServerOper.pm,
+	  module/User/Vanish.pm:
+	typoの訂正。動作に変更は無い。
+
 2004-07-08  Topia  <topia@clovery.jp>
 
 	* main/Configuration.pm:
@@ -1752,7 +1759,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.155 2004/07/08 15:13:12 topia Exp $
-#   Author: $Author: topia $
-#     Date: $Date: 2004/07/08 15:13:12 $
-# Revision: $Revision: 1.155 $
+#       Id: $Id: ChangeLog,v 1.156 2004/07/09 02:34:12 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2004/07/09 02:34:12 $
+# Revision: $Revision: 1.156 $
