@@ -138,16 +138,38 @@ sub _try_connect_ipv6 {
 }
 
 sub _try_connect_tcp {
-    my $this = shift;
+    my ($this, $package, $addr, %additional) = @_;
 
-    $this->_try_connect_io_socket(
-	@_,
+    eval "require $package";
+    my $sock = $package->new(
+	%additional,
 	(defined $this->{bind_addr} ?
 	     (LocalAddr => $this->{bind_addr}) : ()),
-	PeerAddr => $this->{connecting}->{addr},
-	PeerPort => $this->{connecting}->{port},
-	Blocking => 0,
+	Timeout => undef,
 	Proto => 'tcp');
+    if (!defined $sock) {
+	$this->_warn("Couldn't prepare socket");
+	$this->_connect_try_next;
+	return;
+    }
+    if (!defined $sock->blocking(0)) {
+	$this->_warn('cannot blocking');
+    }
+    my $saddr = Tiarra::Resolver->resolve(
+	'saddr', [$this->current_addr, $this->current_port],
+	sub {}, 0);
+    if ($sock->connect($saddr->answer_data)) {
+	my $error = $!;
+	$this->{sock} = $sock;
+	$! = $error;
+	if ($!{EINPROGRESS}) {
+	    $this->install;
+	} else {
+	    $this->_call;
+	}
+    } else {
+	$this->_connect_error_try_next(($!+0).': '.$!);
+    }
 }
 
 sub _try_connect_unix {
@@ -160,33 +182,13 @@ sub _try_connect_unix {
 		    qq{Use other protocol if possible.\n});
     }
 
-    $this->_try_connect_io_socket(
-	'IO::Socket::UNIX',
-	Peer => $this->{connecting}->{addr},
-       );
-}
-
-sub _try_connect_io_socket {
-    my ($this, $package, %additional) = @_;
-
-    my @new_socket_args = (
-	Timeout => undef,
-	%additional,
-    );
-
-    eval "require $package";
-    my $sock = $package->new(@new_socket_args);
-    my $error = $!;
+    Require IO::Socket::UNIX;
+    my $sock = IO::Socket::UNIX->new(Peer => $this->{connecting}->{addr});
     if (defined $sock) {
 	$this->{sock} = $sock;
-	$! = $error;
-	if ($!{EINPROGRESS}) {
-	    $this->install;
-	} else {
-	    $this->_call;
-	}
+	$this->_call;
     } else {
-	$this->_connect_error_try_next($error);
+	$this->_connect_error_try_next($!);
     }
 }
 
@@ -297,7 +299,7 @@ sub write {
 
 sub read {
     my $this = shift;
-    croak "->read should be stub method!";
+    $this->_warn('->read should be stub method!');
 }
 
 1;
