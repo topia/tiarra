@@ -116,6 +116,7 @@ sub check_changelog {
 		} else {
 		    (my $svndir = $dir) =~ s/'/'\''/;
 		    do {
+			our $CWD;
 			local $CWD = $svndir;
 			# special cleanup for taint check
 			$ENV{PATH} =~ /^(.*)$/;
