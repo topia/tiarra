@@ -195,9 +195,11 @@ sub _NOTICE_from_server {
 
     my $target = $message->params->[0];
     if (channel_p($target)) {
-	# nick(つまり自分)の場合はそのままクライアントに配布。
 	# この場合はチャンネルなので、ネットワーク名を付加。
 	$message->params->[0] = attach($target,$sender->network_name);
+    } else {
+	# nick(つまり自分)の場合は global_to_local を行う。
+	$message->param(0, global_to_local($message->param(0),$sender));
     }
     return $message;
 }
