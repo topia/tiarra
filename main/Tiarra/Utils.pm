@@ -21,7 +21,7 @@ sub simple_caller_formatter {
     my $caller_level = shift || 0;
 
     sprintf('%s at %s line %s', $msg,
-	    ($pkg->get_caller($caller_level))[1,2]);
+	    ($pkg->get_caller($caller_level + 1))[1,2]);
 }
 
 # utilities
