@@ -255,7 +255,7 @@ sub _send_mode_cache {
 	    },
 	   )
        );
-    if (defined $ch->remark('creation_time')) {
+    if (defined $ch->remark('creation-time')) {
 	$sendto->send_message(
 	    IRCMessage->new(
 		Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
@@ -263,7 +263,7 @@ sub _send_mode_cache {
 		Params => [
 		    RunLoop->shared_loop->current_nick,
 		    $ch_name,
-		    $ch->remark('creation_time'),
+		    $ch->remark('creation-time'),
 		   ],
 		Remarks => {
 		    'fill-prefix-when-sending-to-client' => 1,

@@ -876,7 +876,7 @@ sub _RPL_CREATIONTIME {
     my ($this,$msg) = @_;
     my $ch = $this->channel($msg->param(1));
     if (defined $ch) {
-	$ch->remark('creation_time', $msg->param(2));
+	$ch->remark('creation-time', $msg->param(2));
     }
 }
 
