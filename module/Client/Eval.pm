@@ -15,7 +15,8 @@ sub message_arrived {
     if ($sender->isa('IrcIO::Client')) {
 	# 指定されたコマンドか?
 	if (Mask::match_deep([$this->config->command('all')], $msg->command)) {
-	    my ($method) = $msg->param(0);
+	    # メッセージ再構築
+	    my ($method) = join(' ', @{$msg->params}[0 .. ($msg->n_params - 1)]);
 	    my ($ret, $err);
 	    do {
 		# disable warning
@@ -25,6 +26,7 @@ sub message_arrived {
 		no strict;
 		# untaint
 		$method =~ /\A(.*)\z/s;
+		$err = '';
 		$ret = eval($1);
 	    };
 
