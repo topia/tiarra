@@ -16,8 +16,7 @@ utils->define_attr_getter(0, qw(sock installed));
 utils->define_attr_accessor(0, qw(name),
 			    map { ["_$_", $_] }
 				qw(sock installed));
-use Config;
-our $is_winsock = $Config{archname} =~ /^MSWin32/;
+our $is_winsock = $^O =~ /^MSWin32/;
 
 sub new {
     my ($class, %opts) = @_;
