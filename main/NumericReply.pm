@@ -6,7 +6,8 @@
 package NumericReply;
 use strict;
 use warnings;
-use base qw/Exporter/;
+require Exporter;
+use base qw(Exporter);
 our @EXPORT;
 our %replies;
 our %numbers;
