@@ -7,6 +7,8 @@ use warnings;
 use vars qw($AUTOLOAD);
 use UNIVERSAL;
 use Unicode::Japanese;
+use Tiarra::DefineEnumMixin qw(BLOCK_NAME TABLE);
+use Tiarra::Utils;
 # 値を取得するにはgetメソッドを用いる他、エントリ名をそのままメソッドとして呼ぶ事も出来ます。
 #
 # $block->hoge;
@@ -41,9 +43,6 @@ use Unicode::Japanese;
 # reinterpret-encoding,AUTOLOADといった属性はget()でしか読めない。
 # また、属性名にアンダースコアを持つ属性もget()でしか読めない。
 
-use constant BLOCK_NAME => 0;
-use constant TABLE      => 1;
-
 sub new {
     my ($class,$block_name) = @_;
     my $obj = bless [] => $class;
@@ -52,21 +51,7 @@ sub new {
     $obj;
 }
 
-sub block_name {
-    my ($this,$newvalue) = @_;
-    if (defined $newvalue) {
-	$this->[BLOCK_NAME] = $newvalue;
-    }
-    $this->[BLOCK_NAME];
-}
-
-sub table {
-    my ($this,$newvalue) = @_;
-    if (defined $newvalue) {
-	$this->[TABLE] = $newvalue;
-    }
-    $this->[TABLE];
-}
+Tiarra::Utils->define_array_attr_accessor(0, qw(block_name table));
 
 sub equals {
     # 二つのConfiguration::Blockが完全に等価なら1を返す。

@@ -36,6 +36,10 @@ use warnings;
 use Carp;
 use Unicode::Japanese;
 use Data::Dumper;
+use Tiarra::Utils;
+use Tiarra::DefineEnumMixin (qw(PREFIX COMMAND PARAMS),
+			     qw(NICK NAME HOST),
+			     qw(REMARKS TIME));
 
 our $use_time_hires;
 BEGIN {
@@ -54,18 +58,7 @@ BEGIN {
 # constants
 use constant MAX_PARAMS => 14;
 
-# variable indices
-use constant PREFIX  => 0;
-use constant COMMAND => 1;
-use constant PARAMS  => 2;
-
-use constant NICK    => 3;
-use constant NAME    => 4;
-use constant HOST    => 5;
-
-use constant REMARKS => 6;
-
-use constant TIME    => 7;
+Tiarra::Utils->define_array_attr_accessor(0, qw(command time));
 
 sub new {
     my ($class,%args) = @_;
@@ -119,8 +112,7 @@ sub new {
 		$obj->[PARAMS] = [$params];
 	    }
 	    elsif ($type eq 'ARRAY') {
-		my @copy_of_params = @{$params};
-		$obj->[PARAMS] = \@copy_of_params; # ¥³¥Ô¡¼¤ò³ÊÇ¼
+		$obj->[PARAMS] = [@$params]; # ¥³¥Ô¡¼¤ò³ÊÇ¼
 	    }
 	}
 	elsif (exists $args{'Param'}) {
@@ -129,8 +121,7 @@ sub new {
 	}
     }
     if (exists $args{'Remarks'}) {
-	my %copy_of_remarks = %{$args{'Remarks'}};
-	$obj->[REMARKS] = \%copy_of_remarks;
+	$obj->[REMARKS] = {%{$args{'Remarks'}}};
     }
     $obj->_parse_prefix;
     $obj;
@@ -347,12 +338,6 @@ sub host {
     $this->[HOST];
 }
 
-sub command {
-    my ($this,$new_val) = @_;
-    $this->[COMMAND] = $new_val if defined($new_val);
-    $this->[COMMAND];
-}
-
 sub params {
     croak "Parameter specified to params(). You must mistaked with param().\n" if (@_ > 1);
     my $this = shift;
@@ -402,12 +387,6 @@ sub remark {
 	defined $this->[REMARKS] ?
 	    $this->[REMARKS]->{$key} : undef;
     }
-}
-
-sub time {
-    my ($this,$new_val) = @_;
-    $this->[TIME] = $new_val if defined($new_val);
-    $this->[TIME];
 }
 
 1;

@@ -11,16 +11,15 @@
 package PersonalInfo;
 use strict;
 use warnings;
+use Tiarra::Utils;
+use Tiarra::DefineEnumMixin (qw(NICK USERNAME USERHOST REALNAME),
+			     qw(SERVER REMARK AWAY));
 use Carp;
 our $AUTOLOAD;
 
-use constant NICK     => 0;
-use constant USERNAME => 1;
-use constant USERHOST => 2;
-use constant REALNAME => 3;
-use constant SERVER   => 4;
-use constant REMARK   => 5;
-use constant AWAY     => 6;
+Tiarra::Utils->define_array_attr_accessor(0,
+				   qw(nick username userhost realname),
+				   qw(server away));
 
 sub new {
     my ($class,%args) = @_;
@@ -30,7 +29,7 @@ sub new {
 	croak "PersonalInfo must be created with Nick parameter.\n";
     }
 
-    my $def_or_null = sub{ defined $_[0] ? $_[0] : '' };
+    my $def_or_null = sub{ Tiarra::Utils->get_first_defined(@_,''); };
     my $obj = bless [] => $class;
     $obj->[NICK] = $def_or_null->($args{Nick});
     $obj->[USERNAME] = $def_or_null->($args{UserName});
@@ -48,22 +47,6 @@ sub info {
     $wantarray ?
       @$this[NICK, USERNAME, USERHOST] :
 	sprintf('%s!%s@%s', $this->nick, $this->username, $this->userhost);
-}
-
-BEGIN {
-    foreach my $constname (qw/NICK USERNAME USERHOST REALNAME SERVER AWAY/) {
-	my $methodname = lc $constname;
-	eval qq{
-	    sub $methodname {
-		my (\$this, \$new) = \@_;
-
-		if (defined \$new) {
-		    \$this->[$constname] = \$new;
-		}
-		\$this->[$constname];
-	    }
-	};
-    }
 }
 
 sub remark {

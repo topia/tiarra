@@ -9,11 +9,10 @@ use strict;
 use warnings;
 use Carp;
 use PersonalInfo;
-
-use constant PERSON  => 0;
-use constant HAS_O   => 1;
-use constant HAS_V   => 2;
-use constant REMARKS => 3;
+use Tiarra::DefineEnumMixin qw(PERSON HAS_O HAS_V REMARKS);
+use Tiarra::Utils;
+Tiarra::Utils->define_array_attr_getter(0, qw(person));
+Tiarra::Utils->define_array_attr_accessor(0, qw(has_o has_v));
 
 sub new {
     my ($class,$person,$has_o,$has_v) = @_;
@@ -26,25 +25,9 @@ sub new {
     $obj;
 }
 
-sub person {
-    shift->[PERSON];
-}
-
 sub info {
     my ($this, $wantarray) = @_;
     shift->[PERSON]->info($wantarray);
-}
-
-sub has_o {
-    my ($this,$option) = @_;
-    $this->[HAS_O] = $option if defined $option;
-    $this->[HAS_O];
-}
-
-sub has_v {
-    my ($this,$option) = @_;
-    $this->[HAS_V] = $option if defined $option;
-    $this->[HAS_V];
 }
 
 sub priv_symbol {
