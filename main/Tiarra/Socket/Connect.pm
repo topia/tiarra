@@ -11,9 +11,10 @@ use Carp;
 use Tiarra::Socket;
 use Timer;
 use base qw(Tiarra::Socket);
-__PACKAGE__->define_attr_accessor(0, qw(host addr port callback),
-				  qw(bind_addr prefer timeout),
-				  qw(retry_int));
+use Tiarra::Utils;
+utils->define_attr_accessor(0, qw(host addr port callback),
+			    qw(bind_addr prefer timeout),
+			    qw(retry_int));
 
 sub new {
     my ($class, %opts) = @_;
@@ -24,7 +25,7 @@ sub new {
 	$this->$_($opts{$_});
     } qw(host addr port callback bind_addr timeout);
     $this->retry_int($opts{retry});
-    $this->prefer($this->get_first_defined($opts{prefer},
+    $this->prefer(utils->get_first_defined($opts{prefer},
 					   [qw(ipv6 ipv4)]));
     $this->{queue} = [];
     $this->connect;
@@ -41,7 +42,7 @@ sub connect {
 		$this->_connect_error('timeout');
 	    });
     }
-    Tiarra::Resolver->resolve('addr', $this->get_first_defined(
+    Tiarra::Resolver->resolve('addr', utils->get_first_defined(
 	$this->addr, $this->host), sub {
 	    eval {
 		$this->_connect_stage(@_);
@@ -201,10 +202,10 @@ sub destination {
 
     $this->repr_destination(
 	host => $this->host,
-	addr => $this->get_first_defined(
+	addr => utils->get_first_defined(
 	    $this->{connecting}->{addr},
 	    $this->addr),
-	port => $this->get_first_defined(
+	port => utils->get_first_defined(
 	    $this->{connecting}->{port},
 	    $this->port),
 	type => $this->type_name);

@@ -32,7 +32,6 @@ use Tiarra::Utils;
 use Tiarra::Resolver;
 use Tiarra::TerminateManager;
 our $_shared_instance;
-my $utils = Tiarra::Utils->shared;
 
 BEGIN {
     # Time::HiResは使えるか？
@@ -152,14 +151,14 @@ sub networks {
     }
 }
 
-$utils->define_attr_getter(1, qw(default_network clients),
-			   [qw(multi_server_mode_p multi_server_mode)],
-			   [qw(_mod_manager mod_manager)]);
+utils->define_attr_getter(1, qw(default_network clients),
+			  [qw(multi_server_mode_p multi_server_mode)],
+			  [qw(_mod_manager mod_manager)]);
 
 # クライアントから見た、現在のnick。
 # このnickは実際に使われているnickとは異なっている場合がある。
 # すなわち、希望のnickが既に使われていた場合である。
-$utils->define_attr_getter(1, qw(current_nick));
+utils->define_attr_getter(1, qw(current_nick));
 
 sub networks_list { values %{shift->networks(@_)}; }
 sub clients_list { @{shift->clients}; }
@@ -805,7 +804,7 @@ sub run {
 
 		my $cntr = $network->remark('pong-drop-counter');
 		$network->remark('pong-drop-counter',
-				 $utils->get_first_defined($cntr,0) + 1);
+				 utils->get_first_defined($cntr,0) + 1);
 	    }
 	},
 	Repeat => 1,

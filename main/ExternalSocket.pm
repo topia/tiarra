@@ -33,8 +33,7 @@ use Carp;
 use Tiarra::Utils;
 use Tiarra::Socket;
 use base qw(Tiarra::Socket);
-use base qw(Tiarra::Utils);
-__PACKAGE__->define_attr_getter(0, qw(name));
+utils->define_attr_getter(0, qw(name));
 
 sub socket {
     shift->sock(@_);

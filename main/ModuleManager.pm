@@ -14,8 +14,7 @@ use Tiarra::SharedMixin qw(shared shared_manager);
 use Tiarra::ShorthandConfMixin;
 use Tiarra::Utils;
 our $_shared_instance;
-my $utils = Tiarra::Utils->shared;
-$utils->define_attr_getter(1, [qw(_runloop runloop)]);
+utils->define_attr_getter(1, [qw(_runloop runloop)]);
 
 sub _new {
     shift->new(shift || RunLoop->shared);
@@ -417,9 +416,9 @@ sub _load {
     my $mod_name = $mod_conf->block_name;
 
     # use
-    $utils->do_with_errmsg("module load: $mod_name", sub {
-			       eval "use $mod_name;";
-			   });
+    utils->do_with_errmsg("module load: $mod_name", sub {
+			      eval "use $mod_name;";
+			  });
     if ($@) {
 	$this->_runloop->notify_error(
 	    "Couldn't load module $mod_name because of exception.\n$@");

@@ -21,16 +21,15 @@ use NumericReply;
 use Tiarra::Utils;
 use Tiarra::Socket::Connect;
 use Tiarra::Resolver;
-use base qw(Tiarra::Utils);
-__PACKAGE__->define_attr_getter(0,
-				qw(network_name current_nick logged_in),
-				qw(server_hostname isupport config),
-				[qw(host server_host)]);
-__PACKAGE__->define_attr_accessor(0, qw(state finalizing));
-__PACKAGE__->define_attr_enum_accessor('state', 'eq',
-				       qw(connecting finalizing terminating),
-				       qw(terminated finalized connected),
-				       qw(reconnecting));
+utils->define_attr_getter(0,
+			  qw(network_name current_nick logged_in),
+			  qw(server_hostname isupport config),
+			  [qw(host server_host)]);
+utils->define_attr_accessor(0, qw(state finalizing));
+utils->define_attr_enum_accessor('state', 'eq',
+				 qw(connecting finalizing terminating),
+				 qw(terminated finalized connected),
+				 qw(reconnecting));
 
 
 sub new {

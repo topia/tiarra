@@ -10,8 +10,9 @@ use warnings;
 use Carp;
 use Tiarra::Socket;
 use base qw(Tiarra::Socket);
-__PACKAGE__->define_attr_getter(0, qw(connected));
-__PACKAGE__->define_attr_accessor(0, qw(recvbuf sendbuf));
+use Tiarra::Utils;
+utils->define_attr_getter(0, qw(connected));
+utils->define_attr_accessor(0, qw(recvbuf sendbuf));
 
 sub new {
     my ($class, %opts) = @_;

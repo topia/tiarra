@@ -43,7 +43,6 @@ use warnings;
 use Carp;
 use UNIVERSAL;
 use Tiarra::Utils;
-my $utils = Tiarra::Utils->shared;
 
 sub new {
     my $class = shift;
@@ -55,7 +54,7 @@ sub new {
     }
     if (ref($name) eq 'CODE' && !defined($code)) {
 	$code = $name;
-	$name = $utils->simple_caller_formatter($class.' registered');
+	$name = utils->simple_caller_formatter($class.' registered');
     }
 
     my $this = {
@@ -166,10 +165,10 @@ sub call {
 
     my ($caller_pkg) = caller(2);
     if ($caller_pkg->isa(ref $this->{target})) {
-	$utils->do_with_errmsg("Hook: $this->{target}/$this->{hook_name}($this->{name})",
-			       sub {
-				   $this->{code}->($this, @args);
-			       });
+	utils->do_with_errmsg("Hook: $this->{target}/$this->{hook_name}($this->{name})",
+			      sub {
+				  $this->{code}->($this, @args);
+			      });
     }
     else {
 	croak "Only ${\ref($this->{target})} can call ${\ref($this)}->call\n".

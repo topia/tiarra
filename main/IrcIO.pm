@@ -15,7 +15,7 @@ use Tiarra::ShorthandConfMixin;
 use Tiarra::Utils;
 use Tiarra::Socket::Buffered;
 use base qw(Tiarra::Socket::Buffered);
-__PACKAGE__->define_attr_getter(0, [qw(_runloop runloop)]);
+utils->define_attr_getter(0, [qw(_runloop runloop)]);
 
 sub new {
     my ($class, $runloop, %opts) = @_;

@@ -9,11 +9,10 @@ use strict;
 use warnings;
 use Carp;
 use Tiarra::Utils;
-my $utils = Tiarra::Utils->shared;
-$utils->define_attr_accessor(0,
-			     qw(installed name),
-			     map { ["_$_", $_] }
-				 qw(closure type interval object));
+utils->define_attr_accessor(0,
+			    qw(installed name),
+			    map { ["_$_", $_] }
+				qw(closure type interval object));
 
 # lazy load
 #use RunLoop;
@@ -26,12 +25,12 @@ sub new {
 	installed => 0,
     };
     bless $this, $class;
-    $this->type($utils->get_first_defined($opt{type}, 'timer'));
-    $this->interval($utils->get_first_defined($opt{interval}, 5));
-    $this->_closure($utils->get_first_defined($opt{closure}, undef));
-    $this->name($utils->get_first_defined(
+    $this->type(utils->get_first_defined($opt{type}, 'timer'));
+    $this->interval(utils->get_first_defined($opt{interval}, 5));
+    $this->_closure(utils->get_first_defined($opt{closure}, undef));
+    $this->name(utils->get_first_defined(
 	$opt{name},
-	$utils->simple_caller_formatter('wrapmainloop registered')));
+	utils->simple_caller_formatter('wrapmainloop registered')));
     $this;
 }
 

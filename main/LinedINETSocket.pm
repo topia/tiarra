@@ -14,8 +14,7 @@ use RunLoop;
 use Tiarra::Utils;
 use Tiarra::Socket::Buffered;
 use base qw(Tiarra::Socket::Buffered);
-use base qw(Tiarra::Utils);
-__PACKAGE__->define_attr_accessor(0, qw(eol));
+utils->define_attr_accessor(0, qw(eol));
 
 use SelfLoader;
 SelfLoader->load_stubs;
@@ -36,7 +35,7 @@ sub new {
     my $this = $class->SUPER::new(
 	_caller => 1,
 	_subject => 'lined-inet-socket');
-    $this->eol($this->get_first_defined(
+    $this->eol(utils->get_first_defined(
 	$eol,
 	"\x0d\x0a"));
     $this->{recvqueue} = [];

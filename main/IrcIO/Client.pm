@@ -18,6 +18,9 @@ use NumericReply;
 use Tiarra::Resolver;
 use Tiarra::Socket;
 use Tiarra::Utils;
+utils->define_attr_getter(0, qw(logging_in username),
+			  qw(client_host client_addr client_host_repr));
+
 
 # 複数のパッケージを混在させてるとSelfLoaderが使えない…？
 #use SelfLoader;
@@ -63,9 +66,6 @@ sub accept {
     $this->install;
     $this;
 }
-
-__PACKAGE__->define_attr_getter(0, qw(logging_in username),
-				qw(client_host client_addr client_host_repr));
 
 sub fullname {
     # このクライアントをtiarraから見たnick!username@userhostの形式で表現する。
@@ -126,22 +126,22 @@ sub option_or_default {
     my ($this, $base, $config_prefix, $option_prefix, $default) = @_;
     my $value;
 
-    $this->get_first_defined(
-	$this->option($this->to_str($option_prefix).$base),
-	$this->_conf_general->get($this->to_str($option_prefix).$base),
+    utils->get_first_defined(
+	$this->option(utils->to_str($option_prefix).$base),
+	$this->_conf_general->get(utils->to_str($option_prefix).$base),
 	$default);
 }
 
 sub option_or_default_multiple {
     my ($this, $base, $types, $config_prefix) = @_;
 
-    return $this->get_first_defined(
+    return utils->get_first_defined(
 	(map {
-	    $this->option(join('',$this->to_str($_, $base)));
+	    $this->option(join('',utils->to_str($_, $base)));
 	} @$types),
 	(map {
 	    $this->_conf_general->get(
-		join('',$this->to_str($config_prefix, $_, $base)));
+		join('',utils->to_str($config_prefix, $_, $base)));
 	} @$types));
 }
 

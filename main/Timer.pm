@@ -34,8 +34,7 @@ use warnings;
 use Carp;
 use RunLoop;
 use Tiarra::Utils;
-my $utils = Tiarra::Utils->shared;
-$utils->define_attr_accessor(0, qw(interval name));
+utils->define_attr_accessor(0, qw(interval name));
 
 sub new {
     my ($class,%args) = @_;
@@ -44,7 +43,7 @@ sub new {
 	interval => undef, # repeatする場合は、その間隔。しなければ未定義。
 	code => undef, # 走らせるコード
 	runloop => undef, # RunLoopに登録されている場合は、そのRunLoop。
-	name => $utils->simple_caller_formatter('timer registered'),
+	name => utils->simple_caller_formatter('timer registered'),
     };
     bless $obj,$class;
 
@@ -146,9 +145,9 @@ sub execute {
     }
 
     eval {
-	$utils->do_with_errmsg("Timer: $this->{name}", sub {
-				   $this->{code}->($this);
-			       });
+	utils->do_with_errmsg("Timer: $this->{name}", sub {
+				  $this->{code}->($this);
+			      });
     }; if ($@) {
 	$this->{runloop}->notify_error("$@");
     }

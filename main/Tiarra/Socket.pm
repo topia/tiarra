@@ -10,11 +10,10 @@ use warnings;
 use Carp;
 use Tiarra::Utils;
 use RunLoop;
-use base qw(Tiarra::Utils);
-__PACKAGE__->define_attr_getter(0, qw(sock installed));
-__PACKAGE__->define_attr_accessor(0, qw(name),
-				  map { ["_$_", $_] }
-				      qw(sock installed));
+utils->define_attr_getter(0, qw(sock installed));
+utils->define_attr_accessor(0, qw(name),
+			    map { ["_$_", $_] }
+				qw(sock installed));
 
 sub new {
     my ($class, %opts) = @_;
@@ -23,10 +22,10 @@ sub new {
 	runloop => $opts{runloop},
 	installed => 0,
 	sock => undef,
-	name => $class->get_first_defined(
+	name => utils->get_first_defined(
 	    $opts{name},
-	    $class->simple_caller_formatter(
-		$class->get_first_defined($opts{_subject}, 'socket').' registered',
+	    utils->simple_caller_formatter(
+		utils->get_first_defined($opts{_subject}, 'socket').' registered',
 		($opts{_caller} || 0))),
     };
     bless $this, $class;
@@ -35,7 +34,7 @@ sub new {
 sub runloop {
     my $this = shift;
 
-    $this->get_first_defined($this->{runloop}, RunLoop->shared);
+    utils->get_first_defined($this->{runloop}, RunLoop->shared);
 }
 
 sub attach {
@@ -114,14 +113,14 @@ sub repr_destination {
     # $if($get(str_started),' (')))
     $str = join('/',
 		join('',
-		     $class_or_this->get_first_defined($data{host}),
+		     utils->get_first_defined($data{host}),
 		     ((defined $data{addr} && $data{host} ne $data{addr}) ?
 			  "($data{addr})" : '')),
-		$class_or_this->get_first_defined($data{port}));
+		utils->get_first_defined($data{port}));
     if (length $str) {
 	$str .= " ($data{type})" if defined $data{type};
     } else {
-	$str .= $class_or_this->to_str($data{type});
+	$str .= utils->to_str($data{type});
     }
     $str;
 }
@@ -147,7 +146,7 @@ sub _increment_caller {
     my ($class_or_this, $subject, $opts) = @_;
 
     $opts->{_caller} = ($opts->{_caller} || 0) + 1;
-    $opts->{_subject} = $class_or_this->get_first_defined(
+    $opts->{_subject} = utils->get_first_defined(
 	$opts->{_subject},
 	$subject);
     $opts;
