@@ -102,7 +102,8 @@ sub check_changelog {
     my $changelog = 'ChangeLog';
 
     foreach my $file (follow_link($0)) {
-	my $path = File::Spec->catfile(dirname($file), $changelog);
+	my $dir = dirname($file);
+	my $path = File::Spec->catfile($dir, $changelog);
 	my $fh = IO::File->new($path, 'r');
 	if (defined $fh) {
 	    my $revision = undef;
@@ -119,8 +120,16 @@ sub check_changelog {
 	    $version .= '+cvs-' . $revision if defined $revision;
 	    $version .= '(' . $date . ')' if defined $date;
 
-	    (my $svndir = dirname($file)) =~ s/'/'\''/;
-	    my $svnversion = `svnversion -n '$svndir'`;
+	    my $svnversion;
+	    if (-e File::Spec->catdir($dir, '.svn')) {
+		(my $svndir = $dir) =~ s/'/'\''/;
+		$svnversion = `svnversion -n '$svndir'`;
+	    } elsif (-e File::Spec->catfile($dir, '.svnversion')) {
+		my $path = File::Spec->catfile($dir, '.svnversion');
+		my $fh = IO::File->new($path, 'r');
+		$svnversion = <$fh>;
+		chomp $svnversion;
+	    }
 	    $version .= '+svn-' . $svnversion if defined $svnversion && length $svnversion;
 	    return;
 	}
