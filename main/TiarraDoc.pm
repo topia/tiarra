@@ -289,6 +289,7 @@ sub _makeconf {
     # infoヘッダの内容を出力。無ければエラー。
     # ただしinfo-is-omittedが定義されていて真であれば出力しない。
     my $indent = ' ' x $indent_level;
+    my $block_indent = '';
     my $info = $pod->header->{info};
     if (defined $info) {
 	if (!$pod->header->{'info-is-omitted'}) {
@@ -332,23 +333,32 @@ sub _makeconf {
 
 	    die "$errstr\n$list";
 	};
-	
+
 	$result .= $indent . do {
 	    if ($line eq '') {
 		'';
 	    }
 	    elsif ($line =~ m/^\s*#/) {
 		(my $stripped = $line) =~ s/^\s*//;
-		$stripped;
+		"$block_indent$stripped";
 	    }
 	    elsif ($line =~ m/^(.+?)\s*:\s*(.+)$/) {
 		my ($key,$value) = ($1,$2);
 		if ($key =~ s/^-//) {
-		    "#$key: $value";
+		    "$block_indent#$key: $value";
 		}
 		else {
-		    "$key: $value";
+		    "$block_indent$key: $value";
 		}
+	    }
+	    elsif ($line =~ m/^(.+?)\s*{\s*$/) {
+		$_ = "$block_indent$1 {";
+		$block_indent .= ' ' x 2;
+		$_;
+	    }
+	    elsif ($line =~ m/^}\s*$/) {
+		substr($block_indent, 0, 2) = '';
+		"$block_indent}";
 	    }
 	    else {
 		$error->('illegal line');
