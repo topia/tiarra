@@ -107,7 +107,7 @@ sub _KICK_from_client {
 
 	    $message->params->[0] = $raw_channel;
 	    $message->params->[1] = local_to_global($raw_nick,$runloop->networks->{$to});
-	    forward_to_server($message,$to);		    
+	    forward_to_server($message,$to);
 	}
     }
     elsif (@channels == 1) {
