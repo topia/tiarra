@@ -119,6 +119,7 @@ sub read {
 	    [$msg], 'message_io_hook', $this, 'in');
 
 	foreach (@$filtered) {
+	    $_->purge_raw_params;
 	    push @{$this->{recv_queue}}, $_;
 	}
     }
