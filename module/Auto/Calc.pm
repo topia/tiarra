@@ -4,6 +4,14 @@
 # -----------------------------------------------------------------------------
 # $Clovery: tiarra/module/Auto/Calc.pm,v 1.2 2003/08/24 18:21:13 topia Exp $
 # copyright (C) 2003 Topia <topia@clovery.jp>. all rights reserved.
+package Auto::Calc::Share;
+use strict;
+use warnings;
+
+sub pi () { 3.141592653589793238; }
+sub pie () { pi(); }
+sub e () { exp(1); }
+
 package Auto::Calc;
 use strict;
 use warnings;
@@ -19,7 +27,9 @@ sub new {
     my $this = $class->SUPER::new;
     $this->{safe} = Safe->new();
     $this->{safe}->permit_only(qw(:base_core :base_math :base_orig),
-			       qw(sort pack unpack));
+			       qw(pack unpack),
+			       qw(atan2 sin cos exp log sqrt));
+    $this->{safe}->share_from(__PACKAGE__.'::Share', [qw(pi pie e)]);
 
     return $this;
 }
@@ -51,6 +61,8 @@ sub message_arrived {
 		    local $SIG{__WARN__} = sub { };
 		    # die handler
 		    local $SIG{__DIE__} = sub { $err = $_[0]; };
+		    # floating point exceptions
+		    local $SIG{FPE} = sub { die 'SIGFPE called'; } if exists $SIG{FPE};
 		    no strict;
 		    $ret = $this->{safe}->reval($method);
 		};
@@ -83,8 +95,9 @@ sub message_arrived {
 
 		if ($err) {
 		    $err =~ s/ +at \(eval \d+\) line \d+//;
+		    $err =~ s/, <DATA> line \d+//;
 		    my $format = undef;
-		    # format の個別化 (elapsed min: 5)
+		    # format の個別化
 		    my $error_name = $err;
 		    if ($this->config->error_name_formatter) {
 			
