@@ -94,23 +94,17 @@ sub message_io_hook {
 	    };
 
 	    my $charset = do {
-		if ($io->can('out_encoding')) {
-		    $io->out_encoding;
-		} elsif ($msg->have_raw_params) {
+		if ($msg->have_raw_params) {
 		    $msg->encoding_params('binary');
 		    'binary';
+		} elsif ($io->can('out_encoding')) {
+		    $io->out_encoding;
 		} else {
 		    $this->config->charset;
 		}
 	    };
 	    $this->_write($server, $dirname, $msg->time, $prefix .
 			      $msg->serialize($charset));
-	    # FIXME: temporary feature to debug
-	    use Data::Dumper;
-	    local($Data::Dumper::Terse) = 1;
-	    local($Data::Dumper::Purity) = 1;
-	    $this->_write($server, $dirname, $msg->time, 'dump: ' .
-			      Dumper($msg));
 	}
 	last;
     }
