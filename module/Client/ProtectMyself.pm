@@ -7,7 +7,6 @@ use strict;
 use warnings;
 use base qw(Module);
 use Multicast;
-use RunLoop;
 use IRCMessage;
 use Auto::AliasDB;
 use Tiarra::Utils;
@@ -103,7 +102,7 @@ sub message_io_hook {
 
 1;
 =pod
-info: IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する
+info: 意図せず自分のニックが変わってしまうのを防止する
 default: off
 
 # {nick,part,quit,join}-format: それぞれのメッセージのフォーマットを指定します。
