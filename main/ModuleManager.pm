@@ -53,6 +53,7 @@ sub check_blacklist {
 sub _set_blacklist {
     my ($this,$modname,$add_or_remove) = @_;
 
+    $this->_clear_module_cache;
     if ($add_or_remove) {
 	# modname の存在テストはしない: && defined $this->get($modname)
 	$this->{mod_blacklist}->{$modname} = 1;
@@ -61,7 +62,6 @@ sub _set_blacklist {
     } else {
 	return undef;
     }
-    $this->_clear_module_cache;
     return 1;
 }
 
@@ -216,6 +216,9 @@ sub update_modules {
 	}
 	$this->_unload($_);
     }
+
+    # gc の前に一度キャッシュクリア
+    $this->_clear_module_cache;
 
     if ($deleted_any > 0) {
 	# 何か一つでもアンロードしたモジュールがあれば、最早参照されなくなったモジュールが
