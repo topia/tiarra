@@ -95,10 +95,10 @@ sub do_with_errmsg {
 		sub {
 		    my $msg = shift;
 		    if (!ref($msg)) {
-			$handler->((shift).$str);
+			$handler->(($msg).$str);
 		    } else {
 			#FIXME...
-			$handler->(shift);
+			$handler->($msg);
 		    }
 		};
 	    } qw(warn die));
