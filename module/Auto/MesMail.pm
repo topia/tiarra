@@ -18,8 +18,8 @@ my $FORMAT = '#(date) << #(from.name|from.nick|from.nick.now) >> #(message)';
 my $SUBJECT = 'Message from IRC';
 
 sub new {
-  my ($class) = @_;
-  my $this = $class->SUPER::new;
+  my ($class) = shift;
+  my $this = $class->SUPER::new(@_);
 
   $this->{from_addr} = sub {
     my ($user, $host) = split(/\@/, $_[0], 2);
