@@ -231,6 +231,12 @@ sub _receive_while_logging_in {
 				       Command => 'NOTICE',
 				       Params => [$current_nick,
 						  "*** Your global nick in $network_name is currently '$global_nick'."]));
+		} else {
+		    $this->send_message(
+			new IRCMessage(Prefix => 'tiarra',
+				       Command => 'NOTICE',
+				       Params => [$current_nick,
+						  "*** tiarra is client of $network_name."])); ## FIXME
 		}
 	    } values %{RunLoop->shared_loop->networks};
 
