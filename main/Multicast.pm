@@ -388,7 +388,7 @@ my $server_sent = {
 		((map { ("$_", "ENDOF$_"); } qw(INVITELIST EXCEPTLIST BANLIST)),
 		 (map {"ENDOF$_"} qw(WHO NAMES)),
 		 qw(LIST CHANNELMODEIS NOTOPIC TOPIC TOPICWHOTIME))),
-	   qw(ERR_TOOMANYCHANNELS))},
+	   qw(ERR_TOOMANYCHANNELS ERR_NOTONCHANNEL ERR_NOSUCHCHANNEL))},
     do {
 	no strict 'refs';
 	map {
@@ -462,7 +462,7 @@ my $client_sent = {
 		 (map {"ENDOF$_"} qw(WHO NAMES)),
 		 qw(LIST CHANNELMODEIS NOTOPIC TOPIC TOPICWHOTIME),
 		 qw(INVITING UNIQOPIS WHOREPLY))),
-	   qw(ERR_TOOMANYCHANNELS))},
+	   qw(ERR_TOOMANYCHANNELS ERR_NOTONCHANNEL ERR_NOSUCHCHANNEL))},
     do {
 	no strict 'refs';
 	map {
