@@ -49,10 +49,9 @@ ECONNREFUSED: Connection refused
 EHOSTDOWN: Host is down
 EHOSTUNREACH: No route to host
 EPROCLIM: Too many processes
-...
 __YAML__
-    # strip yaml header/footer
-    shift @data;pop @data;
+    # strip yaml header
+    shift @data;
     %descriptions = ();
     my ($name, $description, $value);
     map {
