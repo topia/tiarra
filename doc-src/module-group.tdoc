@@ -1,0 +1,38 @@
+-*- outline -*-
+$Id: module-group.tdoc,v 1.1 2003/08/04 09:29:21 admin Exp $
+
+各モジュールの分類名(= グループ名)と、その説明。
+グループ名とは、モジュール名のm/^(.+?)::/で与えられる部分を指す。
+
+この分類表で定義されていないモジュールは、グループ `UNCLASSIFIED' に属するものと見做される。
+
+* Auto
+package Auto;
+=pod
+description: 自動反応
+=cut
+
+* Channel
+package Channel;
+=pod
+description: チャンネルに対する操作
+=pod
+
+* Log
+package Log;
+=pod
+description: ログの記録
+=cut
+
+* System
+package System;
+=pod
+description: Tiarra自身の動作に関するもの
+=cut
+
+* User
+package User;
+=pod
+description: 特定の人間に対する動作や自分自身についての動作
+=cut
+

@@ -1,0 +1,86 @@
+/* $Id: default.css,v 1.1 2003/08/04 09:29:21 admin Exp $ */
+
+body {
+  background-color: #ffac6a;
+  color: #000000;
+  font-style: normal;
+  font-size: 14px;
+  text-align: left;
+  text-indent: 0px;
+  padding: 20px 30px;
+  margin: 0px;
+}
+
+/* general */
+a {
+    text-decoration: underline;
+}
+a:link {
+    color: #c70800;
+}
+a:visited {
+    color: #a25a4e;
+}
+a:active {
+    text-decoration: none;
+}
+a:hover {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+/* toc-group */
+.toc-group {
+  font-size: 18px;
+}
+
+.toc-group .group-description {
+  font-size: 14px;
+}
+
+.toc-group .toc-individual {
+    font-size: 16px;
+}
+
+.toc-group .toc-individual .module-description {
+    font-size: 12px;
+}
+
+/* doc-element */
+.element {
+    /* border-style: double;
+    border-width: 3px; */
+    border-color: #ffffff;
+    padding: 7px;
+}
+
+.element .element-name {
+    font-size: 24px;
+    font-style: bold;
+}
+
+.element .description {
+    font-style: bold;
+}
+
+.element .doc-content {
+    margin: 5px 0 0 0;
+}
+
+.element .comment {
+    font-size: 12px;
+
+    /*border-style: solid;
+    border-width: 2px;*/
+    margin: 10px 0 0 0;
+}
+
+.element .key {
+    color: #880000;
+    font-size: 16px;
+}
+
+.element .value {
+    color: #880000;
+    font-size: 16px;
+}

@@ -1,0 +1,269 @@
+#!/usr/bin/perl
+# -----------------------------------------------------------------------------
+# - T i a r r a - :::bootstrap:::
+# Copyright (c) 2002-2003 phonohawk. All rights reserved.
+# This is free software; you can redistribute it and/or modify it
+#   under the same terms as Perl itself.
+# -----------------------------------------------------------------------------
+# $Id: tiarra,v 1.24 2003/08/12 01:45:35 admin Exp $
+# -----------------------------------------------------------------------------
+require 5.006;
+use strict;
+use warnings;
+use lib (map{ (($0 =~ m%(.*[\\\/])[^\\\/]*$%)[0] || "").$_ } qw(main module));
+use Configuration;
+use RunLoop;
+use ModuleManager;
+use ReloadTrigger;
+use IO::Handle;
+my $version = '0';
+my $conf_file = '';
+my $quiet = 0;
+my $no_fork = 0;
+
+&check_changelog;
+
+&install_signal_handlers;
+
+&check_whether_ipv6_enabled;
+
+sub check_changelog {
+    use IO::File;
+    my $seek_offset = -300;
+    my $changelog = 'ChangeLog';
+
+    # get changelog path
+    if ($0 =~ /^(.*)[\\\/][^\\\/]*$/) {
+	$changelog = $1 . '/' . $changelog;
+    } else {
+	$changelog = './' . $changelog;
+    }
+
+    my $fh = IO::File->new($changelog, 'r');
+    if (defined $fh) {
+	my $revision = undef;
+	my $date = undef;
+
+	$fh->seek($seek_offset, 2);
+	foreach my $line (<$fh>) {
+	    if ($line =~ /\$\QRevision:\E ([\d.]+) \$/) {
+		$revision = $1;
+	    } elsif ($line =~ /\$\QDate:\E ([\d\/]+) [\d:]+ \$/) {
+		$date = $1;
+	    }
+	}
+	$version .= '+cvs-' . $revision if defined $revision;
+	$version .= '(' . $date . ')' if defined $date;
+    }
+}
+
+sub help {
+    print "\n";
+    print "Usage: tiarra [--config=config-file] [options]\n";
+    print "\n";
+    print "options:\n";
+    print "  --help           print this message\n";
+    print "  --config=<file>  tiarra configuration file; default is 'tiarra.conf'\n";
+    print "  --quiet          don't output any messages to stdout and stdin\n";
+    print "  --no-fork        don't move to background when started in quiet mode\n";
+    print "   -D<symbol>[=<string>]\n";
+    print "                   treat as `\@define <symbol> <string>' is in the conf\n";
+    print "\n";
+    print "If you omit --config=<file> parameter and execute with piped input,\n";
+    print "Tiarra will read configuration from stdin(pipe).\n";
+    print "  example:\n";
+    print "      cat tiarra.conf | sed -e 's/Tiarra/arraiT/g' | ./tiarra --quiet\n";
+    print "      gunzip -c tiarra.conf.gz | ./tiarra\n";
+    print "\n";
+}
+
+sub find_option {
+    my $option = shift;
+    foreach my $arg (@ARGV) {
+	if ($arg eq "--$option") {
+	    return 1;
+	}
+	elsif ($arg =~ m/^--$option=(.+)$/) {
+	    return $1;
+	}
+    }
+    undef;
+}
+
+sub find_options {
+    # $opt_regex: オプション名の正規表現。後方参照を一つだけ作る事。
+    # 戻り値: ([$1, 値], ...)
+    my $opt_regex = shift;
+    grep {
+	defined;
+    } map {
+	if (m/^--?$opt_regex=(.+)/) {
+	    [$1, $2];
+	}
+	elsif (m/^--?$opt_regex$/) {
+	    [$1, 1];
+	}
+	else {
+	    undef;
+	}
+    } @ARGV;
+}
+
+if (&find_option('help')) {
+    &help;
+    exit;
+}
+
+foreach my $pp_define (&find_options(qr/D(.+?)/)) {
+    &Configuration::Preprocessor::initial_define(@$pp_define);
+}
+
+$conf_file = &find_option('config');
+if (!defined $conf_file) {
+    if (!-t STDIN) {
+	$conf_file = undef; # STDINから読む場合はundefを入れておく。
+    }
+    elsif (-f 'tiarra.conf') {
+	$conf_file = 'tiarra.conf';
+    }
+    else {
+	&help;
+	exit;
+    }
+}
+
+$quiet = &find_option('quiet');
+$no_fork = &find_option('no-fork');
+
+# quietモードならSTDOUTとSTDERRを閉じる。
+if ($quiet) {
+    close STDOUT;
+    close STDERR;
+    #open(STDOUT,"> /dev/null");
+    #open(STDERR,"> /dev/null");
+}
+
+my $load_config = sub {
+    local($|) = 1;
+
+    if (defined $conf_file) {
+	print "Reading configuration from ${conf_file}... ";
+    }
+    else {
+	$conf_file = IO::Handle->new->fdopen(fileno(STDIN),'r');
+	print "Reading configuration from stdin... ";
+    }
+
+    eval {
+	Configuration::shared_conf->load($conf_file);
+    }; if ($@) {
+        die "ERROR: $@\n";
+    } else {
+        print "ok\n";
+    }
+};
+
+my $start_runloop = sub {
+    eval {
+	RunLoop::shared_loop->run;
+    }; if ($@) {
+        die "Tiarra aborted: $@\n";
+    } else {
+        print "Tiarra stopped.\n";
+    }
+};
+
+my $boot = sub  {
+    foreach my $line (get_credit()) {
+	print $line,"\n";
+    }
+    print "\n";
+    $load_config->();
+    ModuleManager->shared; # 準備させる
+    $start_runloop->();
+};
+
+# quietモードであり、且つno-forkオプションが指定されなかったらfork。
+if ($quiet && !$no_fork) {
+    my $child_pid = fork;
+    if ($child_pid == 0) {
+	# 子プロセス
+	$boot->();
+    }
+    elsif (!defined $child_pid) {
+	print "Tiarra: fork() failed.\n";
+    }
+}
+else {
+    $boot->();
+}
+exit;
+
+
+
+sub printmsg {
+    # 文字コードはUTF-8でなければならない。
+    my $msg = shift;
+    if (!defined $msg) {
+	$msg = '';
+    }
+    $msg =~ s/\n*$//s;
+    $msg = Unicode::Japanese->new($msg,'utf8')->conv(
+	Configuration->shared_conf->get('general')->stdout_encoding);
+
+    my ($sec,$min,$hour,$day,$mon,$year) = localtime(time);
+    $mon++;
+    $year += 1900;
+
+    #printf("[%02d/%02d/%04d %02d:%02d:%02d] %s\n",$mon,$day,$year,$hour,$min,$sec,$msg);
+    printf("[%02d/%02d %02d:%02d:%02d] %s\n",$mon,$day,$hour,$min,$sec,$msg);
+}
+
+sub version {
+    $version;
+}
+
+sub get_credit {
+    return ("- T i a r r a - :::version #${version}:::",
+	    "Copyright (c) 2002-2003 phonohawk. All rights reserved.",
+	    "This is free software; you can redistribute it and/or modify it",
+	    "  under the same terms as Perl itself.");
+}
+
+sub install_signal_handlers {
+    local $SIG{__WARN__} = sub {};
+    foreach (qw(INT QUIT ABRT TERM)) {
+	$SIG{$_} = \&handle_exit;
+    }
+    $SIG{HUP} = \&handle_reload;
+}
+
+sub handle_exit {
+    print "Signal received.\n";
+    &shutdown;
+}
+
+sub handle_reload {
+    printmsg('SIGHUP received.');
+    ReloadTrigger->reload_conf_if_updated;
+    ReloadTrigger->reload_mods_if_updated;
+}
+
+sub shutdown {
+    print "Shutting down...\n";
+    ModuleManager->shared_manager->terminate;
+    exit;
+}
+
+our $ipv6_is_enabled;
+sub check_whether_ipv6_enabled {
+    eval q{
+	use IO::Socket::INET6;
+    };
+    $ipv6_is_enabled = ($@ ? 0 : 1);
+}
+
+sub ipv6_enabled {
+    # 外部から呼んで良い。IPv6が有効かどうかを真偽値で返す。
+    $ipv6_is_enabled;
+}

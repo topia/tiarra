@@ -1,0 +1,875 @@
+2003-09-24  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/Multicast.pm (nick_p): 
+	「|」を含むnickをnickと認識していなかったので修正。
+
+	* module/Log/Recent.pm:
+	configのcommandを小文字で書くとログが取られない問題を解決。
+
+2003-09-23  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/ModuleManager.pm:
+	use Module::Useされたサブモジュールが破棄される時に、
+	そのパッケージの destruct メソッドを引数無しで呼ぶ。
+
+	* main/Mask.pm:
+	メモリを食い過ぎるので、コンパイル済み正規表現の
+	キャッシュ保存数を150個に減少。
+
+	* main/PersonalInfo.pm:
+	メソッドinfoに引数として真偽値を渡した時、
+	それが真であればnickとnameとhostの配列を返す。
+	wantarrayにすると互換性が失われるため。
+
+	* main/PersonalInfo.pm:
+	動作速度向上のため、AUTOLOADを廃止。
+
+	* module/Log/Channel.pm:
+	configのcommandを小文字で書くとログが取られない問題を解決。
+
+2003-09-20  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/ChannelInfo.pm, main/IRCMessage.pm,
+	main/PersonInChannel.pm, main/PersonalInfo.pm,
+	main/Configuration/Block.pm:
+	これらのクラスはオブジェクトが大量に作られるので、
+	メモリの節約のためにインスタンス型を配列に変更。
+
+	* main/IrcIO.pm:
+	メソッド remarks を remark のエイリアスに。
+	$io->remark(foo => undef); のように明示的にundefを設定すると
+	その註釈を削除。
+
+	* IrcIO/Server.pm:
+	remarkをIrcIO.pmに移動したので、こちらは削除。
+
+	* main/L10N.pm:
+	* main/LocalChannelManager.pm:
+	未完成であり、まだ使われてもいないが、存在しても害は無い。
+	それぞれ多言語メッセージとTiarra内部チャンネルを扱う。
+
+	* main/Mask.pm:
+	マスク文字列から変換した正規表現のコンパイル結果をキャッシュとして保存するように。
+	大量のマスクを扱う条件下で動作が非常に重くなる問題を回避する。
+	ベンチマークの結果では、62.5%のマッチング速度の向上が見られた。
+
+2003-08-18  Topia  <topia@clovery.jp>
+
+	* main/Multicast.pm:
+	${server,client}_sent に ENDOFWHO を追加。
+	これで LimeChat などのクライアントで、
+	アドレスコピーなどの機能が使えない症状が無くなった。
+	$client_sent の numeric reply にコメントを補完。
+
+2003-08-12  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/FunctionalVariable.pm:
+	追加。与えられた任意のハンドラを変数にtieする。
+	通常のtieとの違いは、ハンドラを変数毎に関数リファで指定する点。
+
+	* main/Hook.pm:
+	フックの一般的な定義。このファイルはクラスHookとクラスHookTargetを定義する。
+	
+	* main/Configuration.pm:
+	リロードした時、フック`reloaded'を呼ぶ。
+
+	* main/Multicast.pm:
+	シングルサーバーモード対応。
+	forward_to_serverやlocal_to_globalを動的スコープのフラグで乗っ取る等、
+	最早スパゲティどころではない。ジャングル。
+
+	* main/RunLoop.pm:
+	シングルサーバーモード対応。
+	このモードでは、同時に接続出来るサーバーの数が一つに限定され、
+	チャンネル名等にネットワーク名が付加されなくなる。
+
+	* main/IrcIO/Client.pm:
+	_inform_joinning_channelsをプライベートメソッドでなくした。
+	新しいメソッド名はinform_joinning_channels。
+
+2003-08-04  phonohawk  <phonohawk@lycos.co.uk>
+
+	* makedoc:
+	追加。このスクリプトはdoc-src下のファイルとmodule下のモジュール、
+	main下のモジュールを読み、tdoc形式で書かれたドキュメントを認識し、
+	sample.confおよびdoc下のhtmlドキュメントを生成する。
+	tdocについてはdoc-src/READMEを参照。
+	尚、各モジュールへのtdocの記述が完了していない為、
+	完全なsample.confは生成出来ない。完了するまではsample.confでなく
+	sample.conf.tmpに書き出す。
+
+	* doc-src/README: 追加。tdocについての説明。
+
+	* doc-src/conf-main.tdoc: 追加。generalやnetworksのドキュメント。
+
+	* doc-src/contents.html: 追加。htmlドキュメントのテンプレート。
+
+	* doc-src/module-group.tdoc: 追加。モジュールの分類情報。
+	
+	* doc-src/module-toc.html: 追加。モジュールの目次のhtmlテンプレート。
+
+	* doc-src/sample.conf.in: 追加。sample.confのテンプレート。
+
+	* main/Template.pm: 追加。テンプレートを扱うクラス。
+
+	* main/TiarraDoc.pm: 追加。tdocパーサ。
+
+	* module/System/PrivTranslator.pm
+	* module/User/Ignore.pm: tdoc追加。
+
+2003-07-31  Topia  <topia@clovery.jp>
+
+	* 全般:
+	・インデントの変更
+	・コメントの整備
+	・mask で使うチャンネル名をネットワーク付きに修正(a)
+	・不要な use のクリーンアップ(b)
+	・不要な変数のクリーンアップ(c)
+
+	* Auto/Oper.pm:
+	(a)
+
+	* Auto/Random.pm:
+	(a)(b)
+
+	* Auto/Reply.pm:
+	(a)(b)(c)
+
+	* Auto/MesMail.pm:
+	(b)(c)
+
+	* Auto/Alias.pm:
+	(c)
+
+	* Auto/Response.pm:
+	(a)(c)
+
+	* Auto/Utils.pm:
+	get_ch_name -> (get_raw_ch_name): ネットワーク名無しの(server 的に raw な)チャンネル名 or undef を得る。
+	(get_full_ch_name): ネットワーク名付きのチャンネル名 or undef を得る。
+	(generate_reply_closures): 返り値に $get_full_ch_name を追加。
+	中身としては、$msg->param(place) 以上の意味は無いが、値の指定場所は一ヶ所にした方が良い。
+
+	* Tools/DateConvert.pm:
+	use_posix を import/unimport を使って再実装した。
+
+	* Tools/FileCache/EachFile.pm:
+	(can_remove): 実装。
+	(AUTOLOAD): eval して関数コールするのではなく、その場でメソッドを定義して飛ぶようにした。
+
+	* Tools/FileCache.pm:
+	(main_loop): refcount を使ったチェックの代わりに、 can_remove を使ったチェックにした。
+
+	* Tools/HashDB.pm:
+	Module::Use を追加。
+
+	* Tools/HashTools.pm:
+	(get_array): 見付からなかった場合に () を返していたが、 undef を返すべきなので修正。
+	(replace_recursive): こっかの補完処理を修正
+	(_format): regexp の修正( %. -> %(.) )。バグでした。
+
+	* Tools/MailSend/EachServer.pm
+	::printmsg -> RunLoop->shared->notify_warn 。
+	LinedINETSocket を生成するときに $E_MAIL_EOL を使っていなかった。修正。
+	MessageID の作られ方をコメントとして記述。
+
+	* Tools/MailSend.pm
+	(b)
+
+	* Mask.pm:
+	s/exclude/include/ 。無意味な三項演算子を消した。
+
+	* sample.conf:
+	mask 関連を修正。
+
+2003-07-28  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/IrcIO/Server.pm (person_list):
+	追加。覚えている全てのPersonalInfoのリストを返す。
+
+2003-07-26  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra:
+	起動時に`-Dfoo'や`-Dfoo=bar'を指定すると、confに`@define foo'や
+	`@define foo bar'が書かれているものと見做す。
+
+	* module/Configuration/Preprocessor.pm
+	(initial_define):
+	@defineの初期設定の為の静的メソッド。
+
+	(_eval_at):
+	@ifdef文、@ifndef文を処理可能に。
+
+2003-07-24  Topia  <topia@clovery.jp>
+
+	* tiarra, make-password:
+	require 5.6.0 は古いバージョンだと解釈されないようなので require 5.006 に。
+	lib, module を tiarra からの相対パスで解釈するように。
+
+	* main/Multicast.pm:
+	352(WHOREPLY)のチャンネル名にネットワーク名をアタッチするようにした。
+
+2003-07-23  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/InstantCapsule.pm:
+	SelfLoader使用中止。SelfLoaderでDESTROYが定義されると
+	カプセル内にDESTROYを定義出来なくなってしまう。
+
+	* module/User/Vanish.pm:
+	コマンド「/VANISHDEBUG 1」でメッセージの改変される様子が見えるように。
+	現在残っている妙な不具合の原因が解り次第削除。
+
+2003-07-22  phonohawk  <phonohawk@lycos.co.uk>
+
+	* module/Channel/Freeze.pm
+	(freeze):
+	カンマで区切られた複数のチャンネル名を認識。
+	
+	(defrost):
+	凍結していないチャンネルをdefrostするとエラーが起こる問題を解決。
+	チャンネル名をマスクとして扱うように変更。
+
+2003-07-20  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/IrcIO/Server.pm (_PART):
+	PART受信時、入っているどのチャンネルにも最早その人物が
+	居なくなった場合は、その人物についてのPersonalInfoを削除する。
+
+2003-07-19  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/ChannelInfo.pm (remark):
+	remarks()のエイリアスとしてremark()を使用可能に。
+
+	* main/Timer.pm (interval):
+	明示的にundefを渡す事で、リピート終了可能に。
+	uninstallすれば一緒なので大した意味は無い。
+	
+	* main/IrcIO/Server.pm (_TOPIC): 
+	TOPICメッセージを受信した時、古いトピックを'old-topic'として註釈を付ける。
+
+2003-07-17  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra-conf.el (tiarra-conf-jump-to-block): 
+	ブロック名を入力し、その位置へジャンプするコマンド。
+	デフォルトでは C-c C-. 及び C-c . に割当てられている。
+
+2003-07-16  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra-conf.el (tiarra-conf-next-token):
+	追加。カレントバッファの現在のカーソル位置の次にあるトークンを返す。
+	カーソルはそのトークンの終わりの位置へ移動する。
+
+	* tiarra-conf.el
+	(tiarra-conf-next-block),
+	(tiarra-conf-prev-block):
+	追加。それぞれ現在のカーソル位置の次や前にあるブロックへカーソルを飛ばす。
+	プリプロセッサ指令があると変な動作をするバグ有り。
+	nextは M-n に、prevは M-p に割当てた。
+
+2003-07-10  phonohawk  <phonohawk@lycos.co.uk>
+
+	* module/Channel/Freeze.pm:
+	追加。特定のチャンネルのNOTICEやPRIVMSGの中継を
+	一時的に中断するためのモジュール。
+	発言を見たくないがPARTはしたくない、といった場合に有効。
+
+2003-07-03  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/Configuration/Block.pm (get):
+	$config->foo('random')のような呼出しを可能に。
+	複数の定義があればランダムに一つ選んで返す。
+
+	* main/IrcIO/Server.pm (new, reload_config, connect):
+	切断された後に再接続すると、以前のNICKが引継がれるように。
+
+	* module/Auto/Oper.pm:
+	複数の応答が定義されていれば、ランダムに一つ選んで発言する。省略も可能。
+
+	* module/Auto/Utils.pm
+	(sendto_channel_closure, generate_reply_closures):
+	作成されたクロージャに、発言内容としてundefを渡した場合、
+	何もせずに処理を終える。
+
+2003-06-21  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra:
+	ActivePerlで起動時に出ていた警告を出ないように変更。
+	SIGHUPのハンドラをインストールする際の警告だった。
+
+2003-06-19  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Multicast.pm (attach,detach) :
+	チャンネル/nickとネットワーク名の区切り文字として、二文字以上の文字列も使用可能に。
+	つまり、今後は区切り文字として「空白を含まない1文字以上の任意の文字列」を使う事が出来ます。
+
+2003-06-06  phonohawk  <phonohawk@lycos.co.uk>
+
+	* PersonInChannel.pm (remark) :
+	明示的に二番目の引数にundefを渡すと、その註釈が削除される。
+
+	* RunLoop.pm (update_networks) :
+	同一ホストへの複数の接続には、それぞれ時間差を設ける。
+
+	* RunLoop.pm (run) :
+	既に始動時刻が過ぎているタイマーが存在すると、タイムアウト無期限のselectを行なうバグを修正。
+
+	* Configuration/Block.pm (eval_code) :
+	%CODE{...}EDOC%ブロックを、パッケージConfiguration::Implanted内で実行する。
+
+	* Configuration/Preprocessor.pm (_eval_pre) :
+	%PRE{...}ERP%ブロックを、パッケージConfiguration::Implanted内で実行する。
+
+	* IrcIO/Server.pm (reload_config) :
+	general/nickを、それぞれのネットワーク設定ブロックのnickでオーバーライド可能に。
+
+2003-06-04  Topia  <topia@clovery.jp>
+
+	* RunLoop.pm (run) : can_read を先に処理する。少しでも send で切断された状況をなくすため。
+	意味があるのかは不明だが、実害は無いはず。
+
+	* IrcIO.pm (send) : 接続チェックの対象に $this->{sock}->connected も追加。
+	これが接続されてない状態で書き込もうとすると perl 自体がエラー落ちすることがあるらしい。
+
+2003-06-04  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra (ipv6_enabled) : IPv6が有効かどうかを真偽値で返す。
+
+	* IrcIO.pm: 閉じられたソケットに対して書き込みを行なう可能性のある問題を(多分)解決。
+
+	* CTCP.pm, ControlPort.pm, Crypt.pm, ExternalSocket.pm,
+	  InstantCapsule.pm, LinedINETSocket.pm: これらは一度も使われない可能性があるため、SelfLoaderを用いて遅延ロード。
+
+	* ChannelInfo.pm, PersonalInfo.pm: DESTROY時にエラーが起こる問題を解決。
+
+2003-05-27  phonohawk  <phonohawk@lycos.co.uk>
+
+	* RunLoop.pm:
+	(notify_warn): 追加。全クライアントとコンソールに警告文を出力する。
+	(run): 経過時間ゼロ秒のselectを連続で100回以上検出すると、10秒ごとに、CPU時間を食い潰している可能性を警告する。
+
+	* ControlPort.pm:
+	ソケットの作成に失敗した時に出たエラーが表示されなかったのを修正。
+
+	* ExternalSocket.pm:
+	WantToWriteが返した真偽値によらず、常に「書き込みが必要」として処理していた問題を解決。
+
+2003-05-26  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Timer.pm (new):
+	AtとAfter(又はInterval)が、両方とも指定されていなければcroakする。
+
+	* Configuration/Preprocessor.pm:
+	elseifやelseの解釈が正しくなかったのを修正。
+	%PREの評価結果がundefになった時に警告が出ていたのを修正。
+	@if文や@elsif文の評価結果がエラーになった時、そのエラー内容を表示していなかったので修正。
+
+2003-05-24  phonohawk  <phonohawk@lycos.co.uk>
+
+	* IO/Socket/INET6.pm: 追加。
+	IO::Socket::INETをIPv6に移植。Socket6.pmが必要。
+	
+	* RunLoop.pm, IrcIO/Server.pm: IPv6対応。
+	general/tiarra-ip-versionに'v6'を指定する事で、IPv6でのリスニングを行なう。
+	また、サーバーには最初にIPv6での接続を試みてからIPv4にフォールバックする。
+	詳細はsample.confに。
+
+2003-05-23  Topia  <topia@clovery.jp>
+
+	* sample.conf: Auto::Random の説明中の 確立 を 確率 に修正した。
+
+	* Auto/Reply.pm: 追加。
+
+	* Auto/Alias.pm (message_arrived/remove): #(count) を使用可能にした。
+	  value が省略された場合はキーごと削除するようにした。
+
+	* Tools/HashDB.pm: 追加。
+
+	* Tools/HashTools.pm: Tools/GroupDB.pm, Tools/HashDB.pm の共通部分を取り出したモジュール。
+
+	* Tools/GroupDB.pm: キー名にコロンを使用可能にした。使用不能な半角スペースが来た場合は拒否する。
+	  コメントを修正し、詳細にした。
+	  無視する行を指定するクロージャを引数に取れるようになった。省略された場合は # で始まる行を無視する。(従来)
+	  del_value は削除出来た値の数を返すようになった。また、 value が未指定ならキーごと削除する。
+
+2003-05-21  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra-conf.l: 追加。
+	  Noboruhiさんによるxyzzy用tiarra.conf編集モード。
+	  インストール方法はtiarra-conf.l内に記述されています。
+
+2003-05-17  Topia  <topia@clovery.jp>
+
+	* Auto/Utils.pm: sendto_channel_closure 関数追加。
+	  NOTICE/PRIVMSG の処理は面倒なので、これを自動的に処理する。
+	  sendto_channel_closure, generate_reply_closures に使用方法のコメントを追加。
+	
+2003-05-15  phonohawk  <phonohawk@lycos.co.uk>
+
+	* conf:
+	  general/control-socket-nameを定義すると、外部プログラムからtiarraをコントロールする為の
+	  UNIXドメインソケットを作成する。詳しくはsample.confに。
+
+	* ControlPort.pm: 追加。外部コントロール用。
+
+	* IRCMessage.pm: dieメッセージのtypoを修正。
+
+	* IrcIO.pm,LinedINETSocket.pm: sendの代わりにsyswriteを使う。
+
+	* Module.pm: メソッドcontrol_requested追加
+
+	* ModuleManager.pm: メソッドget追加
+
+	* RunLoop.pm: ControlPortを起動する為のコードを追加。
+
+	* Log/Channel.pm: "ID: synchronize"で外部からのログの同期を可能に。
+
+2003-04-29  phonohawk  <phonohawk@lycos.co.uk>
+
+	* IrcIO/Server.pm: ログイン時、サーバーから送られてきたニューメリックリプライ以外のメッセージを無視する。
+	  ログイン前にNOTICEを送るようなサーバーに繋げられない問題を解決。
+
+	* RunLoop.pm: IrcIO->pop_queueがdieした時のメッセージを表示せずに捨てていたのを修正。
+
+	* Channel/Join/Kicked.pm: 追加。チャンネルから蹴られた時に、自動JOINするモジュール。
+
+	* IrcIO/Server.pm: 自分がチャンネルから蹴られた場合、そのチャンネル情報を消さずに
+	  ChannelInfoに'kicked-out' => 1というremarkを付ける。
+
+	* RunLoop.pm: サーバーへの再接続時、+kされたチャンネルへの再JOINに失敗していたのを修正。
+
+2003-04-25  phonohawk  <phonohawk@lycos.co.uk>
+
+	* main/Configuration.pm: general/client-allowedが省略された場合、
+	  間違った値をデフォルト値として設定していたので修正。
+
+	* main/Configuration.pm: channel-network-separatorが未定義だった場合に
+	  正しくデフォルト値を設定しないミスがあったので修正。
+
+	* Configuration.pm: networksのnameで列挙されたネットワーク名に対応する
+	  ブロックの定義が無かった場合、適切なエラーメッセージを出さずに処理を止めていたので修正。
+
+2003-04-18  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra: SIGHUPを受信した時の動作を変更。
+	  これまではシャットダウンしていたが、以後は設定をリロードする。
+	
+	* ChannelInfo.pm (fullname): 追加
+
+	* RunLoop.pm: 各ネットワークの設定を変更した後リロードすると、
+	  そのネットワークとの接続を一旦切ってから繋ぎ直す。
+
+	* IrcIO/Server.pm (config): 追加。
+	  コンストラクタの引数をネットワーク名のみに変更。
+
+	* IrcIO.pm (server_p,client_p): 追加。
+	  それぞれIrcIO::Serverであれば1を返すメソッドと
+	  IrcIO::Clientであれば1を返すメソッド。
+	
+2003-04-13  phonohawk  <phonohawk@lycos.co.uk>
+
+	* User/Vanish.pm: 追加
+	  特定のチャンネルでの特定の人物の存在をクライアントに隠すモジュール。
+	  JOINやPART、QUIT等を消去する。
+
+	* IrcIO/Server.pm (channels_list): 追加
+
+	* RunLoop.pm (networks_list,channel): 追加
+
+	* ChannelInfo.pm (AUTOLOAD): ハッシュマップの操作コマンドとして'keys'と'values'を追加。
+
+2003-04-10  phonohawk  <phonohawk@lycos.co.uk>
+
+	* RunLoop.pm: 切断に気付かない場合があるので、3分毎に各サーバーにPINGを発行する。
+	  PING自動発行後にサーバーから来た最初のPONGは破棄される。
+
+	* IrcIO/Server.pm: メソッドremark追加。使い方は他のクラスのremarkと同じ。
+
+	* LinedINETSocket.pm: メソッドconnectの動作をconnectとattachの二つに分けた。
+	  これにより予め開かれたIO::Socket::INETに対してLinedINETSocketの機能を適用可能。
+	
+2003-04-05  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Auto/Joined.pm: 追加。
+	  特定のチャンネルに誰かがJOINする度に特定の発言を行なうモジュール。
+	  チャンネル移転通知以外に使うのはやめた方が良い。
+
+2003-03-28  Topia  <topia@clovery.jp>
+
+	* sample.conf (Auto/Random.pm): mention mask property.
+
+	* Auto/Random.pm: use array_or_all on mask.
+
+	* Auto/Alias.pm: use array_or_all on modifier.
+
+	* Mask.pm: add array_or_(all|all_chan), (all|all_chan)_mask.
+	  for not known maskmode, use Tiarra mode; and do warn.
+
+2003-03-23  phonohawk  <phonohawk@lycos.co.uk>
+
+	* IrcIO/Server.pm: general/bind-addrでサーバーへの接続時のローカルアドレスを指定可能に。
+	  また、各ネットワーク設定でbind-addrはオーバーライドできる。
+
+2003-03-23  Topia  <topia@clovery.jp>
+
+	* tiarra: ソースの判別部分自体が展開されていた…ので修正。
+
+	* ChangeLog: Id/Author/Date/RevisionのRCSタグを末尾に追加した。
+
+	* tiarra: ChangeLogからDateとRevisionを読んでバージョン情報に付加するようにした。
+
+2003-03-23  phonohawk  <phonohawk@lycos.co.uk>
+
+	* User/Filter.pm: 追加。特定のユーザーの発言にフィルタをかけるモジュール。
+
+2003-03-23  Topia  <topia@clovery.jp>
+
+	* CTCP/Version.pm: add perl version infomation.
+
+	* CTCP/ClientInfo.pm: separate ' ' instead of '/'. (ref. TAGGED DATA)
+
+	* CTCP/{ClientInfo|Ping|Time|UserInfo|Version}.pm>: reply to channel CTCP.
+
+	* CTCP.pm: fix wrong-quote dequoting.
+
+	* sample.conf (Channel/Join/Invite.pm): add Channel/Join/Invite.pm sample configuration.
+
+	* NEWS: add. news for non-developer. please write major changes, and so on.
+	  if developer, see ChangeLog and check NEWS, please :-)
+
+	* Channel/Join/Invite.pm: add.
+
+	* Auto/Utils.pm (get_ch_name): add.
+	(generate_reply_closures): 
+	  add param ch_place(6th). default:0.
+	    place of channel name in msg->params.
+	  $get_ch_name closure return static string.
+
+	* Auto/Response.pm: use register_extcallbacks.
+	  generate_reply_closures's 3rd param(use_alias) to undef.(use default)
+
+	* Auto/AliasDB/CallbackUtils.pm: add register_extcallbacks.
+	  (for regist insecure callbacks)
+
+2003-03-19  Topia  <topia@clovery.jp>
+
+	* sample.conf: change sample configuration.
+
+	* Auto/Random.pm: can use multiple random datas.
+
+2003-03-17  Topia  <topia@clovery.jp>
+
+	* Tools/MailSend/EachServer.pm (clean): fix cleaning code.
+	(DESTROY): unnesessary; remove.
+
+	* sample.conf: mention Auto::Random/(mask|count-query|count-format), and format change.
+	  mention Auto::Response's DB format.
+
+	* sample.conf (Auto/Alias.pm): s/#(message)/#(value)/ at sample config. sorry.
+
+	* Tools/FileCache.pm, Tools/FileCache/EachFile.pm: add. Tools::LinedDB based cached file i/o.
+
+	* Tools/LinedDB.pm: add. line based i/o framework.
+
+	* Tools/GroupDB.pm (add_group): add $this->synchronize.
+
+	* Log/DateTime.pm: this module is obsolete. remove.
+
+	* Log/Channel.pm, Log/Recent.pm: use Tools::DateConvert instead Log::DateTime.
+
+	* Auto/Response.pm: add callback: read_file/file_lines.
+	  add mask check in database 'mask' entry.
+
+	* Auto/Random.pm: use Tools::FileCache.
+	  add count query.
+
+	* Auto/AliasDB/CallbackUtils.pm: add #(read_file:fpath:mode:charset).
+	  add #(file_lines:fpath:mode:charset).
+	(register_callback): $reg_callback accept scalar function name.
+
+2003-03-15  phonohawk  <phonohawk@lycos.co.uk>
+
+	* BulletinBoard.pm:
+	  ・AUTOLOAD経由で値を設定可能に。
+	  ・メソッドkeys()を追加。
+
+	* CTCP.pm: 追加。CTCPエンコード/デコードを行なうモジュール。
+
+	* IrcIO.pm: メソッドremark()追加。
+
+	* CTCP/ClientInfo.pm,
+	  CTCP/Ping.pm,
+	  CTCP/Time.pm,
+	  CTCP/UserInfo.pm,
+	  CTCP/Version.pm     : 追加。
+
+2003-03-10  phonohawk  <phonohawk@lycos.co.uk>
+
+	* IrcIO/Server.pm: ネットワーク毎の設定でin-encoding,out-encodingを定義する事により
+	  文字エンコーディングの設定をオーバーライド可能に。
+
+2003-03-09  Topia  <topia@clovery.jp>
+
+	* Auto/Response.pm: plum でのキー名が response だったのを勘違いして reply にしていた。
+	  (りんりんさんバグレポートありがとうございます)
+
+2003-03-09  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Configuration/Block.pm: %CODE{ }EDOC%の解釈でメモリリークを起こす不具合を回避。
+
+2003-03-09  Topia  <topia@clovery.jp>
+
+	* Auto/AliasDB/CallbackUtils.pm: register_RandomNickConvertでメッセージがIrcIO::Client
+	  発信だった場合に登録しないようにした。 (りんりんさんバグレポートありがとうございます)
+
+2003-03-08  phonohawk  <phonohawk@lycos.co.uk>
+
+	* IrcIO/Server.pm: オプションnetworks/always-notify-new-nickが設定されていたら
+	  nickを変更する度に、変更したサーバーの新しいグローバルnickをNOTICEで通知する。
+
+	* IrcIO/Client.pm: ログイン時に本名として渡された$key=value;key=value...$のオプションを
+	  パースする部分を書き直し。$  key =value  ;key  =   value$のような設定でも
+	  期待された通りに解釈する。
+	  また、メソッドoption追加。このようにして渡されたオプションを取得する。
+
+	* tiarra, Configuration.pm, Configuration/Preprocessor.pm:
+	  起動時にオプション--configを省略された場合の動作を変更。
+	  ターミナル上から起動した場合は従来のようにデフォルトのファイル名であるtiarra.confを読むが、
+	  標準入力がターミナルに接続されていなかった場合、つまりパイプ経由でリダイレクトされている場合は
+	  tiarra.confでなく標準入力から設定を読む。この場合は設定のリロードは不可能となる。
+	  例: cat tiarra.conf | sed -e 's/Tiarra/arraiT/g' | ./tiarra --quiet
+
+	* Configuration/Block.pm:
+	  %CODE{ ... }EDOC%で挟まれた部分を、値の取得時に毎回評価する。
+
+2003-03-04  Topia  <topia@clovery.jp>
+
+	* Tools/MailSend/EachServer.pm: RunLoop::Hookを使用するように変更。
+	  ループをなるべく回すように変更。flushはclose時とDATA時に行うことにした。
+	  フェイルセーフの為に5sec間隔のTimerも使うことにする。
+
+	* Tools/GroupDB.pm: fpathで指定されたファイルが存在しないときにエラーとなるのを修正。
+
+	* Auto/Alias.pm: 配列の参照を渡すべきところを配列を渡してしまっていた。修正。
+
+	* LinedINETSocket.pm: ExternalSocketのuninstall等も必要かも知れないので
+	  DESTROYを復活させる。
+
+2003-03-04  phonohawk  <phonohawk@lycos.co.uk>
+
+	* ExternalSocket.pm: read/write/want_to_writeで、callerをチェックする位置を変更。
+
+	* Configuration/Block.pm: 文字コードの再解釈に失敗する不具合を解決。
+
+	* RunLoop.pm: クラスRunLoop::Hook追加。
+	  RunLoopのループが一回実行される度に呼ばれるフック。
+	  呼ばれるタイミングとしてはselect実行直前または直後。どちらかを選択可能。
+	  詳しくはRunLoop::Hookの先頭のコメントを参照の事。
+
+2003-03-04  Topia  <topia@clovery.jp>
+
+	* Auto/MesMail.pm: Tools/MailSend.pmを使うように修正。
+
+	* Tools/MailSend/EachServer.pm: 新規追加。SMTPサーバ毎に具体的なメール送信を行う。
+	  POP before SMTPの場合はexpireまで待って、そうでない場合はすぐにオブジェクトを破棄する。
+
+	* Tools/MailSend.pm: 新規追加。メール送信を行う。
+	  複数のサーバと同時に通信するためにTools/MailSend/EachServer.pmを管理している。
+
+	* Auto/Response.pm: rateを使えるようにした。
+
+2003-03-03  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Configuration/Block.pm: ブロック内ブロックを扱えるように。
+	
+	* Configuration/LexicalAnalyzer.pm: 新規追加。confの字句解析器。
+
+	* Configuration/Parser.pm: 新規追加。confの構文解析器。
+
+	* Configuration.pm: パーサを書き直し。上記二つのクラス、及びプリプロセッサを使用。
+
+2003-03-02  Topia  <topia@clovery.jp>
+
+	* Auto/Response.pm: 新規追加。plumのauto/response.plmの動作をする。
+
+	* Auto/AliasDB/CallbackUtils.pm: 存在してはいけないuninstallがあったので削除。
+
+	* Auto/Utils.pm: コールバックを追加できる引数の追加。
+
+	* Tools/GroupDB.pm: regexpを利用できるようにする引数の追加。
+	  find_groups/find_groups_with_primaryの追加。
+
+	* Channel/Mode/Oper/Grant.pm: Auto/Oper.pmとmask処理を統一した。
+
+	* sample.conf: maskの説明が変わってしまうので書き換えた。
+
+	* sample.conf: '-*- tiarra-conf -*-' を一行目に追加した。Auto/MesMailのエントリ追加。
+
+	* Auto/MesMail.pm: 新規追加。伝言をメールとして送信する。メール送信部分は分けられてTools下に
+	  行く可能性もある。
+
+	* Auto/Utils.pm: AliasDBの変更に同期。'(nick|user|host).now'はAliasDB内部に移動している。
+
+	* Auto/Oper.pm: AliasDBの変更に同期。Mask::match_deep_chanを使用するように。
+
+	* Auto/Alias.pm: AliasDBはオートフラッシュなのでデストラクタを消した。
+
+	* Auto/AliasDB/CallbackUtils.pm: RandomAliasConvert, JoinedListConvertを追加。
+	  MessageReplaceにmessage_replace_lastを追加。
+
+	* Auto/AliasDB.pm: GroupDBを使用するように変更。関数名を一部変更した。
+	  confでprivateとreadonlyなキーの指定が出来る。readonlyはまだ対応モジュールが存在しない。
+
+	* Tools/GroupDB.pm: 新規追加。AliasDBから独立させた。
+
+2003-03-02  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Configuration/Preprocessor.pm: 新規追加。
+	  confファイルのプリプロセッサとして使用する。
+
+2003-03-01  phonohawk  <phonohawk@lycos.co.uk>
+
+	* ConfigBlock.pm: 削除。Configuration::Blockに移動。
+
+	* InstantCapsule.pm: 新規追加。
+	  フィールドとメソッドを持つオブジェクトを一時的に生成するクラス。
+	  サンプルコードはInstantCapsule.pm内にあります。
+
+2003-02-27  Topia  <topia@clovery.jp>
+
+	* Mask.pm: チャンネルとユーザのマスクをconfで切替え可能にした。
+	  sample.confにも説明を追加している。
+
+	* Mask.pm: mask_chanで[+-]を使用可能にした。+channelは++channelまたは
+	  -+channelと表記する必要がある。
+	  _split_with_chanのsplit処理を_splitに委託した。
+
+	* Mask.pm: channelを含めたmaskを処理する関数を追加した。
+	  mask_chan, mask_deep_chanはstrの次にchanが追加されているだけで仕様は同じ。
+	  mask_array_chanはstr_masks, chan_masks, str, chanと言う引数になっている。
+	  次にcommitされる予定のAuto::Oper辺りがサンプルコードになるはず。
+
+2003-02-26  Topia  <topia@clovery.jp>
+
+	* Multicast.pm: channel_pを追加した。
+	  nick_pに文字数チェック(length != 0)とdetachの処理を追加した。
+
+	* LinedINETSocket.pm: デストラクタを実行するより前にsocketが開放されているようだ。
+	  デストラクタをコメントアウトした。
+
+	* LinedINETSocket.pm: 新規追加。行単位のキューを使用した入出力を行う。
+
+2003-02-26  phonohawk  <phonohawk@lycos.co.uk>
+
+	* ExternalSocket.pm: 新規追加。
+
+	* RunLoop.pm: RunLoopが任意のソケットを監視出来るように。
+	  ソケットの監視にはExternalSocketを用いる。使い方はExternalSocket.pmにある。
+
+	* Timer.pm: uninstallした時はrunloopにundefを代入する。
+	
+2003-02-20  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Module.pm (notification_of_message_io) : 新規追加。
+	  サーバーやクライアントと実際に送受信したメッセージが通知されるメソッド。デバッグ用。
+
+	* IrcIO/(Client/Server).pm : notification_of_message_ioを呼ぶための修正。
+
+	* IrcIO/Client.pm : 複数のクライアントを接続している際、
+	  NICKの変更が他のクライアントへ伝わっていなかったので修正。
+
+2003-02-19  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra-conf.el: 新規追加。confファイルのEmacs用モード。試作品。
+	  このファイルが置かれている場所をload-pathに追加し、次のようなautoloadを実行すれば良い。
+	  (autoload 'tiarra-conf-mode "tiarra-conf" "tiarra.conf editing mode" t)
+
+2003-02-17  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Configuration.pm:
+		・@includeで他のファイルをインクルード可能に。
+		  但し一つのファイルを複数回@includeする事は出来ない。
+		・ブロックの{}の位置をある程度自由に。
+		・ブロックの中身が空で良ければ{}を省略可能に。
+		sample.confに詳しい説明があります。
+
+	* IrcIO/Client.pm: $key=value;key=value;...$形式の本名でログインすると、
+	  特定のクライアントの間においてのみconfで設定された項目をオーバーライドする。
+	  現在有効なキーはencodingで、これはクライアントとの通信に用いる文字コードである。
+	  例:
+	  $encoding=euc$     この本名でログインした場合、EUC-JPで通信を行なう。
+
+2003-02-17  Topia  <topia@clovery.jp>
+
+	* System/RemoteControl.pm: 複数行のmaskを使えるようにした。
+
+	* Mask.pm: コメント中の例が間違っていたので修正。
+
+	* Mask.pm: 正規表現マッチと+-機能のオン/オフを可能にした。
+	 comma-separeted mask arrayを渡せる関数を追加した。
+	 単純にmask arrayを渡せる関数を追加した。
+	 wild cardを正規表現にするmake_regexを別関数として独立させた。
+
+	* Auto/Utils.pm: $get_ch_nameでparam(0)が無い場合undefを返すようにした。
+
+2003-02-15  phonohawk  <phonohawk@lycos.co.uk>
+
+	* RunLoop.pm: Time::HiResがインストールされている環境では
+	  Timerの精度がミリ秒に上がる。入っていなければ秒のまま。
+
+	* PersonInChannel.pm: メソッドremark,delete-remark追加。
+	  註釈を付ける事が出来る。
+
+	* Multicast.pm: attach/detachでエラーチェックを行なう。
+
+2003-02-13  Topia  <topia@clovery.jp>
+
+	* Auto/AliasDB/CallbackUtils.pm: MessageReplace callback を追加しました。
+	 #(message_replace:[split_regexp]:[place]) です。placeはzero originとなっています。
+	 ex. test alias -> #(message_replace: :1) -> alias
+	 また、この変更でregister_stdcallbacksの引数が$ch_name -> $msgとなり、
+	 その変更をAuto/AliasDB.pm, Auto/Utils.pmに反映させています。
+
+	* Auto/Answer.pm: 返答に$reply_anywhereを使うようにした。
+
+	* Auto/Random.pm: オートリロードと追加/削除の返答を追加しています。
+
+	* Auto/Alias.pm: Auto/AliasDB.pmに追加と削除を移しています。
+	 追加/削除出来た場合に返答できるようにしました。
+
+	* Auto/Utils.pm: 返り値に、$reply_anywhere
+	 (場合によってチャンネルに返したりprivで返したりする)を追加しました。
+	 $reply_as_privがextra_replacesを付けられるようにしました。
+	  reply_with_stdcallbacksを使用するようにしました。
+	  reply_with_stdcallbacksはrandomやdate、randomnick、randomselectなどのcallbackを
+	  登録します。
+	  user.now, host.now などのエイリアスを追加するようにしました。
+
+	* Auto/AliasDB.pm: Auto/Alias.pmから追加と削除機能を移しました。
+	 オートリロードするようにしました。
+	 渡されたエイリアスからキーを見つけ出せなかった場合、callbackを呼ぶようにしました。
+	 #(name;%s さん) などの表記をサポートしました。
+	 サブフォーマット中に対応する括弧を含めます。
+	 #(namesuf;#(name)%s)のような表記ができます。
+
+	* Auto/AliasDB/CallbackUtils.pm: AliasDBのCallback機能を使った標準的な拡張です。
+
+	* Tools/DateConvert.pm: 新規追加。plumの&'dateに相当。
+
+	* System/Pong.pm: xchat対策に、pingの代わりにpongを消滅させるようにした。
+
+2003-02-13  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Multicast.pm: nick_pでのnicklen制限をやめた。
+
+2003-02-12  phonohawk  <phonohawk@lycos.co.uk>
+
+	* RunLoop.pm: $(network)/userでgeneral/userをオーバーライド可能に。
+
+	* System/RemoteControl.pm: 新規追加
+
+	* これ以前のログは書いていません。
+
+#       Id: $Id: ChangeLog,v 1.102 2003/09/23 15:26:11 admin Exp $
+#   Author: $Author: admin $
+#     Date: $Date: 2003/09/23 15:26:11 $
+# Revision: $Revision: 1.102 $

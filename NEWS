@@ -1,0 +1,95 @@
+2003-08-12  phonohawk  <phonohawk@lycos.co.uk>
+
+	* シングルサーバーモードを実装。
+	networks/multi-server-modeを0に設定すると、シングルサーバーモードになります。
+	この状態では同時に接続出来るサーバーの数が一つに制限され、クライアントから見た
+	チャンネル名にネットワーク名が付かなくなります。
+
+2003-07-31  Topia  <topia@clovery.jp>
+
+	* mask のチャンネル名にネットワーク名を必要とするように修正した。
+	影響を受けるモジュールは
+	  - Auto::Oper
+	  - Auto::Random
+	  - Auto::Reply
+	  - Auto::MesMail
+	  - Auto::Alias
+	  - Auto::Response
+	です。変更よろしくお願いします。(^^;;
+
+2003-07-10  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Channel::Freeze
+	追加。特定のチャンネルのNOTICEやPRIVMSGの中継を
+	一時的に中断するためのモジュール。
+	発言を見たくないがPARTはしたくない、といった場合に有効。
+
+003-07-03  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Auto::Oper
+	複数の応答が定義されていれば、ランダムに一つ選んで発言する。省略も可能。
+
+2003-06-06  phonohawk  <phonohawk@lycos.co.uk>
+
+	* general/nickを、それぞれのネットワーク設定ブロックのnickでオーバーライド可能に。
+
+2003-05-27  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Tiarra本体の誤動作によりCPU時間を食い潰している可能性を検出して警告する。
+
+2003-05-24  phonohawk  <phonohawk@lycos.co.uk>
+
+	* IPv6対応
+	general/tiarra-ip-versionに'v6'を指定する事で、IPv6でのリスニングを行なう。
+	また、サーバーには最初にIPv6での接続を試みてからIPv4にフォールバックする。
+	詳細はsample.confに。
+	
+2003-05-23  Topia  <topia@clovery.jp>
+
+	* Auto/Reply.pm: 追加。
+	  plum の auto/reply.plm に相当する。
+
+	* Auto/Alias.pm: キーを指定しての値削除、削除した個数の表示が可能になったため、
+	  サンプルの removed-format が変更されています。好みに合わせて変更してください。
+
+2003-05-21  phonohawk  <phonohawk@lycos.co.uk>
+
+	* tiarra-conf.l: 追加。
+	  Noboruhiさんによるxyzzy用tiarra.conf編集モード。
+	  インストール方法はtiarra-conf.l内に記述されています。
+
+2003-04-29  phonohawk  <phonohawk@lycos.co.uk>
+
+	* Channel/Join/Kicked.pm: 追加。チャンネルから蹴られた時に、自動JOINするモジュール。
+
+2003-04-13  phonohawk  <phonohawk@lycos.co.uk>
+
+	* User/Vanish.pm: 追加
+	  特定のチャンネルでの特定の人物の存在をクライアントに隠すモジュール。
+	  JOINやPART、QUIT等を消去する。
+
+2003-04-05  phonohawk  <phonohawk@lycos.co.uk>
+
+	* モジュール Auto::Joined 追加。
+	  特定のチャンネルに誰かがJOINする度に特定の発言を行なうモジュール。
+	  チャンネル移転通知以外に使うのはやめた方が良い。
+
+2003-03-28  Topia  <topia@clovery.jp>
+
+	* sample.conf (Auto/Random.pm): 設定に mask プロパティが抜けていました。
+	  Auto/Random.pm を使っていた方は、 sample.conf にしたがって適当なところに追加してください。
+
+2003-03-23  phonohawk <phonohawk@lycos.co.uk>
+
+	* User/Filter.pm: 新規追加。 特定の人物の発言にフィルタをかける。
+
+	* general/bind-addrでサーバーへの接続時のローカル側アドレスを指定可能になりました。
+
+2003-03-23  Topia  <topia@clovery.jp>
+
+	* Channel/Join/Invite.pm: 新規追加。 Invite されたチャンネルに Join する。
+
+2003-03-19  Topia  <topia@clovery.jp>
+
+	* Auto/Random.pm: 設定ファイルの形式がかなり変わっています。
+	  sample.conf を参照して書き換えをお願いします。

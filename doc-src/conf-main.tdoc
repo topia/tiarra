@@ -1,0 +1,192 @@
+-*- outline -*-
+$Id: conf-main.tdoc,v 1.1 2003/08/04 09:29:21 admin Exp $
+
+perlのソースに使うpodパーサを流用しているので、package文と=pod〜=cutで書く必要があります。
+ヘッダのinfo-is-ommitedとno-switchはどちらも値を真に定義しなければなりません。
+
+* general
+package general;
+=pod
+info: conf自身の文字コードやユーザー情報などを指定する
+info-is-omitted: 1
+no-switch: 1
+
+# tiarra.conf自身の文字コード
+# コード名はjis,sjis,euc,utf8,utf16,utf32等。(この値はUnicode::Japaneseにそのまま渡されます)
+# autoが指定された、または省略された場合は自動判別します。
+conf-encoding: euc
+
+# ユーザー情報
+# 省略不能です。
+nick: tiarra
+user: tiarra
+name: Tiarra the "Aeon"
+
+# どのようなユーザーモードでログインするか。+iwや+iのように指定する。
+# 省略された場合はユーザーモードを特に設定しない。
+-user-mode: +i
+  
+# Tiarraへの接続を許可するホスト名を表わすマスク。
+# 制限をしないのであれば"*"を指定するか省略する。
+client-allowed: *
+
+# Tiarraが開くポート。ここに指定したポートへクライアントに接続させる。
+# 省略されたらポートを開かない。
+tiarra-port: 6667
+
+# Tiarraがポートtiarra-portを開く際、IPv6とIPv4のどちらでリスニングを行なうか。
+# 'v4'または'v6'で指定します。デフォルトは'v4'です。
+# IPv6を使うためにはSocket6.pmが利用可能である必要があります。
+-tiarra-ip-version: v4
+
+# Tiarraがポートtiarra-portを開く際のローカルアドレス。
+# 意味が分からなければ省略して下さい。
+# デフォルトは、IPv4のはINADDR_ANY、IPv6のはin6addr_anyになります。
+-tiarra-ipv4-bind-addr: 0.0.0.0
+-tiarra-ipv6-bind-addr: ::0
+
+# Tiarraにクライアントが接続する際に要求するパスワードをcryptした文字列。
+# 空の文字列が指定されたり省略された場合はパスワードを要求しない。
+tiarra-password: xl7cflIcH9AwE
+
+# 外部プログラムからtiarraをコントロールする為のUNIXドメインソケットの名前。
+# 例えば"foo"を指定した場合、ソケット/tmp/tiarra-control/fooが作られる。
+# 省略された場合はこの機能を無効とする。
+# また、非UNIX環境ではそもそもUNIXドメインソケットが利用可能でないため、
+# そのような場合にもこの機能は無効となる。
+-control-socket-name: test
+  
+# IRCサーバーから送られる文字のコードと、IRCサーバーへ送る文字のコード
+# どちらも省略された場合はjis。
+server-in-encoding: jis
+server-out-encoding: jis
+  
+# クライアントから受け取る文字のコードと、クライアントへ伝える文字のコード
+# どちらも省略された場合はjis。
+client-in-encoding: jis
+client-out-encoding: jis
+  
+# Tiarraは標準出力に様々なメッセージを出力するが、その文字コードを指定する。省略時にはeucとなる。
+# ただしtiarra.confのパースが完了するまでは文字コードの変換は行なわれない(つまりこの設定が有効にならない)ことに注意して下さい。
+stdout-encoding: euc
+  
+# Tiarraはエラーメッセージを標準出力に出力するが、その時に接続しているクライアントがあればクライアントにもNOTICEで送る事が出来る。
+# この値を1にすると、その機能が有効になる。省略するか0を指定するとこの機能は無効になる。
+notice-error-messages: 1
+
+# Tiarraでチャンネルとユーザーのマスクを指定するときの形式。
+# plum形式とTiarra形式が選択できます。
+#-----------------
+# plum形式: (channelには+や-は使えない。channelは省略すると*とみなす。)
+#   + syntax: user[ channel[ channel[ ...]]]
+#
+#  mask: +*!*@*.example.com #{example}@ircnet +{example3}@ircnet
+#  mask: -*!*@*.example.com #{example2}@2ch,+{example4}@2ch
+#  mask: -*!*@*
+#-----------------
+# Tiarra形式: (channelにも+や-を使える。)
+#   + syntax: channel user
+#
+#  mask: #{example}@ircnet,-#{example2}@2ch    +*!*@*.example.com
+#  mask: ++{example3}@ircnet,-+{example4}@2ch  +*!*@*.example.com # +で始まるチャンネル。
+#  mask: *                                     -*!*@*
+#-----------------
+# となります。 この二つはまったく同じマスクを表しています。
+
+# この値をplumにすると、plum形式、省略するかtiarraを指定すると、Tiarra形式になります。
+chanmask-mode: tiarra
+
+# サーバーに接続する際、ローカル側のどのアドレスにバインドするか。
+# 意味が分からなければ省略して下さい。
+# デフォルトは、IPv4のはINADDR_ANY、IPv6のはin6addr_anyになります。
+-ipv4-bind-addr: 0.0.0.0
+-ipv6-bind-addr: ::0
+=cut
+
+* networks
+package networks;
+=pod
+info: Tiarraから接続するネットワークの定義、その他
+info-is-omitted: 1
+no-switch: 1
+
+
+# 接続するIRCネットワークに名前を付けます。この名前は後で使用します。
+# 複数のネットワークに接続したい場合は多重定義して下さい。
+name: ircnet
+name: 2ch
+  
+# 通常Tiarraではチャンネル名を「#Tiarra@ircnet」のように表現します。
+# これはネットワークircnet内の#Tiarraというチャンネルを表わします。
+# @以降は省略可能ですが、省略された場合のデフォルトのネットワーク名をここで指定します。
+# 省略した場合は最も始めに定義されたnameがデフォルトになります。
+# (そしてnameが一つも無かった場合はmainがデフォルトになります)
+default: ircnet
+  
+# 上に述べた通り、デフォルトではTierraはチャンネル名とネットワーク名を@で区切ります。
+# この区切り文字は任意の文字に変更する事が出来ます。省略された場合は@になります。
+channel-network-separator: @
+
+# 接続先のサーバーから切断された時に、joinしていたそのサーバーのチャンネルをどうするか。
+# 1. "part-and-join"の場合は、切断されるとクライアントにはチャンネルからpartしたように見せ掛け、
+#    再接続に成功すると再びjoinしたように見せ掛ける。最も負荷が高い。(これはplumに似た動作である)
+# 2. "one-message"の場合は、切断されるとクライアントに宛ててTiarraがNOTICEでその旨を報告する。
+#    再接続に成功すると再びNOTICEで報告する。JOINやPARTはしないので、
+#    クライアントからはまだそのチャンネルに残っているかのように見える。
+# 3. "message-for-each"の場合は、切断されるとクライアントに宛ててTiarraが
+#    到達不能になった全てのチャンネルにNOTICEでその旨を報告する。
+#    再接続に成功すると再びNOTICEで報告する。JOINやPARTはしない。
+# デフォルトはpart-and-joinです。
+action-when-disconnected: message-for-each
+
+# NICKを変更する度に、変更したサーバーでの新しいNICKをNOTICEで常に通知するかどうか。
+# 1なら必ず通知し、0なら変更後のnickがローカルnick(クライアントが見る事の出来るnick)と違っている場合のみ通知する。
+# デフォルトは0です。
+always-notify-new-nick: 0
+=cut
+
+
+* ircnet
+package ircnet;
+=pod
+info: ネットワーク定義例 (IRCnet)
+info-is-omitted: 1
+no-switch: 1
+
+# サーバーのホストとポート。省略不可。
+host: irc.kyoto.wide.ad.jp
+port: 6663
+
+# general/userで設定したユーザ名を使わずに、各ネットワークで独自のユーザ名を使用する事も可能。
+# 省略されたら当然、general/userで設定したものが使われる。
+-user: hoge
+
+# general/nameで設定した本名(建前上)を使わずに、各ネットワークで独自の本名を使用可能。
+-name: hoge
+
+# このサーバーの要求するパスワード。省略可能。
+-password: hoge
+
+# general/setver-in/out-encodingで設定したエンコーディングを使わずに、
+# 各ネットワークで独自のエンコーディングを使用する事も可能。
+# 省略されたら当然、generalで設定したものが使われる。
+-in-encoding: jis
+-out-encoding: jis
+
+# general/(ipv4|ipv6)bind-addrで設定したローカルアドレスを使わずに、
+# 各ネットワークで独自のbind_addrを使用する事も可能。
+# 省略されたらgeneralで設定したものが使われる。
+-ipv4-bind-addr: 0.0.0.0
+-ipv6-bind-addr: ::0
+=cut
+
+* 2ch
+package 2ch;
+=pod
+info: ネットワーク定義例 (2ch)
+info-is-omitted: 1
+no-switch: 1
+
+host: irc.2ch.net
+port: 6667
+=cut

@@ -1,0 +1,292 @@
+#!/usr/bin/perl
+# ------------------------------------------------------------------------
+# $Id: makedoc,v 1.1 2003/08/04 09:29:21 admin Exp $
+# ------------------------------------------------------------------------
+use strict;
+use warnings;
+use lib qw(main);
+use Unicode::Japanese;
+use IO::File;
+use File::Find;
+use Template;
+use TiarraDoc;
+my $unijp_init = Unicode::Japanese->new;
+
+my $conf_output = 'sample.conf.tmp';
+
+my $stdout_charset = 'euc';
+my $conf_charset = 'euc';
+my $html_charset = 'euc';
+
+if (!-f 'tiarra' || !-d 'main' || !-d 'module') {
+    die "run this script on tiarra's directory.\n";
+}
+
+mkdir 'doc';
+
+&makeconf;
+&makehtml_mods_toc;
+&makehtml_mods;
+exit;
+
+sub makeconf {
+    print "*** Generating $conf_output... ***\n";
+
+    my $unijp = Unicode::Japanese->new;
+    my $t = Template->new('doc-src/sample.conf.in');
+
+    foreach my $conf (DocParser::Module->new('doc-src/conf-main.tdoc')->makeconf) {
+	print $conf->[0]." : ".$unijp->set($conf->[1])->$stdout_charset."\n";
+	$t->expand($conf->[0] => $unijp->set($conf->[2])->$conf_charset);
+    }
+
+    # module下の.pmを検索
+    find(sub {
+	if (-f $_ && $_ =~ m/\.pm$/) {
+	    my @confs = DocParser::Module->new($_)->makeconf;
+	    foreach my $conf (@confs) {
+		print $conf->[0]." : ".$unijp->set($conf->[1])->$stdout_charset."\n";
+		$t->modules->add(module => $unijp->set($conf->[2])->$conf_charset);
+	    }
+	}
+    },'module');
+
+    my $fh = IO::File->new($conf_output,'w');
+    $fh->print($t->str);
+}
+
+our $classify_modules_CACHE;
+sub classify_modules {
+    # 一度実行したら、その結果がキャッシュされる。
+    if (defined($_ = $classify_modules_CACHE)) {
+	return $_;
+    }
+    
+    my $classified = {}; # {グループ名 => [それに含まれるモジュールのDocPod]}
+    my $classify = sub {
+	my $doc = shift;
+	
+	my $groupname = do {
+	    if ($doc->pkg_name =~ m/^(.+?)::/) {
+		$1;
+	    }
+	    else {
+		'';
+	    }
+	};
+	
+	my $vec = $classified->{$groupname};
+	if (!defined $vec) {
+	    $vec = $classified->{$groupname} = [];
+	}
+	push @$vec,$doc;
+    };
+
+    # module下の.pmを検索
+    find(sub {
+	if (-f $_ && $_ =~ m/\.pm$/) {
+	    my $parser = DocParser->new($_);
+	    my $doc = eval {
+		$parser->getdoc;
+	    }; if ($@) {
+		die "ERROR[$_]: $@\n";
+	    }
+
+	    # 分類
+	    $classify->($doc) if defined $doc;
+	}
+    },'module');
+
+    $classify_modules_CACHE = $classified;
+    $classified;
+}
+
+sub makehtml_mods {
+    # ファイルはグループ毎に作られる点に注意。
+    # すなわち、まず最初に全てのモジュールをグループに分類する必要がある。
+    my $classified = &classify_modules; # {グループ名 => [それに含まれるモジュールのDocPod]}
+
+    mkdir 'doc/module';
+
+    my $unijp = Unicode::Japanese->new;
+    my $t = Template->new('doc-src/contents.html');
+
+    while (my ($groupname,$docpods) = each %$classified) {
+	my $group_path =
+	    join('',
+		 'module/',
+		 $groupname eq '' ? 'UNCLASSIFIED' : $groupname,
+		 '.html');
+	print "*** Generating doc/$group_path... ***\n";
+
+	$t->reset;
+	$t->expand(
+	    group_name => $groupname,
+	    css_path => '../default.css',
+	);
+
+	my $last_docpod = $docpods->[-1];
+	foreach my $docpod (@$docpods) {
+	    print "  parsing and translating ".$docpod->pkg_name."\n";
+	    # 空行はそのまま出力。
+	    # key: valueの行は、<span id="key">と<span id="value">で出力。
+	    # そのkeyの頭に'-'が付いていたら、単にその'-'を消す。
+	    #
+	    # '#'で始まる行は、<p id="comment">で出力するが、以下の特殊なルールに従う。
+	    # 1. '#'の行が連続している場合、それらの行を一つのグループにまとめる。
+	    # 2. 各グループ内で'#'に後続する共通の数のスペースを取り除く。
+	    # 3. 取り除いた後、'#'後にスペースがまだ残っているなら、それを&nbsp;に置換する。
+	    #
+	    # 例:
+	    # # foo
+	    # # bar {
+	    # #   baz
+	    # # }
+	    # ↓
+	    # <p id="comment">
+	    #   foo<br />
+	    #   bar {<br />
+	    #   &nbsp;&nbsp;baz<br />
+	    #   }<br />
+	    # </p>
+	    my $html = ''; # 文字コードはUTF-8
+	    
+	    my @lines = split /\n/,$docpod->content;
+	    for (my $i = 0; $i < @lines; $i++) {
+		my $line = $lines[$i];
+
+		if ($line eq '') {
+		    #$html .= "<br />\n";
+		}
+		elsif ($line =~ m/^-?(.+?)\s*:\s*(.+)$/) {
+		    my ($key,$value) = ($1,$2);
+		    $html .= qq{<span class="key">$key</span>:<span class="value">$value</span><br />\n};
+		}
+		elsif ($line =~ m/^\s*#/) {
+		    # グループ作成
+		    my @group;
+		    for (; $i < @lines; $i++) {
+			if ($lines[$i] =~ m/^\s*#/) {
+			    # これはブロックの続き。
+			    (my $stripped = $lines[$i]) =~ s/^\s*#//;
+			    
+			    # タブは4つのスペースに変換。この動作は後で修正するかも知れない。
+			    $stripped =~ s/\t/    /g;
+			    
+			    push @group,$stripped;
+			}
+			else {
+			    $i--;
+			    last; # ここで終わり
+			}
+		    }
+		    
+		    # 共通する先頭のスペースを除去。すなわち各行について先頭のスペースの個数を数え、
+		    # その最小値を削るべきスペースの数とする。
+		    my $spaces_to_remove;
+		    foreach (@group) {
+			m/^(\s*)/;
+			if (defined $1) {
+			    my $n_spaces = length($1);
+			    if (defined $spaces_to_remove) {
+				$spaces_to_remove = $n_spaces
+				    if $spaces_to_remove > $n_spaces;
+			    }
+			    else {
+				$spaces_to_remove = $n_spaces;
+			    }
+			}
+		    }
+		    if (defined $spaces_to_remove) {
+			@group = map {
+			    s/^\s{$spaces_to_remove}//; $_;
+			} @group;
+		    }
+
+		    # それでも残っている先頭のスペースを&nbsp;に置換。
+		    @group = map {
+			s/^(\s+)/'&nbsp;' x length($1) if defined $1/e; $_;
+		    } @group;
+
+		    $html .= qq{<p class="comment">\n};
+		    $html .= join('',
+				  map {
+				      "$_<br />\n";
+				  } @group);
+		    $html .= qq{</p>\n};
+		}
+	    }
+
+	    # テンプレを展開
+	    $t->element->expand(
+		content_name => $docpod->pkg_name,
+		description => $unijp->set($docpod->header('info'))->$html_charset,
+		content => $unijp->set($html)->$html_charset);
+
+	    # これが最後の要素でなければ、hrを追加する。
+	    if ($docpod != $last_docpod) {
+		$t->element->hr->add;
+	    }
+
+	    $t->element->add;
+	}
+
+	# ファイルに出力
+	my $fh = IO::File->new("doc/$group_path",'w');
+	$fh->print($t->str);
+    }
+}
+
+sub makehtml_mods_toc {
+    print "*** Generating doc/module-toc.html... ***\n";
+
+    my $t = Template->new('doc-src/module-toc.html');
+
+    my $classified = &classify_modules; # {グループ名 => [それに含まれるモジュールのDocPod]}
+
+    # module-group.tdocを読んで、各グループの説明を取得する。
+    my $groups = DocParser->new('doc-src/module-group.tdoc');
+
+    foreach my $groupname (sort {$a cmp $b} keys %$classified) {
+	my $description = do {
+	    # このグループに対して、説明が定義されているか？
+	    my $groupdoc = $groups->getdoc($groupname);
+	    if (defined $groupdoc) {
+		my $description = $groupdoc->header->{description};
+		defined $description ? $description : '';
+	    }
+	    else {
+		'';
+	    }
+	};
+
+	my $unijp = Unicode::Japanese->new;
+
+	my $group_path =
+	    join('',
+		 'module/',
+		 $groupname eq '' ? 'UNCLASSIFIED' : $groupname,
+		 '.html');
+	
+	$t->toc_group->expand(
+	    group_path => $unijp->set($group_path)->$html_charset,
+	    group_name => $unijp->set($groupname)->$html_charset,
+	    description => $unijp->set($description)->$html_charset,
+	);
+
+	# 各モジュール名とその説明を展開〜
+	foreach my $moddoc (@{$classified->{$groupname}}) {
+	    print $moddoc->pkg_name." belongs to the group `".$groupname."'\n";
+	    $t->toc_group->toc_individual->add(
+		group_path => $unijp->set($group_path)->$html_charset,
+		mod_name => $unijp->set($moddoc->pkg_name)->$html_charset,
+		description => $unijp->set($moddoc->header->{info} || '')->$html_charset,
+	    );
+	}
+
+	$t->toc_group->add;
+    }
+
+    my $fh = IO::File->new('doc/module-toc.html','w');
+    $fh->print($t->str);
+}
