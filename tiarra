@@ -67,6 +67,7 @@ sub help {
     print "  --config=<file>  tiarra configuration file; default is 'tiarra.conf'\n";
     print "  --quiet          don't output any messages to stdout and stdin\n";
     print "  --no-fork        don't move to background when started in quiet mode\n";
+    print "  --debug          show debug infomation\n";
     print "   -D<symbol>[=<string>]\n";
     print "                   treat as `\@define <symbol> <string>' is in the conf\n";
     print "\n";
@@ -117,6 +118,14 @@ if (&find_option('help')) {
 if (&find_option('version')) {
     print join("\n",get_credit()) . "\n";
     exit;
+}
+
+if (&find_option('debug')) {
+    eval q(sub debug_printmsg{printmsg('debug: '.shift)});
+    eval q(sub debug_mode{1;});
+} else {
+    eval q(sub debug_printmsg{});
+    eval q(sub debug_mode{0;});
 }
 
 foreach my $pp_define (&find_options(qr/D(.+?)/)) {
