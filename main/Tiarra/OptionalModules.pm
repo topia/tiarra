@@ -11,29 +11,68 @@ use Tiarra::SharedMixin;
 use Tiarra::Utils;
 # failsafe to module-reload
 our $status = {};
+our %modules = (
+    'threads' => [qw(threads threads::shared)],
+    'ipv6' => [qw(IO::Socket::INET6)],
+    'time_hires' => [qw(Time::HiRes)],
+    'unix_dom' => [qw(IO::Socket::UNIX)],
+   );
 
 sub _new {
     bless $status, shift;
 }
 
-do {
-    my %struct = (
-	'threads' => 'use threads; use threads::shared;',
-	'ipv6' => 'use IO::Socket::INET6;',
-	'time_hires' => 'use Time::HiRes;',
-	'unix_dom' => 'use IO::Socket::UNIX;',
-       );
-    while (my ($name, $statement) = each %struct) {
-	eval '
-sub '.$name.' {
+sub all_modules {
+    keys %modules;
+}
+
+sub repr_modules {
     my $this = shift->_this;
-    return $this->{'.$name.'} if defined $this->{'.$name.'};
+    $this->check_all;
+    my @enabled = sort grep $this->check($_), keys %modules;
+    my @disabled = sort grep !$this->check($_), keys %modules;
+
+    ((@enabled ?
+	  ("enabled:",
+	   map {
+	       "  - $_ (" . join(', ', map {
+		   "$_ " . $_->VERSION;
+	       } @{$modules{$_}}) . ")"
+	   } @enabled) : ()),
+     (@disabled ?
+	  ("disabled:",
+	   map {
+	       "  - $_ (" . join(', ', @{$modules{$_}}) . ")"
+	   } @disabled) : ()));
+}
+
+sub check_all {
+    my $this = shift->_this;
+    map { ($_, $this->check($_)) } $this->all_modules;
+}
+
+sub check {
+    my ($class_or_this, $name) = @_;
+    my $this = $class_or_this->_this;
+
+    return $this->{$name} if defined $this->{$name};
+    die "module $name spec. not found" unless defined $modules{$name};
 
     local $@;
-    eval q{ '.$statement.' };
-    $this->{'.$name.'} = ($@ ? 0 : 1);
-}';
+    eval join('', map { "use $_ ();" } @{$modules{$name}});
+    $this->{$name} = ($@ ? 0 : 1);
+}
+
+sub AUTOLOAD {
+    my $this = shift;
+    our $AUTOLOAD;
+    if ($AUTOLOAD =~ /::DESTROY$/) {
+	# DESTROYは伝達させない。
+	return;
     }
-};
+
+    (my $key = $AUTOLOAD) =~ s/.+?:://g;
+    $this->check($key);
+}
 
 1;
