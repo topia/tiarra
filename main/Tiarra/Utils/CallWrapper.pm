@@ -67,7 +67,7 @@ sub sighandler_or_default {
     if (!defined $func) {
 	if ($name =~ /^__(DIE|WARN)__$/) {
 	    no strict 'refs';
-	    $func = \&{"CORE::GLOBAL::\L$1\E"};
+	    $func = \&{"__real_\L$1\E"};
 	}
     }
 
@@ -80,6 +80,9 @@ sub sighandler_or_default {
     }
     $value;
 }
+
+sub __real_die  { die  @_ }
+sub __real_warn { warn @_ }
 
 sub do_with_errmsg {
     my $pkg = shift;
