@@ -87,7 +87,7 @@ sub with_session {
     $this->do_with_ensure(
 	sub {
 	    $this->do_with_errmsg(
-		$this->session_name.": start_level: $level",
+		$this->session_name,
 		sub {
 		    $this->call_with_wantarray($wantarray, $closure);
 		}
