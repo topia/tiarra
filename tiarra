@@ -70,6 +70,11 @@ BEGIN {
 	use Time::HiRes ();
     };
     $time_hires_is_enabled = ($@ ? 0 : 1);
+
+    # 外部から呼べるオプションモジュールの存在チェック。
+    sub ipv6_enabled { $ipv6_is_enabled; }
+    sub threads_enabled { $threads_is_enabled; }
+    sub time_hires_is_enabled { $time_hires_is_enabled; }
 }
 
 use Configuration;
@@ -396,10 +401,5 @@ sub shutdown {
 	RunLoop->shared_loop->terminate($msg);
     }
 }
-
-# 外部から呼べるオプションモジュールの存在チェック。
-sub ipv6_enabled { $ipv6_is_enabled; }
-sub threads_enabled { $threads_is_enabled; }
-sub time_hires_is_enabled { $time_hires_is_enabled; }
 
 exit main();
