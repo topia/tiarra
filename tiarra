@@ -341,6 +341,7 @@ sub shutdown {
     if ($terminated) {
 	printmsg("Second Terminate Request; Force Exit! [$msg]");
 	# force
+	ModuleManager->shared_manager->terminate;
 	exit;
     } else {
 	$terminated = 1;

@@ -120,7 +120,7 @@ default: off
 #   LimeChat(1.18)
 
 # nick rehash に使うコマンドを指定します。
-# 第二パラメータとして nick を指定してください。
+# 第二パラメータとして現在クライアントが認識している nick を指定してください。
 command-nick: rehash-nick
 
 # names rehash に使うコマンドを指定します。
