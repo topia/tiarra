@@ -9,7 +9,6 @@ use base qw(Module);
 use Mask;
 use Multicast;
 use Tiarra::Utils;
-my $utils = Tiarra::Utils->shared;
 
 sub PART_SHIELD_EXPIRE_TIME (){5 * 60;}
 
@@ -24,7 +23,7 @@ sub message_io_hook {
 
     if ($io->isa('IrcIO::Client') &&
 	    $this->is_cotton($io)) {
-	if ($utils->cond_yesno($this->config->use_part_shield) &&
+	if (utils->cond_yesno($this->config->use_part_shield) &&
 		$type eq 'in' &&
 		    $msg->command eq 'PART' &&
 			Multicast::channel_p($msg->param(0)) &&
