@@ -1,11 +1,24 @@
+2003-11-17  Topia  <topia@clovery.jp>
+
+	* module/Log/Channel.pm: enhancement/need reload.
+	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F23%2F%2Fpatch-1>
+	デフォルトのログファイルパーミッションを 644 から 600 にした。
+	ディレクトリ作成時のパーミッションを指定できるようにした。(dir-mode)
+	デフォルトは 700 。
+
+	* tiarra: enhancement.
+	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F24%2F%2Fpatch-1>
+	--dumpversion を追加した。
+	パッケージ作成時にバージョン情報を得るため等に使う予定。
+
 2003-11-09  Topia  <topia@clovery.jp>
 
-	* Reload.pm (message_arrived): bugfix/need reload.
+	* module/System/Reload.pm (message_arrived): bugfix/need reload.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F22%2F%2Fpatch-1>
 	Timer を使って遅延処理することによって、reload command での
 	自分自身のリロードを可能にした。
 
-	* RunLoop.pm (run): bugfix(single-server-mode)/need reboot.
+	* main/RunLoop.pm (run): bugfix(single-server-mode)/need reboot.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F21%2F%2Fpatch-1>
 	single-server-mode 時の、クライアントから送られて来た
 	PRIVMSG/NOTICE のブロードキャストで、 network-suffix 付きの
@@ -1042,7 +1055,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.118 2003/11/09 09:04:17 topia Exp $
+#       Id: $Id: ChangeLog,v 1.119 2003/11/16 19:04:39 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2003/11/09 09:04:17 $
-# Revision: $Revision: 1.118 $
+#     Date: $Date: 2003/11/16 19:04:39 $
+# Revision: $Revision: 1.119 $

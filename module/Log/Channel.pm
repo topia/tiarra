@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# $Id: Channel.pm,v 1.10 2003/09/22 18:02:05 admin Exp $
+# $Id: Channel.pm,v 1.11 2003/11/16 19:04:39 topia Exp $
 # -----------------------------------------------------------------------------
 # Local: $Clovery: tiarra/module/Log/Channel.pm,v 1.4 2003/02/11 07:53:40 topia Exp $
 package Log::Channel;
@@ -47,7 +47,7 @@ sub new {
 	    },
 	    $this,
 	    'S_PRIVMSG','C_PRIVMSG','S_NOTICE','C_NOTICE');
-    
+
     $this->_init;
 }
 
@@ -61,7 +61,7 @@ sub _init {
 	}
 	push @{$this->{channels}},[$dirname,$mask];
     }
-    
+
     $this;
 }
 
@@ -88,7 +88,7 @@ sub message_arrived {
     # syncは有効で、クライアントから受け取ったメッセージであり、かつ今回のコマンドがsyncに一致しているか？
     if (defined $this->{sync_command} &&
 	$sender->isa('IrcIO::Client') &&
-        $message->command eq $this->{sync_command}) {
+	$message->command eq $this->{sync_command}) {
 	# 開いているファイルを全てflush。
 	# 他のモジュールも同じコマンドでsyncするかも知れないので、
 	# do-not-send-to-servers => 1は設定するが
@@ -97,12 +97,12 @@ sub message_arrived {
 	$message->remark('do-not-send-to-servers',1);
 	return $message;
     }
-    
+
     # Log::Channel/commandにマッチするか？
-    if (Mask::match(lc($this->config->command || '*'),lc($message->command))) {    
+    if (Mask::match(lc($this->config->command || '*'),lc($message->command))) {
 	$this->{logger}->log($message,$sender);
     }
-    
+
     $message;
 }
 
@@ -134,7 +134,7 @@ sub PRIVMSG_or_NOTICE {
 	}
 	else {
 	    my $format = do {
-		if ($this->{distinguish_myself} && $sender->isa('IrcIO::Client')) {		    
+		if ($this->{distinguish_myself} && $sender->isa('IrcIO::Client')) {
 		    $cmd eq 'PRIVMSG' ? '>%s:%s< %s' : ')%s:%s( %s';
 		}
 		else {
@@ -154,7 +154,7 @@ sub PRIVMSG_or_NOTICE {
 	    sprintf $format,$msg->param(0),$nick,$msg->param(1);
 	}
     };
-    
+
     [$is_priv ? 'priv' : $msg->param(0),$line];
 }
 
@@ -180,7 +180,7 @@ sub _channel_match {
 	    # マッチした。
 	    my $fname_format = $this->config->filename || '%Y.%m.%d.txt';
 	    my $fpath_format = $ch->[0]."/$fname_format";
-	    
+
 	    $this->{matching_cache}->{$channel} = $fpath_format;
 	    return $fpath_format;
 	}
@@ -219,7 +219,7 @@ sub _write {
 	    oct('0'.$mode_conf);
 	}
 	else {
-	    0644;
+	    0600;
 	}
     };
     # ディレクトリが無ければ作る。
@@ -227,7 +227,7 @@ sub _write {
     # ファイルに追記
     my $make_path_fh_set = sub {
 	[$concrete_fpath,
-	 IO::File->new($concrete_fpath,'a')];
+	 IO::File->new($concrete_fpath,O_CREAT | O_APPEND | O_WRONLY,$mode)];
     };
     my $fh = sub {
 	# キャッシュは有効か？
@@ -249,7 +249,7 @@ sub _write {
 			$cached_elem->[1]->flush;
 			$cached_elem->[1]->close;
 		    };
-		    # 新たなファイルハンドルを生成。		    
+		    # 新たなファイルハンドルを生成。
 		    @$cached_elem = @{$make_path_fh_set->()};
 		    return $cached_elem->[1];
 		}
@@ -259,7 +259,7 @@ sub _write {
 		#print "$concrete_fpath: *cached*\n";
 		my $cached_elem =
 		    $this->{filehandle_cache}->{$channel} =
-		        $make_path_fh_set->();		    
+			$make_path_fh_set->();
 		return $cached_elem->[1];
 	    }
 	}
@@ -272,13 +272,14 @@ sub _write {
 	$fh->print(
 	    Unicode::Japanese->new("$header $line\n",'utf8')->conv(
 		$this->config->charset || 'jis'));
-	chmod $mode,$concrete_fpath;
     }
 }
 
 sub mkdirs {
     my ($this,$file) = @_;
     my (undef,$directories,undef) = File::Spec->splitpath($file);
+    my $dir_mode = undef;
+
     # 直接の親が存在するか
     if ($directories eq '' || -d $directories) {
 	# これ以上辿れないか、存在するので終了。
@@ -290,7 +291,16 @@ sub mkdirs {
 	foreach (0 .. (scalar @dirs - 2)) {
 	    my $dir = File::Spec->catdir(@dirs[0 .. $_]);
 	    unless (-d $dir) {
-		mkdir $dir;
+		$dir_mode ||= do {
+		    my $mode_conf = $this->config->dir_mode;
+		    if (defined $mode_conf) {
+			oct('0'.$mode_conf);
+		    }
+		    else {
+			0700;
+		    }
+		};
+		mkdir $dir, $dir_mode;
 	    }
 	}
     }
@@ -318,3 +328,69 @@ sub destruct {
 }
 
 1;
+
+=pod
+info: チャンネルやprivのログを取るモジュール。
+default: off
+
+# Log系のモジュールでは、以下のように日付や時刻の置換が行なわれる。
+# %% : %
+# %Y : 年(4桁)
+# %m : 月(2桁)
+# %d : 日(2桁)
+# %H : 時間(2桁)
+# %M : 分(2桁)
+# %S : 秒(2桁)
+
+# ログを保存するディレクトリ。Tiarraが起動した位置からの相対パス。~指定は使えない。
+directory: log
+
+# ログファイルの文字コード。省略されたらjis。
+charset: sjis
+
+# 各行のヘッダのフォーマット。省略されたら'%H:%M'。
+header: %H:%M:%S
+
+# ファイル名のフォーマット。省略されたら'%Y.%m.%d.txt'
+filename: %Y.%m.%d.txt
+
+# ログファイルのモード(8進数)。省略されたら600
+mode: 600
+
+# ログディレクトリのモード(8進数)。省略されたら700
+dir-mode: 700
+
+# ログを取るコマンドを表すマスク。省略されたら記録出来るだけのコマンドを記録する。
+command: privmsg,join,part,kick,invite,mode,nick,quit,kill,topic,notice
+
+# PRIVMSGとNOTICEを記録する際に、自分の発言と他人の発言でフォーマットを変えるかどうか。1/0。デフォルトで1。
+distinguish-myself: 1
+
+# 各ログファイルを開きっぱなしにするかどうか。
+# このオプションは多くの場合、ディスクアクセスを抑えて効率良くログを保存しますが
+# ログを記録すべき全てのファイルを開いたままにするので、50や100のチャンネルを
+# 別々のファイルにログを取るような場合には使うべきではありません。
+-keep-file-open: 1
+
+# keep-file-openを有効にした場合、発言の度にログファイルに追記するのではなく
+# 一定の分量が溜まってから書き込まれる。そのため、ファイルを開いても
+# 最近の発言はまだ書き込まれていない可能性がある。
+# syncを設定すると、即座にログをディスクに書き込むためのコマンドが追加される。
+# 省略された場合はコマンドを追加しない。
+sync: sync
+
+# 各チャンネルの設定。チャンネル名の部分はマスクである。
+# 個人宛てに送られたPRIVMSGやNOTICEはチャンネル名"priv"として検索される。
+# 記述された順序で検索されるので、全てのチャンネルにマッチする"*"などは最後に書かなければならない。
+# 指定されたディレクトリが存在しなかったら、Log::Channelはそれを勝手に作る。
+# フォーマットは次の通り。
+# channel: <ディレクトリ名> (<チャンネル名> / 'priv')
+# 例:
+# filename: %Y.%m.%d.txt
+# channel: IRCDanwasitu #IRC談話室@ircnet
+# channel: others *
+# この例では、#IRC談話室@ircnetのログはIRCDanwasitu/%Y.%m.%d.txtに、
+# それ以外(privも含む)のログはothers/%Y.%m.%d.txtに保存される。
+channel: priv priv
+channel: others *
+=cut

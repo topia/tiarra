@@ -1,3 +1,11 @@
+2003-11-17  Topia  <topia@clovery.jp>
+
+	* Log::Channel
+	mode のデフォルトが 644 から 600 に変更されました。
+	mode をコメントアウトしている場合は注意してください。
+	dir-mode が追加され、デフォルトが 700 です。
+	これも、必要に応じて 755 を指定するようにしてください。
+
 2003-11-09  Topia  <topia@clovery.jp>
 
 	* System::Reload

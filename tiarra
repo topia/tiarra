@@ -5,7 +5,7 @@
 # This is free software; you can redistribute it and/or modify it
 #   under the same terms as Perl itself.
 # -----------------------------------------------------------------------------
-# $Id: tiarra,v 1.27 2003/11/09 07:32:12 admin Exp $
+# $Id: tiarra,v 1.28 2003/11/16 19:04:39 topia Exp $
 # -----------------------------------------------------------------------------
 require 5.006;
 use strict;
@@ -63,6 +63,7 @@ sub help {
     print "\n";
     print "options:\n";
     print "  --help           print this message\n";
+    print "  --dumpversion    print version\n";
     print "  --version        print version infomation\n";
     print "  --config=<file>  tiarra configuration file; default is 'tiarra.conf'\n";
     print "  --quiet          don't output any messages to stdout and stderr\n";
@@ -113,10 +114,11 @@ sub find_options {
 if (&find_option('help')) {
     &help;
     exit;
-}
-
-if (&find_option('version')) {
+} elsif (&find_option('version')) {
     print join("\n",get_credit()) . "\n";
+    exit;
+} elsif (&find_option('dumpversion')) {
+    print &version . "\n";
     exit;
 }
 
