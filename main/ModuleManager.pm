@@ -116,6 +116,13 @@ sub update_modules {
 	$_->block_name => $loaded_mods{$_->block_name};
     } @$not_changed;
 
+    # $mod_configsに書かれた順序に従い、$this->{modules}を再構成。
+    # 但しロードに失敗したモジュールはnullになっているので除外。
+    @{$this->{modules}} = grep { defined $_ } map {
+	my $modname = $_->block_name;
+	$not_changed_mods{$modname} || $rebuilt_mods{$modname} || $new_mods{$modname};
+    } @$mod_configs;
+
     my $deleted_any = @$deleted > 0;
     foreach (@$deleted) {
 	# 削除されたモジュール。
@@ -128,13 +135,6 @@ sub update_modules {
 	}
 	$this->_unload($_);
     }
-
-    # $mod_configsに書かれた順序に従い、$this->{modules}を再構成。
-    # 但しロードに失敗したモジュールはnullになっているので除外。
-    @{$this->{modules}} = grep { defined $_ } map {	
-	my $modname = $_->block_name;
-	$not_changed_mods{$modname} || $rebuilt_mods{$modname} || $new_mods{$modname};
-    } @$mod_configs;
 
     if ($deleted_any > 0) {
 	# 何か一つでもアンロードしたモジュールがあれば、最早参照されなくなったモジュールが
@@ -161,7 +161,7 @@ sub _check_difference {
     foreach my $conf (@$mod_configs) {
 	my $old_conf = $this->{mod_configs}->{$conf->block_name};
 	if (defined $old_conf) {
-	    # このモジュールは既に定義されているが、変更を加えられてはいないか？	    
+	    # このモジュールは既に定義されているが、変更を加えられてはいないか？
 	    if ($old_conf->equals($conf)) {
 		# 変わってない。
 		push @not_changed,$conf;
@@ -329,7 +329,7 @@ sub _load {
 	my @isa = eval qq{ \@${mod_name}::ISA };
 	foreach (@isa) {
 	    if ($_ eq 'Module') {
-		::printmsg('UNIVERSAL::isa tell a lie...');
+		::debug_printmsg('UNIVERSAL::isa tell a lie...');
 		return 1;
 	    }
 	}
@@ -373,37 +373,51 @@ sub _unload {
     # このモジュールのuse時刻を消去
     delete $this->{mod_timestamps}->{$modname};
 
+    # このモジュールのファイル名を求めておく。
+    (my $mod_filename = $modname) =~ s|::|/|g;
+    $mod_filename .= '.pm';
+
     # シンボルテーブルを削除してしまえば変数やサブルーチンにアクセス出来なくなる。
     # 多分これでメモリが開放されるだろう。
-    if ($] < 5.008) {
-	# NG。v5.6.0 built for darwinでこれをやるとbus errorで落ちる。
-	# 代わりにシンボルテーブル内の全てのシンボルをundefする。
-	# シンボルテーブル一つ分のメモリはリークするが、仕方が無い。
-	no strict;
-	local(*stab) = eval qq{\*${modname}::};
-	while (($key,$val) = each(%stab)) {
-	    local(*entry) = $val;
-	    if (defined $entry) {
-		undef $entry;
-	    }
-	    if (defined @entry) {
-		undef @entry;
-	    }
-	    if (defined &entry) {
+    #eval 'undef %'.$modname.'::;';
+    # NG。v5.6.0 built for darwinでこれをやるとbus errorで落ちる。
+    # 落ちなかったとしても非常に危険である。
+    # 代わりにシンボルテーブル内の全てのシンボルをundefする。
+    # シンボルテーブル一つ分のメモリはリークするが、仕方が無い。
+    no strict;
+    local(*stab) = eval qq{\*${modname}::};
+    my $defined_on;
+    while (my ($key,$val) = each(%stab)) {
+	local(*entry) = $val;
+	if (defined $entry) {
+	    ::debug_printmsg("unload scalar: $key");
+	    undef $entry;
+	}
+	if (defined @entry) {
+	    ::debug_printmsg("unload array: $key");
+	    undef @entry;
+	}
+	if (defined &entry) {
+	    $defined_on = eval q{
+		use B;
+		B::svref_2object(\&entry)->FILE
+	    };
+	    if ($defined_on && $defined_on eq $INC{$mod_filename}) {
+		::debug_printmsg("unload subroutine: $key");
 		undef &entry;
-	    }
-	    if ($key ne "${modname}::" && defined %entry) {
-		undef %entry;
+	    } else {
+		::debug_printmsg("not-unload subroutine: $key, on " .
+				     ($defined_on || '(undefined)'));
 	    }
 	}
-    } else {
-	# v5.8.0 built for i386-netbsd-multi-64intではちゃんとできるようだ。
-	eval 'undef %'.$modname.'::;';
+	if ($key ne "${modname}::" && defined %entry) {
+	    ::debug_printmsg("unload symtable: $key");
+	    undef %entry;
+	}
     }
 
     # %INCからも削除
-    (my $mod_filename = $modname) =~ s|::|/|g;
-    delete $INC{$mod_filename.'.pm'};
+    delete $INC{$mod_filename};
 }
 
 sub fix_USED_fields {
@@ -464,12 +478,12 @@ sub gc {
 	    }
 	}
     };
-    
+
     for my $mod (@{$this->{modules}}) {
 	my $modname = ref $mod;
 	$trace->($modname);
     }
-    
+
     # マークされなかったサブモジュールは到達不可能なのでアンロードする。
     my $runloop = RunLoop->shared_loop;
     while (my ($key,$value) = each %all_mods) {
@@ -477,7 +491,7 @@ sub gc {
 	    eval qq{
 		\&${key}::destruct();
 	    };
-	    
+
 	    $runloop->notify_msg(
 		"Submodule $key is no longer required. It will be unloaded.");
 	    $this->_unload($key);
