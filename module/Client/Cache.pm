@@ -94,6 +94,13 @@ sub message_io_hook {
 	    if (defined $ch) {
 		$ch->remark(__PACKAGE__."/fetching-who", undef, 'delete');
 	    }
+	} elsif ($type eq 'in' &&
+		     $msg->command eq RPL_ENDOFWHO &&
+			 Multicast::channel_p($msg->param(1))) {
+	    my $ch = $io->channel($msg->param(1));
+	    if (defined $ch) {
+		$ch->remark(__PACKAGE__."/fetching-who", undef, 'delete');
+	    }
 	}
     }
     return $msg;
