@@ -29,7 +29,7 @@ sub message_arrived {
 	    
 	    # メッセージ再構築
 	    my $raw_msg = IRCMessage->new(
-		Line => join(' ', @{$msg->params}[1 .. $msg->n_params]),
+		Line => join(' ', @{$msg->params}[1 .. ($msg->n_params - 1)]),
 		Encoding => 'utf8',
 	       );
 
