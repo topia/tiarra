@@ -319,15 +319,18 @@ sub proc_sock {
 	$this->cleanup;
 	$this->close;
 	$this->_connect_error_try_next('cant write: '.$this->sock_errno_to_msg($error));
-    } elsif (!$this->sock->connect($this->{connecting}->{saddr}) &&
-		 ($!{EISCONN} ||
-		      ($this->_is_winsock && (($! == 10022) || $!{EWOULDBLOCK} ||
-					   $!{EALREADY})))) {
-	$this->cleanup;
-	$this->_call;
+    } elsif (!$this->sock->connect($this->{connecting}->{saddr})) {
+	if ($!{EISCONN} ||
+		($this->_is_winsock && (($! == 10022) || $!{EWOULDBLOCK} ||
+					    $!{EALREADY}))) {
+	    $this->cleanup;
+	    $this->_call;
+	} else {
+	    $this->_warn('connection try error: '.$this->sock_errno_to_msg($!));
+	    $this->_handle_sock_error;
+	}
     } else {
-	warn 'connection try error: '.$this->sock_errno_to_msg($!);
-	$this->_handle_sock_error;
+	$this->_warn('connect successful, why called this?');
     }
 }
 
