@@ -124,6 +124,16 @@ sysmsg-prefix-use-masks {
   channel: *
 }
 
+# Tiarra が nick 変更時の衝突等を処理するモードを指定します。
+# 0: Tiarra が接続時と同様に自動処理します。
+# 1: クライアントにそのまま投げます。
+#    複数のクライアントが nick 重複を処理する場合は非常に危険です。
+#    (設定不足の IRC クライアントが複数つながっている場合も含みます)
+# 2: 対応するエラーメッセージ付きの NOTICE に変換して、
+#    クライアントに投げます。
+# multi-server-mode 時のデフォルトは 0 、 single-server-mode 時のデフォルトは 1 です。
+-nick-fix-mode: 0
+
 messages {
   # Tiarra が使用する、いくつかのメッセージを指定する。
 

@@ -193,6 +193,7 @@ my $defaults = {
 	    'priv' => '',
 	    'channel' => '*',
 	},
+	# nick-fix-mode のデフォルト値も後で別処理。
 	'messages' => {
 	    'quit' => {
 		'netconf-changed-reconnect' =>
@@ -218,6 +219,17 @@ sub _complete_table_with_defaults {
 	$root_block->set($_->block_name, $_);
     } @$blocks;
     $this->_complete_block_with_defaults($root_block, $defaults);
+
+    my $general = $root_block->general;
+    if (!defined $general->nick_fix_mode) {
+	$general->set('nick-fix-mode', do {
+	    if ($general->multi_server_mode) {
+		0;
+	    } else {
+		1;
+	    }
+	});
+    }
 
     # networksのdefaultだけは別処理。
     my $networks = $root_block->networks;

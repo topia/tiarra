@@ -611,8 +611,8 @@ sub _receive_while_logging_in {
 	$this->_set_to_next_nick($first_msg->param(1));
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
     }
-    elsif (grep { $_ eq $reply } (RPL_HELLO, RPL_WELCOME, qw(NOTICE PRIVMSG))) {
-	# RPL_HELLO (irc2.11.x) / NOTICE / PRIVMSG
+    elsif (grep { $_ eq $reply } qw(NOTICE PRIVMSG)) {
+	# NOTICE / PRIVMSG
 	return; # 何もしない
     }
     elsif ($reply eq 'PING') {
@@ -623,8 +623,11 @@ sub _receive_while_logging_in {
     }
     else {
 	# それ以外。手の打ちようがないのでconnectionごと切断してしまう。
-	# 但し、ニューメリックリプライでもERRORでもなければ無視する。
-	if ($reply eq 'ERROR' or $reply =~ m/^\d+/) {
+	# 但し、エラーニューメリックリプライでもERRORでもなければ無視する。
+	if ($reply =~ /^[0-3]\d+/) {
+	    $this->printmsg("Server replied $reply, ignored.\n".$first_msg->serialize."\n");
+	    return;
+	} elsif ($reply eq 'ERROR' or $reply !~ m/^\d+/) {
 	    $this->disconnect;
 	    $this->die("Server replied $reply.\n".$first_msg->serialize."\n");
 	}
@@ -682,20 +685,12 @@ sub _receive_after_logged_in {
     }
     elsif ($msg->command eq ERR_NICKNAMEINUSE) {
 	# nickが既に使用中
-	if ($this->_runloop->multi_server_mode_p) {
-	    $this->_set_to_next_nick($msg->param(1));
-
-	    # これもクライアントには伝えない。
-	    $msg = undef;
-	}
+	return $this->_handle_fix_nick($msg);
     }
     elsif ($msg->command eq ERR_UNAVAILRESOURCE) {
 	# nick/channel temporary unavaliable
-	if (Multicast::nick_p($msg->param(1)) && $this->_runloop->multi_server_mode_p) {
-	    $this->_set_to_next_nick($msg->param(1));
-
-	    # これもクライアントには伝えない。
-	    $msg = undef;
+	if (Multicast::nick_p($msg->param(1))) {
+	    return $this->_handle_fix_nick($msg);
 	}
     }
     elsif ($msg->command eq 'JOIN') {
@@ -1258,6 +1253,44 @@ sub _RPL_YOURID {
     my ($this,$msg) = @_;
 
     $this->remark('uid', $msg->param(1));
+}
+
+sub _handle_fix_nick {
+    my ($this, $type, $msg) = @_;
+    # 接続時以外のnick重複を処理します。
+    my $mode = $this->config_local_or_general('nick-fix-mode');
+
+    if ($mode == 0) {
+	# 常に Tiarra が処理します。
+
+	$this->_set_to_next_nick($msg->param(1));
+	return undef;
+    } elsif ($mode == 1) {
+	# クライアントにそのまま投げます。
+	# 複数のクライアントが nick 重複を処理する場合は非常に危険です。
+	# (設定不足の IRC クライアントが複数つながっている場合も含みます)
+	return $msg;
+    } elsif ($mode == 2) {
+	# 対応するエラーメッセージ付きの NOTICE に変換して、
+	# クライアントに投げます。
+
+	my $new_msg = IRCMessage->new(
+	    Prefix => $this->_runloop->sysmsg_prefix(qw(priv nick::system)),
+	    Command => 'NOTICE',
+	    Params => [$this->_runloop->current_nick,
+		       ''],
+	   );
+	if ($msg->command eq ERR_NICKNAMEINUSE) {
+	    $new_msg->param(1, 'Nickname is already in use: ' .
+				$msg->param(1));
+	} elsif ($msg->command eq ERR_UNAVAILRESOURCE) {
+	    $new_msg->param(1, 'Nick/channel is temporarily unavailable: ' .
+				$msg->param(1));
+	} else {
+	    return $msg;
+	}
+	return $new_msg;
+    }
 }
 
 sub _set_to_next_nick {
