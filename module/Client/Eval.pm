@@ -57,7 +57,7 @@ sub message_arrived {
 
 # useful functions to call from eval
 sub network {
-    return runloop->network(shift);
+    return runloop()->network(shift);
 }
 
 sub runloop {
