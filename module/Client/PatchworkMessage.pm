@@ -11,6 +11,7 @@ use Multicast;
 use NumericReply;
 use Module::Use qw(Client::Guess);
 use Client::Guess;
+use Tiarra::Utils;
 
 sub message_io_hook {
     my ($this,$msg,$io,$type) = @_;
@@ -36,10 +37,11 @@ sub message_io_hook {
 }
 
 sub is_target {
-    my ($this, $target, $io) = @_;
+    my ($this, $target, $io, $default_disable) = @_;
 
-    if ($this->config->get("enable-$target") &&
-	    Client::Guess->shared->is_target($target, $io)) {
+    if (Client::Guess->shared->is_target($target, $io) &&
+	    utils->cond_yesno($this->config->get("enable-$target"),
+			      !$default_disable)) {
 	return 1;
     }
     return 0;
@@ -49,6 +51,8 @@ sub is_target {
 =pod
 info: IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する
 default: off
+
+# 特に注意書きがない場合はデフォルトで有効です。
 
 # WoolChat:
 #  対応しているメッセージ:
