@@ -33,10 +33,6 @@ sub set {
     my $str = shift;
     my $code = shift;
 
-    if (!exists $this->{unijp}) {
-	$this->{unijp} = Unicode::Japanese->new;
-    }
-
     if (defined $str) {
 	if ($code =~ /,/) {
 	    # comma seperated guess-list
@@ -53,6 +49,11 @@ sub set {
     $this;
 }
 
+sub _init {
+    my $this = shift;
+    $this->{unijp} = Unicode::Japanese->new;
+}
+
 sub AUTOLOAD {
     our $AUTOLOAD;
     my $this = shift;
@@ -63,10 +64,12 @@ sub AUTOLOAD {
     }
 
     (my $method = $AUTOLOAD) =~ s/.+?:://g;
-    if (!exists $this->{unijp}) {
-	$this->{unijp} = Unicode::Japanese->new;
+    if ($method =~ /^(?:h2z|z2h).*$/) {
+	$this->{unijp}->$method(@_);
+	$this;
+    } else {
+	$this->{unijp}->$method(@_);
     }
-    $this->{unijp}->$method(@_);
 }
 
 1;
