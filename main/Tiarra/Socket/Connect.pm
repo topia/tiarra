@@ -202,7 +202,7 @@ sub _try_connect_unix {
 		    qq{Use other protocol if possible.\n});
     }
 
-    Require IO::Socket::UNIX;
+    require IO::Socket::UNIX;
     my $sock = IO::Socket::UNIX->new(Peer => $this->{connecting}->{addr});
     if (defined $sock) {
 	$this->attach($sock);
