@@ -55,6 +55,14 @@ sub logging_in {
     shift->{logging_in};
 }
 
+sub username {
+    shift->{username};
+}
+
+sub client_host {
+    shift->{client_host};
+}
+
 sub fullname {
     # このクライアントをtiarraから見たnick!username@userhostの形式で表現する。
     my ($this,$type) = @_;
@@ -379,25 +387,81 @@ sub _receive_after_logged_in {
     return $msg;
 }
 
+sub do_namreply {
+    my ($this, $ch, $network, $max_length, $flush_func) = @_;
+
+    $max_length = 400 if !defined $max_length;
+    croak('$ch is not specified') if !defined $ch;
+    croak('$network is not specified') if !defined $network;
+    croak('$flush_func is not specified') if !defined $flush_func;
+    my $global_to_local = sub {
+	Multicast::global_to_local(shift, $network);
+    };
+    my $ch_property_char = do {
+	if ($ch->switches('s')) {
+	    '@';
+	}
+	elsif ($ch->switches('p')) {
+	    '*';
+	}
+	else {
+	    '=';
+	}
+    };
+    # 余裕を見てnickの列挙部が $max_length(デフォルト:400) バイトを越えたら行を分ける。
+    my $nick_enumeration = '';
+    my $flush_enum_buffer = sub {
+	if ($nick_enumeration ne '') {
+	    $flush_func->(
+		IRCMessage->new(
+		    Prefix => $this->fullname,
+		    Command => RPL_NAMREPLY,
+		    Params => [RunLoop->shared_loop->current_nick,
+			       $ch_property_char,
+			       Multicast::attach_for_client($ch->name, $network->network_name),
+			       $nick_enumeration]));
+	    $nick_enumeration = '';
+	}
+    };
+    my $append_to_enum_buffer = sub {
+	my $nick_to_append = shift;
+	if ($nick_enumeration eq '') {
+	    $nick_enumeration = $nick_to_append;
+	}
+	else {
+	    $nick_enumeration .= ' '.$nick_to_append;
+	}
+    };
+    map {
+	my $person = $_;
+	my $mode_char = do {
+	    if ($person->has_o) {
+		'@';
+	    }
+	    elsif ($person->has_v) {
+		'+';
+	    }
+	    else {
+		'';
+	    }
+	};
+	$append_to_enum_buffer->($mode_char . $global_to_local->($person->person->nick));
+	if (length($nick_enumeration) > $max_length) {
+	    $flush_enum_buffer->();
+	}
+    } values %{$ch->names};
+    $flush_enum_buffer->();
+
+    undef;
+}
+
 sub inform_joinning_channels {
     my $this = shift;
-    my $multi = RunLoop->shared->multi_server_mode_p;
     my $local_nick = RunLoop->shared_loop->current_nick;
 
     my $send_channelinfo = sub {
 	my ($network, $ch) = @_;
-	my $global_nick = $network->current_nick;
-	my $global_to_local = sub {
-	    $_[0] eq $global_nick ? $local_nick : $_[0];
-	};
-	my $ch_name = do {
-	    if ($multi) {
-		Multicast::attach($ch->name, $network->network_name);
-	    }
-	    else {
-		$ch->name;
-	    }
-	};
+	my $ch_name = Multicast::attach_for_client($ch->name, $network->network_name);
 
 	# まずJOIN
 	$this->send_message(
@@ -422,60 +486,11 @@ sub inform_joinning_channels {
 		    Params => [$local_nick,$ch_name,$ch->topic_who,$ch->topic_time]));
 	}
 	# 次にRPL_NAMREPLY
-	my $ch_property_char = do {
-	    if ($ch->switches('s')) {
-		'@';
-	    }
-	    elsif ($ch->switches('p')) {
-		'*';
-	    }
-	    else {
-		'=';
-	    }
+	my $flush_namreply = sub {
+	    my $msg = shift;
+	    $this->send_message($msg);
 	};
-	# 余裕を見てnickの列挙部が400バイトを越えたら行を分ける。
-	my $nick_enumeration = '';
-	my $flush_enum_buffer = sub {
-	    if ($nick_enumeration ne '') {
-		$this->send_message(
-		    IRCMessage->new(
-			Prefix => $this->fullname,
-			Command => RPL_NAMREPLY,
-			Params => [$local_nick,
-				   $ch_property_char,
-				   $ch_name,
-				   $nick_enumeration]));
-		$nick_enumeration = '';
-	    }
-	};
-	my $append_to_enum_buffer = sub {
-	    my $nick_to_append = shift;
-	    if ($nick_enumeration eq '') {
-		$nick_enumeration = $nick_to_append;
-	    }
-	    else {
-		$nick_enumeration .= ' '.$nick_to_append;
-	    }
-	};
-	map {
-	    my $person = $_;
-	    my $mode_char = do {
-		if ($person->has_o) {
-		    '@';
-		}
-		elsif ($person->has_v) {
-		    '+';
-		}
-		else {
-		    '';
-		}
-	    };
-	    $append_to_enum_buffer->($mode_char . $global_to_local->($person->person->nick));
-	    if (length($nick_enumeration) > 400) {
-		$flush_enum_buffer->();
-	    }
-	} values %{$ch->names};
-	$flush_enum_buffer->();
+	$this->do_namreply($ch, $network, undef, $flush_namreply);
 	# 最後にRPL_ENDOFNAMES
 	$this->send_message(
 	    IRCMessage->new(
