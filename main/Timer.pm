@@ -167,4 +167,16 @@ sub interval {
     $this->{interval};
 }
 
+sub reset {
+    # interval から fire_time を算出しなおす
+    my ($this) = shift;
+
+    if (defined $this->{interval}) {
+	$this->{fire_time} = time + $this->{interval};
+    } else {
+	croak "Only Interval(Repeat) Timer can reset.\n";
+    }
+    $this;
+}
+
 1;
