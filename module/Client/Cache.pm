@@ -24,8 +24,8 @@ sub destruct {
     # cleaning remarks
 
     # チャンネルについている remark を削除。
-    foreach my $network (@{RunLoop->shared_loop->networks}) {
-	foreach my $ch (@{$network->channels}) {
+    foreach my $network (RunLoop->shared_loop->networks_list) {
+	foreach my $ch ($network->channels_list) {
 	    $ch->remark("__PACKAGE__/fetching-switches", undef, 'delete');
 	    $ch->remark("__PACKAGE__/fetching-who", undef, 'delete');
 	}
