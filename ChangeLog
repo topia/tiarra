@@ -1,3 +1,28 @@
+2004-03-19  Topia  <topia@clovery.jp>
+
+	* main/IrcIO.pm, main/LinedINETSocket.pm:
+	  - IO::Handle 1.21 において、 LEN が存在しないと croak がでる bug
+	    の回避。
+
+	* main/ModuleManager.pm:
+	  - モジュールの destruct を呼ぶ際に、 $show_msg でなく
+	    RunLoop->shared_loop->notify_error を使うように。
+
+	* main/IrcIO/Client.pm:
+	(inform_joinning_channels):
+	  - フックの引数を変更。
+	  - フックコール中にエラーが発生しても
+	    最低限すべてのチャンネル情報だけは送信するように。
+
+	* module/Client/Cache.pm:
+	  - IrcIO::Client::Hook/channel-info を使用して、
+	    知っているチャンネルモードを強制的に先行して送るようにした。
+
+	* module/Log/Recent.pm:
+	(IrcIO::Client::Hook/channel-info):
+	  - 引数変更に同期。
+	  - クライアントオプション no-recent-logs をみるようにした。
+
 2004-03-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Hook.pm (Hook::call, HookTarget::call_hooks):
@@ -1477,7 +1502,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.138 2004/03/13 07:17:33 admin Exp $
-#   Author: $Author: admin $
-#     Date: $Date: 2004/03/13 07:17:33 $
-# Revision: $Revision: 1.138 $
+#       Id: $Id: ChangeLog,v 1.139 2004/03/19 13:21:06 topia Exp $
+#   Author: $Author: topia $
+#     Date: $Date: 2004/03/19 13:21:06 $
+# Revision: $Revision: 1.139 $
