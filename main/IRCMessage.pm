@@ -44,9 +44,17 @@ use Tiarra::DefineEnumMixin (qw(PREFIX COMMAND PARAMS),
 
 
 # constants
-use constant MAX_PARAMS => 14;
+use constant MAX_MIDDLES => 14;
+use constant MAX_PARAMS => MAX_MIDDLES + 1;
+# max params = (middles[14] + trailing[1]) = 15
 
-Tiarra::Utils->define_array_attr_accessor(0, qw(command time));
+utils->define_array_attr_accessor(0, qw(time));
+utils->define_array_attr_translate_accessor(
+    0, '(my $temp = shift) =~ tr/a-z/A-Z/', qw(command));
+utils->define_array_attr_notify_accessor(
+    0, '$this->_update_prefix', qw(nick name host));
+utils->define_array_attr_notify_accessor(
+    0, '$this->_parse_prefix', qw(prefix));
 
 sub new {
     my ($class,%args) = @_;
@@ -70,24 +78,23 @@ sub new {
     }
     else {
 	if (exists $args{'Prefix'}) {
-	    $obj->[PREFIX] = $args{'Prefix'}; # prefixが指定された
+	    $obj->prefix($args{'Prefix'}); # prefixが指定された
 	}
 	elsif (exists $args{'Server'}) {
-	    $obj->[PREFIX] = $args{'Server'}; # prefix決定
+	    $obj->prefix($args{'Server'}); # prefix決定
 	}
-	elsif (exists $args{'Nick'}) {
-	    $obj->[PREFIX] = $args{'Nick'}; # まずはnickがあることが分かった
-	    if (exists $args{'User'}) {
-		$obj->[PREFIX] .= '!'.$args{'User'}; # userもあった。
-	    }
-	    if (exists $args{'Host'}) {
-		$obj->[PREFIX] .= '@'.$args{'Host'}; # hostもあった。
+	else {
+	    foreach (qw(Nick User Host)) {
+		if (exists $args{$_}) {
+		    my $method = lc($_);
+		    $obj->$method($args{$_});
+		}
 	    }
 	}
 
 	# Commandは絶対に無ければならない。
 	if (exists $args{'Command'}) {
-	    ($obj->[COMMAND] = $args{'Command'}) =~ tr/a-z/A-Z/;
+	    $obj->command($args{'Command'});
 	}
 	else {
 	    die "You can't make IRCMessage without a COMMAND.\n";
@@ -112,7 +119,6 @@ sub new {
     if (exists $args{'Remarks'}) {
 	$obj->[REMARKS] = {%{$args{'Remarks'}}};
     }
-    $obj->_parse_prefix;
     $obj;
 }
 
@@ -140,7 +146,7 @@ sub _parse {
     if (substr($line,0,1) eq ':') {
 	# :で始まっていたら
 	my $pos_space = index($line,' ');
-	$this->[PREFIX] = substr($line,1,$pos_space - 1);
+	$this->prefix(substr($line,1,$pos_space - 1));
 	$pos = $pos_space + 1; # スペースの次から解釈再開
     }
     # command & params
@@ -170,7 +176,7 @@ sub _parse {
 	}
 	else {
 	    # まだコマンドが設定されていない。
-	    ($this->[COMMAND] = $value) =~ tr/a-z/A-Z/;
+	    $this->command($value);
 	}
     };
     while (1) {
@@ -186,9 +192,10 @@ sub _parse {
 	}
 
 	if ($param ne '') {
-	    if (substr($param,0,1) eq ':') {
-		# これ以降は全て一つの引数。
-		$add_command_or_param->(substr($line,$pos+1)); # :は外す。
+	    if (substr($param,0,1) eq ':' || $this->n_params >= MAX_MIDDLES) {
+		$param = substr($line, $pos); # これ以降は全て一つの引数。
+		$param =~ s/^://; # :があった場合は外す。
+		$add_command_or_param->($param);
 		last; # ここで終わり。
 	    }
 	    else {
@@ -207,38 +214,51 @@ sub _parse {
     # 解釈結果の正当性をチェック。
     # commandが無かったらdie。
     unless ($this->[COMMAND]) {
-	die "IRCMessage parsed invalid one, which doesn't have command.\n  $line\n";
+	croak "IRCMessage parsed invalid one, which doesn't have command.\n  $line\n";
     }
 }
 
 sub _parse_prefix {
     my $this = shift;
+    delete $this->[NICK];
+    delete $this->[NAME];
+    delete $this->[HOST];
     if (defined $this->[PREFIX]) {
-	$this->[PREFIX] =~ m/^(.+?)!(.+?)@(.+)$/;
-	if (!defined($1)) {
+	if ($this->[PREFIX] !~ /@/) {
 	    $this->[NICK] = $this->[PREFIX];
-	}
-	else {
+	} elsif ($this->[PREFIX] =~ m/^(.+?)!(.+?)@(.+)$/) {
 	    $this->[NICK] = $1;
 	    $this->[NAME] = $2;
 	    $this->[HOST] = $3;
+	} elsif ($this->[PREFIX] =~ m/^(.+?)@(.+)$/) {
+	    $this->[NICK] = $1;
+	    $this->[HOST] = $2;
 	}
+    } else {
+	delete $this->[PREFIX];
     }
 }
 
 sub _update_prefix {
     my $this = shift;
     if (defined $this->[NICK]) {
-	if (defined $this->[NAME]) {
-	    $this->[PREFIX] =
-		$this->[NICK].'!'.$this->[NAME].'@'.$this->[HOST];
+	$this->[PREFIX] = $this->[NICK];
+	if (defined $this->[HOST]) {
+	    if (defined $this->[NAME]) {
+		$this->[PREFIX] .= '!'.$this->[NAME];
+		$this->[PREFIX] .= '@'.$this->[HOST];
+	    } else {
+		$this->[PREFIX] .= '@'.$this->[HOST];
+		delete $this->[NAME];
+	    }
+	} else {
+	    delete $this->[NAME];
+	    delete $this->[HOST];
 	}
-	else {
-	    $this->[PREFIX] = $this->[NICK];
-	}
-    }
-    else {
+    } else {
 	delete $this->[NICK];
+	delete $this->[NAME];
+	delete $this->[HOST];
     }
 }
 
@@ -256,7 +276,11 @@ sub serialize {
 
     if ($this->[PARAMS]) {
 	my $unicode = new Unicode::Japanese;
-	my $n_params = scalar @{$this->[PARAMS]||[]};
+	my $n_params = $this->n_params;
+	if ($n_params > MAX_PARAMS) {
+	    # 表現不能なので croak
+	    croak 'this message exceeded maximum param numbers!';
+	}
 	for (my $i = 0;$i < $n_params;$i++) {
 	    if ($i == $n_params - 1) {
 		# 最後のパラメタなら頭にコロンを付けて後にはスペースを置かない。
@@ -289,42 +313,6 @@ sub serialize {
 sub length {
     my ($this) = shift;
     length($this->serialize(@_));
-}
-
-sub prefix {
-    my ($this,$new_val) = @_;
-    if (defined $new_val) {
-	$this->[PREFIX] = $new_val;
-	$this->_parse_prefix;
-    }
-    $this->[PREFIX];
-}
-
-sub nick {
-    my ($this,$new_val) = @_;
-    if (defined $new_val) {
-	$this->[NICK] = $new_val;
-	$this->_update_prefix;
-    }
-    $this->[NICK];
-}
-
-sub name {
-    my ($this,$new_val) = @_;
-    if (defined $new_val) {
-	$this->[NAME] = $new_val;
-	$this->_update_prefix;
-    }
-    $this->[NAME];
-}
-
-sub host {
-    my ($this,$new_val) = @_;
-    if (defined $new_val) {
-	$this->[HOST] = $new_val;
-	$this->_update_prefix;
-    }
-    $this->[HOST];
 }
 
 sub params {
