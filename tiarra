@@ -38,11 +38,14 @@ BEGIN {
     # untaint
     $0 =~ /^(.+)$/;
     my $self = $1;
+    my @add_inc;
 
     foreach my $path (map dirname($_), reverse follow_link($1)) {
 	unshift(@INC,
 		map{ File::Spec->catdir($path, $_); } qw(main module));
+	unshift(@add_inc, File::Spec->catdir($path, 'bundle'));
     }
+    push(@INC, @add_inc);
 }
 
 # optional modules
