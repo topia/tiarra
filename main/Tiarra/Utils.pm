@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Misc Utilities
 # -----------------------------------------------------------------------------
-# copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
+# copyright (C) 2004-2005 Topia <topia@clovery.jp>. all rights reserved.
 package Tiarra::Utils;
 use strict;
 use warnings;
@@ -40,6 +40,7 @@ so please refer these classes' documents.
 
 =item utils
 
+  use Tiarra::Utils;
   utils->foo_method;
 
 default export function for shorthand use of Tiarra::Utils functions.
@@ -55,8 +56,6 @@ sub utils {
   utils->simple_caller_formatter([$msg[, $caller_level]]);
 
 format "<msg> at <file> line <line>" style caller information.
-
-args:
 
 =over 4
 
