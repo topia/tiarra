@@ -1,5 +1,8 @@
 2003-11-08  Topia  <topia@clovery.jp>
 
+	* make-password: enhancement.
+	パスワードの入力に、 Term::ReadLine を使用するようにした。
+
 	* module/Log/Recent.pm (client_attached): bugfix/need reload.
 	single-server-mode 時に、送信チャンネル名から network-suffix
 	をはずす。
@@ -1018,7 +1021,7 @@
 
 	* これ以前のログは書いていません。
 
-#       Id: $Id: ChangeLog,v 1.114 2003/11/08 06:12:56 topia Exp $
+#       Id: $Id: ChangeLog,v 1.115 2003/11/08 09:40:41 topia Exp $
 #   Author: $Author: topia $
-#     Date: $Date: 2003/11/08 06:12:56 $
-# Revision: $Revision: 1.114 $
+#     Date: $Date: 2003/11/08 09:40:41 $
+# Revision: $Revision: 1.115 $
