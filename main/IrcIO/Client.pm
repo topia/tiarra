@@ -340,109 +340,134 @@ sub inform_joinning_channels {
     my $this = shift;
     my $multi = RunLoop->shared->multi_server_mode_p;
     my $local_nick = RunLoop->shared_loop->current_nick;
-    map {
-	my $network = $_;
+
+    my $send_channelinfo = sub {
+	my ($network, $ch) = @_;
 	my $global_nick = $network->current_nick;
 	my $global_to_local = sub {
 	    $_[0] eq $global_nick ? $local_nick : $_[0];
 	};
+	my $ch_name = do {
+	    if ($multi) {
+		Multicast::attach($ch->name, $network->network_name);
+	    }
+	    else {
+		$ch->name;
+	    }
+	};
 
-	map {
-	    my $ch = $_;
-	    my $ch_name = do {
-		if ($multi) {
-		    Multicast::attach($ch->name, $network->network_name);
-		}
-		else {
-		    $ch->name;
-		}
-	    };
-
-	    # まずJOIN
+	# まずJOIN
+	$this->send_message(
+	    IRCMessage->new(
+		Prefix => $this->fullname,
+		Command => 'JOIN',
+		Param => $ch_name));
+	# 次にRPL_TOPIC(あれば)
+	if ($ch->topic ne '') {
 	    $this->send_message(
 		IRCMessage->new(
 		    Prefix => $this->fullname,
-		    Command => 'JOIN',
-		    Param => $ch_name));
-	    # 次にRPL_TOPIC(あれば)
-	    if ($ch->topic ne '') {
+		    Command => RPL_TOPIC,
+		    Params => [$local_nick,$ch_name,$ch->topic]));
+	}
+	# 次にRPL_TOPICWHOTIME(あれば)
+	if (defined($ch->topic_who)) {
+	    $this->send_message(
+		IRCMessage->new(
+		    Prefix => $this->fullname,
+		    Command => RPL_TOPICWHOTIME,
+		    Params => [$local_nick,$ch_name,$ch->topic_who,$ch->topic_time]));
+	}
+	# 次にRPL_NAMREPLY
+	my $ch_property_char = do {
+	    if ($ch->switches('s')) {
+		'@';
+	    }
+	    elsif ($ch->switches('p')) {
+		'*';
+	    }
+	    else {
+		'=';
+	    }
+	};
+	# 余裕を見てnickの列挙部が400バイトを越えたら行を分ける。
+	my $nick_enumeration = '';
+	my $flush_enum_buffer = sub {
+	    if ($nick_enumeration ne '') {
 		$this->send_message(
 		    IRCMessage->new(
 			Prefix => $this->fullname,
-			Command => RPL_TOPIC,
-			Params => [$local_nick,$ch_name,$ch->topic]));
+			Command => RPL_NAMREPLY,
+			Params => [$local_nick,
+				   $ch_property_char,
+				   $ch_name,
+				   $nick_enumeration]));
+		$nick_enumeration = '';
 	    }
-	    # 次にRPL_TOPICWHOTIME(あれば)
-	    if (defined($ch->topic_who)) {
-		$this->send_message(
-		    IRCMessage->new(
-			Prefix => $this->fullname,
-			Command => RPL_TOPICWHOTIME,
-			Params => [$local_nick,$ch_name,$ch->topic_who,$ch->topic_time]));
+	};
+	my $append_to_enum_buffer = sub {
+	    my $nick_to_append = shift;
+	    if ($nick_enumeration eq '') {
+		$nick_enumeration = $nick_to_append;
 	    }
-	    # 次にRPL_NAMREPLY
-	    my $ch_property_char = do {
-		if ($ch->switches('s')) {
+	    else {
+		$nick_enumeration .= ' '.$nick_to_append;
+	    }
+	};
+	map {
+	    my $person = $_;
+	    my $mode_char = do {
+		if ($person->has_o) {
 		    '@';
 		}
-		elsif ($ch->switches('p')) {
-		    '*';
+		elsif ($person->has_v) {
+		    '+';
 		}
 		else {
-		    '=';
+		    '';
 		}
 	    };
-	    # 余裕を見てnickの列挙部が400バイトを越えたら行を分ける。
-	    my $nick_enumeration = '';
-	    my $flush_enum_buffer = sub {
-		if ($nick_enumeration ne '') {
-		    $this->send_message(
-			IRCMessage->new(
-			    Prefix => $this->fullname,
-			    Command => RPL_NAMREPLY,
-			    Params => [$local_nick,
-				       $ch_property_char,
-				       $ch_name,
-				       $nick_enumeration]));
-		    $nick_enumeration = '';
-		}
-	    };
-	    my $append_to_enum_buffer = sub {
-		my $nick_to_append = shift;
-		if ($nick_enumeration eq '') {
-		    $nick_enumeration = $nick_to_append;
-		}
-		else {
-		    $nick_enumeration .= ' '.$nick_to_append;
-		}
-	    };
-	    map {
-		my $person = $_;
-		my $mode_char = do {
-		    if ($person->has_o) {
-			'@';
-		    }
-		    elsif ($person->has_v) {
-			'+';
-		    }
-		    else {
-			'';
-		    }
-		};
-		$append_to_enum_buffer->($mode_char . $global_to_local->($person->person->nick));
-		if (length($nick_enumeration) > 400) {
-		    $flush_enum_buffer->();
-		}
-	    } values %{$ch->names};
-	    $flush_enum_buffer->();
-	    # 最後にRPL_ENDOFNAMES
-	    $this->send_message(
-		IRCMessage->new(
-		    Prefix => $this->fullname,
-		    Command => RPL_ENDOFNAMES,
-		    Params => [$local_nick,$ch_name,'End of NAMES list']));
+	    $append_to_enum_buffer->($mode_char . $global_to_local->($person->person->nick));
+	    if (length($nick_enumeration) > 400) {
+		$flush_enum_buffer->();
+	    }
+	} values %{$ch->names};
+	$flush_enum_buffer->();
+	# 最後にRPL_ENDOFNAMES
+	$this->send_message(
+	    IRCMessage->new(
+		Prefix => $this->fullname,
+		Command => RPL_ENDOFNAMES,
+		Params => [$local_nick,$ch_name,'End of NAMES list']));
+    };
+
+    my %channels = map {
+	my $network = $_;
+	map {
+	    my $ch = $_;
+	    (Multicast::attach($ch->name, $network->network_name) =>
+		    [$network, $ch]);
 	} values %{$network->channels};
     } values %{RunLoop->shared_loop->networks};
+
+    # Mask を使って、マッチしたものを出力
+    foreach (Configuration->shared->networks->
+		 fixed_channels('block')->channel('all')) {
+	my $mask = $_;
+	foreach (keys %channels) {
+	    my $ch_name = $_;
+	    if (Mask::match($mask, $ch_name)) {
+		$send_channelinfo->(@{$channels{$ch_name}});
+		delete $channels{$ch_name};
+		last;
+	    }
+	}
+    }
+
+    # のこりを出力
+    map {
+	$send_channelinfo->(@$_);
+    } values %channels;
 }
 
 1;
