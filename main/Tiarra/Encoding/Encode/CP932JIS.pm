@@ -91,7 +91,7 @@ sub encode($$;$)
     };
     while (length($str)) {
 	if ($str =~ s/\A((?:[\x81-\x9f\xe0-\xef].)+)//s) {
-	    $startmode->('0218', $ESC{JIS_0208});
+	    $startmode->('0208', $ESC{JIS_0208});
 	    # sjis 2byte
 	    #j1 = (s1 << 1) - (s1 <= 0x9f ? 0xe0 : 0x160) - (s2 < 0x9f ? 1 : 0);
 	    #j2 = s2 - 0x1f - (s2 >= 0x7f ? 1 : 0) - (s2 >= 0x9f ? 0x5e : 0);
@@ -102,7 +102,7 @@ sub encode($$;$)
 			     $s2 - 0x1f - ($s2 >= 0x7f ? 1 : 0) - ($s2 >= 0x9f ? 0x5e : 0));
 	    }
 	} elsif ($str =~ s/\A([\xa1-\xdf]+)//s) {
-	    $startmode->('0201', $ESC{JIS_0201});
+	    $startmode->('0201-8bit', "\e\(J");
 	    foreach (split //, $1) {
 		#$ret .= unpack('H*', $_);
 		$ret .= $_;
