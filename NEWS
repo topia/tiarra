@@ -1,3 +1,19 @@
+2004-08-22  Topia  <topia@clovery.jp>
+
+	* Client::Rehash
+	  - 追加。クライアントの nick と names を訂正する。
+
+	* System::Error
+	  - 追加。クライアントに送信するときに ERROR メッセージを
+	    NOTICE に埋め込む。
+	  - このモジュールはデフォルトオンです。アップデートの際は忘れずに
+	    追加するようにしてください。
+
+	* Log::Channel
+	  - Log::Writer フレームワークを使うようにしました。
+	  - file system full 等で書き込みに失敗しても、出来る限りログを
+	    保持します。
+
 2004-07-29  Topia  <topia@clovery.jp>
 
 	* System::NotifyIcon::Win32
