@@ -16,11 +16,48 @@ use Tiarra::OptionalModules;
 use Tiarra::Utils;
 utils->define_attr_accessor(0, qw(domain host addr port callback),
 			    qw(bind_addr prefer timeout),
-			    qw(retry_int));
+			    qw(retry_int retry_count try_count));
 utils->define_attr_enum_accessor('domain', 'eq',
 				 qw(tcp unix));
 
 # now supported tcp, unix
+
+# tcp:
+#   my $connector = connect->new(
+#       host => [hostname],
+#       port => [port],
+#       callback => sub {
+#           my ($genre, $connector, $msg_or_sock) = @_;
+#           if ($genre eq 'warn') {
+#               # $msg_or_sock: msg
+#               warn $msg_or_sock;
+#           } elsif ($genre eq 'error') {
+#               # $msg_or_sock: msg
+#               die $msg_or_sock;
+#           } elsif ($genre eq 'sock') {
+#               # $msg_or_sock: sock
+#               attach($connector->current_addr, $connector->current_port,
+#                      $msg_or_sock);
+#           # optional genre
+#           } elsif ($genre eq 'interrupt') {
+#               # $msg_or_sock: undef
+#               die 'interrupted';
+#           } elsif ($genre eq 'timeout') {
+#               # $msg_or_sock: undef
+#               die 'timeout';
+#           }
+#       },
+#       # optional params
+#       addr => [already resolved addr],
+#       bind_addr => [bind_addr (cannot specify host)],
+#       timeout => [timeout], # didn't test enough, please send report when bugs.
+#       retry_int => [retry interval],
+#       retry_count => [retry count],
+#       prefer => [prefer socket type(and order) (ipv4, ipv6) as string's
+#                  array ref, default ipv6, ipv4],
+#       domain => 'tcp', # default
+#       );
+#   $connector->interrupt;
 
 sub new {
     my ($class, %opts) = @_;
@@ -29,8 +66,7 @@ sub new {
     my $this = $class->SUPER::new(%opts);
     map {
 	$this->$_($opts{$_});
-    } qw(host addr port callback bind_addr timeout);
-    $this->retry_int($opts{retry});
+    } qw(host addr port callback bind_addr timeout retry_int retry_count);
     $this->domain(utils->get_first_defined($opts{domain},
 					   'tcp'));
     $this->prefer(utils->get_first_defined($opts{prefer},
@@ -46,8 +82,7 @@ sub connect {
 	$this->{timer} = Timer->new(
 	    After => $this->timeout,
 	    Code => sub {
-		$this->cleanup;
-		$this->_connect_error('timeout');
+		$this->interrupt('timeout');
 	    });
     }
 
@@ -76,7 +111,7 @@ sub _connect_stage {
     my %addrs_by_types;
 
     if ($entry->answer_status ne $entry->ANSWER_OK) {
-	$this->_connect_error("couldn't resolve hostname");
+	$this->_connect_error("Couldn't resolve hostname");
 	return undef; # end
     }
 
@@ -107,14 +142,18 @@ sub _connect_try_next {
 	my $methodname = '_try_connect_' . $this->{connecting}->{type};
 	$this->$methodname;
     } else {
-	$this->_connect_error('all dead');
-	if ($this->retry_int) {
+	if ($this->retry_int && (++$this->try_count <= $this->retry_count)) {
 	    $this->{timer} = Timer->new(
 		After => $this->retry_int,
 		Code => sub {
 		    $this->cleanup;
 		    $this->connect;
 		});
+	    $this->_connect_warn(
+		'all dead, ' .
+		    utils->to_ordinal_number($this->try_count) . ' retry');
+	} else {
+	    $this->_connect_error('all dead');
 	}
     }
 }
@@ -149,8 +188,7 @@ sub _try_connect_tcp {
 	Timeout => undef,
 	Proto => 'tcp');
     if (!defined $sock) {
-	$this->_warn("Couldn't prepare socket");
-	$this->_connect_try_next;
+	$this->_connect_error($this->sock_errno_to_msg($!, 'Couldn\'t prepare socket'));
 	return;
     }
     if (!defined $sock->blocking(0)) {
@@ -163,9 +201,12 @@ sub _try_connect_tcp {
 	    my $temp = chr(1);
 	    my $retval = $sock->ioctl($FIONBIO, $temp);
 	    if (!$retval) {
-		$this->_warn('cannot non-blocking (winsock2): '.
-				 $this->sock_errno_to_msg($!));
+		$this->_warn($this->sock_errno_to_msg(
+		    $!, 'Couldn\'t set non-blocking mode (winsock2)'));
 	    }
+	} else {
+	    $this->_warn($this->sock_errno_to_msg(
+		$!, 'Couldn\'t set non-blocking mode (general)'));
 	}
     }
     my $saddr = Tiarra::Resolver->resolve(
@@ -183,7 +224,7 @@ sub _try_connect_tcp {
 	    $this->_call;
 	}
     } else {
-	$this->_connect_error_try_next('connect error: '.$this->sock_errno_to_msg($!));
+	$this->_connect_warn_try_next($!, 'connect error');
     }
 }
 
@@ -203,14 +244,14 @@ sub _try_connect_unix {
 	$this->attach($sock);
 	$this->_call;
     } else {
-	$this->_connect_error_try_next($this->sock_errno_to_msg($!));
+	$this->_connect_warn_try_next($!, 'Couldn\'t connect');
     }
 }
 
-sub _connect_error_try_next {
-    my ($this, $msg) = @_;
+sub _connect_warn_try_next {
+    my ($this, $errno, $msg) = @_;
 
-    $this->_connect_warn($msg);
+    $this->_connect_warn($this->sock_errno_to_msg($errno, $msg));
     $this->_connect_try_next;
 }
 
@@ -263,18 +304,21 @@ sub current_type {
 }
 
 sub _error {
+    # connection error; and finish ->connect chain
     my ($this, $msg) = @_;
 
     $this->callback->('error', $this, $msg);
 }
 
 sub _warn {
+    # connection warning; but continue trying
     my ($this, $msg) = @_;
 
     $this->callback->('warn', $this, $msg);
 }
 
 sub _call {
+    # connection successful
     my $this = shift;
 
     $this->callback->('sock', $this, $this->sock);
@@ -293,13 +337,14 @@ sub cleanup {
 }
 
 sub interrupt {
-    my $this = shift;
+    my ($this, $genre) = @_;
 
     $this->cleanup;
     if (defined $this->sock) {
 	$this->close;
     }
-    $this->callback->('interrupt', $this);
+    $genre = 'interrupt' unless defined $genre;
+    $this->callback->($genre, $this);
 }
 
 sub want_to_write {
@@ -318,7 +363,7 @@ sub proc_sock {
 	my $error = $this->sock->sockopt(SO_ERROR);
 	$this->cleanup;
 	$this->close;
-	$this->_connect_error_try_next('cant write: '.$this->sock_errno_to_msg($error));
+	$this->_connect_warn_try_next($error, 'cant write');
     } elsif (!$this->sock->connect($this->{connecting}->{saddr})) {
 	if ($!{EISCONN} ||
 		($this->_is_winsock && (($! == 10022) || $!{EWOULDBLOCK} ||
@@ -326,7 +371,7 @@ sub proc_sock {
 	    $this->cleanup;
 	    $this->_call;
 	} else {
-	    $this->_warn('connection try error: '.$this->sock_errno_to_msg($!));
+	    $this->_warn($this->sock_errno_to_msg($!, 'connection try error'));
 	    $this->_handle_sock_error;
 	}
     } else {
@@ -340,7 +385,7 @@ sub _handle_sock_error {
     my $error = $this->sock->sockopt(SO_ERROR);
     $this->cleanup;
     $this->close;
-    $this->_connect_error_try_next($this->sock_errno_to_msg($error));
+    $this->_connect_warn_try_next($error);
 }
 
 1;
