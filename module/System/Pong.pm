@@ -20,7 +20,6 @@ sub message_arrived {
 	# これを送りつけてきたサーバー/クライアントにPONGを送り返す。
 	$sender->send_message(
 	    new IRCMessage(
-		Prefix => $prefix,
 		Command => 'PONG',
 		Params => $message->params));
 	
