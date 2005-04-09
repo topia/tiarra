@@ -148,11 +148,11 @@ sub help {
     print "   -D<symbol>[=<string>]\n";
     print "                   treat as `\@define <symbol> <string>' is in the conf\n";
     print "\n";
-    print "If you omit --config=<file> parameter and execute with piped input,\n";
+    print "If you specify --config=- parameter,\n";
     print "Tiarra will read configuration from stdin(pipe).\n";
     print "  example:\n";
-    print "      cat tiarra.conf | sed -e 's/Tiarra/arraiT/g' | ./tiarra --quiet\n";
-    print "      gunzip -c tiarra.conf.gz | ./tiarra\n";
+    print "      cat tiarra.conf | sed -e 's/Tiarra/arraiT/g' | ./tiarra --config=- --quiet\n";
+    print "      gunzip -c tiarra.conf.gz | ./tiarra --config=-\n";
     print "\n";
 }
 
@@ -243,9 +243,7 @@ sub main {
 
     my $conf_file = &find_option('config');
     if (!defined $conf_file) {
-	if (!-t STDIN) {
-	    $conf_file = undef; # STDINから読む場合はundefを入れておく。
-	} elsif (-f 'tiarra.conf') {
+	if (-f 'tiarra.conf') {
 	    $conf_file = 'tiarra.conf';
 	} else {
 	    &help;
@@ -278,7 +276,7 @@ sub main {
     do {
 	local($|) = 1;
 
-	if (defined $conf_file) {
+	if ($conf_file ne '-') {
 	    $print->("Reading configuration from ${conf_file}... ");
 	} else {
 	    $conf_file = IO::Handle->new->fdopen(fileno(STDIN),'r');
