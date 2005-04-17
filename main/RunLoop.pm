@@ -828,7 +828,7 @@ sub run {
     # control-socket-nameが指定されていたら、ControlPortを開く。
     if ($conf_general->control_socket_name) {
 	eval {
-	    ControlPort->new($conf_general->control_socket_name);
+	    $this->{control_port} = ControlPort->new($conf_general->control_socket_name);
 	}; if ($@) {
 	    ::printmsg($@);
 	}
@@ -1094,6 +1094,7 @@ sub run {
 	$this->{tiarra_server_socket}->close;
 	$this->unregister_receive_socket($this->{tiarra_server_socket}); # 受信セレクタから登録解除
     }
+    undef $this->{control_port};
     $this->_mod_manager->terminate;
 }
 
@@ -1118,7 +1119,8 @@ sub broadcast_to_clients {
     my $this = $class_or_this->_this;
     foreach my $client (@{$this->{clients}}) {
 	next if $client->logging_in;
-	
+	next unless $client->disconnected;
+
 	foreach my $msg (@messages) {
 	    if ($msg->remark('fill-prefix-when-sending-to-client')) {
 		$msg = $msg->clone;
