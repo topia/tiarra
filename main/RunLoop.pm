@@ -1119,7 +1119,7 @@ sub broadcast_to_clients {
     my $this = $class_or_this->_this;
     foreach my $client (@{$this->{clients}}) {
 	next if $client->logging_in;
-	next unless $client->disconnected;
+	next unless $client->connected;
 
 	foreach my $msg (@messages) {
 	    if ($msg->remark('fill-prefix-when-sending-to-client')) {
