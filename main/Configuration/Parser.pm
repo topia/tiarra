@@ -19,7 +19,7 @@ sub new {
     my ($class,$body) = @_;
     my $this = {
 	lex => Configuration::LexicalAnalyzer->new($body),
-	
+
 	parsed => [], # Configuration::Block (現れた順番に並ぶ。)
     };
     bless $this,$class;
@@ -57,7 +57,7 @@ sub _parse {
 
 sub _parse_block {
     my ($this,$context) = @_;
-    
+
     my ($token,$type);
     # block := LABEL BLOCKSTART blockcontent BLOCKEND
 
@@ -99,7 +99,7 @@ sub _parse_blockcontent {
 	    die "Semantics error: pair, label or blockend is needed here.\n";
 	}
 	elsif ($type eq 'pair') {
-	    $token =~ m/^(.+?)\s*:\s*(.+)$/;
+	    $token =~ m/^(.+?)\s*:\s*(.*)$/;
 	    $block->add($1,$2);
 	}
 	elsif ($type eq 'label') {
