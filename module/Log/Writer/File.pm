@@ -8,8 +8,8 @@ use warnings;
 use IO::File;
 use File::Spec;
 use Module::Use qw(Log::Writer::Base);
-use Log::Writer::Base;
 use base qw(Log::Writer::Base);
+use File::Path;
 
 sub new {
     my ($class, $parent, $uri, %options) = @_;
@@ -112,10 +112,9 @@ sub mkdirs {
     }
     else {
 	# 存在しないので作成
-	my @dirs = File::Spec->splitdir($directories);
-	foreach (0 .. (scalar @dirs - 2)) {
-	    my $dir = File::Spec->catdir(@dirs[0 .. $_]);
-	    mkdir $dir, $this->dir_mode unless (-d $dir);
+	eval { mkpath($directories, 0, $this->dir_mode) };
+	if ($@) {
+	    $this->_notify_warn("mkpath failed; Couldn't create $directories: $@");
 	}
     }
 }
