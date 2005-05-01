@@ -102,7 +102,7 @@ sub guess_ctcp_version {
 	}
     }
 
-    if ($str =~ /^(Cotton|Unknown) Client$/) {
+    if ($str =~ /^(Cotton|Unknown) Client/) {
 	$struct->{type} = 'cotton';
 	$struct->{exact_type} = lc($1);
     } else {
@@ -119,10 +119,10 @@ __DATA__
 sub version_guess_c {
     my ($this, $str, $struct_set) = @_;
 
-    if ($str =~ /^CHOCOA ($re_ver) \(($re_tok)\)$/) {
+    if ($str =~ /^CHOCOA ($re_ver) \(($re_tok)\)/) {
 	$struct_set->([qw(type ver plat)],
 		      'chocoa', $1, $2);
-    } elsif ($str =~ m[^Conversation ($re_ver) for (MacOS X|.+?) (http://$re_tok)$|]) {
+    } elsif ($str =~ m[^Conversation ($re_ver) for (MacOS X|.+?) (http://$re_tok)]) {
 	$struct_set->([qw(type ver plat url)],
 		      'conversation', $1, $2, $3);
     } else {
@@ -134,7 +134,7 @@ sub version_guess_c {
 sub version_guess_t {
     my ($this, $str, $struct_set) = @_;
 
-    if ($str =~ /^Tiarra:($re_tok):perl ($re_tok) on ($re_tok)$/) {
+    if ($str =~ /^Tiarra:($re_tok):perl ($re_tok) on ($re_tok)/) {
 	$struct_set->([qw(type ver perl_ver perl_plat)],
 		      'tiarra', $1, $2, $3);
     } else {
@@ -146,11 +146,11 @@ sub version_guess_t {
 sub version_guess_l {
     my ($this, $str, $struct_set) = @_;
 
-    if ($str =~ /^LimeChat ($re_ver) \((.+?)\)$/) {
+    if ($str =~ /^LimeChat ($re_ver) \((.+?)\)/) {
 	$struct_set->([qw(type ver plat)], 'limechat', $1, $2);
     } elsif ($str =~ /^Loqui version ($re_tok)/) {
 	$struct_set->([qw(type ver)], 'loqui', $1);
-    } elsif ($str =~ m{^Liece/($re_ver) :$}) {
+    } elsif ($str =~ m{^Liece/($re_ver) :}) {
 	$struct_set->([qw(type ver)], 'liece', $1);
     } else {
 	return undef;
@@ -161,9 +161,9 @@ sub version_guess_l {
 sub version_guess_m {
     my ($this, $str, $struct_set) = @_;
 
-    if ($str =~ /^madoka ($re_ver) in perl ($re_ver):$/) {
+    if ($str =~ /^madoka ($re_ver) in perl ($re_ver):/) {
 	$struct_set->([qw(type ver perl_ver)], 'madoka', $1, $2);
-    } elsif ($str =~ /^Misuzilla Ircv \(($re_ver) version\) on (.NET CLR-$re_tok)$/) {
+    } elsif ($str =~ /^Misuzilla Ircv \(($re_ver) version\) on (.NET CLR-$re_tok)/) {
 	$struct_set->([qw(type ver plat)], 'ircv', $1, $2);
     } else {
 	return undef;
@@ -174,7 +174,7 @@ sub version_guess_m {
 sub version_guess_p {
     my ($this, $str, $struct_set) = @_;
 
-    if ($str =~ /^plum ($re_ver) perl ($re_ver)\s*:?$/) {
+    if ($str =~ /^plum ($re_ver) perl ($re_ver)\s*:?/) {
 	$struct_set->([qw(type ver perl_ver)], 'plum', $1, $2);
     } else {
 	return undef;
@@ -185,7 +185,7 @@ sub version_guess_p {
 sub version_guess_r {
     my ($this, $str, $struct_set) = @_;
 
-    if ($str =~ m{^Riece/($re_ver) ($re_tok)/($re_ver) }) {
+    if ($str =~ m{^Riece/($re_ver) ($re_tok)/($re_ver)}) {
 	$struct_set->([qw(type ver emacs_flavor emacs_ver)], 'riece', $1, $2, $3);
     } else {
 	return undef;
@@ -196,7 +196,7 @@ sub version_guess_r {
 sub version_guess_w {
     my ($this, $str, $struct_set) = @_;
 
-    if ($str =~ /^WoolChat Ver ($re_ver)?$/) {
+    if ($str =~ /^WoolChat Ver ($re_ver)/) {
 	$struct_set->([qw(type ver)], 'woolchat', $1);
     } else {
 	return undef;
@@ -207,7 +207,7 @@ sub version_guess_w {
 sub version_guess_x {
     my ($this, $str, $struct_set) = @_;
 
-    if ($str =~ m{^xchat ($re_ver) ($re_tok) ($re_tok) \[($re_tok)/($re_tok)\]$}) {
+    if ($str =~ m{^xchat ($re_ver) ($re_tok) ($re_tok) \[($re_tok)/($re_tok)\]}) {
 	$struct_set->([qw(type ver plat plat_ver arch cpu_speed)],
 		      'xchat', $1, $2, $3, $4, $5);
     } else {
