@@ -6,23 +6,39 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
-    <title><&group-name></title>
+    <title><&group-name> 関係のモジュール - Tiarra Documentation</title>
     <link rel="stylesheet" type="text/css" href="<&css-path>" />
   </head>
   <body>
-
-    <!begin:element>
-    <div id="<&content-name>" class="element">
-      <span class="element-name"><&content-name></span> <span class="description"><&description></span>
-      <div class="content">
-	<&content>
-      </div>
+    <div class="header">
+      <h1><&group-name> 関係のモジュール</h1>
     </div>
 
-    <!begin:hr>
-    <hr />
-    <!end:hr>
-    <!end:element>
+    <hr class="sep" />
 
+    <div class="pane-main">
+      <!begin:module>
+      <div id="module-<&content-name>" class="module">
+        <div class="module-header"><h2 title="<&description>"><&content-name></h2>
+          <span class="description"><&description></span></div>
+        <div class="content">
+	  <&content>
+        </div>
+      </div>
+
+      <!begin:hr>
+      <hr class="sep" />
+      <!end:hr>
+      <!end:module>
+    </div>
+
+    <div class="pane-sidebar">
+      <ul class="menu">
+        <!begin:toc-individual>
+        <li><a href="#module-<&mod-name>" title="<&description>"><&mod-name></a></li>
+        <!end:toc-individual>
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
+      </ul>
+    </div>
   </body>
 </html>

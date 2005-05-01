@@ -1,86 +1,112 @@
 /* $Id: default.css,v 1.1 2003/08/04 09:29:21 admin Exp $ */
-
-body {
-  background-color: #ffac6a;
-  color: #000000;
-  font-style: normal;
-  font-size: 14px;
-  text-align: left;
-  text-indent: 0px;
-  padding: 20px 30px;
-  margin: 0px;
-}
-
-/* general */
-a {
-    text-decoration: underline;
-}
-a:link {
-    color: #c70800;
-}
-a:visited {
-    color: #a25a4e;
-}
-a:active {
-    text-decoration: none;
-}
-a:hover {
-    font-weight: bold;
-    text-decoration: underline;
-}
+@import url(../../common/style/blue/base.css);
 
 /* toc-group */
-.toc-group {
-  font-size: 18px;
-}
+.toc-group
+{
+  font-size: x-large;
+  }
 
-.toc-group .group-description {
-  font-size: 14px;
-}
+.toc-group .group-description
+{
+  font-size: large;
+  }
 
-.toc-group .toc-individual {
-    font-size: 16px;
-}
+.toc-group .toc-individual
+{
+  font-size: large;
+  }
 
-.toc-group .toc-individual .module-description {
-    font-size: 12px;
-}
+.toc-group .toc-individual .module-description
+{
+  font-size: medium;
+  }
+
 
 /* doc-element */
-.element {
-    /* border-style: double;
-    border-width: 3px; */
-    border-color: #ffffff;
-    padding: 7px;
-}
+div.module
+{
+  border-style: dotted;
+  border-width: 2px;
+  border-color: #66b3ff;
+  padding: 10px;
+  margin-left: 20px;
+  margin-bottom: 10px;
+  margin-right: 10px;
+  background: #d4e9ff;
+  }
 
-.element .element-name {
-    font-size: 24px;
-    font-style: bold;
-}
+div.module h2
+{
+  display: inline;
+  }
 
-.element .description {
-    font-style: bold;
-}
+div.module .description
+{
+  font-style: bold;
+  margin-left: 2em;
+  }
 
-.element .doc-content {
-    margin: 5px 0 0 0;
-}
+div.module .content
+{
+  padding-left: 1em;
+/*
+  padding-top: 1em;
+  border-top-width: 1px;
+  border-top-style: dashed;
+  border-top-color: #66b3ff;
+  border-left-width: 1px;
+  border-left-style: dashed;
+  border-left-color: #66b3ff;
+  */
+  }
 
-.element .comment {
-    font-size: 12px;
+div.module .comment
+{
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-left-color: #66b3ff;
+  border-bottom-width: 1px;
+  border-bottom-style: dashed;
+  border-bottom-color: #66b3ff;
+  padding-left: 1em;
+  }
 
-    /*border-style: solid;
-    border-width: 2px;*/
-    margin: 10px 0 0 0;
-}
+div.element.block
+{
+  }
 
-.element .key {
-    color: #880000;
-    font-size: 16px;
-}
+div.element .key
+{
+  font-weight: bolder;
+  }
 
-.element .value {
-    color: #880000;
-    font-size: 16px;
-}
+div.element .value
+{
+  margin-left: 0.5em;
+  }
+
+div.element.block
+{
+  margin-top: 0.7em;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #66b3ff;
+  }
+
+div.element.block .block.key
+{
+  position: relative;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  top: -0.6em;
+  left: 0.3em;
+  color: black;
+  background: #d4e9ff;
+  }
+
+div.block.content
+{
+  margin: 0.5em;
+  margin-top: 0em;
+  }

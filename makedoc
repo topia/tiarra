@@ -247,27 +247,32 @@ sub makehtml_mods {
 		}
 		elsif ($line =~ m/^-?(.+?)\s*:\s*(.*)$/) {
 		    my ($key,$value) = ($1,$2);
-		    $html .= qq{<span class="key">$key</span>:<span class="value">$value</span><br />\n};
+		    $html .= qq{<div class="element"><span class="key">$key</span>:<span class="value">$value</span></div>\n};
 		} elsif ($line =~ m/^(.+?)\s*{\s*$/) {
-		    $html .= qq{<span class="key">$1</span>\n};
-		    $html .= qq{<div class="block">\n};
+		    $html .= qq{<div class="block element"><span class="block key">$1</span>\n};
+		    $html .= qq{<div class="block content">\n};
 		} elsif ($line =~ m/^}\s*$/) {
-		    $html .= qq{</div>\n};
+		    $html .= qq{</div></div>\n};
 		}
 	    }
 
 	    # テンプレを展開
-	    $t->element->expand(
+	    $t->module->expand(
 		content_name => $docpod->pkg_name,
 		description => $unijp->set($docpod->header('info'))->$html_charset,
 		content => $unijp->set($html)->$html_charset);
 
+	    $t->toc_individual->add(
+		mod_name => $docpod->pkg_name,
+		description => $unijp->set($docpod->header('info'))->$html_charset,
+	    );
+
 	    # これが最後の要素でなければ、hrを追加する。
 	    if ($docpod != $last_docpod) {
-		$t->element->hr->add;
+		$t->module->hr->add;
 	    }
 
-	    $t->element->add;
+	    $t->module->add;
 	}
 
 	# ファイルに出力
