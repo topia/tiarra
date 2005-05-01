@@ -52,14 +52,16 @@ sub control_requested {
 
     foreach my $chinfo ($server->channels_list) {
 	if (Mask::match_array([$channel_mask], $chinfo->name)) {
-	    $matched = 1;
+	    ++$matched;
 	    Auto::Utils::sendto_channel_closure(
 		$chinfo->fullname, $command, undef, undef, undef, 0
 	       )->($text);
 	}
     }
     if ($matched) {
-	return new ControlPort::Reply(200, "OK");
+	my $reply = ControlPort::Reply->new(200, 'OK');
+	$reply->MatchedChannels($matched);
+	return $reply;
     } else {
 	return new ControlPort::Reply(404, "Channel Not Found");
     }
