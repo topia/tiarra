@@ -107,15 +107,16 @@ sub parse_realname {
     # $ foo=bar;key=value $
     # $foo    =bar;key=  value    $
 
-    my $key = qr{[^=]+?}; # キーとして許されるパターン
+    my $key = qr{[^=:]+?}; # キーとして許されるパターン
     my $value = qr{[^;]*?}; # 値として許されるパターン
-    my $lastpair = qr{$key\s*=\s*$value};
+    my $sep = qr{[:=]};
+    my $lastpair = qr{$key\s*$sep\s*$value};
     my $pair = qr{$lastpair\s*;};
 
     my $line = qr{^\$(?:\s*($pair)\s*)*\s*($lastpair)\s*\$$};
     if (my @pairs = ($realname =~ m/$line/g)) {
 	%{$this->{options}} = map {
-	    m/^\s*($key)\s*=\s*($value)\s*;?$/;
+	    m/^\s*($key)\s*$sep\s*($value)\s*;?$/;
 	} grep {
 	    defined;
 	} @pairs;
@@ -258,97 +259,111 @@ sub _receive_while_logging_in {
 	    }
 	    $this->{logging_in} = 0;
 
-	    $this->send_message(
-		$this->construct_irc_message(Prefix => $prefix,
-			       Command => RPL_WELCOME,
-			       Params => [$this->{nick},'Welcome to the Internet Relay Network '.$this->fullname_from_client]));
-
-	    my $current_nick = $this->_runloop->current_nick;
-	    if ($this->{nick} ne $current_nick) {
-		# クライアントが送ってきたnickとローカルのnickが食い違っているので正しいnickを教える。
+	    # 実際にはループではない。
+	    while (1) {
 		$this->send_message(
-		    $this->construct_irc_message(Prefix => $this->fullname_from_client,
-				   Command => 'NICK',
-				   Param => $current_nick));
-	    }
+		    $this->construct_irc_message(Prefix => $prefix,
+						 Command => RPL_WELCOME,
+						 Params => [$this->{nick},'Welcome to the Internet Relay Network '.$this->fullname_from_client]));
 
-	    my $send_message = sub {
-		my ($command, @params) = @_;
-		$this->send_message(
-		    $this->construct_irc_message(
-			Prefix => $prefix,
-			Command => $command,
-			Params => [$current_nick,
-				   @params],
-		       ));
-	    };
+		my $current_nick = $this->_runloop->current_nick;
+		if ($this->{nick} ne $current_nick) {
+		    # クライアントが送ってきたnickとローカルのnickが食い違っているので正しいnickを教える。
+		    $this->send_message(
+			$this->construct_irc_message(Prefix => $this->fullname_from_client,
+						     Command => 'NICK',
+						     Param => $current_nick));
+		}
 
-	    map {
-		# ローカルnickとグローバルnickが食い違っていたらその旨を伝える。
-		my $network_name = $_->network_name;
-		my $global_nick = $_->current_nick;
-		if ($global_nick ne $current_nick) {
+		my $send_message = sub {
+		    my ($command, @params) = @_;
 		    $this->send_message(
 			$this->construct_irc_message(
-			    Prefix => $this->_runloop->sysmsg_prefix(qw(priv system)),
-			    Command => 'NOTICE',
+			    Prefix => $prefix,
+			    Command => $command,
 			    Params => [$current_nick,
-				       "*** Your global nick in $network_name is currently '$global_nick'."]));
-		}
-	    } values %{$this->_runloop->networks};
-	    
-	    $send_message->(RPL_YOURHOST, "Your host is $prefix, running version ".::version());
-	    if (!$this->_runloop->multi_server_mode_p) {
-		# single server mode
-		my $network = ($this->_runloop->networks_list)[0];
+				       @params],
+			   ));
+		};
 
-		if (defined $network) {
-		    # send isupport
-		    my $msg_tmpl = $this->construct_irc_message(
-			Prefix => $prefix,
-			Command => RPL_ISUPPORT,
-			Params => [$current_nick],
-		       );
-		    # last param is reserved for 'are supported...'
-		    # and first param for nick
-		    my $max_params = $this->irc_message_class->MAX_PARAMS - 2;
-		    my @params = ();
-		    my $length = 0;
-		    my $flush_msg = sub {
-			if (@params) {
-			    my $msg = $msg_tmpl->clone;
-			    $msg->push(@params);
-			    $msg->push('are supported by this server');
-			    $this->send_message($msg);
-			}
-			@params = ();
-			$length = 0;
-		    };
-		    foreach my $key (keys %{$network->isupport}) {
-			my $value = $network->isupport->{$key};
-			my $str = length($value) ? ($key.'='.$value) : $key;
-			$length += length($str) + 1; # $str and space
-			# 余裕を見て400バイトを越えたら行を分ける。
-			if ($length >= 400 || scalar(@params) >= $max_params) {
-			    $flush_msg->();
-			    $length = length($str);
-			}
-			push(@params, $str);
+		map {
+		    # ローカルnickとグローバルnickが食い違っていたらその旨を伝える。
+		    my $network_name = $_->network_name;
+		    my $global_nick = $_->current_nick;
+		    if ($global_nick ne $current_nick) {
+			$this->send_message(
+			    $this->construct_irc_message(
+				Prefix => $this->_runloop->sysmsg_prefix(qw(priv system)),
+				Command => 'NOTICE',
+				Params => [$current_nick,
+					   "*** Your global nick in $network_name is currently '$global_nick'."]));
 		    }
-		    $flush_msg->();
+		} values %{$this->_runloop->networks};
+
+		$send_message->(RPL_YOURHOST, "Your host is $prefix, running version ".::version());
+		if (!$this->_runloop->multi_server_mode_p) {
+		    # single server mode
+		    my $network = ($this->_runloop->networks_list)[0];
+
+		    if (defined $network) {
+			# send isupport
+			my $msg_tmpl = $this->construct_irc_message(
+			    Prefix => $prefix,
+			    Command => RPL_ISUPPORT,
+			    Params => [$current_nick],
+			   );
+			# last param is reserved for 'are supported...'
+			# and first param for nick
+			my $max_params = $this->irc_message_class->MAX_PARAMS - 2;
+			my @params = ();
+			my $length = 0;
+			my $flush_msg = sub {
+			    if (@params) {
+				my $msg = $msg_tmpl->clone;
+				$msg->push(@params);
+				$msg->push('are supported by this server');
+				$this->send_message($msg);
+			    }
+			    @params = ();
+			    $length = 0;
+			};
+			foreach my $key (keys %{$network->isupport}) {
+			    my $value = $network->isupport->{$key};
+			    my $str = length($value) ? ($key.'='.$value) : $key;
+			    $length += length($str) + 1; # $str and space
+			    # 余裕を見て400バイトを越えたら行を分ける。
+			    if ($length >= 400 || scalar(@params) >= $max_params) {
+				$flush_msg->();
+				$length = length($str);
+			    }
+			    push(@params, $str);
+			}
+			$flush_msg->();
+		    }
 		}
-	    }
-	    $send_message->(RPL_MOTDSTART, "- $prefix Message of the Day -");
-	    foreach my $line (main::get_credit()) {
-		$send_message->(RPL_MOTD, "- ".$line);
-	    }
-	    $send_message->(RPL_ENDOFMOTD, "End of MOTD command.");
+		$send_message->(RPL_MOTDSTART, "- $prefix Message of the Day -");
+		foreach my $line (main::get_credit()) {
+		    $send_message->(RPL_MOTD, "- ".$line);
+		}
+		$send_message->(RPL_ENDOFMOTD, "End of MOTD command.");
 
-	    # joinしている全てのチャンネルの情報をクライアント送る。
-	    $this->inform_joinning_channels;
+		# クライアントに出力。
+		# その結果切断されたらループを抜ける。
+		$this->flush;
+		last unless $this->connected;
 
-	    # 各モジュールにクライアント追加の通知を出す。
-	    $this->_runloop->notify_modules('client_attached',$this);
+		# joinしている全てのチャンネルの情報をクライアント送る。
+		$this->inform_joinning_channels;
+
+		# 切断されていたらループを抜ける。
+		last unless $this->connected;
+
+		# 各モジュールにクライアント追加の通知を出す。
+		$this->_runloop->notify_modules('client_attached',$this);
+
+		# 必ずループを抜ける。
+		last;
+	    }
 	}
     }
     # ログイン作業中にクライアントから受け取ったいかなるメッセージもサーバーには送らない。
@@ -543,6 +558,11 @@ sub inform_joinning_channels {
 	    # エラーメッセージは表示するが、送信処理は続ける
 	    $this->_runloop->notify_error(__PACKAGE__." hook call error: $@");
 	}
+
+	# クライアントに出力。
+	# その結果切断されたら関数を抜ける。
+	$this->flush;
+	last CONNECTING unless $this->connected;
     };
 
     my %channels = map {
@@ -554,22 +574,27 @@ sub inform_joinning_channels {
 	} values %{$network->channels};
     } values %{$this->_runloop->networks};
 
-    # Mask を使って、マッチしたものを出力
-    foreach ($this->_conf_networks->
-		 fixed_channels('block')->channel('all')) {
-	my $mask = $_;
-	foreach (keys %channels) {
-	    my $ch_name = $_;
-	    if (Mask::match($mask, $ch_name)) {
-		$send_channelinfo->(@{$channels{$ch_name}});
-		delete $channels{$ch_name};
+ CONNECTING:
+    while (1) {
+	# Mask を使って、マッチしたものを出力
+	foreach ($this->_conf_networks->
+		     fixed_channels('block')->channel('all')) {
+	    my $mask = $_;
+	    foreach (keys %channels) {
+		my $ch_name = $_;
+		if (Mask::match($mask, $ch_name)) {
+		    $send_channelinfo->(@{$channels{$ch_name}});
+		    delete $channels{$ch_name};
+		}
 	    }
 	}
-    }
 
-    # のこりを出力
-    foreach (values %channels) {
-	$send_channelinfo->(@$_);
+	# のこりを出力
+	foreach (values %channels) {
+	    $send_channelinfo->(@$_);
+	}
+
+	last;
     }
 }
 
