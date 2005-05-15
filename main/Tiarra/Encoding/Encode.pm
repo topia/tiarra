@@ -15,6 +15,9 @@ BEGIN { eval { require Tiarra::Encoding::Encode::CP932JIS } }
 use Tiarra::OptionalModules;
 use base qw(Tiarra::Encoding);
 
+# we can't support if Encode::Guess->renew is not defined.
+die 'Please use latest Encode to use.' unless Encode::Guess->can('renew');
+
 our %encoding_names = ( # please specify _Encode.pm's canonical_ name.
     sjis => 'cp932', # compatible with unijp
     ucs2 => 'UCS-2BE',
