@@ -12,6 +12,7 @@ our %modules = (
     qr/(uni-?jp|unicode(::|-)japanese)/i => 'UniJP',
     qr/encode/i => 'Encode',
    );
+our %tried_providers;
 
 sub new {
     my ($class, $str, $icode, $encode, %options) = @_;
@@ -54,8 +55,11 @@ sub from_to {
 }
 
 sub _is_supported {
-    my $retval = eval 'require ' . shift->_get_module_name(@_);
+    my $modname = shift->_get_module_name(@_);
+    return $tried_providers{$modname} if defined $tried_providers{$modname};
+    my $retval = eval 'require ' . $modname;
     warn $@ if $@;
+    $tried_providers{$modname} = $retval;
     return $retval;
 }
 
