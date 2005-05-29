@@ -10,19 +10,20 @@ use Mask;
 use Multicast;
 use NumericReply;
 
-sub message_arrived {
-    my ($this,$msg,$sender) = @_;
+sub message_io_hook {
+    my ($this,$msg,$io,$type) = @_;
 
-    my $result = $msg;
-    if ($sender->server_p) {
-	my $numeric = NumericReply::fetch_name($msg->command);
-	my $method = 'cmd_'.($numeric || $msg->command);
-	if ($this->can($method)) {
-	    $result = $this->$method($msg, $sender);
+    if ($io->isa('IrcIO::Server')) {
+	if ($type eq 'in') {
+	    my $numeric = NumericReply::fetch_name($msg->command);
+	    my $method = 'cmd_'.($numeric || $msg->command);
+	    if ($this->can($method)) {
+		return $this->$method($msg, $io);
+	    }
 	}
     }
 
-    $result;
+    $msg;
 }
 
 *cmd_NOTICE = \&cmd_PRIVMSG;
@@ -32,12 +33,12 @@ sub message_arrived {
 *cmd_MODE = \&cmd_PRIVMSG;
 *cmd_KICK = \&cmd_PRIVMSG;
 sub cmd_PRIVMSG {
-    my ($this,$msg,$sender) = @_;
+    my ($this,$msg,$io) = @_;
 
-    my $ch_long = $msg->param(0);
-    my $ch_short = Multicast::detach($ch_long);
+    my $ch_short = $msg->param(0);
+    my $ch_long = Multicast::attach($ch_short, $io->network_name);
     if (!Multicast::channel_p($ch_short)) {
-	$ch_long = 'priv@'.$sender->network_name;
+	$ch_long = 'priv@'.$io->network_name;
     }
 
     if ($this->ignore_channel_p($ch_long)) {
@@ -49,11 +50,12 @@ sub cmd_PRIVMSG {
 }
 
 sub cmd_JOIN {
-    my ($this,$msg,$sender) = @_;
+    my ($this,$msg,$io) = @_;
     my @channels; # チャンネルリストを再構成する。
     foreach my $channel (split m/,/,$msg->param(0)) {
-	my ($ch_full,$mode) = ($channel =~ m/^([^\x07]+)(?:\x07(.*))?/);
-	if (!$this->ignore_channel_p($ch_full)) {
+	my ($ch_short,$mode) = ($channel =~ m/^([^\x07]+)(?:\x07(.*))?/);
+	my $ch_long = Multicast::attach($ch_short, $io->network_name);
+	if (!$this->ignore_channel_p($ch_long)) {
 	    push @channels,$channel;
 	}
     }
@@ -70,9 +72,9 @@ sub cmd_JOIN {
 }
 
 sub cmd_NJOIN {
-    my ($this,$msg,$sender) = @_;
-    my $ch_long = $msg->param(0);
-    my $ch_short = Multicast::detach($ch_long);
+    my ($this,$msg,$io) = @_;
+    my $ch_short = $msg->param(0);
+    my $ch_long = Multicast::attach($ch_short, $io->network_name);
     if ($this->ignore_channel_p($ch_long)) {
 	$msg = undef;
     }
@@ -82,21 +84,20 @@ sub cmd_NJOIN {
 
 *cmd_QUIT = \&cmd_NICK;
 sub cmd_NICK {
-    my ($this,$msg,$sender) = @_;
+    my ($this,$msg,$io) = @_;
 
     # 影響を及ぼした全チャンネル名のリストを得る。このリストにはネットワーク名が付いていない。
     my $affected = $msg->remark('affected-channels');
-    # 一つでもVanish対象でないチャンネルとnickの組みがあれば、このNICKは破棄しない。
-    my $no_vanish;
+    my $no_ignore;
     foreach (@$affected) {
-	my $ch_long = Multicast::attach($_,$sender->network_name);
+	my $ch_long = Multicast::attach($_,$io->network_name);
 	if (!$this->ignore_channel_p($ch_long)) {
-	    $no_vanish = 1;
+	    $no_ignore = 1;
 	    last;
 	}
     }
 
-    if ($no_vanish) {
+    if ($no_ignore) {
 	$msg;
     }
     else {
@@ -105,10 +106,25 @@ sub cmd_NICK {
 }
 
 sub cmd_RPL_NAMREPLY {
-    my ($this,$msg,$sender) = @_;
+    my ($this,$msg,$io) = @_;
 
-    my $ch_long = $msg->param(2);
-    my $ch_short = Multicast::detach($ch_long);
+    my $ch_short = $msg->param(2);
+    my $ch_long = Multicast::attach($ch_short, $io->network_name);
+    if ($this->ignore_channel_p($ch_long)) {
+	$msg = undef;
+    }
+
+    $msg;
+}
+
+*cmd_RPL_CHANNELMODEIS = \&cmd_RPL_ENDOFNAMES;
+*cmd_RPL_TOPIC_WHO_TIME = \&cmd_RPL_ENDOFNAMES;
+*cmd_RPL_TOPIC = \&cmd_RPL_ENDOFNAMES;
+sub cmd_RPL_ENDOFNAMES {
+    my ($this,$msg,$io) = @_;
+
+    my $ch_short = $msg->param(1);
+    my $ch_long = Multicast::attach($ch_short, $io->network_name);
     if ($this->ignore_channel_p($ch_long)) {
 	$msg = undef;
     }
