@@ -87,9 +87,10 @@ sub cmd_NICK {
     my ($this,$msg,$io) = @_;
 
     # 影響を及ぼした全チャンネル名のリストを得る。このリストにはネットワーク名が付いていない。
-    my $affected = $msg->remark('affected-channels');
     my $no_ignore;
-    foreach (@$affected) {
+    my $nick = $msg->nick;
+
+    foreach (grep { defined $_->names($nick) } $io->channels_list) {
 	my $ch_long = Multicast::attach($_,$io->network_name);
 	if (!$this->ignore_channel_p($ch_long)) {
 	    $no_ignore = 1;
