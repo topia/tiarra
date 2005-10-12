@@ -54,7 +54,7 @@ sub message_arrived {
 #     my @result = ($msg);
 # 
 #     if ($msg->command eq 'PRIVMSG') {
-# 	my ($reply,$reply_as_priv,$get_raw_ch_name,$reply_anywhere,$get_full_ch_name)
+# 	my ($get_raw_ch_name, $reply, $reply_as_priv, $reply_anywhere, $get_full_ch_name)
 # 	    = Auto::Utils::generate_reply_closures($msg,$sender,\@result);
 # 
 # 	$reply_anywhere->('Hello, #(name|default_name)',
