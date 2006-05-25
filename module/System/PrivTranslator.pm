@@ -15,8 +15,9 @@ sub REMARK_NICK_ATTACHED_KEY (){ __PACKAGE__ . '/nick-attached' }
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
-    if ($sender->isa('IrcIO::Server') &&
-	    defined $msg->nick) {
+    if ($this->_runloop->multi_server_mode_p &&
+	    $sender->isa('IrcIO::Server') &&
+		defined $msg->nick) {
 
 	my $cmd = $msg->command;
 	if (($cmd eq 'PRIVMSG' || $cmd eq 'NOTICE') &&
@@ -32,8 +33,9 @@ sub message_arrived {
 sub message_io_hook {
     my ($this,$msg,$io,$type) = @_;
 
-    if ($io->isa('IrcIO::Client') &&
-	    $type eq 'out') {
+    if ($this->_runloop->multi_server_mode_p &&
+	    $io->isa('IrcIO::Client') &&
+		$type eq 'out') {
 	my $remark = $io->remark(NICK_CACHE_EXPIRE_KEY) || {};
 	if (my $info = $msg->remark(REMARK_NICK_ATTACHED_KEY)) {
 	    $remark->{$info->[1]}->{$info->[0]} = time() + NICK_CACHE_EXPIRE_TIME;
@@ -68,7 +70,7 @@ sub message_io_hook {
 1;
 =pod
 info: クライアントからの個人的なprivが相手に届かなくなる現象を回避する。
-default: off
+default: on
 section: important
 
 # このモジュールは個人宛てのprivmsgの送信者のnickにネットワーク名を付加します。
