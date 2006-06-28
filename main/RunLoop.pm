@@ -803,7 +803,7 @@ sub run {
     # 鯖に接続
     $this->update_networks;
 
-    # 3分毎に全ての鯖にPINGを送るタイマーをインストール。
+    # 3分毎に全ての鯖とクライアントにPINGを送るタイマーをインストール。
     # これはtcp接続の切断に気付かない事があるため。
     # 応答のPONGは捨てる。このためにPONG破棄カウンタをインクリメントする。
     # PONG破棄カウンタはIrcIO::Serverのremarkで、キーは'pong-drop-counter'
@@ -819,6 +819,18 @@ sub run {
 		my $cntr = $network->remark('pong-drop-counter');
 		$network->remark('pong-drop-counter',
 				 utils->get_first_defined($cntr,0) + 1);
+	    }
+
+	    my $prefix = $this->_runloop->sysmsg_prefix('system');
+	    foreach my $client ($this->clients_list) {
+		$client->send_message(
+		    $this->construct_irc_message(
+			Command => 'PING',
+			Param => $prefix));
+
+		my $cntr = $client->remark('pong-drop-counter');
+		$client->remark('pong-drop-counter',
+				utils->get_first_defined($cntr,0) + 1);
 	    }
 	},
 	Repeat => 1,
@@ -947,18 +959,18 @@ sub run {
 				next;
 			    }
 
-			    if ($socket->isa("IrcIO::Server")) {
-				# このメッセージがPONGであればpong-drop-counterを見る。
-				if ($msg->command eq 'PONG') {
-				    my $cntr = $socket->remark('pong-drop-counter');
-				    if (defined $cntr && $cntr > 0) {
-					# このPONGは捨てる。
-					$cntr--;
-					$socket->remark('pong-drop-counter',$cntr);
-					next;
-				    }
+			    # このメッセージがPONGであればpong-drop-counterを見る。
+			    if ($msg->command eq 'PONG') {
+				my $cntr = $socket->remark('pong-drop-counter');
+				if (defined $cntr && $cntr > 0) {
+				    # このPONGは捨てる。
+				    $cntr--;
+				    $socket->remark('pong-drop-counter',$cntr);
+				    next;
 				}
+			    }
 
+			    if ($socket->isa("IrcIO::Server")) {
 				# メッセージをMulticastのフィルタに通す。
 				my @received_messages =
 				    Multicast::from_server_to_client($msg,$socket);
