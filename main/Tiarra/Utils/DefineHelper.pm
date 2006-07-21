@@ -271,7 +271,7 @@ sub _generate_attr_closure {
 		       getter   => '',
 		   }->{$type}),
 		   ' {',
-		   ' die "too many args" if $#_ >= ',
+		   ' die "too many args: @_" if $#_ >= ',
 		   ({
 		       accessor => '2',
 		       getter   => '1',
@@ -307,7 +307,7 @@ sub _generate_attr_hooked_closure {
 		   (defined $funcname ? "->$funcname\: " : ''),
 		   "attr $type\"\n",
 		   '(sub {',
-		   ' die "too many args" if $#_ >= 2;',
+		   ' die "too many args: @_" if $#_ >= 2;',
 		   ' my $this = shift',
 		   ($class_method_p ? '->_this' : ''),
 		   ';',
