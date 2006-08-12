@@ -516,6 +516,8 @@ sub _cleanup {
     } elsif ($this->state_finalizing) {
 	$this->state_finalized(1);
     }
+    # remove pong drop counter
+    $this->remark('pong-drop-counter', undef, 'delete');
 }
 
 sub quit {
