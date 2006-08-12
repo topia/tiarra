@@ -125,7 +125,7 @@ sub read {
 
 	# message_encoding_hook
 	my $filtered = $this->_runloop->apply_filters(
-	    [$msg], 'message_encoding_hook', $this, 'out', $encoding);
+	    [$msg], 'message_encoding_hook', $this, 'in', $encoding);
 
 	# message_io_hook
 	$filtered = $this->_runloop->apply_filters(
