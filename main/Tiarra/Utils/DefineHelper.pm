@@ -3,11 +3,10 @@
 # -----------------------------------------------------------------------------
 # Define Helper Utilities
 # -----------------------------------------------------------------------------
-# copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
+# copyright (C) 2004-2005 Topia <topia@clovery.jp>. all rights reserved.
 package Tiarra::Utils::DefineHelper;
 use strict;
 use warnings;
-use Tiarra::Utils::Core;
 use base qw(Tiarra::Utils::Core);
 our $ExportLevel = 0;
 
@@ -19,9 +18,55 @@ our $ExportLevel = 0;
 #         });
 # in define_*s' wrapper function.
 
-# all function is class method.
-# please use package->method(...);
-# maybe all functions can use with Tiarra::Utils->...
+
+=head1 NAME
+
+Tiarra::Utils::DefineHelper - Tiarra misc Utility Functions: Define Helper
+
+=head1 SYNOPSIS
+
+  use Tiarra::Utils; # import master
+
+=head1 DESCRIPTION
+
+Tiarra::Utils is misc helper functions class. this class is implement define
+helpers. (accessors, proxys, ...)
+
+class splitting is maintainer issue only. please require/use Tiarra::Utils.
+
+all function is class method; please use package->method(...);
+
+maybe all functions can use with utils->...
+
+=head1 METHODS
+
+=over 4
+
+=cut
+
+=item define_function
+
+  utils->define_function($package, $code, @funcnames)
+
+define function with some package, code, funcnames.
+
+=over 4
+
+=item * $package
+
+package name. such as C<< utils->get_package($some_level) >>.
+
+=item * $code
+
+coderef(closure) of function. such as C<< sub { shift->foo_func('bar') } >>.
+
+=item * @funcnames
+
+function names to define.
+
+=back
+
+=cut
 
 sub define_function {
     shift; #package
@@ -65,9 +110,51 @@ sub _define_attr_common {
     undef;
 }
 
+=item define_attr_accessor
+
+  utils->define_attr_accessor($class_method_p, @defines)
+
+define attribute accessor.
+
+=over 4
+
+=item * $class_method_p
+
+these accessor is called as class method, pass true; otherwise false.
+
+=item * @defines
+
+accessor defines array.
+
+=over 4
+
+=item * scalar value ($valname)
+
+define ->$valname for accessor of ->{$valname}.
+
+=item * array ref value ([$funcname, $valname])
+
+define ->$funcname for accessor of ->{$valname}.
+
+=back
+
+=back
+
+=cut
+
 sub define_attr_accessor {
     shift->_define_attr_common('accessor', @_);
 }
+
+=item define_attr_getter
+
+  utils->define_attr_getter($class_method_p, @defines)
+
+define attribute getter.
+
+all params is same as L</define_attr_accessor>, except s/accessor/getter/.
+
+=cut
 
 sub define_attr_getter {
     shift->_define_attr_common('getter', @_);
@@ -129,6 +216,40 @@ sub _define_array_attr_common {
     }
     undef;
 }
+
+=item define_array_attr_accessor
+
+  utils->define_attr_accessor($class_method_p, @defines)
+
+define attribute accessor for array type object.
+
+=over 4
+
+=item * $class_method_p
+
+these accessor is called as class method, pass true; otherwise false.
+
+=item * @defines
+
+accessor defines array.
+
+=over 4
+
+=item * scalar value (value)
+
+define ->value for accessor of ->[VALUE].
+
+example: ->define_attr
+
+=item * array ref value ([$funcname, $valname])
+
+define ->$funcname for accessor of ->{$valname}.
+
+=back
+
+=back
+
+=cut
 
 sub define_array_attr_accessor {
     shift->_define_array_attr_common('accessor', @_);
@@ -328,5 +449,25 @@ sub _generate_attr_hooked_closure {
 	(print STDERR __PACKAGE__."/generator error: \n$str\n$@", undef);
 }
 
-
 1;
+
+__END__
+=back
+
+=head1 SEE ALSO
+
+L<Tiarra::Utils>
+
+=head1 AUTHOR
+
+Topia E<lt>topia@clovery.jpE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2005 by Topia.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.6 or,
+at your option, any later version of Perl 5 you may have available.
+
+=cut
