@@ -628,6 +628,11 @@ sub _receive_while_logging_in {
 	$this->_set_to_next_nick($first_msg->param(1));
 	return; # 何も返さない→クライアントにはこの結果を知らせない。
     }
+    elsif ($reply eq RPL_HELLO) {
+	# RPL_HELLO (irc2.11.x)
+	$this->printmsg("Server replied 020(RPL_HELLO). Please wait.");
+	return; # 何も返さない→クライアントにはこの結果を知らせない。
+    }
     elsif (grep { $_ eq $reply } qw(NOTICE PRIVMSG)) {
 	# NOTICE / PRIVMSG
 	return; # 何もしない
