@@ -12,7 +12,7 @@ use Tiarra::IRC::Message;
 Tiarra::Mixin::NewIRCMessage - Tiarra::IRC::Message Construction Interface Mixin
 =head1 SYNOPSIS
 
-  package foo::class; 
+  package foo::class;
   use base qw(Tiarra::Mixin::NewIRCMessage); # use this
   $this->irc_message_class->foo_class_method;
   $this->construct_irc_message(Command => ...);
