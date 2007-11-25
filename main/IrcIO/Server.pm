@@ -606,6 +606,7 @@ sub _receive_while_logging_in {
 		      $this->{user_shortname},
 		      $this->{user_realname});
 
+
 	$this->printmsg("Logged-in successfuly into ".$this->destination.".");
 
 	# 各モジュールにサーバー追加の通知を行なう。
@@ -615,6 +616,7 @@ sub _receive_while_logging_in {
 	    $this->_runloop->reconnected_server($this);
 	}
 	$this->{new_connection} = undef;
+	return;
     }
     elsif ($reply eq ERR_NICKNAMEINUSE) {
 	# nick重複。
