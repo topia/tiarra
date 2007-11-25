@@ -447,6 +447,7 @@ sub serialize {
 	if ($n_params > MAX_PARAMS) {
 	    # 表現不能なので croak (危険なので carp で……)
 	    carp 'this message exceeded maximum param numbers!';
+	    carp "tail parameters: @{$this->[PARAMS]}[MAX_PARAMS..$n_params]";
 	}
 	for (my $i = 0;$i < $n_params;$i++) {
 	    my $arg = $this->[PARAMS]->[$i];
