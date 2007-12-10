@@ -39,7 +39,7 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
     + define_attr_setter($class_method, $name, ...)
 				呼び出し元パッケージに $name で指定された属性設定関数を定義します。
 				引数の意味は define_attr_accessor と同じです。
-    + get_packag($level)	呼び出し元のパッケージ名を取得します。
+    + get_package($level)	呼び出し元のパッケージ名を取得します。
 				$level が省略された場合は 0 で、この値は呼び出し元の呼び出し元(通常
 				欲しいと思われる値)を返します。
     + cond_yesno($str, $default)
