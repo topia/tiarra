@@ -1,0 +1,705 @@
+<?xml version="1.0" encoding="EUC-JP"?>
+<!DOCTYPE html
+	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!-- $Id: contents.html 896 2005-05-01 12:40:25Z topia $ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
+    <title>Auto 関係のモジュール - Tiarra Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../default.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>Auto 関係のモジュール</h1>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="pane-main">
+      
+      <div id="module-Auto::Alias" class="module">
+        <div class="module-header"><h2 title="ユーザエイリアス情報の管理を行ないます。">Auto::Alias</h2>
+          <span class="description">ユーザエイリアス情報の管理を行ないます。</span></div>
+        <div class="content">
+	  <p class="comment">
+エイリアスは基本的にname,userの二つのフィールドから成っており、<br />
+それぞれユーザー名、ユーザーマスクを表します。<br />
+</p>
+<p class="comment">
+&nbsp;エイリアス定義ファイルのパスと、そのエンコーディング。<br />
+&nbsp;このファイルは次のようなフォーマットである。<br />
+&nbsp;1. それぞれの行は「<キー>: <値>」の形式である。<br />
+&nbsp;2. 空の行で、各ユーザーを区切る。<br />
+&nbsp;3. <値>はカンマで区切られて複数の値とされる。<br />
+<br />
+&nbsp;エイリアス定義ファイルの例:<br />
+<br />
+&nbsp;name: sample<br />
+&nbsp;user: *!*sample@*.sample.net<br />
+<br />
+&nbsp;name: sample2,[sample2]<br />
+&nbsp;user: *!sample2@*.sample.net,*!sample2@*.sample2.net<br />
+<br />
+</p>
+<div class="element"><span class="key">alias</span>:<span class="value">alias.txt</span></div>
+<div class="element"><span class="key">alias-encoding</span>:<span class="value">euc</span></div>
+<p class="comment">
+この発言をした人のエイリアスが登録されていれば、それをprivで送る。<br />
+</p>
+<div class="element"><span class="key">confirm</span>:<span class="value">エイリアス確認</span></div>
+<p class="comment">
+「<addで指定したキーワード> user *!*user@*.user.net」のようにして情報を追加。<br />
+発言をした人のエイリアスが未登録だった場合は、userのみ受け付けて新規追加とする。<br />
+</p>
+<div class="element"><span class="key">add</span>:<span class="value">エイリアス追加</span></div>
+<p class="comment">
+「<removeで指定したキーワード> name ユーザー」のようにして情報を削除。<br />
+userを全て削除されたエイリアスは他の情報(name等)も含めて消滅する。<br />
+</p>
+<div class="element"><span class="key">remove</span>:<span class="value">エイリアス削除</span></div>
+<p class="comment">
+メッセージが追加されたときの反応を指定します。<br />
+ランダムなメッセージを発言する際のフォーマットを指定します。<br />
+エイリアス置換が有効です。#(nick.now)、#(channel)は<br />
+それぞれ相手のnick、チャンネル名に置換されます。<br />
+#(key)、#(value)は、追加されたキーと値に置換されます。<br />
+</p>
+<div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): エイリアス #(key) に #(value) を追加しました。</span></div>
+<div class="element"><span class="key">add-failed-format</span>:<span class="value">#(name|nick.now): エイリアス #(key) の追加に失敗しました。</span></div>
+<p class="comment">
+メッセージが削除されたときの反応を指定します。<br />
+added-formatで指定できるものと同じです。<br />
+</p>
+<div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): エイリアス #(key) から #(value) を削除しました。</span></div>
+<div class="element"><span class="key">remove-failed-format</span>:<span class="value">#(name|nick.now): エイリアス #(key) からの削除に失敗しました。</span></div>
+<p class="comment">
+エイリアスの追加や削除が許されている人。省略された場合は「*!*@*」と見做される。<br />
+</p>
+<div class="element"><span class="key">modifier</span>:<span class="value">*!*@*</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::Answer" class="module">
+        <div class="module-header"><h2 title="特定の発言に反応して対応する発言をする。">Auto::Answer</h2>
+          <span class="description">特定の発言に反応して対応する発言をする。</span></div>
+        <div class="content">
+	  <p class="comment">
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
+</p>
+<p class="comment">
+&nbsp;反応する発言と、それに対する返事を定義します。<br />
+&nbsp;エイリアス置換が有効です。#(nick.now)と$(channel)はそれぞれ<br />
+&nbsp;相手の現在のnickとチャンネル名に置換されます。<br />
+<br />
+&nbsp;書式: <反応する発言のマスク> <それに対する返事><br />
+&nbsp;例:<br />
+</p>
+<div class="element"><span class="key">reply</span>:<span class="value">こんにちは* こんにちは、#(name|nick.now)さん。</span></div>
+<p class="comment">
+この例では誰かが「こんにちは」で始まる発言をすると、<br />
+発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。<br />
+</p>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::Calc" class="module">
+        <div class="module-header"><h2 title="Perlの式を計算させるモジュール。">Auto::Calc</h2>
+          <span class="description">Perlの式を計算させるモジュール。</span></div>
+        <div class="content">
+	  <p class="comment">
+反応する発言を指定します。<br />
+</p>
+<div class="element"><span class="key">request</span>:<span class="value">計算</span></div>
+<p class="comment">
+使用を許可する人&チャンネルのマスク。<br />
+例はTiarraモード時。 [default: なし]<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">* +*!*@*</span></div>
+<p class="comment">
+[plum-mode] mask: +*!*@*<br />
+</p>
+<p class="comment">
+結果が未定義だったときに置き換えられる文字列。省略されると undef 。<br />
+</p>
+<div class="element"><span class="key">undef</span>:<span class="value">(未定義)</span></div>
+<p class="comment">
+正常に計算できたときのフォーマット<br />
+method: 計算式, result: 結果, error: エラー, signal: シグナル<br />
+</p>
+<div class="element"><span class="key">reply-format</span>:<span class="value">#(method): #(result)</span></div>
+<p class="comment">
+エラーが起きたときのフォーマット<br />
+method: 計算式, result: 結果, error: エラー, signal: シグナル<br />
+</p>
+<div class="element"><span class="key">error-format</span>:<span class="value">#(method): エラーです。(#(error))</span></div>
+<p class="comment">
+シグナルが発生したときのフォーマット<br />
+</p>
+<div class="element"><span class="key">signal-format</span>:<span class="value">#(method): シグナルです。(#(signal))</span></div>
+<p class="comment">
+signal-$SIGNALNAME-format 形式。<br />
+$SIGNALNAME には現状 alarm/sigfpe があります。<br />
+該当がなければ signal-format にフォールバックします。<br />
+</p>
+<p class="comment">
+いくつかの例を挙げます。<br />
+</p>
+<div class="element"><span class="key">signal-alarm-format</span>:<span class="value">#(method): 時間切れです。</span></div>
+<div class="element"><span class="key">signal-sigfpe-format</span>:<span class="value">$(method): 浮動小数点計算例外です。</span></div>
+<p class="comment">
+タイムアウトする秒数を指定します。 alarm に渡されます。<br />
+再帰を止めるのに使えますが、どうもメモリリークしていそうな雰囲気です。<br />
+</p>
+<div class="element"><span class="key">timeout</span>:<span class="value">1</span></div>
+<p class="comment">
+サブルーチン定義を許可するかどうかを指定する。<br />
+再帰定義が可能なので、許可する場合はこのモジュール専用の<br />
+Tiarra を動かすことをお勧めします。<br />
+</p>
+<div class="element"><span class="key">permit-sub</span>:<span class="value">0</span></div>
+<p class="comment">
+初期化する発言を指定します。<br />
+このモジュールでは現状変数や関数定義などを行えます。<br />
+このコマンドが発行されるとそれらをクリアします。<br />
+</p>
+<div class="element"><span class="key">init</span>:<span class="value">計算初期化</span></div>
+<p class="comment">
+初期化を許可する人&チャンネルのマスク。<br />
+例はTiarraモード時。 [default: なし]<br />
+</p>
+<div class="element"><span class="key">init-mask</span>:<span class="value">* +*!*@*</span></div>
+<p class="comment">
+[plum-mode] mask: +*!*@*<br />
+</p>
+<p class="comment">
+再初期化したときの発言を指定します。<br />
+</p>
+<div class="element"><span class="key">init-format</span>:<span class="value">初期化しました。</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::ChannelWithoutOper" class="module">
+        <div class="module-header"><h2 title="チャンネルオペレータ権限がなくなってしまったときに発言する。">Auto::ChannelWithoutOper</h2>
+          <span class="description">チャンネルオペレータ権限がなくなってしまったときに発言する。</span></div>
+        <div class="content">
+	  <p class="comment">
++で始まらない特定のチャンネルで、+aモードでも+rモードでもないのに<br />
+誰もチャンネルオペレータ権限を持っていない状態になっている時、<br />
+そこに誰かがJOINする度に特定のメッセージを発言するモジュールです。<br />
+</p>
+<p class="comment">
+書式: <チャンネル名> <メッセージ><br />
+</p>
+<div class="element"><span class="key">channel</span>:<span class="value">#IRC談話室@ircnet なると消失しました。</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::Joined" class="module">
+        <div class="module-header"><h2 title="特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。">Auto::Joined</h2>
+          <span class="description">特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。</span></div>
+        <div class="content">
+	  <p class="comment">
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
+</p>
+<p class="comment">
+&nbsp;発言を行なうチャンネルと、その内容を定義します。<br />
+&nbsp;#(nick.now)と$(channel)は、それぞれ相手の現在のnickとチャンネル名に置換されます。<br />
+<br />
+&nbsp;書式: <チャンネル名> <発言内容><br />
+</p>
+<div class="element"><span class="key">channel</span>:<span class="value">#チャンネル@ircnet   「#ちゃんねる」に移転しました。</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::MesMail" class="module">
+        <div class="module-header"><h2 title="伝言をメールとして送信する。">Auto::MesMail</h2>
+          <span class="description">伝言をメールとして送信する。</span></div>
+        <div class="content">
+	  <p class="comment">
+メールアドレスはエイリアスの mail を参照します。<br />
+</p>
+<p class="comment">
+Fromアドレス。[default: OSのユーザ名]<br />
+</p>
+<div class="element"><span class="key">from</span>:<span class="value">example1@example.jp</span></div>
+<p class="comment">
+送信用のキーワード [default: mesmail_send]<br />
+</p>
+<div class="element"><span class="key">send</span>:<span class="value">速達伝言</span></div>
+<p class="comment">
+使用を許可する人&チャンネルのマスク。<br />
+例はTiarraモード時。 [default: なし]<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">* +*!*@*</span></div>
+<p class="comment">
+[plum-mode] mask: +*!*@*<br />
+</p>
+<p class="comment">
+maskで拒否されたときのメッセージ [default: なし]<br />
+</p>
+<div class="element"><span class="key">deny</span>:<span class="value">伝言したくない。</span></div>
+<p class="comment">
+一度に送れる宛先の量 [default: 無制限]<br />
+</p>
+<div class="element"><span class="key">max-send-address</span>:<span class="value">5</span></div>
+<p class="comment">
+宛先を探すエイリアスエントリ [default: なし]<br />
+</p>
+<div class="element"><span class="key">alias-key</span>:<span class="value">name</span></div>
+<div class="element"><span class="key">alias-key</span>:<span class="value">nick</span></div>
+<p class="comment">
+宛先の人を判別出来なかったときのメッセージ [default: なし]<br />
+</p>
+<div class="element"><span class="key">unknown</span>:<span class="value">#(who)さんと言うのは誰ですか?</span></div>
+<p class="comment">
+メールの日付形式<br />
+</p>
+<div class="element"><span class="key">date</span>:<span class="value">%H:%M:%S</span></div>
+<p class="comment">
+エイリアスは見付かったけれどメールアドレスが登録されていなかったときのメッセージ。 [default: なし]<br />
+</p>
+<div class="element"><span class="key">none-address</span>:<span class="value">#(who)さんはアドレスを登録していません。</span></div>
+<p class="comment">
+SMTPのホスト [default: localhost]<br />
+</p>
+<div class="element"><span class="key">smtphost</span>:<span class="value">localhost</span></div>
+<p class="comment">
+SMTPのポート [default: smtp(25)]<br />
+</p>
+<div class="element"><span class="key">smtpport</span>:<span class="value">25</span></div>
+<p class="comment">
+SMTPで自ホストのFQDN [default: localhost]<br />
+</p>
+<div class="element"><span class="key">smtpfqdn</span>:<span class="value">localhost</span></div>
+<p class="comment">
+送信するメールの既定件名(エイリアス使用不可) [default: Message from IRC]<br />
+</p>
+<div class="element"><span class="key">subject</span>:<span class="value">Message from IRC</span></div>
+<p class="comment">
+送信するメールの本文 [default: #(date) << #(from.name|from.nick|from.nick.now) >> #(message)]<br />
+</p>
+<div class="element"><span class="key">format</span>:<span class="value">#(date)に#(from.name|from.nick|from.nick.now)さんから#(message)という伝言です。</span></div>
+<p class="comment">
+送信したときのメッセージ。 [default: なし]<br />
+</p>
+<div class="element"><span class="key">accept</span>:<span class="value">#(who)さんに#(message)と伝言しておきました。</span></div>
+<p class="comment">
+---- POP before SMTP の指定 ----<br />
+POP before SMTPを使う。 [default: no]<br />
+</p>
+<div class="element"><span class="key">use-pop3</span>:<span class="value">yes</span></div>
+<p class="comment">
+POP before SMTPのタイムアウト時間(分)。分からない場合は指定しなくて良い。 [default: 0]<br />
+</p>
+<div class="element"><span class="key">pop3-expire</span>:<span class="value">4</span></div>
+<p class="comment">
+POPのホスト。 [default: localhost]<br />
+</p>
+<div class="element"><span class="key">pop3host</span>:<span class="value">localhost</span></div>
+<p class="comment">
+POPのポート。 [default: pop(110)]<br />
+</p>
+<div class="element"><span class="key">pop3port</span>:<span class="value">110</span></div>
+<p class="comment">
+POPのユーザ [default: OSのユーザ名]<br />
+</p>
+<div class="element"><span class="key">pop3user</span>:<span class="value">example1</span></div>
+<p class="comment">
+POPのパスワード [default: 空パスワード('')]<br />
+</p>
+<div class="element"><span class="key">pop3pass</span>:<span class="value">test-password</span></div>
+<p class="comment">
+---- エラーメッセージの設定 ----<br />
+</p>
+<p class="comment">
+一般エラー。<br />
+error-[state] と言う形式で詳細エラーメッセージを指定できる。<br />
+[state]は、<br />
+&nbsp;&nbsp;&nbsp;* mailfrom(メールの送信者を指定しようとしてエラー)<br />
+&nbsp;&nbsp;&nbsp;* rcptto(メールの送信先を指定しようとしてエラー)<br />
+&nbsp;&nbsp;&nbsp;* norcptto(メールの送信先が全部無くなった)<br />
+&nbsp;&nbsp;&nbsp;* data(メールの中身を送信しようとしてエラー)<br />
+&nbsp;&nbsp;&nbsp;* finish(メールの中身を送信したらエラー)<br />
+がある。特に欲しくなければerror-[state]は指定しなくても構わない。<br />
+メッセージを出したくないなら中身の無いエントリを指定すれば良い。<br />
+error-[state]が指定されてない場合は代わりに error を使う。 [default: 未定義]<br />
+</p>
+<div class="element"><span class="key">error-rcptto</span>:<span class="value"></span></div>
+<div class="element"><span class="key">error-norcptto</span>:<span class="value">#(who)さんには送れませんでした。送信できるメールアドレスがありません。</span></div>
+<div class="element"><span class="key">error-data</span>:<span class="value">メールが送信できません。DATAコマンドに失敗しました。#(line;サーバ応答:%s|;)</span></div>
+<div class="element"><span class="key">error</span>:<span class="value">メール送信エラーです。#(line;サーバ応答:%s|;)#(state; on %s|;)</span></div>
+<p class="comment">
+致命的なエラー。メールに個別なエラーではないので送信者(のprefix)毎に1メッセージ送られる。<br />
+fatalerror-[state]<br />
+[state]:<br />
+&nbsp;&nbsp;&nbsp;* first(接続エラー)<br />
+&nbsp;&nbsp;&nbsp;* helo(SMTPセッションを開始出来ない)<br />
+がある。特に欲しくなければfatalerror-[state]は指定しなくても構わない。<br />
+メッセージを出したくないなら中身の無いエントリを指定すれば良い。<br />
+fatalerror-[state]が指定されてない場合は代わりに fatalerror を使う。 [default: 未定義]<br />
+</p>
+<div class="element"><span class="key">fatalerror-first</span>:<span class="value">SMTPサーバに接続できません。</span></div>
+<div class="element"><span class="key">fatalerror</span>:<span class="value">SMTPセッションで致命的なエラーがありました。#(line; サーバ応答:%s|;)#(state; on %s|;)</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::Oper" class="module">
+        <div class="module-header"><h2 title="特定の文字列を発言した人を+oする。">Auto::Oper</h2>
+          <span class="description">特定の文字列を発言した人を+oする。</span></div>
+        <div class="content">
+	  <p class="comment">
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
+</p>
+<p class="comment">
++oを要求する文字列(マスク)を指定します。<br />
+</p>
+<div class="element"><span class="key">request</span>:<span class="value">なると寄越せ</span></div>
+<p class="comment">
+チャンネルオペレータ権限を要求した人と要求されたチャンネルが<br />
+ここで指定したマスクに一致しなかった場合は<br />
+denyで指定した文字列を発言し、+oをやめます。<br />
+省略された場合は誰にも+oしません。<br />
+書式は「チャンネル 発言者」です。<br />
+マッチングのアルゴリズムは次の通りです。<br />
+1. チャンネル名にマッチするmask定義を全て集める<br />
+2. 集まった定義の発言者マスクを、定義された順にカンマで結合する<br />
+3. そのようにして生成されたマスクで発言者のマッチングを行ない、結果を+o可能性とする。<br />
+例1:<br />
+mask: *@2ch* *!*@*<br />
+mask: #*@ircnet* *!*@*.hoge.jp<br />
+この例ではネットワーク 2ch の全てのチャンネルで誰にでも +o し、<br />
+ネットワーク ircnet の # で始まる全てのチャンネルでホスト名 *.hoge.jp の人に+oします。<br />
+#*@ircnetだと「#hoge@ircnet:*.jp」などにマッチしなくなります。<br />
+例2:<br />
+mask: #hoge@ircnet -*!*@*,+*!*@*.hoge.jp<br />
+mask: *            +*!*@*<br />
+基本的に全てのチャンネルで誰にでも +o するが、例外的に#hoge@ircnetでは<br />
+ホスト名 *.hoge.jp の人にしか +o しない。<br />
+この順序を上下逆にすると、全てのチャンネルで全ての人を +o する事になります。<br />
+何故なら最初の* +*!*@*が全ての人にマッチするからです。<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
+<p class="comment">
++oを要求した人を実際に+oする時、ここで指定した発言をしてから+oします。<br />
+#(name|nick)のようなエイリアス置換を行います。<br />
+エイリアス以外でも、#(nick.now)を相手のnickに、#(channel)を<br />
+そのチャンネル名にそれぞれ置換します。<br />
+</p>
+<div class="element"><span class="key">message</span>:<span class="value">了解</span></div>
+<p class="comment">
++oを要求されたが+oすべき相手ではなかった場合の発言。<br />
+省略されたら何も喋りません。<br />
+</p>
+<div class="element"><span class="key">deny</span>:<span class="value">断わる</span></div>
+<p class="comment">
++oを要求されたが相手は既にチャンネルオペレータ権限を持っていた場合の発言。<br />
+省略されたらdenyに設定されたものを使います。<br />
+</p>
+<div class="element"><span class="key">oper</span>:<span class="value">既に@を持っている</span></div>
+<p class="comment">
++oを要求されたが自分はチャンネルオペレータ権限を持っていなかった場合の発言。<br />
+省略されたらdenyに設定されたものを使います。<br />
+</p>
+<div class="element"><span class="key">not-oper</span>:<span class="value">@が無い</span></div>
+<p class="comment">
+チャンネルに対してでなく自分に対して+oの要求を行なった場合の発言。<br />
+省略されたらdenyに設定されたものを使います。<br />
+</p>
+<div class="element"><span class="key">private</span>:<span class="value">チャンネルで要求せよ</span></div>
+<p class="comment">
+チャンネルの外から+oを要求された場合の発言。+nチャンネルでは起こりません。<br />
+省略されたらdenyに設定されたものを使います。<br />
+</p>
+<div class="element"><span class="key">out</span>:<span class="value">チャンネルに入っていない</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::Random" class="module">
+        <div class="module-header"><h2 title="特定の発言に反応してランダムな発言をします。">Auto::Random</h2>
+          <span class="description">特定の発言に反応してランダムな発言をします。</span></div>
+        <div class="content">
+	  <p class="comment">
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
+</p>
+<p class="comment">
+使用するブロックの定義。<br />
+</p>
+<div class="element"><span class="key">blocks</span>:<span class="value">wimikuji</span></div>
+<div class="block element"><span class="block key">wimikuji</span>
+<div class="block content">
+<p class="comment">
+ランダムに発言するメッセージの書かれたファイルと、その文字コードを指定します。<br />
+ファイルの中では一行に一つのメッセージを書いて下さい。<br />
+</p>
+<div class="element"><span class="key">file</span>:<span class="value">random.txt</span></div>
+<div class="element"><span class="key">file-encoding</span>:<span class="value">euc</span></div>
+<p class="comment">
+反応する発言を表すマスクを指定します。<br />
+</p>
+<div class="element"><span class="key">request</span>:<span class="value">ゐみくじ</span></div>
+<p class="comment">
+メッセージの登録数を返答するキーワードを指定します。<br />
+</p>
+<div class="element"><span class="key">count-query</span>:<span class="value">ゐみくじ登録数</span></div>
+<p class="comment">
+メッセージの登録数を返答するときの反応を指定します。<br />
+formatで指定できるものと同じです。#(count)は登録数になります。<br />
+</p>
+<div class="element"><span class="key">count-format</span>:<span class="value">ゐみくじは#(count)件登録されています。</span></div>
+<p class="comment">
+ランダムなメッセージを発言する際のフォーマットを指定します。<br />
+エイリアス置換が有効です。#(message)、#(nick.now)、#(channel)は<br />
+それぞれメッセージ内容、相手のnick、チャンネル名に置換されます。<br />
+何も登録されていないときのために、#(message|;無登録)のように指定すると良いでしょう。<br />
+</p>
+<div class="element"><span class="key">format</span>:<span class="value">#(name|nick.now)の運命は#(message)</span></div>
+<p class="comment">
+反応する人のマスク。<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
+<p class="comment">
+plum: mask: *!*@*<br />
+</p>
+<p class="comment">
+メッセージが追加されたときの反応を指定します。<br />
+formatで指定できるものと同じです。#(message)は追加されたメッセージになります。<br />
+</p>
+<div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): ゐみくじ #(message) を追加しました。</span></div>
+<p class="comment">
+メッセージが削除されたときの反応を指定します。<br />
+formatで指定できるものと同じです。#(message)は削除されたメッセージになります。<br />
+</p>
+<div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): ゐみくじ #(message) を削除しました。</span></div>
+<p class="comment">
+発言に反応する確率を指定します。百分率です。省略された場合は100と見做されます。<br />
+</p>
+<div class="element"><span class="key">rate</span>:<span class="value">100</span></div>
+<p class="comment">
+メッセージを追加するキーワードを指定します。<br />
+ここで指定したキーワードを発言すると、新しいメッセージを追加します。<br />
+実際の追加方法は「<addで指定したキーワード> <追加するメッセージ>」です。<br />
+</p>
+<div class="element"><span class="key">add</span>:<span class="value">ゐみくじ追加</span></div>
+<p class="comment">
+メッセージを削除するキーワードを指定します。<br />
+実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。<br />
+</p>
+<div class="element"><span class="key">remove</span>:<span class="value">ゐみくじ削除</span></div>
+<p class="comment">
+addとremoveを許可する人。省略された場合は誰も変更できません。<br />
+</p>
+<div class="element"><span class="key">modifier</span>:<span class="value">* *!*@*</span></div>
+<p class="comment">
+plum: modifier: *!*@*<br />
+</p>
+</div></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::Reply" class="module">
+        <div class="module-header"><h2 title="特定の発言に反応して発言をします。">Auto::Reply</h2>
+          <span class="description">特定の発言に反応して発言をします。</span></div>
+        <div class="content">
+	  <p class="comment">
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
+</p>
+<p class="comment">
+使用するブロックの定義。<br />
+</p>
+<div class="element"><span class="key">blocks</span>:<span class="value">std</span></div>
+<div class="block element"><span class="block key">std</span>
+<div class="block content">
+<p class="comment">
+データファイルと文字コードを指定します。<br />
+ファイルの中では一行に一つの"反応:メッセージ"を書いて下さい。<br />
+</p>
+<div class="element"><span class="key">file</span>:<span class="value">reply.txt</span></div>
+<div class="element"><span class="key">file-encoding</span>:<span class="value">euc</span></div>
+<p class="comment">
+反応チェックを行うキーワードを指定します。<br />
+実際の指定方法は、「<requestで指定したキーワード> <チェックしたい発言>」です。<br />
+</p>
+<div class="element"><span class="key">request</span>:<span class="value">反応チェック</span></div>
+<p class="comment">
+request に反応するときのフォーマットを指定します。<br />
+#(key) がキーワード、 #(message) が発言に置換されます。<br />
+</p>
+<div class="element"><span class="key">reply-format</span>:<span class="value">「#(key)」という発言に「#(message)」と反応します。</span></div>
+<p class="comment">
+request に反応する最大個数を指定します。<br />
+あまり大きな値を指定すると、アタックが可能になったり、ログが流れて邪魔なので注意してください。<br />
+</p>
+<div class="element"><span class="key">max-reply</span>:<span class="value">5</span></div>
+<p class="comment">
+メッセージの登録数を返答するキーワードを指定します。<br />
+</p>
+<div class="element"><span class="key">count-query</span>:<span class="value">反応登録数</span></div>
+<p class="comment">
+メッセージの登録数を返答するときの反応を指定します。<br />
+formatで指定できるものと同じです。#(count)は登録数になります。<br />
+</p>
+<div class="element"><span class="key">count-format</span>:<span class="value">反応は#(count)件登録されています。</span></div>
+<p class="comment">
+反応する人のマスク。<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
+<p class="comment">
+plum: mask: *!*@*<br />
+</p>
+<p class="comment">
+反応が追加されたときの反応を指定します。<br />
+formatで指定できるものと同じです。#(message)は追加されたメッセージになります。<br />
+</p>
+<div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): #(key) に対する反応 #(message) を追加しました。</span></div>
+<p class="comment">
+メッセージが削除されたときの反応を指定します。<br />
+formatで指定できるものと同じです。#(message)は削除されたメッセージになります。<br />
+</p>
+<div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): #(key) #(message;に対する反応 %s|;) を #(count) 件削除しました。</span></div>
+<p class="comment">
+発言に反応する確率を指定します。百分率です。省略された場合は100と見做されます。<br />
+</p>
+<div class="element"><span class="key">rate</span>:<span class="value">100</span></div>
+<p class="comment">
+メッセージを追加するキーワードを指定します。<br />
+ここで指定したキーワードを発言すると、新しいメッセージを追加します。<br />
+実際の追加方法は「<addで指定したキーワード> <追加するメッセージ>」です。<br />
+</p>
+<div class="element"><span class="key">add</span>:<span class="value">反応追加</span></div>
+<p class="comment">
+メッセージを削除するキーワードを指定します。<br />
+実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。<br />
+</p>
+<div class="element"><span class="key">remove</span>:<span class="value">反応削除</span></div>
+<p class="comment">
+addとremoveを許可する人。省略された場合は「* *!*@*」と見做します。<br />
+</p>
+<div class="element"><span class="key">modifier</span>:<span class="value">* *!*@*</span></div>
+<p class="comment">
+正規表現拡張を許可するか。省略された場合は禁止します。<br />
+</p>
+<div class="element"><span class="key">use-re</span>:<span class="value">1</span></div>
+</div></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::Response" class="module">
+        <div class="module-header"><h2 title="データファイルの指定にしたがって反応する。">Auto::Response</h2>
+          <span class="description">データファイルの指定にしたがって反応する。</span></div>
+        <div class="content">
+	  <p class="comment">
+大量の反応データを定義するのに向いています。<br />
+</p>
+<p class="comment">
+データファイルのフォーマット<br />
+| pattern: re:^(こん(に)?ちは)<br />
+| rate: 90<br />
+| mask: * *!*@*<br />
+| #plum: mask: *!*@*<br />
+| response: こんにちは。<br />
+| response: いらっしゃいませ。<br />
+|<br />
+| pattern: おやすみ<br />
+| rate: 20<br />
+| response: おやすみなさい。<br />
+patternは一行しか書けません。(手抜き<br />
+maskもrateも省略できます。省略した場合はmaskは全員、rateは100となります。<br />
+responseは複数書いておけばランダムに選択されます。<br />
+</p>
+<p class="comment">
+データファイル<br />
+</p>
+<div class="element"><span class="key">file</span>:<span class="value">response.txt</span></div>
+<p class="comment">
+文字コード<br />
+</p>
+<div class="element"><span class="key">charset</span>:<span class="value">euc</span></div>
+<p class="comment">
+使用を許可する人&チャンネルのマスク。<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
+<p class="comment">
+plum: mask: +*!*@*<br />
+</p>
+
+        </div>
+      </div>
+
+      
+      
+    </div>
+
+    <div class="pane-sidebar">
+      <ul class="menu">
+        
+        <li><a href="#module-Auto::Alias" title="ユーザエイリアス情報の管理を行ないます。">Auto::Alias</a></li>
+        
+        <li><a href="#module-Auto::Answer" title="特定の発言に反応して対応する発言をする。">Auto::Answer</a></li>
+        
+        <li><a href="#module-Auto::Calc" title="Perlの式を計算させるモジュール。">Auto::Calc</a></li>
+        
+        <li><a href="#module-Auto::ChannelWithoutOper" title="チャンネルオペレータ権限がなくなってしまったときに発言する。">Auto::ChannelWithoutOper</a></li>
+        
+        <li><a href="#module-Auto::Joined" title="特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。">Auto::Joined</a></li>
+        
+        <li><a href="#module-Auto::MesMail" title="伝言をメールとして送信する。">Auto::MesMail</a></li>
+        
+        <li><a href="#module-Auto::Oper" title="特定の文字列を発言した人を+oする。">Auto::Oper</a></li>
+        
+        <li><a href="#module-Auto::Random" title="特定の発言に反応してランダムな発言をします。">Auto::Random</a></li>
+        
+        <li><a href="#module-Auto::Reply" title="特定の発言に反応して発言をします。">Auto::Reply</a></li>
+        
+        <li><a href="#module-Auto::Response" title="データファイルの指定にしたがって反応する。">Auto::Response</a></li>
+        
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
+      </ul>
+    </div>
+  </body>
+</html>

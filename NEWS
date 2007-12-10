@@ -1,0 +1,292 @@
+2004-08-22  Topia  <topia@clovery.jp>
+
+	* Client::Rehash
+	  - 追加。クライアントの nick と names を訂正する。
+
+	* System::Error
+	  - 追加。クライアントに送信するときに ERROR メッセージを
+	    NOTICE に埋め込む。
+	  - このモジュールはデフォルトオンです。アップデートの際は忘れずに
+	    追加するようにしてください。
+
+	* Log::Channel
+	  - Log::Writer フレームワークを使うようにしました。
+	  - file system full 等で書き込みに失敗しても、出来る限りログを
+	    保持します。
+
+2004-07-29  Topia  <topia@clovery.jp>
+
+	* System::NotifyIcon::Win32
+	  - 追加。タスクバーの通知領域にアイコンを表示し、コンソールの
+	    表示・非表示、 conf リロード、終了などができます。
+
+2004-07-09  Topia  <topia@clovery.jp>
+
+	* System::Reload
+	  - conf-reloaded-notify を追加。(デフォルトで有効)
+	    conf ファイルが再読込された場合に通知します。
+
+2004-06-19  Topia  <topia@clovery.jp>
+
+	* Client::Cotton
+	  - 追加。いくつかの Cotton の不具合を回避する(予定)。
+	    今は network rejoin 時の自動 part を無視します。
+	    Client::GetVersion と組み合わせると良いと思います。
+
+	* Client::GetVersion
+	  - 追加。クライアントの接続時に CTCP Version を発行して
+	    クライアントのバージョンを取得します。
+
+2004-06-04  Topia  <topia@clovery.jp>
+
+	* 全般
+	  - 今回の変更は RPL_ISUPPORT のクライアントへの送信が必要なければ、
+	    再起動する必要はありません。
+	    再起動せずにリロードしてもエラーが起こることはないと思います。
+	  - 書き忘れていましたが Unicode::Japanese 0.21 (の PurePerl) にて
+	    SI/SO な jis への対応が行われています。(2004-05-26 の update)
+
+2004-03-07  Topia  <topia@clovery.jp>
+
+	* 全般
+	   - taint check モードで動作するようになりました(多分)。
+
+2004-02-23  Topia  <topia@clovery.jp>
+
+	* Debug::RawLog
+	  - 追加。生の IRC メッセージ(のようなもの?)を ::printmsg を使って
+	    表示する。
+
+	* sample.conf
+	  - 順序が変わっています。注意してください。
+	  - general/omit-sysmsg-prefix-when-possible 削除。
+	  - general/sysmsg-prefix-use-masks ブロック追加。
+
+	* Log::Recent
+	  - no-client-logs クライアントオプションが追加されました。
+	    クライアントオプションの使い方は、
+	    realname 部分に $no-client-logs=1$ を指定します。
+	    複数ある場合は $no-client-logs=1;a=1;...$ のように指定できます。
+
+	* 全般
+	  - クライアントとの接続時にチャンネルの送出順を指定する patch を
+	    暫定的に取り込みました。 networks に fixed-channels ブロックを
+	    作り、中に channel をキー名としてマスクを列挙します。
+	    例:
+	      fixed-channels {
+	        channel: #てすとちゃんねる@ircnet
+	        channel: #てすと@localserver
+	        channel: *@localserver
+	        channel: *@localserver:*.jp
+	      }
+	    マッチしなかったチャンネルについては最後にまとめて
+	    (順番がごちゃごちゃになって)送られてきます。
+	    conf の設定場所は暫定です。変わる可能性があるので注意してください。
+	  - doc/ 以下に HTML でのドキュメントが生成されていますが、
+	    まだ未調整な部分も多くあるので、正確な記述は sample.conf を参照してください。
+
+2004-02-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* Channel::Freeze
+	freezeコマンドの引数は、これまでは完全なチャンネル名であったが、
+	これはマスクに変更。その時にJOINしている全てのチャンネルの中から
+	マスクに一致した全てのチャンネルを凍結する。
+
+	* 設定 general/omit-sysmsg-prefix-when-possible 追加。
+	これが1である時、sysmsg-prefixはチャンネルに対してのメッセージ
+	でなければ省略する。デフォルトは1。
+
+2004-02-15  Topia  <topia@clovery.jp>
+
+	* Client::Cache
+	  - 昨日の分だけでは Excess Flood/Max SendQ Exceeded 対策として
+	    不十分だったので、アップデートを推奨します。
+	  - 2つ以上のクライアントが同時に同じ動作をする場合に、
+	    今回の変更で効果が出ます。
+	    長すぎず短すぎずの絶妙な差で同じ動作をされた場合には
+	    効きませんが、滅多にそんなことはない(と思いたい)です。
+
+2004-02-14  Topia  <topia@clovery.jp>
+
+	* Log::Recent, System::Raw, Channel::Freeze, Channel::Rejoin
+	  - これらのモジュールのうち一つでも組み込んでいる場合は、
+	    リロードする前に Tiarra を再起動させてください。
+	    新たに入った機能を使っています。
+
+	* Client::Cache
+	  - 新規追加。クライアントからの問い合わせのうち、
+	    Tiarra が情報を持っていて、
+	    サーバに問い合わせる必要がないものをキャッシュとして返します。
+	  - いまのところ MODE キャッシュと、 WHO キャッシュを実装していて、
+	    どちらも、クライアントからの最初の問い合わせのときにのみ
+	    キャッシュを使います。
+	  - LimeChat(1.18 で WHO 機能を切れるようになりましたが) や、
+	    X-Chat などのクライアントを使用されている場合は、
+	    組み込むと便利です。
+
+	* Client::Eval
+	  - 追加。クライアントからのコマンドしか受け付けませんが、
+	    その代わりすべてのコマンドを実行できます。
+	    事実上 IRC パスワードがわかれば Tiarra が動いているホスト上で
+	    動作しているアカウントの権限で何でもできる、
+	    ということに注意してください。
+	  - 意味がわからなければ組み込まないことを推奨します。
+	    必要な時だけ組み込んで、すぐはずす、というのも良いかもしれません。
+
+2004-01-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* 行の終わりにCRLFでなくLFを付けるようなクライアントでも
+	正しく動作するようになりました。
+
+2004-01-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* tiarra: 起動時オプション --make-password 追加。
+	make-passwordの機能をtiarra本体に移した。
+	
+	* make-password: 削除
+
+2003-11-17  Topia  <topia@clovery.jp>
+
+	* Log::Channel
+	mode のデフォルトが 644 から 600 に変更されました。
+	mode をコメントアウトしている場合は注意してください。
+	dir-mode が追加され、デフォルトが 700 です。
+	これも、必要に応じて 755 を指定するようにしてください。
+
+2003-11-09  Topia  <topia@clovery.jp>
+
+	* System::Reload
+	自分自身がリロードできないバグの修正。
+	kill -HUP pid は出来るので、これを使ってリロードしてください。
+
+	* single-server-mode の bugfix です。
+	single-server-mode を使う予定が無い場合は再起動は不要です。
+	single-server-mode を使っている方は、アップデートして再起動して下さい。
+
+2003-11-08  Topia  <topia@clovery.jp>
+
+	* single-server-mode の bugfix です。
+	single-server-mode を使う予定が無い場合は再起動は不要です。
+	single-server-mode を使っている方は、アップデートして再起動して下さい。
+
+2003-10-16  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* System::Raw
+	追加。Tiarraに改変されない生のメッセージをサーバーに送るためのモジュール。
+
+2003-10-14  Topia  <topia@clovery.jp>
+
+	* single-server-mode の bugfix です。
+	single-server-mode を使う予定が無い場合は再起動は不要です。
+
+2003-09-28  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* tiarra-conf.el:
+	mmm-modeがインストールされていて、(require 'mmm-mode)または
+	(require 'mmm-auto)されている場合に、tiarra-conf用の設定を
+	行った後、それを有効にする。
+
+	mmm-modeのサイトは次のURLに。
+	http://mmm-mode.sourceforge.net/
+
+2003-09-25  Topia  <topia@clovery.jp>
+
+	* このバージョン以前の Tiarra には、
+	モジュールのアンロードをすると原因不明のエラーが起こるバグがあります。
+	また、アップグレードの際には再起動が必要です。
+
+2003-08-12  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* シングルサーバーモードを実装。
+	networks/multi-server-modeを0に設定すると、シングルサーバーモードになります。
+	この状態では同時に接続出来るサーバーの数が一つに制限され、クライアントから見た
+	チャンネル名にネットワーク名が付かなくなります。
+
+2003-07-31  Topia  <topia@clovery.jp>
+
+	* mask のチャンネル名にネットワーク名を必要とするように修正した。
+	影響を受けるモジュールは
+	  - Auto::Oper
+	  - Auto::Random
+	  - Auto::Reply
+	  - Auto::MesMail
+	  - Auto::Alias
+	  - Auto::Response
+	です。変更よろしくお願いします。(^^;;
+
+2003-07-10  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* Channel::Freeze
+	追加。特定のチャンネルのNOTICEやPRIVMSGの中継を
+	一時的に中断するためのモジュール。
+	発言を見たくないがPARTはしたくない、といった場合に有効。
+
+003-07-03  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* Auto::Oper
+	複数の応答が定義されていれば、ランダムに一つ選んで発言する。省略も可能。
+
+2003-06-06  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* general/nickを、それぞれのネットワーク設定ブロックのnickでオーバーライド可能に。
+
+2003-05-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* Tiarra本体の誤動作によりCPU時間を食い潰している可能性を検出して警告する。
+
+2003-05-24  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* IPv6対応
+	general/tiarra-ip-versionに'v6'を指定する事で、IPv6でのリスニングを行なう。
+	また、サーバーには最初にIPv6での接続を試みてからIPv4にフォールバックする。
+	詳細はsample.confに。
+	
+2003-05-23  Topia  <topia@clovery.jp>
+
+	* Auto/Reply.pm: 追加。
+	  plum の auto/reply.plm に相当する。
+
+	* Auto/Alias.pm: キーを指定しての値削除、削除した個数の表示が可能になったため、
+	  サンプルの removed-format が変更されています。好みに合わせて変更してください。
+
+2003-05-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* tiarra-conf.l: 追加。
+	  Noboruhiさんによるxyzzy用tiarra.conf編集モード。
+	  インストール方法はtiarra-conf.l内に記述されています。
+
+2003-04-29  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* Channel/Join/Kicked.pm: 追加。チャンネルから蹴られた時に、自動JOINするモジュール。
+
+2003-04-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* User/Vanish.pm: 追加
+	  特定のチャンネルでの特定の人物の存在をクライアントに隠すモジュール。
+	  JOINやPART、QUIT等を消去する。
+
+2003-04-05  phonohawk  <phonohawk@ps.sakura.ne.jp>
+
+	* モジュール Auto::Joined 追加。
+	  特定のチャンネルに誰かがJOINする度に特定の発言を行なうモジュール。
+	  チャンネル移転通知以外に使うのはやめた方が良い。
+
+2003-03-28  Topia  <topia@clovery.jp>
+
+	* sample.conf (Auto/Random.pm): 設定に mask プロパティが抜けていました。
+	  Auto/Random.pm を使っていた方は、 sample.conf にしたがって適当なところに追加してください。
+
+2003-03-23  phonohawk <phonohawk@ps.sakura.ne.jp>
+
+	* User/Filter.pm: 新規追加。 特定の人物の発言にフィルタをかける。
+
+	* general/bind-addrでサーバーへの接続時のローカル側アドレスを指定可能になりました。
+
+2003-03-23  Topia  <topia@clovery.jp>
+
+	* Channel/Join/Invite.pm: 新規追加。 Invite されたチャンネルに Join する。
+
+2003-03-19  Topia  <topia@clovery.jp>
+
+	* Auto/Random.pm: 設定ファイルの形式がかなり変わっています。
+	  sample.conf を参照して書き換えをお願いします。

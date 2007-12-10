@@ -1,0 +1,65 @@
+-*- text -*-
+$Id$
+
+必要なもの
+==========
+* Perl:
+    5.6.0 以上。
+
+あるとよいもの
+==============
+* IO::Socket::INET6 または Socket6:
+    インストールすると IPv6 のサポートが追加されます。
+* Unicode::Japanese:
+    特に XS モジュールをインストールすると性能が改善されます。
+* ithreads:
+    5.8.0 以上で ithreads を有効にした場合に、 DNS 解決時の性能低下がなくなります。
+* Win32::GUI:
+    System::NotifyIcon:Win32 を使う場合に必須です。
+
+手順
+====
+1. 必要なものをインストールしたら、 sample.conf をファイル名を変えてコピーします。
+  $ cp sample.conf foo.conf
+
+2. コピーした conf ファイルを編集します。
+  $ vi foo.conf
+   最低でも main, network, そして network/name で指定したネットワークのブロック
+   (指定してないブロックは無視されるので書き換えていなくても大丈夫です)
+   を書き換えてください。
+   自動 Join 設定は Channel::Join::Connect に、ログ取り設定は Log::Channel にあります。
+   使うときはブロックの先頭の - を + に変えるのを忘れずに。
+
+3. 起動します。
+  $ ./tiarra --config=foo.conf --quiet
+  (これで起動しないときは perl ./tiarra ... で試す)
+
+TIPS
+====
+* ログファイルなどのパスは起動時のディレクトリからの相対になります。
+  (絶対指定も可能です)
+  たとえば:
+    | tiarra/test/tiarra.conf
+    | tiarra/tiarra
+    | tiarra/main/...
+    | tiarra/...
+  なディレクトリ構成の時に
+    $ cd tiarra/test
+    $ ../tiarra --config=tiarra.conf
+  とすれば、
+    | tiarra/test/log/others/...
+    | tiarra/test/log/priv/...
+  といった感じになります。
+
+* --config を省略した場合は、標準入力か tiarra.conf を読みます。
+
+* シンボリックリンクを張った場合でも問題なく運用できます。
+  たとえば:
+    | /home/foo/tiarra/test/tiarra -> /usr/share/tiarra/tiarra
+    | /usr/share/tiarra/main/...
+    | /usr/share/tiarra/...
+  という構成( -> はシンボリックリンク)でも問題ありません。
+  その場合、
+    | /home/foo/tiarra/test/module/Auto/Reply.pm
+  などを置いた場合は /usr/share/tiarra/module/Auto/Reply.pm より
+  優先されます。

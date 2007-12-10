@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="EUC-JP"?>
+<!DOCTYPE html
+	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!-- $Id: contents.html 896 2005-05-01 12:40:25Z topia $ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
+    <title>CTCP 関係のモジュール - Tiarra Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../default.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>CTCP 関係のモジュール</h1>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="pane-main">
+      
+      <div id="module-CTCP::ClientInfo" class="module">
+        <div class="module-header"><h2 title="CTCP CLIENTINFOに応答する。">CTCP::ClientInfo</h2>
+          <span class="description">CTCP CLIENTINFOに応答する。</span></div>
+        <div class="content">
+	  <p class="comment">
+CTCP::Versionのintervalと同じ。<br />
+</p>
+<div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-CTCP::Ping" class="module">
+        <div class="module-header"><h2 title="CTCP PINGに応答する。">CTCP::Ping</h2>
+          <span class="description">CTCP PINGに応答する。</span></div>
+        <div class="content">
+	  <p class="comment">
+CTCP::Versionのintervalと同じ。<br />
+</p>
+<div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-CTCP::Time" class="module">
+        <div class="module-header"><h2 title="CTCP TIMEに応答する。">CTCP::Time</h2>
+          <span class="description">CTCP TIMEに応答する。</span></div>
+        <div class="content">
+	  <p class="comment">
+CTCP::Versionのintervalと同じ。<br />
+</p>
+<div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-CTCP::UserInfo" class="module">
+        <div class="module-header"><h2 title="CTCP USERINFOに応答する。">CTCP::UserInfo</h2>
+          <span class="description">CTCP USERINFOに応答する。</span></div>
+        <div class="content">
+	  <p class="comment">
+CTCP::Versionのintervalと同じ。<br />
+</p>
+<div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
+<p class="comment">
+USERINFOとして返すメッセージ。<br />
+</p>
+<div class="element"><span class="key">message</span>:<span class="value">テスト</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-CTCP::Version" class="module">
+        <div class="module-header"><h2 title="CTCP VERSIONに応答する。">CTCP::Version</h2>
+          <span class="description">CTCP VERSIONに応答する。</span></div>
+        <div class="content">
+	  <p class="comment">
+&nbsp;連続したCTCPリクエストに対する応答の間隔。単位は秒。<br />
+&nbsp;例えば3秒に設定した場合、一度応答してから3秒間は<br />
+&nbsp;CTCPに一切応答しなくなる。デフォルトは3。<br />
+<br />
+&nbsp;なお、CTCP受信時刻の記録は、全てのCTCPモジュールで共有される。<br />
+&nbsp;例えばCTCP VERSIONを送った直後にCTCP CLIENTINFOを送ったとしても、<br />
+&nbsp;CTCP::ClientInfoのintervalで設定された時間を過ぎていなければ<br />
+&nbsp;後者は応答しない。<br />
+</p>
+<div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
+
+        </div>
+      </div>
+
+      
+      
+    </div>
+
+    <div class="pane-sidebar">
+      <ul class="menu">
+        
+        <li><a href="#module-CTCP::ClientInfo" title="CTCP CLIENTINFOに応答する。">CTCP::ClientInfo</a></li>
+        
+        <li><a href="#module-CTCP::Ping" title="CTCP PINGに応答する。">CTCP::Ping</a></li>
+        
+        <li><a href="#module-CTCP::Time" title="CTCP TIMEに応答する。">CTCP::Time</a></li>
+        
+        <li><a href="#module-CTCP::UserInfo" title="CTCP USERINFOに応答する。">CTCP::UserInfo</a></li>
+        
+        <li><a href="#module-CTCP::Version" title="CTCP VERSIONに応答する。">CTCP::Version</a></li>
+        
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
+      </ul>
+    </div>
+  </body>
+</html>

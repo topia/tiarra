@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="EUC-JP"?>
+<!DOCTYPE html
+	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!-- $Id: contents.html 896 2005-05-01 12:40:25Z topia $ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
+    <title>Client 関係のモジュール - Tiarra Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../default.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>Client 関係のモジュール</h1>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="pane-main">
+      
+      <div id="module-Client::Cache" class="module">
+        <div class="module-header"><h2 title="データをキャッシュしてサーバに問い合わせないようにする">Client::Cache</h2>
+          <span class="description">データをキャッシュしてサーバに問い合わせないようにする</span></div>
+        <div class="content">
+	  <p class="comment">
+キャッシュを使用しても、使われるのは接続後最初の一度だけです。<br />
+二度目からは通常通りにサーバに問い合わせます。<br />
+また、クライアントオプションの no-cache を指定すれば動きません。<br />
+</p>
+<p class="comment">
+mode キャッシュを使用するか<br />
+</p>
+<div class="element"><span class="key">use-mode-cache</span>:<span class="value">1</span></div>
+<p class="comment">
+who キャッシュを使用するか<br />
+</p>
+<div class="element"><span class="key">use-who-cache</span>:<span class="value">1</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Client::Conservative" class="module">
+        <div class="module-header"><h2 title="サーバが送信するような IRC メッセージを作成するようにする">Client::Conservative</h2>
+          <span class="description">サーバが送信するような IRC メッセージを作成するようにする</span></div>
+        <div class="content">
+	  <p class="comment">
+サーバが実際に送信しているようなメッセージにあわせるようにします。<br />
+多くのクライアントの設計ミスを回避でき(ると思われ)ます。<br />
+</p>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Client::Cotton" class="module">
+        <div class="module-header"><h2 title="Cotton の行うおかしな動作のいくつかを無視する">Client::Cotton</h2>
+          <span class="description">Cotton の行うおかしな動作のいくつかを無視する</span></div>
+        <div class="content">
+	  <p class="comment">
+該当クライアントのオプション client-type に cotton や unknown と指定するか、<br />
+Client::GetVersion を利用してクライアントのバージョンを取得するように<br />
+してください。<br />
+</p>
+<p class="comment">
+part shield (rejoin 時に自動で行われる part の無視)を使用するか<br />
+</p>
+<div class="element"><span class="key">use-part-shield</span>:<span class="value">1</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Client::Eval" class="module">
+        <div class="module-header"><h2 title="クライアントから Perl 式を実行できるようにする。">Client::Eval</h2>
+          <span class="description">クライアントから Perl 式を実行できるようにする。</span></div>
+        <div class="content">
+	  <p class="comment">
+eval を実行するコマンド名。省略されるとコマンドを追加しません。<br />
+この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された<br />
+コマンド名を設定すべきではありません。<br />
+</p>
+<div class="element"><span class="key">command</span>:<span class="value">eval</span></div>
+<p class="comment">
+hex eval を実行するコマンド名。省略されるとコマンドを追加しません。<br />
+この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された<br />
+コマンド名を設定すべきではありません。<br />
+</p>
+<div class="element"><span class="key">hex-command</span>:<span class="value">hexeval</span></div>
+<p class="comment">
+表示する最大行数を指定します。省略するとすべての行を表示します。<br />
+</p>
+<div class="element"><span class="key">max-line</span>:<span class="value">30</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Client::GetVersion" class="module">
+        <div class="module-header"><h2 title="クライアントに CTCP Version を発行してバージョン情報を得る">Client::GetVersion</h2>
+          <span class="description">クライアントに CTCP Version を発行してバージョン情報を得る</span></div>
+        <div class="content">
+	  <p class="comment">
+オプションはいまのところありません。<br />
+(開発者向け情報: 取得した情報は remark の client-version に設定され、<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Client::Guess から使用されます。)<br />
+</p>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Client::PatchworkMessage" class="module">
+        <div class="module-header"><h2 title="IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する">Client::PatchworkMessage</h2>
+          <span class="description">IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する</span></div>
+        <div class="content">
+	  <p class="comment">
+特に注意書きがない場合はデフォルトで有効です。<br />
+また、 Client::GetVersion も同時に入れておくと便利です。<br />
+とりあえず obsolete です。このモジュールで実装されていた機能は<br />
+Client::Conservative によって実現できます。<br />
+Client::Conservative で実装してはいけないようなものがあった場合のみ<br />
+このモジュールで対処します。<br />
+</p>
+<p class="comment">
+WoolChat:<br />
+&nbsp;対応しているメッセージ:<br />
+&nbsp;&nbsp;NICK(コロンが必須)<br />
+&nbsp;説明:<br />
+&nbsp;&nbsp;NICK は接続直後にも発行されるため、 Client::GetVersion での判別まで<br />
+&nbsp;&nbsp;待てません。該当クライアントのオプション client-type に woolchat と<br />
+&nbsp;&nbsp;指定してください。実名欄に $client-type=woolchat$ と書けば OK です。<br />
+</p>
+<div class="element"><span class="key">enable-woolchat</span>:<span class="value">1</span></div>
+<p class="comment">
+X-Chat:<br />
+&nbsp;対応しているメッセージ:<br />
+&nbsp;&nbsp;RPL_WHOISUSER(コロンが必須)<br />
+&nbsp;説明:<br />
+&nbsp;&nbsp;WHOIS の realname にスペースが入っていないと最初の一文字が削られます。<br />
+</p>
+<div class="element"><span class="key">enable-xchat</span>:<span class="value">1</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Client::ProtectMyself" class="module">
+        <div class="module-header"><h2 title="意図せず自分のニックが変わってしまうのを防止する">Client::ProtectMyself</h2>
+          <span class="description">意図せず自分のニックが変わってしまうのを防止する</span></div>
+        <div class="content">
+	  <p class="comment">
+{nick,part,quit,join}-format: それぞれのメッセージのフォーマットを指定します。<br />
+{nick,user,host,prefix}.now などはどこでも使えます。<br />
+そのほかには<br />
+&nbsp;target   : 表示するチャンネル(またはニック)。<br />
+&nbsp;nick.new : nick-format のみ。新しいニック。<br />
+&nbsp;message  : part と quit 。メッセージ。<br />
+</p>
+<div class="element"><span class="key">nick-format</span>:<span class="value">Nick changed #(nick.now) -> #(nick.new)</span></div>
+<div class="element"><span class="key">part-format</span>:<span class="value">Part #(nick.now) (#(message)) from #(target)</span></div>
+<div class="element"><span class="key">quit-format</span>:<span class="value">Quit #(nick.now) (#(message))</span></div>
+<div class="element"><span class="key">join-format</span>:<span class="value">Join #(nick.now) (#(prefix.now)) to #(target)</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Client::Rehash" class="module">
+        <div class="module-header"><h2 title="全チャンネル分の names の内部キャッシュをクライアントに送信する。">Client::Rehash</h2>
+          <span class="description">全チャンネル分の names の内部キャッシュをクライアントに送信する。</span></div>
+        <div class="content">
+	  <p class="comment">
+もともとはクライアントの再初期化目的に作ったのですが、 names を送信しても<br />
+更新されないクライアントが多いので、主に multi-server-mode な Tiarra の<br />
+下にさらに Tiarra をつないでいる人向けにします。<br />
+</p>
+<p class="comment">
+names でニックリストを更新してくれるクライアント:<br />
+&nbsp;&nbsp;Tiarra<br />
+してくれないクライアント: (括弧内は確認したバージョンまたは注釈)<br />
+&nbsp;&nbsp;LimeChat(1.18)<br />
+</p>
+<p class="comment">
+nick rehash に使うコマンドを指定します。<br />
+第二パラメータとして現在クライアントが認識している nick を指定してください。<br />
+</p>
+<div class="element"><span class="key">command-nick</span>:<span class="value">rehash-nick</span></div>
+<p class="comment">
+names rehash に使うコマンドを指定します。<br />
+</p>
+<div class="element"><span class="key">command-names</span>:<span class="value">rehash-names</span></div>
+<p class="comment">
+チャンネルとチャンネルの間のウェイトを指定します。<br />
+</p>
+<div class="element"><span class="key">interval</span>:<span class="value">2</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Client::ShowNick" class="module">
+        <div class="module-header"><h2 title="show network">Client::ShowNick</h2>
+          <span class="description">show network</span></div>
+        <div class="content">
+	  
+        </div>
+      </div>
+
+      
+      
+    </div>
+
+    <div class="pane-sidebar">
+      <ul class="menu">
+        
+        <li><a href="#module-Client::Cache" title="データをキャッシュしてサーバに問い合わせないようにする">Client::Cache</a></li>
+        
+        <li><a href="#module-Client::Conservative" title="サーバが送信するような IRC メッセージを作成するようにする">Client::Conservative</a></li>
+        
+        <li><a href="#module-Client::Cotton" title="Cotton の行うおかしな動作のいくつかを無視する">Client::Cotton</a></li>
+        
+        <li><a href="#module-Client::Eval" title="クライアントから Perl 式を実行できるようにする。">Client::Eval</a></li>
+        
+        <li><a href="#module-Client::GetVersion" title="クライアントに CTCP Version を発行してバージョン情報を得る">Client::GetVersion</a></li>
+        
+        <li><a href="#module-Client::PatchworkMessage" title="IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する">Client::PatchworkMessage</a></li>
+        
+        <li><a href="#module-Client::ProtectMyself" title="意図せず自分のニックが変わってしまうのを防止する">Client::ProtectMyself</a></li>
+        
+        <li><a href="#module-Client::Rehash" title="全チャンネル分の names の内部キャッシュをクライアントに送信する。">Client::Rehash</a></li>
+        
+        <li><a href="#module-Client::ShowNick" title="show network">Client::ShowNick</a></li>
+        
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
+      </ul>
+    </div>
+  </body>
+</html>

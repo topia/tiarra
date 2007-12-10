@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="EUC-JP"?>
+<!DOCTYPE html
+	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!-- $Id: contents.html 896 2005-05-01 12:40:25Z topia $ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
+    <title>Debug 関係のモジュール - Tiarra Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../default.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>Debug 関係のモジュール</h1>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="pane-main">
+      
+      <div id="module-Debug::RawLog" class="module">
+        <div class="module-header"><h2 title="標準出力にクライアントやサーバとの通信をダンプする。">Debug::RawLog</h2>
+          <span class="description">標準出力にクライアントやサーバとの通信をダンプする。</span></div>
+        <div class="content">
+	  <p class="comment">
+0 または省略で表示しない。 1 で表示する。<br />
+クライアントオプションの logname によって、ダンプに使う名前を指定できます。<br />
+</p>
+<p class="comment">
+サーバからの入力<br />
+</p>
+<div class="element"><span class="key">enable-server-in</span>:<span class="value">1</span></div>
+<p class="comment">
+サーバへの出力<br />
+</p>
+<div class="element"><span class="key">enable-server-out</span>:<span class="value">1</span></div>
+<p class="comment">
+クライアントからの入力<br />
+</p>
+<div class="element"><span class="key">enable-client-in</span>:<span class="value">0</span></div>
+<p class="comment">
+クライアントへの出力<br />
+</p>
+<div class="element"><span class="key">enable-client-out</span>:<span class="value">0</span></div>
+<p class="comment">
+PING/PONG を無視する<br />
+</p>
+<div class="element"><span class="key">ignore-ping</span>:<span class="value">1</span></div>
+<p class="comment">
+NumericReply の名前を解決して表示する(ちゃんとした dump では無くなります)<br />
+</p>
+<div class="element"><span class="key">resolve-numeric</span>:<span class="value">1</span></div>
+
+        </div>
+      </div>
+
+      
+      
+    </div>
+
+    <div class="pane-sidebar">
+      <ul class="menu">
+        
+        <li><a href="#module-Debug::RawLog" title="標準出力にクライアントやサーバとの通信をダンプする。">Debug::RawLog</a></li>
+        
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
+      </ul>
+    </div>
+  </body>
+</html>

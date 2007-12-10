@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="EUC-JP"?>
+<!DOCTYPE html
+	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!-- $Id: contents.html 896 2005-05-01 12:40:25Z topia $ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
+    <title>Log 関係のモジュール - Tiarra Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../default.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>Log 関係のモジュール</h1>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="pane-main">
+      
+      <div id="module-Log::Channel" class="module">
+        <div class="module-header"><h2 title="チャンネルやprivのログを取るモジュール。">Log::Channel</h2>
+          <span class="description">チャンネルやprivのログを取るモジュール。</span></div>
+        <div class="content">
+	  <p class="comment">
+Log系のモジュールでは、以下のように日付や時刻の置換が行なわれる。<br />
+%% : %<br />
+%Y : 年(4桁)<br />
+%m : 月(2桁)<br />
+%d : 日(2桁)<br />
+%H : 時間(2桁)<br />
+%M : 分(2桁)<br />
+%S : 秒(2桁)<br />
+</p>
+<p class="comment">
+ログを保存するディレクトリ。Tiarraが起動した位置からの相対パス。~指定は使えない。<br />
+</p>
+<div class="element"><span class="key">directory</span>:<span class="value">log</span></div>
+<p class="comment">
+ログファイルの文字コード。省略されたらjis。<br />
+</p>
+<div class="element"><span class="key">charset</span>:<span class="value">sjis</span></div>
+<p class="comment">
+各行のヘッダのフォーマット。省略されたら'%H:%M'。<br />
+</p>
+<div class="element"><span class="key">header</span>:<span class="value">%H:%M:%S</span></div>
+<p class="comment">
+ファイル名のフォーマット。省略されたら'%Y.%m.%d.txt'<br />
+</p>
+<div class="element"><span class="key">filename</span>:<span class="value">%Y.%m.%d.txt</span></div>
+<p class="comment">
+ログファイルのモード(8進数)。省略されたら600<br />
+</p>
+<div class="element"><span class="key">mode</span>:<span class="value">600</span></div>
+<p class="comment">
+ログディレクトリのモード(8進数)。省略されたら700<br />
+</p>
+<div class="element"><span class="key">dir-mode</span>:<span class="value">700</span></div>
+<p class="comment">
+ログを取るコマンドを表すマスク。省略されたら記録出来るだけのコマンドを記録する。<br />
+</p>
+<div class="element"><span class="key">command</span>:<span class="value">privmsg,join,part,kick,invite,mode,nick,quit,kill,topic,notice</span></div>
+<p class="comment">
+PRIVMSGとNOTICEを記録する際に、自分の発言と他人の発言でフォーマットを変えるかどうか。1/0。デフォルトで1。<br />
+</p>
+<div class="element"><span class="key">distinguish-myself</span>:<span class="value">1</span></div>
+<p class="comment">
+各ログファイルを開きっぱなしにするかどうか。<br />
+このオプションは多くの場合、ディスクアクセスを抑えて効率良くログを保存しますが<br />
+ログを記録すべき全てのファイルを開いたままにするので、50や100のチャンネルを<br />
+別々のファイルにログを取るような場合には使うべきではありません。<br />
+万一 fd があふれた場合、クライアントから(またはサーバへ)接続できない・<br />
+新たなモジュールをロードできない・ログが全然できないなどの症状が起こる可能性が<br />
+あります。limit の詳細については OS 等のドキュメントを参照してください。<br />
+</p>
+<div class="element"><span class="key">keep-file-open</span>:<span class="value">1</span></div>
+<p class="comment">
+keep-file-open 時に各行ごとに flush するかどうか。<br />
+open/close の負荷は気になるが、ログは失いたくない人向け。<br />
+keep-file-open が有効でないなら無視され(1になり)ます。<br />
+</p>
+<div class="element"><span class="key">always-flush</span>:<span class="value">0</span></div>
+<p class="comment">
+keep-file-openを有効にした場合、発言の度にログファイルに追記するのではなく<br />
+一定の分量が溜まってから書き込まれる。そのため、ファイルを開いても<br />
+最近の発言はまだ書き込まれていない可能性がある。<br />
+syncを設定すると、即座にログをディスクに書き込むためのコマンドが追加される。<br />
+省略された場合はコマンドを追加しない。<br />
+</p>
+<div class="element"><span class="key">sync</span>:<span class="value">sync</span></div>
+<p class="comment">
+各チャンネルの設定。チャンネル名の部分はマスクである。<br />
+個人宛てに送られたPRIVMSGやNOTICEはチャンネル名"priv"として検索される。<br />
+記述された順序で検索されるので、全てのチャンネルにマッチする"*"などは最後に書かなければならない。<br />
+指定されたディレクトリが存在しなかったら、Log::Channelはそれを勝手に作る。<br />
+フォーマットは次の通り。<br />
+channel: <ディレクトリ名> (<チャンネル名> / 'priv')<br />
+例:<br />
+filename: %Y.%m.%d.txt<br />
+channel: IRCDanwasitu #IRC談話室@ircnet<br />
+channel: others *<br />
+この例では、#IRC談話室@ircnetのログはIRCDanwasitu/%Y.%m.%d.txtに、<br />
+それ以外(privも含む)のログはothers/%Y.%m.%d.txtに保存される。<br />
+</p>
+<div class="element"><span class="key">channel</span>:<span class="value">priv priv</span></div>
+<div class="element"><span class="key">channel</span>:<span class="value">others *</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Log::ChannelList" class="module">
+        <div class="module-header"><h2 title="チャンネルリストをテンプレートに沿って HTML 化します。">Log::ChannelList</h2>
+          <span class="description">チャンネルリストをテンプレートに沿って HTML 化します。</span></div>
+        <div class="content">
+	  <p class="comment">
+list コマンドが実行された際に動作します。<br />
+</p>
+<p class="comment">
+出力したいファイル名、ネットワーク名、使う設定のブロックを指定します。。<br />
+</p>
+<div class="element"><span class="key">networks</span>:<span class="value">ircnet.html ircnet ircnet</span></div>
+<div class="block element"><span class="block key">ircnet</span>
+<div class="block content">
+<p class="comment">
+テンプレートファイルを指定します。<br />
+</p>
+<div class="element"><span class="key">template</span>:<span class="value">channellist.html.tmpl</span></div>
+<p class="comment">
+出力とテンプレートファイルの文字コードを指定します。<br />
+</p>
+<div class="element"><span class="key">charset</span>:<span class="value">euc</span></div>
+<p class="comment">
+取得を開始/終了した時刻のフォーマットを指定します。<br />
+</p>
+<div class="element"><span class="key">fetch-starttime</span>:<span class="value">%Y年%m月%d日 %H時%M分(日本時間)</span></div>
+<div class="element"><span class="key">fetch-endtime</span>:<span class="value">%Y年%m月%d日 %H時%M分(日本時間)</span></div>
+<p class="comment">
+表示するチャンネルの mask を指定します。<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">*</span></div>
+<div class="element"><span class="key">mask</span>:<span class="value">-re:^\&(AUTH|SERVICES|LOCAL|HASH|SERVERS|NUMERICS|CHANNEL|KILLS|NOTICES|ERRORS)</span></div>
+<p class="comment">
+出力するファイルのモードを指定します。<br />
+</p>
+<div class="element"><span class="key">mode</span>:<span class="value">644</span></div>
+</div></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Log::Raw" class="module">
+        <div class="module-header"><h2 title="サーバとの生の通信を保存する">Log::Raw</h2>
+          <span class="description">サーバとの生の通信を保存する</span></div>
+        <div class="content">
+	  <p class="comment">
+Log系のモジュールでは、以下のように日付や時刻の置換が行なわれる。<br />
+%% : %<br />
+%Y : 年(4桁)<br />
+%m : 月(2桁)<br />
+%d : 日(2桁)<br />
+%H : 時間(2桁)<br />
+%M : 分(2桁)<br />
+%S : 秒(2桁)<br />
+</p>
+<p class="comment">
+ログを保存するディレクトリ。Tiarraが起動した位置からの相対パス。~指定は使えない。<br />
+</p>
+<div class="element"><span class="key">directory</span>:<span class="value">rawlog</span></div>
+<p class="comment">
+各行のヘッダのフォーマット。省略されたら'%H:%M'。<br />
+</p>
+<div class="element"><span class="key">header</span>:<span class="value">%H:%M:%S</span></div>
+<p class="comment">
+ファイル名のフォーマット。省略されたら'%Y.%m.%d.txt'<br />
+</p>
+<div class="element"><span class="key">filename</span>:<span class="value">%Y-%m-%d.txt</span></div>
+<p class="comment">
+ログファイルのモード(8進数)。省略されたら600<br />
+</p>
+<div class="element"><span class="key">mode</span>:<span class="value">600</span></div>
+<p class="comment">
+ログディレクトリのモード(8進数)。省略されたら700<br />
+</p>
+<div class="element"><span class="key">dir-mode</span>:<span class="value">700</span></div>
+<p class="comment">
+使っている文字コードがよくわからなかったときの文字コード。省略されたらutf8。<br />
+たぶんこの指定が生きることはないと思いますが……。<br />
+</p>
+<div class="element"><span class="key">charset</span>:<span class="value">jis</span></div>
+<p class="comment">
+NumericReply の名前を解決して表示する(ちゃんとした dump では無くなります)<br />
+</p>
+<div class="element"><span class="key">resolve-numeric</span>:<span class="value">1</span></div>
+<p class="comment">
+ログを取るコマンドを表すマスク。省略されたら記録出来るだけのコマンドを記録する。<br />
+</p>
+<div class="element"><span class="key">command</span>:<span class="value">*,-ping,-pong</span></div>
+<p class="comment">
+各ログファイルを開きっぱなしにするかどうか。<br />
+このオプションは多くの場合、ディスクアクセスを抑えて効率良くログを保存しますが<br />
+ログを記録すべき全てのファイルを開いたままにするので、50や100のチャンネルを<br />
+別々のファイルにログを取るような場合には使うべきではありません。<br />
+万一 fd があふれた場合、クライアントから(またはサーバへ)接続できない・<br />
+新たなモジュールをロードできない・ログが全然できないなどの症状が起こる可能性が<br />
+あります。limit の詳細については OS 等のドキュメントを参照してください。<br />
+</p>
+<div class="element"><span class="key">keep-file-open</span>:<span class="value">1</span></div>
+<p class="comment">
+keep-file-open 時に各行ごとに flush するかどうか。<br />
+open/close の負荷は気になるが、ログは失いたくない人向け。<br />
+keep-file-open が有効でないなら無視され(1になり)ます。<br />
+</p>
+<div class="element"><span class="key">always-flush</span>:<span class="value">0</span></div>
+<p class="comment">
+keep-file-openを有効にした場合、発言の度にログファイルに追記するのではなく<br />
+一定の分量が溜まってから書き込まれる。そのため、ファイルを開いても<br />
+最近の発言はまだ書き込まれていない可能性がある。<br />
+syncを設定すると、即座にログをディスクに書き込むためのコマンドが追加される。<br />
+省略された場合はコマンドを追加しない。<br />
+</p>
+<div class="element"><span class="key">sync</span>:<span class="value">sync</span></div>
+<p class="comment">
+各サーバの設定。サーバ名の部分はマスクである。<br />
+記述された順序で検索されるので、全てのサーバにマッチする"*"などは最後に書かなければならない。<br />
+指定されたディレクトリが存在しなかったら、勝手に作られる。<br />
+フォーマットは次の通り。<br />
+channel: <ディレクトリ名> <サーバ名マスク><br />
+例:<br />
+filename: %Y-%m-%d.txt<br />
+server: ircnet ircnet<br />
+server: others *<br />
+この例では、ircnetのログはircnet/%Y.%m.%d.txtに、<br />
+それ以外のログはothers/%Y.%m.%d.txtに保存される。<br />
+</p>
+<div class="element"><span class="key">server</span>:<span class="value">ircnet ircnet</span></div>
+<div class="element"><span class="key">server</span>:<span class="value">others *</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Log::Recent" class="module">
+        <div class="module-header"><h2 title="クライアントを接続した時に、保存しておいた最近のメッセージを送る。">Log::Recent</h2>
+          <span class="description">クライアントを接続した時に、保存しておいた最近のメッセージを送る。</span></div>
+        <div class="content">
+	  <p class="comment">
+クライアントオプションの no-recent-logs が指定されていれば送信しません。<br />
+</p>
+<p class="comment">
+各行のヘッダのフォーマット。省略されたら'%H:%M'。<br />
+</p>
+<div class="element"><span class="key">header</span>:<span class="value">%H:%M:%S</span></div>
+<p class="comment">
+ログをチャンネル毎に何行まで保存するか。省略されたら10。<br />
+</p>
+<div class="element"><span class="key">line</span>:<span class="value">15</span></div>
+<p class="comment">
+PRIVMSGとNOTICEを記録する際に、自分の発言と他人の発言でフォーマットを変えるかどうか。1/0。デフォルトで1。<br />
+</p>
+<div class="element"><span class="key">distinguish-myself</span>:<span class="value">1</span></div>
+<p class="comment">
+どのメッセージを保存するか。省略されたら保存可能な全てのメッセージを保存する。<br />
+</p>
+<div class="element"><span class="key">command</span>:<span class="value">privmsg,notice,topic,join,part,quit,kill</span></div>
+
+        </div>
+      </div>
+
+      
+      
+    </div>
+
+    <div class="pane-sidebar">
+      <ul class="menu">
+        
+        <li><a href="#module-Log::Channel" title="チャンネルやprivのログを取るモジュール。">Log::Channel</a></li>
+        
+        <li><a href="#module-Log::ChannelList" title="チャンネルリストをテンプレートに沿って HTML 化します。">Log::ChannelList</a></li>
+        
+        <li><a href="#module-Log::Raw" title="サーバとの生の通信を保存する">Log::Raw</a></li>
+        
+        <li><a href="#module-Log::Recent" title="クライアントを接続した時に、保存しておいた最近のメッセージを送る。">Log::Recent</a></li>
+        
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
+      </ul>
+    </div>
+  </body>
+</html>

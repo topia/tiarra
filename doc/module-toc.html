@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="EUC-JP"?>
+<!DOCTYPE html
+	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!-- $Id: module-toc.html 896 2005-05-01 12:40:25Z topia $ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
+    <title>モジュール一覧 - Tiarra Documentation</title>
+    <link rel="stylesheet" type="text/css" href="default.css" />
+  </head>
+  <body>
+
+    <h1>モジュール一覧</h1>
+
+    <ul class="toc-group">
+      
+      <li>
+	<a href="module/Auto.html">Auto</a> <span class="group-description">自動反応</span>
+	<ul class="toc-individual">
+	  
+	  <li><a href="module/Auto.html#module-Auto::Alias">Auto::Alias</a> <span class="module-description">ユーザエイリアス情報の管理を行ないます。</span></li>
+	  
+	  <li><a href="module/Auto.html#module-Auto::Answer">Auto::Answer</a> <span class="module-description">特定の発言に反応して対応する発言をする。</span></li>
+	  
+	  <li><a href="module/Auto.html#module-Auto::Calc">Auto::Calc</a> <span class="module-description">Perlの式を計算させるモジュール。</span></li>
+	  
+	  <li><a href="module/Auto.html#module-Auto::ChannelWithoutOper">Auto::ChannelWithoutOper</a> <span class="module-description">チャンネルオペレータ権限がなくなってしまったときに発言する。</span></li>
+	  
+	  <li><a href="module/Auto.html#module-Auto::Joined">Auto::Joined</a> <span class="module-description">特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。</span></li>
+	  
+	  <li><a href="module/Auto.html#module-Auto::MesMail">Auto::MesMail</a> <span class="module-description">伝言をメールとして送信する。</span></li>
+	  
+	  <li><a href="module/Auto.html#module-Auto::Oper">Auto::Oper</a> <span class="module-description">特定の文字列を発言した人を+oする。</span></li>
+	  
+	  <li><a href="module/Auto.html#module-Auto::Random">Auto::Random</a> <span class="module-description">特定の発言に反応してランダムな発言をします。</span></li>
+	  
+	  <li><a href="module/Auto.html#module-Auto::Reply">Auto::Reply</a> <span class="module-description">特定の発言に反応して発言をします。</span></li>
+	  
+	  <li><a href="module/Auto.html#module-Auto::Response">Auto::Response</a> <span class="module-description">データファイルの指定にしたがって反応する。</span></li>
+	  
+	</ul>
+      </li>
+      
+      <li>
+	<a href="module/CTCP.html">CTCP</a> <span class="group-description">CTCP 関連</span>
+	<ul class="toc-individual">
+	  
+	  <li><a href="module/CTCP.html#module-CTCP::ClientInfo">CTCP::ClientInfo</a> <span class="module-description">CTCP CLIENTINFOに応答する。</span></li>
+	  
+	  <li><a href="module/CTCP.html#module-CTCP::Ping">CTCP::Ping</a> <span class="module-description">CTCP PINGに応答する。</span></li>
+	  
+	  <li><a href="module/CTCP.html#module-CTCP::Time">CTCP::Time</a> <span class="module-description">CTCP TIMEに応答する。</span></li>
+	  
+	  <li><a href="module/CTCP.html#module-CTCP::UserInfo">CTCP::UserInfo</a> <span class="module-description">CTCP USERINFOに応答する。</span></li>
+	  
+	  <li><a href="module/CTCP.html#module-CTCP::Version">CTCP::Version</a> <span class="module-description">CTCP VERSIONに応答する。</span></li>
+	  
+	</ul>
+      </li>
+      
+      <li>
+	<a href="module/Channel.html">Channel</a> <span class="group-description">チャンネルに対する操作</span>
+	<ul class="toc-individual">
+	  
+	  <li><a href="module/Channel.html#module-Channel::Freeze">Channel::Freeze</a> <span class="module-description">特定のチャンネルの発言を、一時的に受信するのをやめる。</span></li>
+	  
+	  <li><a href="module/Channel.html#module-Channel::Ignore">Channel::Ignore</a> <span class="module-description">指定されたチャンネルの存在を、様々なメッセージから消去する。</span></li>
+	  
+	  <li><a href="module/Channel.html#module-Channel::Join::Connect">Channel::Join::Connect</a> <span class="module-description">サーバーに初めて接続した時、指定したチャンネルに入るモジュール。</span></li>
+	  
+	  <li><a href="module/Channel.html#module-Channel::Join::Invite">Channel::Join::Invite</a> <span class="module-description">招待されたらそのチャンネルに入る。</span></li>
+	  
+	  <li><a href="module/Channel.html#module-Channel::Join::Kicked">Channel::Join::Kicked</a> <span class="module-description">特定のチャンネルからkickされた時に、自動で入りなおす。</span></li>
+	  
+	  <li><a href="module/Channel.html#module-Channel::Mode::Get">Channel::Mode::Get</a> <span class="module-description">チャンネルにJOINした時、そのチャンネルのモードを取得します。</span></li>
+	  
+	  <li><a href="module/Channel.html#module-Channel::Mode::Oper::Grant">Channel::Mode::Oper::Grant</a> <span class="module-description">特定のチャンネルに特定の人間がjoinした時に、自分がチャンネルオペレータ権限を持っていれば+oする。</span></li>
+	  
+	  <li><a href="module/Channel.html#module-Channel::Mode::Set">Channel::Mode::Set</a> <span class="module-description">チャンネルを作成した時に自動的にモードを設定するモジュール。</span></li>
+	  
+	  <li><a href="module/Channel.html#module-Channel::Rejoin">Channel::Rejoin</a> <span class="module-description">チャンネルオペレータ権限を無くしたとき、一人ならjoinし直す。</span></li>
+	  
+	</ul>
+      </li>
+      
+      <li>
+	<a href="module/Client.html">Client</a> <span class="group-description">クライアントとの入出力</span>
+	<ul class="toc-individual">
+	  
+	  <li><a href="module/Client.html#module-Client::Cache">Client::Cache</a> <span class="module-description">データをキャッシュしてサーバに問い合わせないようにする</span></li>
+	  
+	  <li><a href="module/Client.html#module-Client::Conservative">Client::Conservative</a> <span class="module-description">サーバが送信するような IRC メッセージを作成するようにする</span></li>
+	  
+	  <li><a href="module/Client.html#module-Client::Cotton">Client::Cotton</a> <span class="module-description">Cotton の行うおかしな動作のいくつかを無視する</span></li>
+	  
+	  <li><a href="module/Client.html#module-Client::Eval">Client::Eval</a> <span class="module-description">クライアントから Perl 式を実行できるようにする。</span></li>
+	  
+	  <li><a href="module/Client.html#module-Client::GetVersion">Client::GetVersion</a> <span class="module-description">クライアントに CTCP Version を発行してバージョン情報を得る</span></li>
+	  
+	  <li><a href="module/Client.html#module-Client::PatchworkMessage">Client::PatchworkMessage</a> <span class="module-description">IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する</span></li>
+	  
+	  <li><a href="module/Client.html#module-Client::ProtectMyself">Client::ProtectMyself</a> <span class="module-description">意図せず自分のニックが変わってしまうのを防止する</span></li>
+	  
+	  <li><a href="module/Client.html#module-Client::Rehash">Client::Rehash</a> <span class="module-description">全チャンネル分の names の内部キャッシュをクライアントに送信する。</span></li>
+	  
+	  <li><a href="module/Client.html#module-Client::ShowNick">Client::ShowNick</a> <span class="module-description">show network</span></li>
+	  
+	</ul>
+      </li>
+      
+      <li>
+	<a href="module/Debug.html">Debug</a> <span class="group-description">Tiarraや、Tiarraモジュールのデバッグ用</span>
+	<ul class="toc-individual">
+	  
+	  <li><a href="module/Debug.html#module-Debug::RawLog">Debug::RawLog</a> <span class="module-description">標準出力にクライアントやサーバとの通信をダンプする。</span></li>
+	  
+	</ul>
+      </li>
+      
+      <li>
+	<a href="module/Log.html">Log</a> <span class="group-description">ログの記録</span>
+	<ul class="toc-individual">
+	  
+	  <li><a href="module/Log.html#module-Log::Channel">Log::Channel</a> <span class="module-description">チャンネルやprivのログを取るモジュール。</span></li>
+	  
+	  <li><a href="module/Log.html#module-Log::ChannelList">Log::ChannelList</a> <span class="module-description">チャンネルリストをテンプレートに沿って HTML 化します。</span></li>
+	  
+	  <li><a href="module/Log.html#module-Log::Raw">Log::Raw</a> <span class="module-description">サーバとの生の通信を保存する</span></li>
+	  
+	  <li><a href="module/Log.html#module-Log::Recent">Log::Recent</a> <span class="module-description">クライアントを接続した時に、保存しておいた最近のメッセージを送る。</span></li>
+	  
+	</ul>
+      </li>
+      
+      <li>
+	<a href="module/System.html">System</a> <span class="group-description">Tiarra自身の動作に関するもの</span>
+	<ul class="toc-individual">
+	  
+	  <li><a href="module/System.html#module-System::Error">System::Error</a> <span class="module-description">サーバーからのERRORメッセージをNOTICEに埋め込む</span></li>
+	  
+	  <li><a href="module/System.html#module-System::Macro">System::Macro</a> <span class="module-description">新規にコマンドを追加し、そのコマンドが使われた時に特定の動作をまとめて実行します。</span></li>
+	  
+	  <li><a href="module/System.html#module-System::NotifyIcon::Win32">System::NotifyIcon::Win32</a> <span class="module-description">タスクトレイにアイコンを表示する。</span></li>
+	  
+	  <li><a href="module/System.html#module-System::Pong">System::Pong</a> <span class="module-description">サーバーからのPINGメッセージに対し、自動的にPONGを返す。</span></li>
+	  
+	  <li><a href="module/System.html#module-System::PrivTranslator">System::PrivTranslator</a> <span class="module-description">クライアントからの個人的なprivが相手に届かなくなる現象を回避する。</span></li>
+	  
+	  <li><a href="module/System.html#module-System::Raw">System::Raw</a> <span class="module-description">マスクで指定したサーバーにIRCメッセージを加工せずに直接送る。</span></li>
+	  
+	  <li><a href="module/System.html#module-System::Reload">System::Reload</a> <span class="module-description">confファイルやモジュールの更新をリロードするコマンドを追加する。</span></li>
+	  
+	  <li><a href="module/System.html#module-System::RemoteControl">System::RemoteControl</a> <span class="module-description">特定の発言が送られてきたとき、それに反応してIRCコマンドを実行します。</span></li>
+	  
+	  <li><a href="module/System.html#module-System::Shutdown">System::Shutdown</a> <span class="module-description">Tiarraを終了させる。</span></li>
+	  
+	</ul>
+      </li>
+      
+      <li>
+	<a href="module/User.html">User</a> <span class="group-description">特定の人間に対する動作や自分自身についての動作</span>
+	<ul class="toc-individual">
+	  
+	  <li><a href="module/User.html#module-User::Away::Client">User::Away::Client</a> <span class="module-description">クライアントが一つも接続されていない時にAWAYを設定します。</span></li>
+	  
+	  <li><a href="module/User.html#module-User::Away::Nick">User::Away::Nick</a> <span class="module-description">ニックネーム変更に応じて AWAY を設定します。</span></li>
+	  
+	  <li><a href="module/User.html#module-User::Filter">User::Filter</a> <span class="module-description">指定された人物からのPRIVMSGやNOTICEを書き換える。</span></li>
+	  
+	  <li><a href="module/User.html#module-User::Ignore">User::Ignore</a> <span class="module-description">指定された人間からのPRIVMSGやNOTICEを破棄してクライアントへ送らないようにするモジュール。</span></li>
+	  
+	  <li><a href="module/User.html#module-User::Nick::Detached">User::Nick::Detached</a> <span class="module-description">クライアントが接続されていない時に、特定のnickに変更します。</span></li>
+	  
+	  <li><a href="module/User.html#module-User::ServerOper">User::ServerOper</a> <span class="module-description">特定のネットワークに接続した時、OPERコマンドを発行します。</span></li>
+	  
+	  <li><a href="module/User.html#module-User::Vanish">User::Vanish</a> <span class="module-description">指定された人物の存在を、様々なメッセージから消去する。</span></li>
+	  
+	</ul>
+      </li>
+      
+    </ul>
+  </body>
+</html>

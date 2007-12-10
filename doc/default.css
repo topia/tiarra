@@ -1,0 +1,112 @@
+/* $Id: default.css,v 1.1 2003/08/04 09:29:21 admin Exp $ */
+@import url(../../common/style/blue/base.css);
+
+/* toc-group */
+.toc-group
+{
+  font-size: x-large;
+  }
+
+.toc-group .group-description
+{
+  font-size: large;
+  }
+
+.toc-group .toc-individual
+{
+  font-size: large;
+  }
+
+.toc-group .toc-individual .module-description
+{
+  font-size: medium;
+  }
+
+
+/* doc-element */
+div.module
+{
+  border-style: dotted;
+  border-width: 2px;
+  border-color: #66b3ff;
+  padding: 10px;
+  margin-left: 20px;
+  margin-bottom: 10px;
+  margin-right: 10px;
+  background: #d4e9ff;
+  }
+
+div.module h2
+{
+  display: inline;
+  }
+
+div.module .description
+{
+  font-style: bold;
+  margin-left: 2em;
+  }
+
+div.module .content
+{
+  padding-left: 1em;
+/*
+  padding-top: 1em;
+  border-top-width: 1px;
+  border-top-style: dashed;
+  border-top-color: #66b3ff;
+  border-left-width: 1px;
+  border-left-style: dashed;
+  border-left-color: #66b3ff;
+  */
+  }
+
+div.module .comment
+{
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-left-color: #66b3ff;
+  border-bottom-width: 1px;
+  border-bottom-style: dashed;
+  border-bottom-color: #66b3ff;
+  padding-left: 1em;
+  }
+
+div.element.block
+{
+  }
+
+div.element .key
+{
+  font-weight: bolder;
+  }
+
+div.element .value
+{
+  margin-left: 0.5em;
+  }
+
+div.element.block
+{
+  margin-top: 0.7em;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #66b3ff;
+  }
+
+div.element.block .block.key
+{
+  position: relative;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  top: -0.6em;
+  left: 0.3em;
+  color: black;
+  background: #d4e9ff;
+  }
+
+div.block.content
+{
+  margin: 0.5em;
+  margin-top: 0em;
+  }

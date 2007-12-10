@@ -1,0 +1,29 @@
+#!/bin/sh
+# $Id$
+# copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
+
+THISDIR="${THISDIR-$(dirname $0)}"
+[ "0${DEBUG}" -ge 1 ] && echo "${THISDIR}/run: start"
+
+# override
+WORKDIR="${WORKDIR:-${THISDIR}}"
+if [ -z "${TOPDIR}" ]; then
+  TOPDIR=.
+else
+  TOPDIR="${TOPDIR}/.."
+fi
+TOPDIR="${TOPDIR#./}"
+
+[ "0${DEBUG}" -ge 2 ] && echo "${THISDIR}/run: read tiarrarc"
+[ -f "${THISDIR}/.tiarrarc" ] && . "${THISDIR}/.tiarrarc"
+if [ -f "${THISDIR}/.tiarrarc-once" ]; then
+  . "${THISDIR}/.tiarrarc-once"
+  rm -f "${THISDIR}/.tiarrarc-once"
+fi
+
+if [ -f "${THISDIR}/run-main" ]; then
+  . "${THISDIR}/run-main"
+else
+  THISDIR="${THISDIR}/.."
+  . "${THISDIR}/run"
+fi

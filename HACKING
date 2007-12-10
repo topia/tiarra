@@ -1,0 +1,186 @@
+モジュールについて
+
+* モジュールの新規作成
+module/Skelton.pm にモジュールのスケルトンがありますので、
+これをコピーして不要な関数を削除すれば、作ることが出来ます。
+
+* 注意すべき事項
+  - Tiarra はシングルスレッドです。時間がかかる処理をそのままやってはいけません。
+    Timer や Hook, ソケット入出力なら ExternalSocket を使って少しずつ処理してください。
+  - conf の変更が起きると、モジュールはインスタンスごと再初期化されます。
+    設定変更後にも必要なデータは、適切なオブジェクトの remark か、 BulletinBoard に
+    書いてください。
+
+* 良く使うモジュール/関数
+  - Tiarra::SharedMixin(main/Tiarra/SharedMixin.pm)
+    インポートするだけで ->shared を簡単に実現する mixin です。
+    ->_new(...) がインスタンス初期化に呼ばれ、 ->_initialize(...) が
+    (->shared を利用する文を含む)初期化用に呼ばれます。 ->_initialize は定義しなくても OK です。
+    + $class_or_this->_this	$class_or_this がただのパッケージ名だったとしても、
+				->shared を呼び出してインスタンス化します。
+				クラスメソッド (package->func(...)) を簡単に実装したいときに
+				使えます。
+  - Tiarra::Utils(main/Tiarra/Utils.pm)
+    このモジュールの関数はすべて package->func(...) または package->shared->func(...) で呼んで
+    ください。
+    + define_function($code, $funcname, ...)
+				呼び出し元パッケージに $code で指定された関数を $funcname という
+				名前で追加します。
+    + define_attr_accessor($class_method, $name, ...)
+				呼び出し元パッケージに $name で指定された属性アクセサ(値の取得設定
+				ともに可能なもの)を定義します。
+				$class_method には、この関数を package->name(...) でアクセスできる
+				ようにするかを指定します。
+				$name には無名配列を指定することもでき、その場合は[関数名, 属性名]
+				と解釈されます。
+    + define_attr_getter($class_method, $name, ...)
+				呼び出し元パッケージに $name で指定された属性取得関数を定義します。
+				引数の意味は define_attr_accessor と同じです。
+    + define_attr_setter($class_method, $name, ...)
+				呼び出し元パッケージに $name で指定された属性設定関数を定義します。
+				引数の意味は define_attr_accessor と同じです。
+    + get_packag($level)	呼び出し元のパッケージ名を取得します。
+				$level が省略された場合は 0 で、この値は呼び出し元の呼び出し元(通常
+				欲しいと思われる値)を返します。
+    + cond_yesno($str, $default)
+				$str を yes か no か評価します。他には true と false を受け付け
+				ます。 $str が未定義だった場合は $default (または 0)を返します。
+    + to_str($value, ...)	任意の値を文字化します。特に undef/ininitialized なエラーを無視して
+				文字化します。
+    + get_first_defined($value, ...)
+				引数の中で一番最初に定義されていたものを返します。
+				(with defined_or: $a // $b // $c // ...)
+  - Tiarra::ShorthandConfMixin(main/Tiarra/ShorthandConfMixin.pm)
+    _runloop を定義した状態でインポートすると、 _conf, _conf_general, _conf_networks,
+    _conf_messages を定義します。
+  - Mask(main/Mask.pm)
+    汎用に使えるマスクマッチング関数群が実装してあります。
+    良く使う形は
+      Mask::match_deep_chan([$this->config->mask('all')], $msg->prefix, $channel_name_with_network)
+      Mask::match_deep([$this->config->keyword('all')], $keyword)
+    だと思います。
+
+  - ModuleManager(main/ModuleManager.pm)
+    ここで紹介する関数は、全て ModuleManager->shared_manager->function(...) と呼んで下さい。
+    + add_to_blacklist($modname)
+				$modname で指定されたモジュールをブラックリストに入れる。
+				ブラックリストに入れられたモジュールは、リロードするか削除される
+				まで呼び出されない。成功したら正を返す。
+    + remove_from_blacklist($modname)
+				$modname で指定されたモジュールをブラックリストから削除する。
+				成功したら正を返す。
+    + check_blacklist($modname)	$modname で指定されたモジュールがブラックリストに入っていれば
+				正を返す。
+
+
+  - Multicast(main/Multicast.pm)
+    + detach($str)		文字列 $str からネットワーク名を外す。
+				戻り値: (セパレータ前の文字列,ネットワーク名,ネットワーク名が明示されたかどうか)
+				ただしスカラーコンテクストではセパレータ前の文字列のみを返す。
+    + attach($str, $network_name)
+				$str にネットワーク名を付ける。
+				$strはChannelInfoのオブジェクトでも良い。
+				$network_nameは省略可能。IrcIO::Serverのオブジェクトでも良い。
+    + attach_for_client($str, $network_name)
+				クライアント向けに、 multi-server-mode でなければ attach しない。
+    + nick_p($str)		文字列 $str が nick name として許される形式なら 1 を返す。
+				ネットワーク名は付けたままでも構わない。処理前に detach される。
+    + channel_p($str)		文字列 $str が channel name として許される形式なら 1 を返す。
+				ネットワーク名は付けたままでも構わない。処理前に detach される。
+
+  - RunLoop(main/RunLoop.pm)
+    ここで紹介する関数は、全て RunLoop->shared_loop->function(...) と呼んで下さい。
+    + channel($str)		チャンネルを探す。
+				ネットワーク名付きのチャンネル名が引数です。
+				無ければ undef を返します。
+    + broadcast_to_clients(@messages)
+				メッセージを全てのクライアントに送信する。
+    + notify_msg($str)		全てのクライアントと、 STDOUT にメッセージを通知します。
+    + notify_error($str)	notify_msg を使ってエラーを通知します。
+    + notify_warn($str)		notify_msg を使って警告を通知します。
+    + terminate($message)	サーバとクライアントを切断して終了します。
+
+  - main(tiarra)
+    + ::printmsg()		STDOUT にのみメッセージを通知します。
+    + ::debug_printmsg()	デバッグモードの時のみメッセージを通知します。
+    + ::debug_mode()		デバッグモードなら 1 を返します。
+    + ::ipv6_enabled()		IPv6 が有効なら 1 を返します。
+
+  - BulletinBoard(main/BulletinBoard.pm)
+    ここで紹介する関数は、全て BulletinBoard->shared->function(...) と呼んで下さい。
+    + set($key, $value)		掲示板に $key という名前で値 $value をセットします。
+				$key を __PACKAGE__."/key" という名前にすれば
+				被りにくいと思います。
+    + get($key)			$key でセットした値を得ます。
+    + keys			BulletinBoard が保持しているテーブルを返します。
+				この内容を変更すると、当然 BulletinBoard の内容も変わります。
+
+  - Auto::Utils(module/Auto/Utils.pm)
+    + generate_reply_closures(...)
+				一般的な自動反応をするのに有用なクロージャを生成する。
+    + sendto_channel_closure(...)
+				チャンネル等に PRIVMSG / NOTICE を送るクロージャを生成する。
+      一般的な使い方は Skelton.pm に書いておきました。
+
+* remark のあるオブジェクト
+  remark とは、オブジェクトに関連づけられた、自由に使える key/value pair です。
+  remark 機能の存在するオブジェクトと、(あるなら)広く使われている既定の remark を挙げます。
+  - IrcIO::Client
+  - IrcIO::Server
+    再接続時には remark はクリアされません。
+    + 情報取得系
+      * server_hops		自分のつながっている server と、あるサーバの hop 数の対応を
+				(情報が得られたときに)記録しています。
+      * isupport		RPL_ISUPPORT が送ってくる情報を記録しています。
+				RPL_ISUPPORT の詳細は http://www.irc.org/tech_docs/005.html 等を
+				参照してください。
+				対応していないサーバでは remark は存在しません。
+      * uid			RPL_YOURID が送ってくる情報を記録しています。
+				対応していないサーバでは remark は存在しません。
+  - IRCMessage
+    + 情報取得系
+      * affected-channels	NICK や QUIT などの全チャンネルに波及するメッセージのときに
+				影響を受けたチャンネルが設定されていることがあります。
+      * old-topic		TOPIC 時に一つ前のトピックが設定されています。
+    + 動作設定系
+      * fill-prefix-when-sending-to-client
+				クライアントに送信するときに prefix (Tiarra が 001(RPL_WELCOME)
+				で返したもの) を補完します。
+      * do-not-send-to-clients	このメッセージを(ほかのモジュールで処理する可能性があるために
+				残すけれど)クライアントには送信しないようにします。
+      * do-not-send-to-servers	do-not-send-to-clients と同じような理由で、サーバに送信しない
+				ようにします。
+      * always-use-colon-on-last-param
+				シリアライズするとき、最終パラメータに常にコロンを使用する
+				ようにします。
+  - ChannelInfo
+    + 情報取得系
+      * kicked-out		そのチャンネルから蹴り出されている(すでにそのチャンネルに
+				いない)かどうか。
+      * switches-are-known	チャンネルモードを取得済みかどうか。
+      * creation-time		RPL_CREATIONTIME が返した値。
+  - PersonInChannel
+  - PersonalInfo
+
+* Hook
+  - 基本的な使い方:
+	use SomePackage::Hook;
+	my $hook = SomePackage::Hook->new(sub{
+	    my $hook = shift;
+	    # do something
+	})->install('someplace');
+  - Hook のあるパッケージ、 Hook 名と簡単な説明
+    + RunLoop
+      * before-select		select 前
+      * after-select		select 後
+      * set-current-nick	set_current_nick が呼ばれたとき
+    + Configuration
+      * reloaded		conf が再読込されたとき
+    + IrcIO::Client
+      * channel-info($client, $ch_name, $network, $ch)
+				接続時に Join しているチャンネルごとに呼ばれる。
+				チャンネル情報とともに recent log を送ったりする場合に使える。
+
+Local variables:
+mode: text
+End:
