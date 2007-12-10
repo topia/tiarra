@@ -137,12 +137,12 @@ sub help {
     print "\n";
     print "options:\n";
     print "  --help           print this message\n";
-    print "  --version        print version infomation\n";
+    print "  --version        print version information\n";
     print "  --dumpversion    print version\n";
     print "  --config=<file>  tiarra configuration file; default is 'tiarra.conf'\n";
     print "  --quiet          don't output any messages to stdout and stderr\n";
     print "  --no-fork        don't move to background when started in quiet mode\n";
-    print "  --debug          show debug infomation\n";
+    print "  --debug          show debug information\n";
     print "  --make-password  prompt you a password to encrypt.\n";
     print "                   *Tiarra doesn't do its normal work with this option*\n";
     print "   -D<symbol>[=<string>]\n";

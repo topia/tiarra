@@ -18,7 +18,7 @@ sub _new {
      datas => {}, # HASH<HASH*>; HASH key is [tag]
      # compressor: stream compressor
      # stream    : stream object
-     # lasterr   : last error infomation
+     # lasterr   : last error information
      # data      : compressor dependent datas
      compressor => {}, # HASH; compressor name => Process Classes
      const => 
