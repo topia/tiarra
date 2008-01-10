@@ -120,7 +120,7 @@ sub check_changelog {
 		    # special cleanup for taint check
 		    $ENV{PATH} =~ /^(.*)$/;
 		    local $ENV{PATH} = $1;
-		    $svnversion = `svnversion -n .`;
+		    $svnversion = system('svnversion', '--no-newline', '--committed', '.');
 		};
 		$olddir =~ /^(.*)$/;
 		chdir $1;
