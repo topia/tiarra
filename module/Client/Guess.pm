@@ -11,7 +11,7 @@ use Tiarra::SharedMixin;
 
 # shorthand
 our $re_ver = qr/[\d.][\d.a-zA-Z-+]+/;
-our $re_tok = qr/[^\s]+/;
+our $re_tok = qr/\S+/;
 
 sub _new {
     # don't need instance present
