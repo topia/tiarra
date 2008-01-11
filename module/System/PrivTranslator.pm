@@ -75,5 +75,6 @@ section: important
 
 # このモジュールは個人宛てのprivmsgの送信者のnickにネットワーク名を付加します。
 # また、最後に声をかけられてから5分以内の nick 変更をクライアントに伝えます。
-# 設定項目はありません。
+# 設定項目はありませんが、 networks/channel-network-separator を ! や @ 以外に
+# 変更することをおすすめします。
 =cut
