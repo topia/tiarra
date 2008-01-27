@@ -164,6 +164,27 @@ sub _MODE_from_client {
     forward_to_server($message,$to);
 }
 
+sub _TOPIC_from_server {
+    my ($message,$sender) = @_;
+    $message->nick(global_to_local($message->nick,$sender));
+
+    my $target = $message->params->[0];
+    if (channel_p($target)) {
+	# nick(つまり自分)の場合はそのままクライアントに配布。
+	# この場合はチャンネルなので、ネットワーク名を付加。
+	$message->params->[0] = attach($target,$sender->network_name);
+    }
+    return $message;
+}
+
+sub _TOPIC_from_client {
+    my ($message,$sender) = @_;
+    my $to;
+    ($message->params->[0],$to) = detach($message->params->[0]);
+
+    forward_to_server($message,$to);
+}
+
 sub _NICK_from_client {
     # ネットワーク名が指定されていたら、その鯖にのみNICKを送信。
     # そうでなければ全ての鯖に送る。
@@ -348,7 +369,7 @@ my $server_sent = {
     'PRIVMSG' => \&_NOTICE_from_server, # NOTICEと同じ処理で良い。
     'QUIT' => undef, # QUITしたのが自分だったら捨てる、といった処理はIrcIO::Serverが行なう。
     'SQUERY' => \&_MODE_from_server, # 多分これは鯖からも来るだろうが、良く分からない。
-    'TOPIC' => \&_MODE_from_server,
+    'TOPIC' => \&_TOPIC_from_server,
     'NJOIN' => \&_NJOIN_from_server,
     (RPL_UNIQOPIS) => \&_RPL_INVITING, # UNIQOPIS (INVITINGと同じ処理)
     # TRACE系のリプライはTiarraは関知しない。少なくとも今のところは。
@@ -412,7 +433,7 @@ my $client_sent = {
     'STATS' => \&_MODE_from_client, # サーバ名はうしろにつくのでこれはよくないかも
     'SUMMON' => \&_MODE_from_client,
     'TIME' => \&_MODE_from_client,
-    'TOPIC' => \&_MODE_from_client,
+    'TOPIC' => \&_TOPIC_from_client,
     'TRACE' => \&_MODE_from_client,
     'UMODE' => \&_MODE_from_client,
     'USER' => undef,
