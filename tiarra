@@ -117,7 +117,7 @@ sub check_changelog {
 		    $ENV{PATH} =~ /^(.*)$/;
 		    local $ENV{PATH} = $1;
 		    $svndir =~ /^(.*)$/;
-                    $svnversion = `svnversion --no-newline --committed $1`;
+		    $svnversion = (`svnversion --no-newline --committed $1` =~ /(\d+[MS]{0,2})$/)[0];
 		};
 	    }
 	    $version .= '+svn-' . $svnversion if defined $svnversion && length $svnversion;
