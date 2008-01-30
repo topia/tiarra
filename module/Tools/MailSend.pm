@@ -60,6 +60,8 @@ sub _get_server_index {
   $data{'smtp_host'} = $arg{'smtp_host'} || 'localhost';
   $data{'smtp_port'} = $arg{'smtp_port'} || getservbyname('smtp', 'tcp') || 25;
   $data{'smtp_fqdn'} = $arg{'smtp_fqdn'} || 'localhost';
+  $data{'smtp_user'} = $arg{'smtp_user'} || '';
+  $data{'smtp_pass'} = $arg{'smtp_pass'} || '';
   $data{'local'} = 
     {
      parent => $this,
