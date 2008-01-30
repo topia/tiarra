@@ -11,9 +11,10 @@ use strict;
 use warnings;
 use IO::File;
 use File::stat;
-use Module::Use qw(Auto::AliasDB::CallbackUtils Tools::GroupDB);
+use Module::Use qw(Auto::AliasDB::CallbackUtils Tools::GroupDB Tools::Hash);
 use Auto::AliasDB::CallbackUtils;
 use Tools::GroupDB;
+use Tools::Hash;
 use Mask;
 use Configuration;
 use Configuration::Block;
@@ -104,7 +105,7 @@ sub find_alias_with_stdreplace {
 sub add_stdreplace {
     my ($alias, $nick, $name, $host, $prefix) = @_;
 
-    $alias = {} unless defined($alias);
+    $alias = Tools::Hash->new() unless defined($alias);
 
     $alias->{'nick.now'} = $nick;
     $alias->{'user.now'} = $name;
