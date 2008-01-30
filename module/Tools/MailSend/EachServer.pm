@@ -38,6 +38,8 @@ sub new {
 	smtp_host => 'localhost',
 	smtp_port => getservbyname('smtp', 'tcp') || 25,
 	smtp_fqdn => 'localhost',
+	smtp_user => '',
+	smtp_pass => '',
 
 	# cleaner is destruction function.
 	cleaner => undef,
@@ -113,7 +115,7 @@ sub _set_data {
 	grep {$name eq $_} 
 	    (qw(local cleaner use_pop3), 
 	     (map { 'pop3_' . $_ } qw(host port user pass expire)), 
-	     (map { 'smtp_' . $_ } qw(host port fqdn)));
+	     (map { 'smtp_' . $_ } qw(host port fqdn user pass)));
 
     $this->{$name} = $value;
     return 1;
@@ -374,13 +376,18 @@ sub _do_smtp {
 	}
     } elsif ($local_state eq 'EHLO') {
 	if ($reply eq '250-') {
-	    push(@{$this->{esmtp_capable}}, substr($line, 5));
+	    push(@{$this->{esmtp_capable}}, substr($line, 4));
 	} elsif ($reply eq '250 ') {
 	    # end of esmtp capable
-	    push(@{$this->{esmtp_capable}}, substr($line, 5));
-	    # ここでHELOと処理を一本化するためにSTART_MAILとしてrecursive.
-	    $this->{local_state} = 'START_MAIL';
-	    return $this->_do_smtp('THROUGH');
+	    push(@{$this->{esmtp_capable}}, substr($line, 4));
+	    if (length($this->{smtp_user})) {
+		$this->{local_state} = 'AUTH_START';
+		return $this->_do_smtp('RECURSIVE');
+	    } else {
+		# ここでHELOと処理を一本化するためにSTART_MAILとしてrecursive.
+		$this->{local_state} = 'START_MAIL';
+		return $this->_do_smtp('RECURSIVE');
+	    }
 	} else {
 	    # error. use HELO instead of EHLO
 	    $this->{local_state} = 'HELO';
@@ -390,12 +397,84 @@ sub _do_smtp {
 	if ($reply eq '250 ') {
 	    # ここでEHLOと処理を一本化するためにSTART_MAILとしてrecursive.
 	    $this->{local_state} = 'START_MAIL';
-	    return $this->_do_smtp('THROUGH');
+	    return $this->_do_smtp('RECURSIVE');
 	} else {
 	    # error
 	    $this->_reply_smtp_error(undef, $local_state, $line); # all stack
 	    $this->_close_smtp();
 	    $this->clean();
+	}
+    } elsif ($local_state eq 'AUTH_START_LOGIN') {
+	local $@;
+	eval { require MIME::Base64; };
+	if ($@) {
+	    $this->{local_state} = 'AUTH_FAILED';
+	    return $this->_do_smtp('RECURSIVE');
+	} else {
+	    $this->{local_state} = 'AUTH_LOGIN_USER';
+	    $sock->send_reserve(
+		'AUTH LOGIN ' .
+		    MIME::Base64::encode($this->{smtp_user}, ''));
+	}
+    } elsif ($local_state eq 'AUTH_LOGIN_USER') {
+	if ($reply eq '334 ') {
+	    $this->{local_state} = 'AUTH_CHECK';
+	    $sock->send_reserve(MIME::Base64::encode($this->{smtp_pass},
+						     ''));
+	} else {
+	    $this->{local_state} = 'AUTH_FAILED';
+	    return $this->_do_smtp('RECURSIVE');
+	}
+    } elsif ($local_state eq 'AUTH_START_PLAIN') {
+	local $@;
+	eval { require MIME::Base64; };
+	if ($@) {
+	    $this->{local_state} = 'AUTH_FAILED';
+	    return $this->_do_smtp('RECURSIVE');
+	} else {
+	    $this->{local_state} = 'AUTH_CHECK';
+	    $sock->send_reserve(
+		'AUTH PLAIN ' . MIME::Base64::encode(
+		    join('',
+			 "\0", $this->{smtp_user},
+			 "\0", $this->{smtp_pass}),
+		    ''));
+	}
+    } elsif ($local_state eq 'AUTH_CHECK') {
+	if (($reply eq '235 ') || ($reply eq '503 ')) {
+	    # success or alreay authed.
+	    $this->{local_state} = 'START_MAIL';
+	    return $this->_do_smtp('RECURSIVE');
+	} else {
+	    my $mech = $this->{smtp_mech_trying};
+	    RunLoop->shared->notify_warn("smtp auth $mech failed with some reason: $line");
+	    $this->{local_state} = 'AUTH_FAILED';
+	    return $this->_do_smtp('RECURSIVE');
+	}
+    } elsif ($local_state =~ /^AUTH_/) {
+	# fallback
+	if ($local_state eq 'AUTH_START') {
+	    my ($type, @meths);
+	    foreach my $capa (@{$this->{esmtp_capable}}) {
+		($type, @meths) = split(/ /, $capa);
+		last if $type eq 'AUTH';
+	    }
+	    $this->{smtp_meths} = [@meths];
+	    $this->{smtp_meths_trail} = [@meths];
+	}
+	my $new_mech = pop(@{$this->{smtp_meths_trail}});
+	if (defined $new_mech) {
+	    $this->{local_state} = 'AUTH_START_' . $new_mech;
+	    $this->{smtp_mech_trying} = $new_mech;
+	    return $this->_do_smtp('RECURSIVE');
+	} else {
+	    # auth failed.
+	    RunLoop->shared->notify_warn(
+		'mesmail: smtp auth failed: '.
+		    join(', ', @{$this->{smtp_meths}}).'.');
+	    RunLoop->shared->notify_warn('mesmail: but try to send mail.');
+	    $this->{local_state} = 'START_MAIL';
+	    return $this->_do_smtp('RECURSIVE');
 	}
     } elsif ($local_state eq 'START_MAIL') {
 	# initialize mail
@@ -525,7 +604,7 @@ sub _smtp_send_final {
 	}
 	# START_MAILにしてrecursive.
 	$this->{local_state} = 'START_MAIL';
-	return $this->_do_smtp('THROUGH');
+	return $this->_do_smtp('RECURSIVE');
     } else {
 	# close smtp
 	$this->_close_smtp();
