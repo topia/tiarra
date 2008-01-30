@@ -121,6 +121,8 @@ sub _mail_send_reserve {
 	      pop3_expire => $this->config->pop3_expire,
 	      smtp_host => $this->config->smtphost,
 	      smtp_port => $this->config->smtpport,
+	      smtp_user => $this->config->smtpuser,
+	      smtp_pass => $this->config->smtppass,
 	      smtp_fqdn => $this->config->smtp_fqdn,
 	      sender => 'Auto::MesMail::' . $msg->prefix(),
 	      priority => 0,
@@ -179,7 +181,7 @@ sub _data {
   my $to = $struct->{local}->{to};
   my $replacer = $struct->{local}->{replacer};
 
-  my @format = Auto::AliasDB::get_array($to, 'mail_format');
+  my @format = @{Auto::AliasDB::get_array($to, 'mail_format') || []};
   @format = $this->config->format('all') unless @format;
   @format = $FORMAT unless @format;
 
@@ -305,6 +307,12 @@ date: %H:%M:%S
 
 # SMTPで自ホストのFQDN [default: localhost]
 -smtpfqdn: localhost
+
+# SMTPのユーザ。指定されれば SMTP Auth を行う [default: なし]
+-smtpuser: example1
+
+# SMTPのパスワード [default: 空パスワード('')]
+-smtppass: test-password
 
 # 送信するメールの既定件名(エイリアス使用不可) [default: Message from IRC]
 -subject: Message from IRC
