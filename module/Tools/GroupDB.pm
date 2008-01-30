@@ -556,7 +556,7 @@ sub concat_string_to_key {
     # $prefix	: prefix 文字列 ('to.' とか 'from.' とか)
     # $suffix	: suffix 文字列
     my ($group, $prefix, $suffix) = @_;
-    return $group->clone->manipulate_keyname(
+    return dup_group($group)->manipulate_keyname(
 	prefix => $prefix,
 	suffix => $suffix,
        );
