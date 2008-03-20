@@ -291,7 +291,8 @@ sub makehtml_mods_toc {
     # module-group.tdocを読んで、各グループの説明を取得する。
     my $groups = DocParser->new('doc-src/module-group.tdoc');
 
-    foreach my $groupname (sort {$a cmp $b} keys %$classified) {
+    foreach my $groupname_key (sort {$a cmp $b} keys %$classified) {
+	my $groupname = $groupname_key ne '' ? $groupname_key : 'UNCLASSIFIED';
 	my $description = do {
 	    # このグループに対して、説明が定義されているか？
 	    my $groupdoc = $groups->getdoc($groupname);
@@ -309,11 +310,7 @@ sub makehtml_mods_toc {
 
 	my $unijp = Tiarra::Encoding->new;
 
-	my $group_path =
-	    join('',
-		 'module/',
-		 $groupname eq '' ? 'UNCLASSIFIED' : $groupname,
-		 '.html');
+	my $group_path = "module/$groupname.html";
 
 	$t->toc_group->expand(
 	    group_path => $unijp->set($group_path)->$html_charset,
@@ -322,7 +319,7 @@ sub makehtml_mods_toc {
 	);
 
 	# 各モジュール名とその説明を展開〜
-	foreach my $moddoc (@{$classified->{$groupname}}) {
+	foreach my $moddoc (@{$classified->{$groupname_key}}) {
 	    print $moddoc->pkg_name." belongs to the group `".$groupname."'\n";
 	    $t->toc_group->toc_individual->add(
 		group_path => $unijp->set($group_path)->$html_charset,
