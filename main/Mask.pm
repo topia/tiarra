@@ -7,6 +7,12 @@ use warnings;
 use Carp;
 use Multicast;
 
+
+# -----------------------------------------------------------------------------
+# $bool = match($masks, $str).
+# $bool = match($masks, $str, $match_type, $use_re, $use_flag).
+# どれにもマッチしなかった際はundef, つまり偽がかえる.
+#
 sub match {
   # matchはワイルドカードを使ったマッチングを行う関数です。
   # ワイルドカード以外にも、+や-を使った除外指定や、
@@ -16,6 +22,8 @@ sub match {
   # 条件中に','(コンマ)を使いたい場合は'\,'と書けます。
 
   # 引数名      : [既定値] - 説明 -
+  # $masks      : [-] カンマ区切りのマッチリスト.
+  # $str        : [-] マッチ対象の文字列.
   # $match_type : [0] 0: 最後にマッチした値を返します。 1: 最初にマッチした値を返します。
   # $use_re     : [1] 0: 正規表現マッチを使用しません。 1: 使用します。
   # $use_flag   : [1] 0: +や-を使用しません。           1: 使用します。
@@ -31,6 +39,11 @@ sub match {
   return match_array([_split($masks)], $str, $match_type, $use_re, $use_flag);
 }
 
+# -----------------------------------------------------------------------------
+# $bool = match_deep(\@masks_list, $str).
+# $bool = match_deep(\@masks_list, $str, $g_match_type, $match_type, $use_re, $use_flag);
+# @masks の各要素に対して match() を行う.
+#
 sub match_deep {
   # match_deepは次のようなマスクの解釈に使います。
 
@@ -61,6 +74,10 @@ sub match_deep {
   return $g_matched;
 }
 
+# -----------------------------------------------------------------------------
+# $bool = match_array(\@masks, $str).
+# $bool = match_array(\@masks, $str, $match_type, $use_re, $use_flag).
+#
 sub match_array {
   # match_arrayは、matchから呼ばれる内部関数ですが、普通に呼び出して使うこともできます。
   # match との違いは、マスクをマスク配列の参照として渡す点です。
