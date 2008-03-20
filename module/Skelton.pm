@@ -146,3 +146,21 @@ sub control_requested {
 }
 
 1;
+
+=begin tiarra-doc
+
+info:    Skelton for tiarra-module.
+default: off
+#section: important
+
+# モジュールの説明をこのあたりに書く.
+# 詳細はこのソースみれば分かると思われ.
+# 書式は tiarra.conf にそのままコピーできる形式.
+
+# もにゅもにゅ
+mask: *!*@*
+mask: ...
+
+=end tiarra-doc
+
+=cut
