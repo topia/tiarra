@@ -54,3 +54,9 @@ package User;
 description: 特定の人間に対する動作や自分自身についての動作
 =cut
 
+* UNCLASSIFIED
+package UNCLASSIFIED;
+=pod
+description: 未分類のモジュール
+=cut
+
