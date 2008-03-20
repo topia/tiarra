@@ -111,6 +111,7 @@ sub _parse_docpod {
 	    } @lines[$remaining_start .. (@lines-1)]) =~ s/^\s*|\s*$//g;
 	    $new_doc->($pod->[0],$header,$remaining);
 	}
+	# ヘッダがなければ tiarra-doc じゃないとみなしてskip.
     }
 
     @result;
@@ -129,9 +130,26 @@ sub _parse_pod {
     my $pkg_name;
     while (1) {
 	# =podを探す
+	my $found_type;
 	my $found_pod_line;
 	for (my $i = $search_start_pos; $i < @lines; $i++) {
+	    if ($lines[$i] =~ m/^=for\s+tiarra-doc(?:\s|$)/) {
+		$found_type     = '=for';
+		$found_pod_line = $i;
+		last;
+	    }
+	    if ($lines[$i] =~ m/^=begin\s+tiarra-doc(?:\s|$)/) {
+		$found_type     = '=begin';
+		while( $i+1 <= $#lines && $lines[$i+1] =~ /^\s*$/ )
+		{
+		  # 続く空白行は取り除いておく.
+		  $i += 1;
+		}
+		$found_pod_line = $i;
+		last;
+	    }
 	    if ($lines[$i] =~ m/^\s*=pod\s*$/) {
+		$found_type     = '=pod'; # old style.
 		$found_pod_line = $i;
 		last;
 	    }
@@ -140,32 +158,58 @@ sub _parse_pod {
 	    }
 	}
 
-	if (defined $found_pod_line) {
-	    # あった。次は=cutを探す。
-	    my $found_cut_line;
+	if( !$found_type )
+	{
+	    # 無い。ここで終わり。
+	    last;
+	}
+
+	my $found_cut_line;
+	my $terminate_type;
+	if( $found_type eq '=for' )
+	{
+	    # 次の空行(若しくはコマンド行？)まで.
+	    $terminate_type = 'blank line';
+	    for (my $i = $found_pod_line+1; $i < @lines; $i++) {
+		if ($lines[$i] =~ m/^(?:\s*|=)$/) {
+		    $found_cut_line = $i;
+		    last;
+		}
+	    }
+	}
+	if( $found_type eq '=begin' )
+	{
+	    # 次の=endまで.
+	    $terminate_type = '=end';
+	    for (my $i = $found_pod_line+1; $i < @lines; $i++) {
+		if ($lines[$i] =~ m/^=end\s+tiarra-doc(?:\s|$)/) {
+		    $found_cut_line = $i;
+		    last;
+		}
+	    }
+	}
+	if( $found_type eq '=pod' )
+	{
+	    # =cutまで.
+	    $terminate_type = '=cut';
 	    for (my $i = $found_pod_line+1; $i < @lines; $i++) {
 		if ($lines[$i] =~ m/^\s*=cut\s*$/) {
 		    $found_cut_line = $i;
 		    last;
 		}
 	    }
-	    if (defined $found_cut_line) {
-		# あった。ここまで=pod & =cut。
-		push @result,[
-		    $pkg_name,
-		    join("\n",@lines[$found_pod_line+1 .. $found_cut_line-1])
-		];
-		$search_start_pos = $found_cut_line+1;
-	    }
-	    else {
-		# 無い。エラー。
-		die "$this->{fpath} has unbalanced =pod and =cut\n";
-	    }
 	}
-	else {
-	    # 無い。ここで終わり。
-	    last;
+	if( !$found_cut_line )
+	{
+	    # 終端が無い。エラー。
+	    die "$this->{fpath} has unbalanced $found_type and $terminate_type\n";
 	}
+	# あった。ここまでを切り出し。
+	push @result,[
+	    $pkg_name,
+	    join("\n",@lines[$found_pod_line+1 .. $found_cut_line-1])
+	];
+	$search_start_pos = $found_cut_line+1;
     }
 
     @result;
