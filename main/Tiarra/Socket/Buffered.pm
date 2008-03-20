@@ -67,7 +67,7 @@ sub detach {
 
     $this->{connected} = 0;
     $this->{sendbuf} = '';
-    $this->{recvbuf} = '';
+    #$this->{recvbuf} = '';
     $this->SUPER::detach;
 }
 
