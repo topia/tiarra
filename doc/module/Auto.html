@@ -2,7 +2,7 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3010 2007-12-10 13:36:55Z topia $ -->
+<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
@@ -97,13 +97,32 @@ Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 &nbsp;エイリアス置換が有効です。#(nick.now)と$(channel)はそれぞれ<br />
 &nbsp;相手の現在のnickとチャンネル名に置換されます。<br />
 <br />
+&nbsp;コマンド: reply<br />
 &nbsp;書式: <反応する発言のマスク> <それに対する返事><br />
 &nbsp;例:<br />
 </p>
 <div class="element"><span class="key">reply</span>:<span class="value">こんにちは* こんにちは、#(name|nick.now)さん。</span></div>
 <p class="comment">
-この例では誰かが「こんにちは」で始まる発言をすると、<br />
-発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。<br />
+&nbsp;この例では誰かが「こんにちは」で始まる発言をすると、<br />
+&nbsp;発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。<br />
+<br />
+&nbsp;コマンド: channel-reply<br />
+&nbsp;書式: <反応するチャンネルのマスク> <反応する発言のマスク> <それに対する返事><br />
+&nbsp;例:<br />
+</p>
+<div class="element"><span class="key">channel-reply</span>:<span class="value">#あいさつ@ircnet こんにちは* こんにちは、#(name|nick.now)さん。</span></div>
+<p class="comment">
+&nbsp;この例では#あいさつ@ircnetで誰かが「こんにちは」で始まる発言をすると、<br />
+&nbsp;発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。<br />
+<br />
+&nbsp;コマンド: answer-to-myself<br />
+&nbsp;書式: <真偽値><br />
+&nbsp;例:<br />
+</p>
+<div class="element"><span class="key">answer-to-myself</span>:<span class="value">on</span></div>
+<p class="comment">
+自分の発言にも反応するようになります。<br />
+デフォルトは off です。<br />
 </p>
 
         </div>
@@ -215,6 +234,62 @@ Tiarra を動かすことをお勧めします。<br />
       <hr class="sep" />
       
       
+      <div id="module-Auto::FetchTitle" class="module">
+        <div class="module-header"><h2 title="発言に含まれるURLからタイトルを取得.">Auto::FetchTitle</h2>
+          <span class="description">発言に含まれるURLからタイトルを取得.</span></div>
+        <div class="content">
+	  <p class="comment">
+リクエストタイムアウトまでの時間(秒).<br />
+</p>
+<div class="element"><span class="key">timeout</span>:<span class="value">3</span></div>
+<p class="comment">
+&nbsp;有効にするチャンネルとオプションとURLの設定.<br />
+<br />
+&nbsp;mask: #test@ircnet &test http://*<br />
+&nbsp;mask: * http://*<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">* http://*</span></div>
+<p class="comment">
+&nbsp;&test と設定すると conf-test ブロックの中身が使われる.<br />
+conf-test {<br />
+&nbsp;&nbsp;auth-test1 {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;url:  http://example.com/*<br />
+&nbsp;&nbsp;&nbsp;&nbsp;user: test<br />
+&nbsp;&nbsp;&nbsp;&nbsp;#pass: test<br />
+&nbsp;&nbsp;&nbsp;&nbsp;pass: {BASE64}dGVzdAo=<br />
+&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;filter-xx {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;url:  http://example.com/*/xx/*<br />
+&nbsp;&nbsp;&nbsp;&nbsp;type: xx<br />
+&nbsp;&nbsp;}<br />
+}<br />
+</p>
+<p class="comment">
+お返事の前や後ろにつける字句.<br />
+</p>
+<div class="element"><span class="key">reply-prefix</span>:<span class="value">"(FetchTitle) "</span></div>
+<div class="element"><span class="key">reply-suffix</span>:<span class="value">" [AR]"</span></div>
+<p class="comment">
+&nbsp;デバッグフラグ.<br />
+debug: 0<br />
+debug-mask: #debug-chan your_nick!~you@example.com<br />
+debug-dumpfile: fetchtitle.log<br />
+</p>
+<p class="comment">
+NOTE:<br />
+&nbsp;利用するにはcodereposから<br />
+&nbsp;module/Tools/HTTPClient.pm     rev.8220<br />
+&nbsp;main/Tiarra/Socket/Buffered.pm rev.8219<br />
+&nbsp;以降が必要です.<br />
+</p>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
       <div id="module-Auto::Joined" class="module">
         <div class="module-header"><h2 title="特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。">Auto::Joined</h2>
           <span class="description">特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。</span></div>
@@ -297,6 +372,14 @@ SMTPのポート [default: smtp(25)]<br />
 SMTPで自ホストのFQDN [default: localhost]<br />
 </p>
 <div class="element"><span class="key">smtpfqdn</span>:<span class="value">localhost</span></div>
+<p class="comment">
+SMTPのユーザ。指定されれば SMTP Auth を行う [default: なし]<br />
+</p>
+<div class="element"><span class="key">smtpuser</span>:<span class="value">example1</span></div>
+<p class="comment">
+SMTPのパスワード [default: 空パスワード('')]<br />
+</p>
+<div class="element"><span class="key">smtppass</span>:<span class="value">test-password</span></div>
 <p class="comment">
 送信するメールの既定件名(エイリアス使用不可) [default: Message from IRC]<br />
 </p>
@@ -685,6 +768,8 @@ plum: mask: +*!*@*<br />
         <li><a href="#module-Auto::Calc" title="Perlの式を計算させるモジュール。">Auto::Calc</a></li>
         
         <li><a href="#module-Auto::ChannelWithoutOper" title="チャンネルオペレータ権限がなくなってしまったときに発言する。">Auto::ChannelWithoutOper</a></li>
+        
+        <li><a href="#module-Auto::FetchTitle" title="発言に含まれるURLからタイトルを取得.">Auto::FetchTitle</a></li>
         
         <li><a href="#module-Auto::Joined" title="特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。">Auto::Joined</a></li>
         
