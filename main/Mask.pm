@@ -12,6 +12,7 @@ use Multicast;
 # $bool = match($masks, $str).
 # $bool = match($masks, $str, $match_type, $use_re, $use_flag).
 # どれにもマッチしなかった際はundef, つまり偽がかえる.
+# 明示的に拒否された場合は 0, つまりdefinedな偽が返る.
 #
 sub match {
   # matchはワイルドカードを使ったマッチングを行う関数です。
