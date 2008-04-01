@@ -11,6 +11,9 @@ use LinedINETSocket;
 use Carp;
 use RunLoop;
 use Timer;
+use Tools::HTTPClient::SSL;
+use Module::Use qw(Tools::HTTPClient::SSL);
+
 # 本当はHTTP::RequestとHTTP::Responseを使いたいが…
 
 our $DEBUG = 0;
@@ -81,8 +84,10 @@ sub start {
     # URLを分解し、ホスト名とパスを得る。
     my ($host, $path);
     $this->{url} =~ s/#.+//;
-    if ($this->{url} =~ m|^http://(.+)$|) {
-	if ($1 =~ m|^(.+?)(/.*)|) {
+    if ($this->{url} =~ m|^http(s?)://(.+)$|) {
+	my $with_ssl = $1;
+	my $hostpath = $2;
+	if ($hostpath =~ m|^(.+?)(/.*)|) {
 	    $host = $1;
 	    $path = $2;
 	}
@@ -90,6 +95,7 @@ sub start {
 	    $host = $1;
 	    $path = '/';
 	}
+	$this->{with_ssl} = $with_ssl;
     }
     else {
 	croak "Unsupported scheme: $this->{url}";
@@ -101,14 +107,15 @@ sub start {
     }
 
     # ホスト名にポートが含まれていたら分解。
-    my $port = 80;
+    my $port = $this->{with_ssl} ? 443 : 80;
     if ($host =~ s/:(\d+)$//) {
 	$port = $1;
     }
 
     # 接続
     $this->{reply}{StreamState} = 'connect';
-    $this->{socket} = LinedINETSocket->new->connect($host, $port);
+    my $socket_class = $this->{with_ssl} ? 'Tools::HTTPClient::SSL' : 'LinedINETSocket';
+    $this->{socket} = $socket_class->new->connect($host, $port);
     if (!defined $this->{socket}) {
 	# 接続不可能
 	croak "Failed to connect: $host:$port";
