@@ -20,7 +20,7 @@ use Tiarra::Encoding;
 # URL Fetch.
 use Tools::HTTPClient;
 
-our $VERSION   = '0.01';
+our $VERSION   = '0.02';
 
 # 全角空白.
 our $U_IDEOGRAPHIC_SPACE = "\xe3\x80\x80";
@@ -48,8 +48,67 @@ our @LATIN1_MAP = qw(
 $LATIN1_MAP[0x82-0x80] = ',';
 $LATIN1_MAP[0xa0-0x80] = ' ';
 
+our $HAS_IMAGE_EXIFTOOL = do{
+  eval{ local($SIG{__DIE__}) = 'DEFAULT'; require Image::ExifTool; };
+  !$@;
+};
+our $HAS_TOUHOU_REPLAYFILE = do{
+  eval{ local($SIG{__DIE__}) = 'DEFAULT'; require Touhou::ReplayFile };
+  @$ or Module::Use->import(qw(Touhou::ReplayFile));
+  !$@;
+};
+
+our $PLUGINS;
+
+our $MAX_ACTIVE_REQUESTS        = 3;
+our $MAX_URLS_IN_SINGLE_MESSAGE = 3;
+our $DEFAULT_RECV_LIMIT         = 4*1024; # 4K bytes.
+our $DEFAULT_TIMEOUT            = 3;  # sec.
+our $MAX_REDIRECTS              = 5;
+our $PROCESSING_LIMIT_TIME      = 60; # secs.
+
 $|=1;
 1;
+
+# -----------------------------------------------------------------------------
+# [処理の流れ]
+# FLOW-1st:
+#  new().
+#  <loop>
+#    message_arrived().
+#  </loop>
+#  destruct().
+#
+# FLOW-2nd: tiarra-module handler/$obj->message_arrived
+#   $obj->_dispatch(..).
+#   <if debug-comment>
+#     $obj->_process_command(..).
+#     return.
+#   </if>
+#   $obj->extract_urls(..).
+#   $obj->_check_mask($url).
+#   $obj->_create_request(..).
+#   $obj->_add_request($req).
+#     (drop orphan requests/_close_request)
+#     $obj->_start_request($req).
+#
+# FLOW-3rd: _start_request()
+#   setup headers.
+#   apply prereq filter.
+#   check redirects on prereq.
+#   start HTTP client.
+#     finish Callback  => $obj->_request_finished($req, @_).
+#     ProgressCallback => $obj->_request_progress($req, @_) => _request_finished().
+#
+# FLOW-4th: _request_finished.
+#   $obj->_close_request($req).
+#   $obj->_reply().
+#
+# FLOW-5th: _close_request().
+#   $obj->_close_head_request().
+#     $obj->_parse_response().
+#     apply response filter.
+#     check redirects on response/_start_request().
 
 # -----------------------------------------------------------------------------
 # my $obj = $pkg->new().
@@ -58,6 +117,8 @@ sub new
 {
   my $pkg  = shift;
   my $this = $pkg->SUPER::new(@_);
+
+  $PLUGINS = undef;
 
   $this->{loaded_at}     = time;
   $this->{debug}         = $this->config->debug;
@@ -91,6 +152,8 @@ sub new
     $this->{debug} = undef;
   }
 
+  $this->_reload_plugins();
+
   return $this;
 }
 
@@ -104,6 +167,82 @@ sub destruct
   {
     $this->{reply_timer}->uninstall();
     $this->{reply_timer} = undef;
+  }
+}
+
+# -----------------------------------------------------------------------------
+# @plugins = $obj->plugins().
+#
+sub plugins
+{
+  my $this = shift;
+
+  $PLUGINS or $this->_reload_plugins();
+
+  @$PLUGINS;
+}
+
+# -----------------------------------------------------------------------------
+# $obj->_reload_plugins().
+# reload $PLUGINS list.
+#
+sub _reload_plugins
+{
+  my $this = shift;
+
+  my @plugins;
+  eval{
+    local($SIG{__DIE__}) = 'DEFAULT';
+    require Module::Pluggable;
+    Module::Pluggable->import(sub_name => '_plugins');
+    @plugins = $this->_plugins;
+  };
+  if( $@ )
+  {
+    RunLoop->shared_loop->notify_msg("Module::Pluggable failed: $@");
+    @plugins = $this->_find_local_plugins;
+  }
+
+  RunLoop->shared_loop->notify_msg("plugins:");
+  if( @plugins )
+  {
+    Module::Use->import(@plugins);
+    foreach my $pkgname (@plugins)
+    {
+      RunLoop->shared_loop->notify_msg("+ $pkgname");
+    }
+    #no warnings 'once';
+    #RunLoop->shared_loop->notify_msg('> '.join(", ", keys %Auto::FetchTitle::Plugin::All::USED));
+    #RunLoop->shared_loop->notify_msg('> '.join(", ", our @USE));
+    #RunLoop->shared_loop->notify_msg('> '.eval{Auto::FetchTitle::Plugin::All->new}.$@);
+  }else
+  {
+    RunLoop->shared_loop->notify_msg("- none");
+  }
+
+  $PLUGINS = \@plugins;
+  $PLUGINS;
+}
+
+# -----------------------------------------------------------------------------
+# $obj->_find_local_plugins().
+# rollback of Module::Pluggable.
+#
+sub _find_local_plugins
+{
+  my $this = shift;
+  my $dir = 'module/Auto/FetchTitle/Plugin';
+  if( opendir(my $dh, $dir) )
+  {
+    my @plugins = readdir($dh);
+    closedir($dh);
+    @plugins = grep{ /\.pm\z/ } @plugins;
+    @plugins = map{ "$dir/$_" } @plugins;
+    return @plugins;
+  }else
+  {
+    RunLoop->shared_loop->notify_msg("_find_local_plugins, opendir($dir): $!");
+    return;
   }
 }
 
@@ -185,7 +324,7 @@ sub _dispatch
   my $count = 0;
   foreach my $_url (@urls)
   {
-    if( $count >= 3 )
+    if( $count >= $MAX_URLS_IN_SINGLE_MESSAGE )
     {
       $DEBUG and $this->_debug($full_ch_name, "debug: too many urls");
       last;
@@ -194,7 +333,7 @@ sub _dispatch
     my $url = $_url;
     $url =~ s{^ttp(s?)://}{http$1://};
     $url =~ m{^https?://} or next;
-    $url =~ s{^https?://[^/]+\z}{$url/};
+    $url =~ s{^https?://[-\w.\x80-\xff]+\z}{$url/};
     $DEBUG && $url ne $_url and $this->_debug($full_ch_name, "debug: fixed url is $url");
 
     # 処理対象か確認.
@@ -208,23 +347,8 @@ sub _dispatch
     ++$count;
 
     # リクエストの生成.
-    # (補足までにリクエストが生成されるのはここと_redirect()の２箇所)
-    my $req = {
-      url          => $url,
-      full_ch_name => $full_ch_name,
-      mask         => $matched,
-
-      requested_at => time,
-      started_at   => undef,
-      active       => undef,
-
-      httpclient   => undef,
-      headers      => {},
-      recv_limit   => 4*1024,
-      timeout      => undef,
-      response     => undef,
-      result       => undef,
-    };
+    my $req = $this->_create_request($full_ch_name, $url, $matched);
+    #$this->_debug("new-request: ".Data::Dumper->new([$req])->Indent(0)->Dump);
     $this->_add_request($req);
   }
 
@@ -233,7 +357,41 @@ sub _dispatch
 }
 
 # -----------------------------------------------------------------------------
-# $matched = $this->_check_mask($full_ch_name, $url);
+# $req = $this->_create_request($full_ch_name, $url, $mask_conf);
+# (補足までにリクエストが生成されるのは_dispatch()と_redirect()の２箇所)
+#
+sub _create_request
+{
+  my $this         = shift;
+  my $full_ch_name = shift;
+  my $url          = shift;
+  my $mask_conf    = shift;
+
+  my $req = {
+    old          => undef,    # undef for first (non-redirect) request.
+    redirected   => undef,    # nr of redirects (integer).
+
+    url          => $url,
+    full_ch_name => $full_ch_name,
+    mask         => $mask_conf,
+
+    requested_at => time,
+    started_at   => undef,
+    active       => undef,
+
+    httpclient   => undef,
+    headers      => {},
+    recv_limit   => $DEFAULT_RECV_LIMIT,
+    timeout      => undef,
+    response     => undef,
+    result       => undef,
+  };
+  $req;
+}
+
+# -----------------------------------------------------------------------------
+# $matched_mask = $this->_check_mask($full_ch_name, $url);
+# マッチした許可マスク定義HASH-refを返す.
 #
 sub _check_mask
 {
@@ -256,11 +414,26 @@ sub _check_mask
 #
 sub _extract_urls
 {
-  my $this = shift;
+  my $this   = shift;
   my $msgval = shift;
 
+  my $pars = {
+    '<' => '>',
+    '(' => ')',
+    '[' => ']',
+  };
+
   my @tokens = split( $RE_WHITESPACES, $msgval );
-  my @urls = map{ m{ (\w+://\S+) }gx } @tokens;
+  my @urls = map{ m{ (\S?\w+://\S+) }gx } @tokens;
+  foreach my $url (@urls)
+  {
+    $url =~ s/(\S)// or next;
+    my $par_begin = $1;
+    my $par_end   = $pars->{$par_begin};
+    $par_end or next;
+    $url =~ s/\Q$par_end\E\z//;
+  }
+
   @urls;
 }
 
@@ -330,7 +503,11 @@ sub _add_request
   my $queue = ($this->{request_queue}{$full_ch_name} ||= []);
   push(@$queue, $req);
 
-  if( (grep{$_->{active}} @$queue) >= 3 )
+  
+  # drop orphan requests if exists.
+  $this->_close_request($full_ch_name);
+
+  if( (grep{$_->{active}} @$queue) >= $MAX_ACTIVE_REQUESTS )
   {
     return;
   }
@@ -401,9 +578,22 @@ sub _start_request
     $req->{active}     = 1;
     $req->{httpclient} = undef;
     $DEBUG and $this->_debug($req, "debug: request has response before start connection");
-    $this->_close_request();
+    $this->_close_request($req->{full_ch_name});
     return $req;
   }
+
+#  if( $req->{url} =~ m{^http://www.print-gakufu.com/} )
+#  {
+#    $this->_apply_recv_limit($req, 8*1024);
+#  }
+#  if( $req->{url} =~ m{^http://www.zakzak.co.jp/} )
+#  {
+#    $this->_apply_recv_limit($req, 10*1024);
+#  }
+#  if( $req->{url} =~ m{^http://www.nikkei.co.jp/} )
+#  {
+#    $this->_apply_recv_limit($req, 16*1024);
+#  }
 
   my $agent_name = $headers->{'User-Agent'};
   if( !defined($agent_name) || $agent_name eq '' )
@@ -412,7 +602,7 @@ sub _start_request
     delete $headers->{'User-Agent'};
   }
 
-  my $timeout = $req->{timeout} || $this->config->timeout || 3;
+  my $timeout = $req->{timeout} || $this->config->timeout || $DEFAULT_TIMEOUT;
   $DEBUG and $this->_debug($req, "debug: create http-client, timeout=$timeout");
   my $httpclient = Tools::HTTPClient->new(
     Method  => 'GET',
@@ -421,18 +611,33 @@ sub _start_request
     Timeout => $timeout,
   );
   $DEBUG and $this->_debug($req, "debug: start http-client: $req->{url}");
-  $httpclient->start(
-    Callback => sub{
-      local($DEBUG) = $DEBUG || $this->{debug};
-      $DEBUG and $this->_debug($req, "debug: http-client finished @_");
-      $this->_request_finished($req, @_);
-    },
-    ProgressCallback => sub{
-      local($DEBUG) = $DEBUG || $this->{debug};
-      $DEBUG and $this->_debug($req, "debug: http-client progress @_");
-      $this->_request_progress($req, @_);
-    },
-  );
+  eval{
+    $httpclient->start(
+      Callback => sub{
+        local($DEBUG) = $DEBUG || $this->{debug};
+        $DEBUG and $this->_debug($req, "debug: http-client finished @_");
+        $this->_request_finished($req, @_);
+      },
+      ProgressCallback => sub{
+        local($DEBUG) = $DEBUG || $this->{debug};
+        $DEBUG and $this->_debug($req, "debug: http-client progress @_");
+        $this->_request_progress($req, @_);
+      },
+    );
+  };
+  if( $@ )
+  {
+    my $err = "$@";
+    $err =~ s/$RE_WHITESPACES\z//;
+    if( $err =~ m{Failed to connect: (\S+):\d+, IO::Socket::INET: Bad hostname '\1' at } )
+    {
+      $err = 'no host to connect';
+    }
+    $err =~ s{Failed to connect: \S+:\d+, IO::Socket::INET: (?:connect: )?(.*) at .*}{$1};
+    $req->{response} = $err;
+    $this->_request_finished($req, $err);
+    return $req;
+  }
 
   $req->{active}     = 1;
   $req->{httpclient} = $httpclient;
@@ -442,7 +647,37 @@ sub _start_request
 }
 
 # -----------------------------------------------------------------------------
-# $this->_request_filter(prereq => $req).
+# $obj->_apply_recv_limit($req, $new_val).
+# $req->{recv_limit} に現在値と新しい値の大きな方を設定.
+#
+sub _apply_recv_limit
+{
+  my $this = shift;
+  my $req  = shift;
+  my $new_value = shift;
+  my $cur_value = $req->{recv_limit} || 0;
+
+  $req->{recv_limit} = $new_value > $cur_value ? $new_value : $cur_value;
+}
+
+# -----------------------------------------------------------------------------
+# $obj->_apply_timeout($req, $new_val).
+# $req->{timeout} に現在値と新しい値の大きな方を設定.
+#
+sub _apply_timeout
+{
+  my $this = shift;
+  my $req  = shift;
+  my $new_value = shift;
+  my $cur_value = $req->{timeout} || 0;
+
+  $req->{timeout} = $new_value > $cur_value ? $new_value : $cur_value;
+}
+
+# -----------------------------------------------------------------------------
+# $this->_request_filter(prereq   => $req).
+# $this->_request_filter(response => $req).
+# リクエストのフィルタを適用.
 #
 sub _request_filter
 {
@@ -459,6 +694,14 @@ sub _request_filter
       prereq   => \&_filter_uploader_prereq,
       response => \&_filter_uploader_response,
     },
+    'touhou-replay' => {
+      prereq   => \&_filter_touhou_replay_prereq,
+      response => \&_filter_touhou_replay_response,
+    },
+    'extract-heading' => {
+      prereq   => \&_filter_extract_heading_prereq,
+      response => \&_filter_extract_heading_response,
+    },
   };
 
   if( $when eq 'prereq' && $url =~ m{https?://\w+\.2ch\.net(?:/|$)} )
@@ -467,6 +710,7 @@ sub _request_filter
     $req->{headers}{'User-Agent'} =~ s/libwww-perl/LWP/;
   }
 
+  my $has_extract_heading;
   $DEBUG and $this->_debug($req, "debug: conf check start for $when");
   foreach my $conf (@{$req->{mask}{conf}})
   {
@@ -477,10 +721,10 @@ sub _request_filter
       $DEBUG and $this->_debug($req, "debug: - $key");
       my $block = $conf->get($key, 'block');
       my $url_masks = [$block->url('all')];
-      $DEBUG and $this->_debug($req, "debug: - url: $_") for @$url_masks;
+      #$DEBUG and $this->_debug($req, "debug: - - url: $_") for @$url_masks;
       if( @$url_masks && !Mask::match_deep($url_masks, $url) )
       {
-        $DEBUG and $this->_debug($req, "debug: - - not match");
+        #$DEBUG and $this->_debug($req, "debug: - - not match");
         next;
       }
 
@@ -503,6 +747,7 @@ sub _request_filter
       {
         $type = $block->user ? 'basic' : '';
       }
+      $has_extract_heading ||= $type eq 'extract-heading';
       if( !$REQUEST_FILTER->{$type} )
       {
         $DEBUG && $type ne '' and $this->_debug($req, "debug: unsupported type: $type");
@@ -521,6 +766,18 @@ sub _request_filter
       }
     }
   }
+
+  if( !$has_extract_heading )
+  {
+    if( my $sub = $REQUEST_FILTER->{'extract-heading'}{$when} )
+    {
+      my $block = undef;#Configuration::Block->new();
+      my $type = 'extract-heading';
+      $DEBUG and $this->_debug($req, "debug: call $type/$when");
+      $sub->($this, $block, $req, $when, $type);
+    }
+  }
+
 }
 
 # -----------------------------------------------------------------------------
@@ -632,6 +889,224 @@ sub _filter_uploader_response
 }
 
 # -----------------------------------------------------------------------------
+# $this->_filter_touhou_replay_prereq($block, $req, $when, $type).
+# (impl:fetchtitle-filter)
+# touhou_replay/prereq.
+#
+sub _filter_touhou_replay_prereq
+{
+  my $this  = shift;
+  my $block = shift;
+  my $req   = shift;
+  my $when  = shift;
+  my $type  = shift;
+
+  if( !$HAS_TOUHOU_REPLAYFILE )
+  {
+    $DEBUG and $this->_debug($req, "debug: - - no Touhou::ReplayFile (private module)");
+    return;
+  }
+
+  $this->_apply_recv_limit($req, 100*1024);
+
+  $this;
+}
+
+# -----------------------------------------------------------------------------
+# $this->_filter_touhou_replay_response($block, $req, $when, $type).
+# (impl:fetchtitle-filter)
+# touhou_replay/response.
+#
+sub _filter_touhou_replay_response
+{
+  my $this  = shift;
+  my $block = shift;
+  my $req   = shift;
+  my $when  = shift;
+  my $type  = shift;
+
+  $HAS_TOUHOU_REPLAYFILE or return;
+
+  my $response = $req->{response};
+  if( !ref($response) )
+  {
+    $DEBUG and $this->_debug($req, "debug: - - skip/not ref");
+    return;
+  }
+  if( $req->{result}{status_code}!=200 )
+  {
+    $DEBUG and $this->_debug($req, "debug: - - skip/not success:$req->{result}{status_code}");
+    return;
+  }
+
+  my @opts;
+
+  my $len = $req->{result}{content_length};
+  if( defined($len) )
+  {
+    $len =~ s/(?<=\d)(?=(\d\d\d)+(?!\d))/,/g;
+    $len = "$len bytes";
+    push(@opts, $len);
+  }
+
+  my $replay = Touhou::ReplayFile->parse($response->{Content});
+  my $reply = $replay->shortdesc();
+  if( @opts )
+  {
+    $reply .= " (".join("; ",@opts).")";
+  }
+  $req->{result}{result} = $reply;
+}
+
+# -----------------------------------------------------------------------------
+# $this->_extract_heading_config().
+# config for extract-heading.
+#
+sub _extract_heading_config
+{
+  my $config = [
+    {
+      url        => 'http://www.print-gakufu.com/*',
+      recv_limit => 8*1024,
+      extract    => qr{<p\s+class="topicPath">(.*?)</p>}s,
+      #remove     => qr/^ぷりんと楽譜 総合案内 ＞ /;
+    },
+    {
+      url        => 'http://www.zakzak.co.jp/*',
+      recv_limit => 10*1024,
+      extract    => qr{<font class="kijimidashi".*?>(.*?)</font>}s,
+    },
+    {
+      url        => 'http://www.nikkei.co.jp/*',
+      recv_limit => 16*1024,
+      extract => [
+        qr{<META NAME="TITLE" CONTENT="(.*?)">}s,
+        qr{<h3 class="topNews-ttl3">(.*?)</h3>}s,
+      ],
+      remove => qr/^NIKKEI NET：/,
+    },
+    {
+      url     => 'http://www\d*.nhk.or.jp/news/*',
+      extract => qr{<p class="newstitle">(.*?)</p>},
+    },
+    {
+      url     => 'http://*.creative.com/*',
+      timeout => 5,
+    },
+  ];
+  $config;
+}
+
+# -----------------------------------------------------------------------------
+# $this->_filter_extract_heading_prereq($block, $req, $when, $type).
+# (impl:fetchtitle-filter)
+# extract_heading/prereq.
+#
+sub _filter_extract_heading_prereq
+{
+  my $this  = shift;
+  my $block = shift;
+  my $req   = shift;
+  my $when  = shift;
+  my $type  = shift;
+
+  my $conflist = $this->_extract_heading_config();
+
+  foreach my $conf (@$conflist)
+  {
+    Mask::match($conf->{url}, $req->{url}) or next;
+    if( my $new_recv_limit = $conf->{recv_limit} )
+    {
+      $this->_apply_recv_limit($req, $new_recv_limit);
+    }
+    if( my $new_timeout = $conf->{timeout} )
+    {
+      $this->_apply_timeout($req, $new_timeout);
+    }
+  }
+
+  $this;
+}
+
+# -----------------------------------------------------------------------------
+# $this->_filter_extract_heading_response($block, $req, $when, $type).
+# (impl:fetchtitle-filter)
+# extract_heading/response.
+#
+sub _filter_extract_heading_response
+{
+  my $this  = shift;
+  my $block = shift;
+  my $req   = shift;
+  my $when  = shift;
+  my $type  = shift;
+
+  my $response = $req->{response};
+  if( !ref($response) )
+  {
+    $DEBUG and $this->_debug($req, "debug: - - skip/not ref");
+    return;
+  }
+  if( $req->{result}{status_code}!=200 )
+  {
+    $DEBUG and $this->_debug($req, "debug: - - skip/not success:$req->{result}{status_code}");
+    return;
+  }
+
+  my $conflist = $this->_extract_heading_config();
+
+  my $heading;
+
+  foreach my $conf (@$conflist)
+  {
+    Mask::match($conf->{url}, $req->{url}) or next;
+
+    my $extract_list = $conf->{extract};
+    if( ref($extract_list) ne 'ARRAY' )
+    {
+      $extract_list = [$extract_list];
+    }
+    foreach my $_extract (@$extract_list)
+    {
+      my $extract = $_extract; # sharrow-copy.
+      $extract = ref($extract) ? $extract : qr/\Q$extract/;
+      my @match = $req->{result}{decoded_content} =~ $extract;
+      @match or next;
+      $heading = $match[0];
+      last;
+    }
+    defined($heading) or next;
+
+    $heading = $this->_fixup_title($heading);
+
+    my $remove_list = $conf->{remove};
+    if( ref($remove_list) ne 'ARRAY' )
+    {
+      $remove_list = [$remove_list];
+    }
+    foreach my $_remove (@$remove_list)
+    {
+      my $remove = $_remove; # sharrow-copy.
+      $remove = ref($remove) ? $remove : qr/\Q$remove/;
+      $heading =~ s/$remove//;
+    }
+  }
+
+  if( defined($heading) && $heading =~ /\S/ )
+  {
+    $heading =~ s/\s+/ /g;
+    $heading =~ s/^\s+//;
+    $heading =~ s/\s+$//;
+
+    my $title = $req->{result}{result};
+    $title = defined($title) && $title ne '' ? "$heading - $title" : $heading;
+
+    $req->{result}{result} = $title;
+  }
+}
+
+
+# -----------------------------------------------------------------------------
 # $obj->_request_progress($req, $res).
 # 大抵はタイトル取得に全部を落とす必要がないので
 # ある程度取得したら切断しちゃう用.
@@ -647,7 +1122,6 @@ sub _request_progress
   {
     $DEBUG and $this->_debug($req, "debug: stop request.");
     $req->{httpclient}->stop();
-    $req->{response} = $res->{reply};
     $this->_request_finished($req, $res);
   }
 }
@@ -666,23 +1140,41 @@ sub _request_finished
   $DEBUG and $this->_debug($req, "debug: got response for $req->{full_ch_name} $req->{url}");
 
   my $full_ch_name = $req->{full_ch_name};
-  while( my $reply = $this->_close_request($full_ch_name) )
+  $this->_close_request($full_ch_name);
+}
+
+# -----------------------------------------------------------------------------
+# $obj->_close_request($full_ch_name).
+# 最初のリクエストが完了していたら返答を生成して送信.
+# 最初のあるだけ複数個.
+#
+sub _close_request
+{
+  my $this = shift;
+  my $full_ch_name = shift;
+  while( my $reply = $this->_close_head_request($full_ch_name) )
   {
     $this->_reply($full_ch_name => $reply);
   }
 }
 
 # -----------------------------------------------------------------------------
-# $obj->_close_request($full_ch_name).
+# my $reply_text = $obj->_close_head_request($full_ch_name).
 # 最初のリクエストが完了していたら返答を生成.
+# 最初の１つだけ.
 #
-sub _close_request
+sub _close_head_request
 {
   my $this = shift;
   my $full_ch_name = shift;
+  if( !$full_ch_name )
+  {
+    $this->_error("_close_head_request: no ch name");
+    return;
+  }
 
   my $req_queue = $this->{request_queue}{$full_ch_name};
-  my $req = $req_queue && $req_queue->[0];
+  my $req = $req_queue && @$req_queue && $req_queue->[0];
 
   if( !$req )
   {
@@ -692,8 +1184,17 @@ sub _close_request
   if( !$req->{response} )
   {
     # first request is still in progress.
-    $DEBUG and $this->_debug($req, "debug: request not finished: for $req->{full_ch_name} $req->{url}");
-    return;
+    my $now = time;
+    if( $req->{requested_at} < $now - $PROCESSING_LIMIT_TIME )
+    {
+      $req->{response} = "timeout(*)";
+      my $el = $now - $req->{requested_at};
+      $DEBUG and $this->_debug($req, "debug: request not finished, but expired: $req->{requested_at}+$el/$PROCESSING_LIMIT_TIME for $req->{full_ch_name} $req->{url}");
+    }else
+    {
+      $DEBUG and $this->_debug($req, "debug: request not finished: for $req->{full_ch_name} $req->{url}");
+      return;
+    }
   }
 
   shift @$req_queue;
@@ -779,29 +1280,17 @@ sub _redirect
   }
 
   # リダイレクトリクエストの生成.
-  # (補足までにリクエストが生成されるのは_dispatch()とここの２箇所)
-  my $new_req = {
-    old          => $req,
-    redirected   => $count,
-    url          => $redir->{url},
-    full_ch_name => $full_ch_name,
-    mask         => $matched,
+  my $new_req = $this->_create_request($req->{full_ch_name}, $redir->{url}, $matched);
+  $new_req->{old}        = $req;
+  $new_req->{redirected} = $count;
+  $new_req->{requested_at} = $req->{requested_at},
+  $this->_apply_recv_limit($new_req, $redir->{recv_limit});
 
-    requested_at => time,
-    started_at   => undef,
-    active       => undef,
-
-    httpclient   => undef,
-    headers      => {},
-    recv_limit   => $redir->{recv_limit} || 4*1024,
-    timeout      => undef,
-    response     => undef,
-    result       => undef,
-  };
-  if( $count > 5 )
+  if( $count > $MAX_REDIRECTS )
   {
     $new_req->{response} = "too many redirects: $req->{redirected}";
   }
+
   $new_req;
 }
 
@@ -828,7 +1317,20 @@ sub _parse_response
 
   if( !ref($res) )
   {
-    $result->{result} = "(error) $res";
+    my $DEFAULT_LANG = 'ja';
+    my $lang = $this->config->lang || $DEFAULT_LANG;
+    my $msgmap = {};
+    if( $lang eq 'ja' )
+    {
+      $msgmap = {
+        error   => 'エラー',
+        timeout => 'タイムアウト',
+        'no host to connect'   => 'サーバが見つかりません',
+        '接続を拒否されました' => 'サーバに接続できませんでした',
+        'Connection refused'   => 'サーバに接続できませんでした',
+      };
+    };
+    $result->{result} = "(".($msgmap->{error}||'error').") $req->{url} ".($msgmap->{$res}||$res);
     return $result;
   }
 
@@ -844,6 +1346,7 @@ sub _parse_response
   {
     $result->{content_length} = length($res->{Content});
   }
+  $DEBUG and $this->_debug($full_ch_name, "debug: fetch ".length($res->{Content})." bytes");
 
   if( my $loc = $headers->{Location} )
   {
@@ -927,20 +1430,48 @@ sub _parse_response
   my ($title) = $content =~ m{<title>\s*(.*?)\s*</title>}is;
   $DEBUG && !$title and $this->_debug($full_ch_name, "debug: no title elements in document");
 
-  if( $req->{url} =~ m{^http://www.nhk.or.jp/news/} && $content =~ m{<p class="newstitle">(.*?)</p>}i )
-  {
-    my $newstitle = $1;
-    $title = defined($title) && $title ne '' ? "$newstitle - $title" : $newstitle;
-  }
+#  my $heading;
+#  if( $req->{url} =~ m{^http://www\d*.nhk.or.jp/news/} && $content =~ m{<p class="newstitle">(.*?)</p>}i )
+#  {
+#    $heading = $1;
+#  }
+#  if( $req->{url} =~ m{^http://www.print-gakufu.com/} && $content =~ m{<p\s+class="topicPath">(.*?)</p>}s )
+#  {
+#    $heading = $1;
+#    $heading =~ s/<.*?>//g;
+#    #$heading =~ s/^ぷりんと楽譜 総合案内 ＞ //;
+#    $heading =~ s/\s+/ /g;
+#  }
+#  if( $req->{url} =~ m{^http://www.zakzak.co.jp/} && $content =~ m{<font class="kijimidashi".*?>(.*)</font>}s )
+#  {
+#    $heading = $1;
+#    $heading =~ s/<.*?>//g;
+#    $heading =~ s/\s+/ /g;
+#  }
+#  if( $req->{url} =~ m{^http://www.nikkei.co.jp/} && $content =~ m{<META NAME="TITLE" CONTENT="(.*?)">}s )
+#  {
+#    $heading = $1;
+#    $heading =~ s/<.*?>//g;
+#    $heading =~ s/\s+/ /g;
+#    $heading =~ s/^NIKKEI NET：//;
+#  }
+#  if( $req->{url} =~ m{^http://www.nikkei.co.jp/} && $content =~ m{<h3 class="topNews-ttl3">(.*)</h3>}s )
+#  {
+#    $heading = $1;
+#    $heading =~ s/<.*?>//g;
+#    $heading =~ s/\s+/ /g;
+#    $heading =~ s/^NIKKEI NET：//;
+#  }
+#  if( defined($heading) && $heading =~ /\S/ )
+#  {
+#    $heading =~ s/^\s+//;
+#    $heading =~ s/\s+$//;
+#    $title = defined($title) && $title ne '' ? "$heading - $title" : $heading;
+#  }
 
   if( defined($title) )
   {
-    $title = $this->_unescapeHTML($title);
-    $title =~ s/[\r\n]+/ /g;
-    $title =~ s/^\s+|\s+$//g;
-    $title =~ s/\xc2([\x80-\xbf])/ $LATIN1_MAP[unpack("C",$1)-0x80]      || $1 /ge;
-    $title =~ s/\xc3([\x80-\xbf])/ $LATIN1_MAP[unpack("C",$1)-0x80+0x40] || $1 /ge;
-    #$title =~ s/([^ -~])/sprintf('[%02x]',unpack("C",$1))/ge;
+    $title = $this->_fixup_title($title);
     $result->{title} = $title;
   }
 
@@ -949,8 +1480,8 @@ sub _parse_response
   $result->{content_type} = $ctype;
   $DEBUG and $this->_debug($full_ch_name, "debug: content-type: $ctype");
 
-  my $reply = $title;
-  if( !defined($reply) )
+  my $reply = defined($title) ? $title : '';
+  if( $reply eq '' )
   {
     $DEBUG and $this->_debug($full_ch_name, "debug: check icecast");
     if( my $icy_name = $headers->{'icy-name'} )
@@ -982,6 +1513,31 @@ sub _parse_response
   if( $reply eq '' || $ctype !~ /html/ )
   {
     push(@opts, $ctype);
+  }
+  if( $ctype =~ m{^(?:image|video)/} && $HAS_IMAGE_EXIFTOOL )
+  {
+    $DEBUG and $this->_debug($full_ch_name, "debug: check image");
+    my @tags = qw(Title ImageSize Headline);
+    my $info = Image::ExifTool::ImageInfo(\$res->{Content}, @tags);
+    my $x = sub{ my $x=shift;$x=~s/([^ -~])/sprintf('[%02x]',unpack("C",$1))/ge;$x};
+    $DEBUG and $this->_debug($full_ch_name, "debug: - ".$x->(join(", ", %$info)));
+    if( $reply eq '' )
+    {
+      my ($key) = grep{$info->{$_}} qw(Title Headline);
+      my $decoded_key = $info->{"$key (1)"} && "$key (1)";
+      my $val = $info->{$decoded_key} || $info->{$key};
+      my $guessed = $decoded_key ? 'decoded' : $ENCODER->getcode($val);
+      my $enc = $guessed eq 'unknown' ? 'sjis' : $guessed;
+      $DEBUG and $this->_debug($full_ch_name, "debug: - $key ($enc/$guessed) ".$x->($val));
+      $reply ||= $decoded_key ? $info->{$decoded_key} : $ENCODER->new($val, $enc)->utf8;
+    }
+    if( $info->{ImageSize} )
+    {
+      push(@opts, $info->{ImageSize});
+    }
+  }
+  if( $reply eq '' || $ctype !~ /html/ )
+  {
     my $len = $result->{content_length};
     if( defined($len) )
     {
@@ -996,18 +1552,40 @@ sub _parse_response
     push(@opts, "$req->{redirected} $redirs");
   }
 
-  if( $reply eq '' )
+  if( $reply eq '' && $ctype =~ /text/ )
   {
     $reply = '(untitled)';
   }
   if( @opts )
   {
-    $reply .= " (".join("; ", @opts).")";
+    $reply eq '' or $reply .= ' ';
+    $reply .= "(".join("; ", @opts).")";
   }
 
   $result->{is_success} = 1;
   $result->{result} = $reply;
   $result;
+}
+
+# -----------------------------------------------------------------------------
+# $title_text = $this->_fixup_title($title_html).
+# htmlから切り出したhtmlパーツのtext化.
+#
+sub _fixup_title
+{
+  my $this = shift;
+  my $title = shift;
+
+  $title =~ s/<.*?>//g;
+
+  $title = $this->_unescapeHTML($title);
+  $title =~ s/[\r\n]+/ /g;
+  $title =~ s/^\s+|\s+$//g;
+  $title =~ s/\xc2([\x80-\xbf])/ $LATIN1_MAP[unpack("C",$1)-0x80]      || $1 /ge;
+  $title =~ s/\xc3([\x80-\xbf])/ $LATIN1_MAP[unpack("C",$1)-0x80+0x40] || $1 /ge;
+  #$title =~ s/([^ -~])/sprintf('[%02x]',unpack("C",$1))/ge;
+
+  $title;
 }
 
 # -----------------------------------------------------------------------------
@@ -1140,6 +1718,19 @@ sub _reply_timer_handler
 }
 
 # -----------------------------------------------------------------------------
+# $obj->_error($msg).
+# エラーメッセージの送信.
+# 回答用じゃなくてエラー記録用.
+#
+sub _error
+{
+  my $this = shift;
+  my $msg  = shift;
+
+  RunLoop->shared_loop->notify_error($msg);
+}
+
+# -----------------------------------------------------------------------------
 # $obj->_debug($full_ch_name, $reply).
 # $obj->_debug($req, $reply).
 # デバッグメッセージの送信.
@@ -1164,6 +1755,7 @@ sub _debug
     Params  => [ '', $reply_prefix."debug: $reply".$reply_suffix ],
   );
 
+  #$this->_error("_debug: full_ch_name: ".Data::Dumper->new([$full_ch_name])->Indent(0)->Dump);
   my ($ch_short,$net_name) = Multicast::detach($full_ch_name);
 
   # send to clients.
@@ -1230,7 +1822,7 @@ Auto::FetchTitle - tiarra-module: fetch title from url.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =head1 SYNOPSIS
 
@@ -1238,7 +1830,7 @@ Version 0.01
    reply-prefix: "(FetchTitle) "
    reply-suffix: " [AR]"
  
-   mask: * http*://*
+   mask: * http://*
  }
 
 See all.conf or sample in tiarra-doc.
