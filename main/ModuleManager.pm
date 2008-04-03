@@ -358,12 +358,13 @@ sub reload_modules_if_modified {
 	    $mod2index->{ref $this->{modules}->[$i]} = $i;
 	}
 
-	# マークされたモジュールをリロードするが、それが$mod2indexに登録されていたら
-	# インスタンスを作り直す。
-	foreach my $modname (map { $_->[0] }
-				 sort { $a->[1] <=> $b->[1] }
-				     map { [$_, $mods_to_be_reloaded->{$_}]; }
-					 keys %$mods_to_be_reloaded) {
+	my @mods_load_order = map { $_->[0] }
+	    sort { $a->[1] <=> $b->[1] }
+		map { [$_, $mods_to_be_reloaded->{$_}]; }
+		    keys %$mods_to_be_reloaded;
+
+	# 先に destruct して回る
+	foreach my $modname (reverse @mods_load_order) {
 	    my $idx = $mod2index->{$modname};
 	    if (defined $idx) {
 		eval {
@@ -371,7 +372,20 @@ sub reload_modules_if_modified {
 		}; if ($@) {
 		    $this->_runloop->notify_error($@);
 		}
+	    } else {
+		eval {
+		    $modname->destruct;
+		}; if ($@ && $modname->can('destruct')) {
+		    $this->_runloop->notify_error($@);
+		}
+	    }
+	}
 
+	# マークされたモジュールをリロードするが、それが$mod2indexに登録されていたら
+	# インスタンスを作り直す。
+	foreach my $modname (@mods_load_order) {
+	    my $idx = $mod2index->{$modname};
+	    if (defined $idx) {
 		my $conf_block = $this->{mod_configs}->{$modname};
 		# message_io_hook が定義されているモジュールが死ぬと怖いので
 		# とりあえず undef を入れて無視させる。
@@ -386,9 +400,6 @@ sub reload_modules_if_modified {
 		no strict 'refs';
 		# その時、%USEDを保存する。@USEは保存しない。
 		my %USED = %{$modname.'::USED'};
-		eval {
-		    $modname->destruct;
-		};
 		$this->_unload($modname);
 		eval qq{
 		    use $modname;
