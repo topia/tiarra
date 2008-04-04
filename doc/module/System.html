@@ -2,7 +2,7 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3010 2007-12-10 13:36:55Z topia $ -->
+<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
@@ -31,6 +31,26 @@
 <p class="comment">
 このモジュールを回避してERRORメッセージをクライアントに送りたい場合は、<br />
 remarkのsend-error-as-is-to-clientを指定してください。<br />
+</p>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-System::LivePatch" class="module">
+        <div class="module-header"><h2 title="Live Patch.">System::LivePatch</h2>
+          <span class="description">Live Patch.</span></div>
+        <div class="content">
+	  <p class="comment">
+main/* に対する実行時パッチ<br />
+有効にすれば自動で適用される.<br />
+</p>
+<p class="comment">
+対応している箇所.<br />
+ModuleManager / reload_modules_if_modified / r3004 => r8009<br />
 </p>
 
         </div>
@@ -247,6 +267,8 @@ privでのシャットダウンを許可する人。<br />
       <ul class="menu">
         
         <li><a href="#module-System::Error" title="サーバーからのERRORメッセージをNOTICEに埋め込む">System::Error</a></li>
+        
+        <li><a href="#module-System::LivePatch" title="Live Patch.">System::LivePatch</a></li>
         
         <li><a href="#module-System::Macro" title="新規にコマンドを追加し、そのコマンドが使われた時に特定の動作をまとめて実行します。">System::Macro</a></li>
         
