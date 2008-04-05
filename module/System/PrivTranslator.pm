@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# copyright (C) 2003 phonohawk <phonohawk@ps.sakura.ne.jp>. all rights reserved.
-# copyright (C) 2004-2005 Topia <topia@clovery.jp>. all rights reserved.
 package System::PrivTranslator;
 use strict;
 use warnings;

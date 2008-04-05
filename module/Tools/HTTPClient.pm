@@ -364,10 +364,6 @@ C<\&progress_callback> คโฦฑออ,
 
 phonohawk <phonohawk@ps.sakura.ne.jp>
 
-=head1 COPYRIGHT
-
-Copyright 2004 phonohawk  <phonohawk@ps.sakura.ne.jp>
-
 =head1 SEE ALSO
 
 tiarra
