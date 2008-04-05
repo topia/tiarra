@@ -730,11 +730,7 @@ originally developed by phonohawk E<lt>phonohawk@ps.sakura.ne.jpE<gt>.
 
 now maintained by Topia E<lt>topia@clovery.jpE<gt>.
 
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2002-2004 by phonohawk.
-
-Copyright (C) 2005 by Topia.
+=head1 LICENSE
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
