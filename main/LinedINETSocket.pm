@@ -61,7 +61,13 @@ sub connect {
 				    PeerPort => $port,
 				    Proto => 'tcp',
 				    Timeout => 5);
-    $this->attach($sock);
+    if( $sock )
+    {
+      $this->attach($sock);
+    }else
+    {
+      undef;
+    }
 }
 
 sub attach {
