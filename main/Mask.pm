@@ -140,6 +140,11 @@ sub match_array {
 
 
 # channel version
+# Mask::match_chan($mask, $user_long, $ch_long).
+# $mask      = '#{example}@ircnet,-#{example2}@2ch   +*!*@*.example.com'
+# $user_long = 'nick!user@remote'
+# $ch_long   = '#chan@ircnet:*.jp'
+# ユーザ名/チャンネル名のマッチング.
 sub match_chan {
   my ($masks, $str, $chan, $match_type, $use_re, $use_flag) = @_;
   if (!defined $masks || !defined $str) {
