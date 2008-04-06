@@ -43,7 +43,7 @@ div.module h2
 
 div.module .description
 {
-  font-style: bold;
+  font-weight: bold;
   margin-left: 2em;
   }
 
@@ -69,8 +69,12 @@ div.module .comment
   border-bottom-width: 1px;
   border-bottom-style: dashed;
   border-bottom-color: #66b3ff;
-  padding-left: 1em;
+  padding-left: 0.3em;
   }
+div.module .comment:first-line
+{
+  font-weight: bolder;
+}
 
 div.element.block
 {
