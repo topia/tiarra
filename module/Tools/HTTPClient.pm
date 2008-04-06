@@ -13,11 +13,16 @@ use RunLoop;
 use Timer;
 use Tools::HTTPClient::SSL;
 use Module::Use qw(Tools::HTTPClient::SSL);
+use Tools::HTTPParser;
+use Module::Use qw(Tools::HTTPParser);
 
 # 本当はHTTP::RequestとHTTP::Responseを使いたいが…
 
 our $DEBUG = 0;
 
+# -----------------------------------------------------------------------------
+# $pkg->new(%opts).
+#
 sub new {
     my ($class, %args) = @_;
     my $this = bless {} => $class;
@@ -34,6 +39,7 @@ sub new {
     $this->{content} = $args{Content}; # undef可
     $this->{header} = $args{Header} || {}; # {key => value} undef可
     $this->{timeout} = $args{Timeout}; # undef可
+    $this->{debug}   = $args{Debug};
 
     $this->{callback} = undef;
     $this->{progress_callback} = undef;
@@ -43,14 +49,24 @@ sub new {
 
     $this->{expire_time} = undef; # タイムアウト時刻
 
-    $this->{status_fetched} = undef;
-    $this->{header_fetched} = undef;
-
-    $this->{reply} = {Header => {}, Content => '', StreamState => 'ready' };
+    $this->{parser} = Tools::HTTPParser->new( response => 1 );
 
     $this;
 }
 
+# -----------------------------------------------------------------------------
+# $obj->DESTROY().
+#
+sub DESTROY
+{
+  my $this = shift;
+  $DEBUG and print __PACKAGE__."#DESTROY($this).\n";
+  $this->stop();
+}
+
+# -----------------------------------------------------------------------------
+# $obj->start(%opts).
+#
 sub start {
     # $callback: セッション終了後に呼ばれる関数。省略不可。
     # この関数には次のようなハッシュが渡される。
@@ -80,6 +96,8 @@ sub start {
     if (!$callback or ref($callback) ne 'CODE') {
 	croak "Callback function is required";
     }
+
+    local($DEBUG) = $DEBUG || $this->{debug};
 
     # URLを分解し、ホスト名とパスを得る。
     my ($host, $path);
@@ -113,9 +131,13 @@ sub start {
     }
 
     # 接続
-    $this->{reply}{StreamState} = 'connect';
-    my $socket_class = $this->{with_ssl} ? 'Tools::HTTPClient::SSL' : 'LinedINETSocket';
-    $this->{socket} = $socket_class->new->connect($host, $port);
+    if( $this->{with_ssl} )
+    {
+      $this->{socket} = Tools::HTTPClient::SSL->new()->connect($host, $port);
+    }else
+    {
+      $this->{socket} = LinedINETSocket->new()->connect($host, $port);
+    }
     if (!defined $this->{socket}) {
 	# 接続不可能
 	croak "Failed to connect: $host:$port";
@@ -124,7 +146,6 @@ sub start {
 	# 接続不可能
 	croak "Failed to connect: $host:$port, $@";
     }
-    $this->{reply}{StreamState} = 'fetch_status';
 
     # 必要ならタイムアウト用のタイマーをインストール
     if ($this->{timeout}) {
@@ -138,22 +159,20 @@ sub start {
     }
 
     # リクエストを発行し、フックをかけて終了。
-    my @request = (
-	"$this->{method} $path HTTP/1.0",
-	do {
-	    map {
-		"$_: ".$this->{header}{$_}
-	    } keys %{$this->{header}}
-	},
-	'',
-	do {
-	    $this->{content} ? $this->{content} : ();
-	},
-       );
-    foreach (@request) {
-	$DEBUG and print "> $_\n";
-	$this->{socket}->send_reserve($_);
-    }
+    # 行単位処理はしないので,
+    # eol を送信時は '' で, 受信時はランダムでつぶして送信.
+    my $req = {
+      Type     => 'request',
+      Method   => $this->{method},
+      Path     => $path,
+      Protocol => 'HTTP/1.0',
+      Header   => $this->{header},
+      ($this->{content} ? (Content  => $this->{content}) : ()),
+    };
+    $this->{socket}->eol("");
+    $this->{socket}->send_reserve( Tools::HTTPParser->to_string($req) );
+    #$DEBUG and print Dumper($req);use Data::Dumper;
+    $this->{socket}->eol( pack("C*", map{rand(256)}1..32) );
 
     $this->{hook} = RunLoop::Hook->new(
 	sub {
@@ -163,88 +182,80 @@ sub start {
     $this;
 }
 
-sub _main {
-    my $this = shift;
+# -----------------------------------------------------------------------------
+# $obj->_main().
+# (private)
+#
+sub _main 
+{
+  my $this = shift;
 
-    # タイムアウト判定
-    if ($this->{expire_time} and time >= $this->{expire_time}) {
-	$this->_end("timeout");
-	return;
-    }
+  # タイムアウト判定
+  if( $this->{expire_time} and time >= $this->{expire_time} )
+  {
+    $this->_end("timeout");
+    return;
+  }
 
-    my $progress;
-    while (defined(my $line = $this->{socket}->pop_queue)) {
-	$DEBUG and print "< $line\n";
-	$progress = 1;
-	
-	if (!$this->{status_fetched}) {
-	    # ステータス行
-	    $line =~ tr/\n\r//d;
-	    if ($line =~ m|^(HTTP/.+?) (\d+?) (.+)$|) {
-		$this->{reply}{Protocol} = $1;
-		$this->{reply}{Code} = $2;
-		$this->{reply}{Message} = $3;
-		$this->{status_fetched} = 1;
-		$this->{reply}{StreamState} = 'fetch_header';
-	    }
-	    else {
-		$this->_end("invalid status line: $line");
-		return;
-	    }
-	}
-	elsif (!$this->{header_fetched}) {
-	    $line =~ tr/\n\r//d;
-	    if (length $line == 0) {
-		# ヘッダ終わり
-		$this->{header_fetched} = 1;
-		$this->{reply}{StreamState} = 'fetch_body';
-	    }
-	    else {
-		if ($line =~ m|(.+?): ?(.+)$|) {
-		    my ($key, $val) = ($1, $2);
-		    $key =~ /^Content-Type\z/i and $key = 'Content-Type';
-		    $this->{reply}{Header}{$key} = $val;
-		}
-		else {
-		    $this->_end("invalid header line: $line");
-		    return;
-		}
-	    }
-	}
-	else {
-	    # 中身
-	    $this->{reply}{Content} .= $line . "\x0d\x0a";
-	}
-    }
+  my $progress = '';
+  while( defined(my $line = $this->{socket}->pop_queue) )
+  {
+    # そうそうこないと思うけれど運悪くマッチしたとき.
+    $progress .= $line . $this->{socket}->eol;
+    $DEBUG and $this->_runloop->notify_msg(__PACKAGE__."#_main, matches with ".unpack("H*",$this->{socket}->eol));
+  }
+  $progress .= $this->{socket}->recvbuf;
+  $this->{socket}->recvbuf = '';
 
-    if( $this->{header_fetched} && $this->{socket}->recvbuf )
+  if( $progress ne '' )
+  {
+    my $status = eval { $this->{parser}->add($progress); };
+    if( $@ )
     {
-      #$DEBUG and print "<< (merge body)\n" . $this->{socket}->recvbuf."<< (end)\n";
-      $progress = 1;
-      $this->{reply}{Content} .= $this->{socket}->recvbuf;
-      $this->{socket}->recvbuf = '';
+      # プロトコルエラー.
+      $this->_end($@);
+      return;
     }
+    if( $status == 0 )
+    {
+      # 正常終了.
+      $this->_end();
+      return;
+    }
+    if( $this->{progress_callback} )
+    {
+      # 進展があったのでコールバック.
+      $this->{progress_callback}->($this->{parser}->object);
+    }
+  }
 
-    # 切断されていたら、ここで終わり。
-    if (!$this->{socket}->connected) {
-        $DEBUG and print "<< (disconnected)\n";
-	if (!$this->{status_fetched} or
-	      !$this->{header_fetched}) {
-	    $this->_end("unexpected disconnect by server");
-	}
-	else {
-	    $this->{reply}{StreamState} = 'finished';
-	    $this->_end;
-	}
+  # 切断されていたら、ここで終わり。
+  if( $this->{socket} && !$this->{socket}->connected )
+  {
+    $DEBUG and print "<< (disconnected)\n";
+    my $success;
+    if( $this->{parser}->isa('Tools::HTTPParser') )
+    {
+      $success = !$this->{parser}{rest};
     }else
     {
-      if( $progress && $this->{progress_callback} )
-      {
-        $this->{progress_callback}->($this->{reply});
-      }
+      $this->{parser}->object->content( $this->{parser}->data );
     }
+    if( $success )
+    {
+      $this->_end();
+    }else
+    {
+      $this->_end("unexpected disconnect by server");
+    }
+  }
 }
 
+# -----------------------------------------------------------------------------
+# $obj->_end().
+# $obj->_end($errmsg).
+# (private)
+#
 sub _end {
     my ($this, $err) = @_;
 
@@ -254,17 +265,29 @@ sub _end {
 	$this->{callback}->($err);
     }
     else {
-	$this->{callback}->($this->{reply});
+	my $res = $this->{parser}->object;
+	if( UNIVERSAL::isa($res, 'HTTP::Message') )
+	{
+	  $res = Tools::HTTPParser->_from_lwp($res);
+	}
+	$this->{callback}->($res);
     }
 }
 
+# -----------------------------------------------------------------------------
+# $obj->alive_p().
+#
 sub alive_p {
     my $this = shift;
     defined $this->{socket};
 }
 
+# -----------------------------------------------------------------------------
+# $obj->stop().
+#
 sub stop {
     my $this = shift;
+    $DEBUG and print __PACKAGE__."#stop($this).\n";
 
     $this->{socket}->disconnect if $this->{socket} && $this->{socket}->connected;
     $this->{hook}->uninstall if $this->{hook};
