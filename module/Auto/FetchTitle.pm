@@ -16,6 +16,7 @@ use Auto::Utils;
 use Mask;
 use Multicast;
 use Tiarra::Encoding;
+use Scalar::Util qw(weaken);
 
 # URL Fetch.
 use Tools::HTTPClient;
@@ -427,10 +428,10 @@ sub _extract_urls
   my @urls = map{ m{ (\S?\w+://\S+) }gx } @tokens;
   foreach my $url (@urls)
   {
-    $url =~ s/(\S)// or next;
-    my $par_begin = $1;
+    my $par_begin = substr($url, 0, 1);
     my $par_end   = $pars->{$par_begin};
     $par_end or next;
+    $url =~ s/^\Q$par_begin\E//;
     $url =~ s/\Q$par_end\E\z//;
   }
 
@@ -611,14 +612,18 @@ sub _start_request
     Timeout => $timeout,
   );
   $DEBUG and $this->_debug($req, "debug: start http-client: $req->{url}");
+
+  weaken($this);
   eval{
     $httpclient->start(
       Callback => sub{
+        $this or return RunLoop->shared_loop->notify_error(__PACKAGE__."#_start_request/httpclient.Callback, object was deleted.");
         local($DEBUG) = $DEBUG || $this->{debug};
-        $DEBUG and $this->_debug($req, "debug: http-client finished @_");
+        $DEBUG and $this->_debug($req, "debug: http-client finished: @_");
         $this->_request_finished($req, @_);
       },
       ProgressCallback => sub{
+        $this or return RunLoop->shared_loop->notify_error(__PACKAGE__."#_start_request/httpclient.Callback, object was deleted.");
         local($DEBUG) = $DEBUG || $this->{debug};
         $DEBUG and $this->_debug($req, "debug: http-client progress @_");
         $this->_request_progress($req, @_);
@@ -690,6 +695,9 @@ sub _request_filter
     basic => {
       prereq => \&_filter_basic_prereq,
     },
+    cookie => {
+      prereq => \&_filter_cookie_prereq,
+    },
     uploader => {
       prereq   => \&_filter_uploader_prereq,
       response => \&_filter_uploader_response,
@@ -742,27 +750,34 @@ sub _request_filter
         }
       }
 
-      my $type = $block->type;
-      if( !defined($type) )
+      my @types = $block->type('all');
+      if( $block->user && !grep {$_ eq 'basic'} @types )
       {
-        $type = $block->user ? 'basic' : '';
+        push(@types, 'basic');
       }
-      $has_extract_heading ||= $type eq 'extract-heading';
-      if( !$REQUEST_FILTER->{$type} )
+      if( $block->cookie && !grep {$_ eq 'cookie'}  @types)
       {
-        $DEBUG && $type ne '' and $this->_debug($req, "debug: unsupported type: $type");
-        next;
+        push(@types, 'cookie');
       }
-      my $sub = $REQUEST_FILTER->{$type}{$when};
-      if( !$sub )
+      $has_extract_heading ||= grep {$_ eq 'extract-heading'} @types;
+      foreach my $type (@types)
       {
-        $DEBUG && $type ne '' and $this->_debug($req, "debug: - no sub for $when");
-        next;
-      }
-      $sub->($this, $block, $req, $when, $type);
-      if( $req->{redirect} || $req->{response} )
-      {
-        return;
+        if( !$REQUEST_FILTER->{$type} )
+        {
+          $DEBUG && $type ne '' and $this->_debug($req, "debug: unsupported type: $type");
+          next;
+        }
+        my $sub = $REQUEST_FILTER->{$type}{$when};
+        if( !$sub )
+        {
+          $DEBUG && $type ne '' and $this->_debug($req, "debug: - no sub for $when");
+          next;
+        }
+        $sub->($this, $block, $req, $when, $type);
+        if( $req->{redirect} || $req->{response} )
+        {
+          return;
+        }
       }
     }
   }
@@ -802,6 +817,40 @@ sub _filter_basic_prereq
   my $user = _decode_value($block->user);
   my $pass = _decode_value($block->pass);
   $req->{headers}{Authorization} = "Basic ".MIME::Base64::encode("$user:$pass", "");
+
+  $this;
+}
+
+# -----------------------------------------------------------------------------
+# $this->_filter_cookie_prereq($block, $req, $when, $type).
+# (impl:fetchtitle-filter)
+# cookie/prereq.
+#
+sub _filter_cookie_prereq
+{
+  my $this  = shift;
+  my $block = shift;
+  my $req   = shift;
+  my $when  = shift;
+  my $type  = shift;
+
+  foreach my $cookie ($block->cookie('all'))
+  {
+    if( $req->{headers}{Cookie} )
+    {
+      $req->{headers}{Cookie} .= "; ";
+    }else
+    {
+      $req->{headers}{Cookie} = "";
+    }
+    if( $cookie =~ /^(\S+?)=(\S+)\z/ )
+    {
+      $req->{headers}{Cookie} .= "$cookie";
+    }else
+    {
+      $DEBUG and $this->_debug($req, "debug: invalid cookie value: $cookie");
+    }
+  }
 
   $this;
 }
@@ -986,12 +1035,30 @@ sub _extract_heading_config
       remove => qr/^NIKKEI NET：/,
     },
     {
-      url     => 'http://www\d*.nhk.or.jp/news/*',
+      url     => 'http://www*.nhk.or.jp/news/*',
       extract => qr{<p class="newstitle">(.*?)</p>},
     },
     {
       url     => 'http://*.creative.com/*',
       timeout => 5,
+    },
+    {
+      url        => 'http://www.soundhouse.co.jp/shop/News.asp?NewsNo=*',
+      recv_limit => 50*1024,
+      extract    => qr{(<td class='honbun'>\s*<font size='\+1'><b>.*?</b></font>.*?)<br>}s,
+    },
+    {
+      # trac changeset.
+      url        => '*/changeset/*',
+      extract    => qr{<dd class="message" id="searchable"><p>(.*?)</p>}s,
+    },
+    {
+      url        => 'http://www.amazon.co.jp/*',
+      recv_limit => 15*1024,
+    },
+    {
+      url        => 'http://www.amazon.com/*',
+      recv_limit => 15*1024,
     },
   ];
   $config;
@@ -1015,13 +1082,16 @@ sub _filter_extract_heading_prereq
   foreach my $conf (@$conflist)
   {
     Mask::match($conf->{url}, $req->{url}) or next;
+    $DEBUG and $this->_debug($req, "debug: - $conf->{url}");
     if( my $new_recv_limit = $conf->{recv_limit} )
     {
       $this->_apply_recv_limit($req, $new_recv_limit);
+      $DEBUG and $this->_debug($req, "debug: - recv_limit, $new_recv_limit");
     }
     if( my $new_timeout = $conf->{timeout} )
     {
       $this->_apply_timeout($req, $new_timeout);
+      $DEBUG and $this->_debug($req, "debug: - timeout, $new_timeout");
     }
   }
 
@@ -1060,6 +1130,7 @@ sub _filter_extract_heading_response
   foreach my $conf (@$conflist)
   {
     Mask::match($conf->{url}, $req->{url}) or next;
+    $DEBUG and $this->_debug($req, "debug: - $conf->{url}");
 
     my $extract_list = $conf->{extract};
     if( ref($extract_list) ne 'ARRAY' )
@@ -1068,6 +1139,7 @@ sub _filter_extract_heading_response
     }
     foreach my $_extract (@$extract_list)
     {
+      $DEBUG and $this->_debug($req, "debug: - $_extract");
       my $extract = $_extract; # sharrow-copy.
       $extract = ref($extract) ? $extract : qr/\Q$extract/;
       my @match = $req->{result}{decoded_content} =~ $extract;
@@ -1076,6 +1148,7 @@ sub _filter_extract_heading_response
       last;
     }
     defined($heading) or next;
+    $DEBUG and $this->_debug($req, "debug: - $heading");
 
     $heading = $this->_fixup_title($heading);
 
@@ -1283,8 +1356,11 @@ sub _redirect
   my $new_req = $this->_create_request($req->{full_ch_name}, $redir->{url}, $matched);
   $new_req->{old}        = $req;
   $new_req->{redirected} = $count;
-  $new_req->{requested_at} = $req->{requested_at},
-  $this->_apply_recv_limit($new_req, $redir->{recv_limit});
+  $new_req->{requested_at} = $req->{requested_at};
+  if( $redir->{recv_limit} )
+  {
+    $this->_apply_recv_limit($new_req, $redir->{recv_limit});
+  }
 
   if( $count > $MAX_REDIRECTS )
   {
@@ -1339,24 +1415,43 @@ sub _parse_response
   my $status_msg  = $res->{Message};
   my $headers     = $res->{Header}; # hash-ref.
   my $content     = $res->{Content};
+  defined($content) or $content = '';
 
   $result->{status_code}    = $status_code;
   $result->{content_length} = $headers->{'Content-Length'};
   if( !defined($result->{content_length}) && $res->{StreamState} eq 'finished' )
   {
-    $result->{content_length} = length($res->{Content});
+    $result->{content_length} = length($content);
   }
-  $DEBUG and $this->_debug($full_ch_name, "debug: fetch ".length($res->{Content})." bytes");
+  $DEBUG and $this->_debug($full_ch_name, "debug: fetch ".length($content)." bytes");
 
   if( my $loc = $headers->{Location} )
   {
     $DEBUG and $this->_debug($full_ch_name, "debug: has Location header: $loc");
-    if( $loc =~ m{^(\w+://[-.\w]+\S*)\s*$}m )
+    if( $loc =~ m{^\s*(\w+://[-.\w]+\S*)\s*$} )
     {
       $result->{redirect} = substr($loc, 0, length($1)); # keep taintness.
+    }elsif( $loc =~ m{^\s*((/?).*?(?:[#?].*)?)\s*$} )
+    {
+      my $path = substr($loc, 0, length($1)); # keep taintness.
+      my $is_abs = $2;
+      my $new_url = $req->{url};
+      $new_url =~ s{[#?].*}{};
+      if( $is_abs )
+      {
+        $new_url =~ s{^(\w+://[^/]+)/.*}{$1} or die "invalid req url(abs): $new_url";
+      }else
+      {
+        $new_url =~ s{^(\w+://[^/]+.*/).*}{$1} or die "invalid req url(rel): $new_url";
+      }
+      $result->{redirect} = $new_url . $path;
+    }else
+    {
+      $DEBUG and $this->_debug($full_ch_name, "debug: broken location url: $loc");
     }
+    $DEBUG && $result->{redirect} and $this->_debug($full_ch_name, "debug: Location redirect: $result->{redirect}");
   }
-  if( int($status_code / 100) != 2 )
+  if( int($status_code / 100) != 2 && !$result->{redirect} )
   {
     my @opts;
     $status_msg and push(@opts, $status_msg);
@@ -1639,6 +1734,8 @@ sub _reply
 
   my $reply_prefix = $this->config_get('reply_prefix');
   my $reply_suffix = $this->config_get('reply_suffix');
+  defined($reply_prefix) or $reply_prefix = '';
+  defined($reply_suffix) or $reply_suffix = '';
   my $msg = $reply_prefix . $reply . $reply_suffix;
 
   # メッセージが追い越しちゃわないように
@@ -1750,6 +1847,8 @@ sub _debug
 
   my $reply_prefix = $this->config_get('reply_prefix');
   my $reply_suffix = $this->config_get('reply_suffix');
+  defined($reply_prefix) or $reply_prefix = '';
+  defined($reply_suffix) or $reply_suffix = '';
   my $msg_to_send = Auto::Utils->construct_irc_message(
     Command => 'NOTICE',
     Params  => [ '', $reply_prefix."debug: $reply".$reply_suffix ],
