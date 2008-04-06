@@ -46,12 +46,17 @@ remarkのsend-error-as-is-to-clientを指定してください。<br />
         <div class="content">
 	  <p class="comment">
 main/* に対する実行時パッチ<br />
-有効にすれば自動で適用される.<br />
+起動/ロード時に確認は行われるが, 実際の適用は指示があるまで行われない.<br />
 </p>
 <p class="comment">
 対応している箇所.<br />
-ModuleManager / reload_modules_if_modified / r3004 => r8009<br />
+ModuleManager / reload_modules_if_modified / r3004 => r8809<br />
 </p>
+<p class="comment">
+/livepatch check で確認.<br />
+/livepatch apply で適用.<br />
+</p>
+<div class="element"><span class="key">command</span>:<span class="value">livepatch</span></div>
 
         </div>
       </div>
