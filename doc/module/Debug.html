@@ -2,7 +2,7 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3010 2007-12-10 13:36:55Z topia $ -->
+<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
@@ -17,6 +17,49 @@
     <hr class="sep" />
 
     <div class="pane-main">
+      
+      <div id="module-Debug::Core" class="module">
+        <div class="module-header"><h2 title="Tiarra の内部構造の追跡.">Debug::Core</h2>
+          <span class="description">Tiarra の内部構造の追跡.</span></div>
+        <div class="content">
+	  <p class="comment">
+Tiarra の内部構造を出力します.<br />
+</p>
+<p class="comment">
+トリガー用コマンド.<br />
+デフォルトは debugcore<br />
+</p>
+<div class="element"><span class="key">command</span>:<span class="value">debugcore</span></div>
+<p class="comment">
+[top commands]<br />
+help   - show this usage.<br />
+bbs    - show BulletinBoard info.<br />
+socket - show internal sockets.<br />
+module - show module info.<br />
+</p>
+<p class="comment">
+[sub commands]<br />
+help:<br />
+bbs:<br />
+&nbsp;&nbsp;keys - show keys in BulletinBoard.<br />
+socket:<br />
+&nbsp;&nbsp;help      - show this usage.<br />
+&nbsp;&nbsp;list      - show installed socket.<br />
+&nbsp;&nbsp;get       - show socket in detail.<br />
+&nbsp;&nbsp;uninstall - uninstall detached socket.<br />
+module:<br />
+&nbsp;&nbsp;help    - show this usage.<br />
+&nbsp;&nbsp;summary - show module summary.<br />
+&nbsp;&nbsp;list    - show module list in detail.<br />
+&nbsp;&nbsp;dep     - show module dependency.<br />
+</p>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
       
       <div id="module-Debug::RawLog" class="module">
         <div class="module-header"><h2 title="標準出力にクライアントやサーバとの通信をダンプする。">Debug::RawLog</h2>
@@ -60,6 +103,8 @@ NumericReply の名前を解決して表示する(ちゃんとした dump では無くなります)<br />
 
     <div class="pane-sidebar">
       <ul class="menu">
+        
+        <li><a href="#module-Debug::Core" title="Tiarra の内部構造の追跡.">Debug::Core</a></li>
         
         <li><a href="#module-Debug::RawLog" title="標準出力にクライアントやサーバとの通信をダンプする。">Debug::RawLog</a></li>
         
