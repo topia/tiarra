@@ -16,6 +16,7 @@ use Auto::Utils;
 use Mask;
 use Multicast;
 use Tiarra::Encoding;
+use Configuration; # Configuration::Hook.
 use Scalar::Util qw(weaken);
 
 # URL Fetch.
@@ -128,32 +129,16 @@ sub new
   $this->{reply_queue}   = undef;
   $this->{reply_timer}   = undef;
 
-  $this->{mask} = [];
-  foreach my $line ($this->config->mask('all'))
-  {
-    my ($ch_mask, @opts) = split(' ', $line);
-    $ch_mask or next;
-    my @conf;
-    while( @opts && $opts[0] =~ s/^&// )
-    {
-      my $confkey = shift @opts;
-      push(@conf, $this->config->get("conf-$confkey", 'block'));
-    }
-    my $url_mask = shift @opts || '*';
-    my $mask = {
-      ch_mask  => $ch_mask,
-      url_mask => $url_mask,
-      conf     => \@conf,
-    };
-    push(@{$this->{mask}}, $mask);
-  }
+  $this->{mask} = undef;
 
-  if( $this->{debug} && $this->{debug} =~ /^(off|no|false)/i )
-  {
-    $this->{debug} = undef;
-  }
-
+  $this->_reload_config();
   $this->_reload_plugins();
+
+  my $weaken_this = $this;
+  weaken($weaken_this);
+  $this->{conf_hook} = Configuration::Hook->new(sub{
+    $weaken_this->_reload_config();
+  })->install('reloaded');
 
   return $this;
 }
@@ -168,6 +153,57 @@ sub destruct
   {
     $this->{reply_timer}->uninstall();
     $this->{reply_timer} = undef;
+  }
+  if( $this->{conf_hook} )
+  {
+    $this->{conf_hook}->uninstall();
+    $this->{conf_hook} = undef;
+  }
+}
+
+# -----------------------------------------------------------------------------
+# $obj->_reload_config().
+#
+sub _reload_config
+{
+  my $this = shift;
+
+  $this->_runloop->notify_msg(__PACKAGE__.", reload config.");
+  $this->{debug} = $this->config->debug;
+  if( $this->{debug} && $this->{debug} =~ /^(off|no|false)/i )
+  {
+    $this->{debug} = undef;
+  }
+
+  $this->{mask} = [];
+  foreach my $line ($this->config->mask('all'))
+  {
+    my ($ch_mask, @opts) = split(' ', $line);
+    $ch_mask or next;
+
+    # #Tiarra@ircnet:*.jp か $#Tiarra:*.jp@ircnet か
+    # 紛らわしいのでmaskがどっちでもマッチするように.
+    # (正しくは前者)
+    # マッチさせるチャンネル名はプログラム内の物なので必ず前者形式のはず.
+    my ($ch_mask_short, $ch_mask_net, $explicit) = Multicast::detach($ch_mask);
+    if( $explicit )
+    {
+      $ch_mask = Multicast::attach($ch_mask_short, $ch_mask_net);
+    }
+
+    my @conf;
+    while( @opts && $opts[0] =~ s/^&// )
+    {
+      my $confkey = shift @opts;
+      push(@conf, $this->config->get("conf-$confkey", 'block'));
+    }
+    my $url_mask = shift @opts || '*';
+    my $mask = {
+      ch_mask  => $ch_mask,
+      url_mask => $url_mask,
+      conf     => \@conf,
+    };
+    push(@{$this->{mask}}, $mask);
   }
 }
 
@@ -204,7 +240,7 @@ sub _reload_plugins
     @plugins = $this->_find_local_plugins;
   }
 
-  RunLoop->shared_loop->notify_msg("plugins:");
+  RunLoop->shared_loop->notify_msg(__PACKAGE__."#_reload_plugins, plugins:");
   if( @plugins )
   {
     Module::Use->import(@plugins);
@@ -392,7 +428,13 @@ sub _create_request
 
 # -----------------------------------------------------------------------------
 # $matched_mask = $this->_check_mask($full_ch_name, $url);
+# チャンネルとURLから, 利用する mask: 行を１つ抽出.
 # マッチした許可マスク定義HASH-refを返す.
+# {
+#   ch_mask  => $ch_mask,  # mask: のチャンネル指定部分(必須).
+#   url_mask => $url_mask, # mask: のURL指定部分(省略'*').
+#   conf     => \@conf,    # mask: のconfに対応するブロックのリスト(Configuration::Block).
+# };
 #
 sub _check_mask
 {
@@ -582,19 +624,6 @@ sub _start_request
     $this->_close_request($req->{full_ch_name});
     return $req;
   }
-
-#  if( $req->{url} =~ m{^http://www.print-gakufu.com/} )
-#  {
-#    $this->_apply_recv_limit($req, 8*1024);
-#  }
-#  if( $req->{url} =~ m{^http://www.zakzak.co.jp/} )
-#  {
-#    $this->_apply_recv_limit($req, 10*1024);
-#  }
-#  if( $req->{url} =~ m{^http://www.nikkei.co.jp/} )
-#  {
-#    $this->_apply_recv_limit($req, 16*1024);
-#  }
 
   my $agent_name = $headers->{'User-Agent'};
   if( !defined($agent_name) || $agent_name eq '' )
@@ -1525,45 +1554,6 @@ sub _parse_response
   my ($title) = $content =~ m{<title>\s*(.*?)\s*</title>}is;
   $DEBUG && !$title and $this->_debug($full_ch_name, "debug: no title elements in document");
 
-#  my $heading;
-#  if( $req->{url} =~ m{^http://www\d*.nhk.or.jp/news/} && $content =~ m{<p class="newstitle">(.*?)</p>}i )
-#  {
-#    $heading = $1;
-#  }
-#  if( $req->{url} =~ m{^http://www.print-gakufu.com/} && $content =~ m{<p\s+class="topicPath">(.*?)</p>}s )
-#  {
-#    $heading = $1;
-#    $heading =~ s/<.*?>//g;
-#    #$heading =~ s/^ぷりんと楽譜 総合案内 ＞ //;
-#    $heading =~ s/\s+/ /g;
-#  }
-#  if( $req->{url} =~ m{^http://www.zakzak.co.jp/} && $content =~ m{<font class="kijimidashi".*?>(.*)</font>}s )
-#  {
-#    $heading = $1;
-#    $heading =~ s/<.*?>//g;
-#    $heading =~ s/\s+/ /g;
-#  }
-#  if( $req->{url} =~ m{^http://www.nikkei.co.jp/} && $content =~ m{<META NAME="TITLE" CONTENT="(.*?)">}s )
-#  {
-#    $heading = $1;
-#    $heading =~ s/<.*?>//g;
-#    $heading =~ s/\s+/ /g;
-#    $heading =~ s/^NIKKEI NET：//;
-#  }
-#  if( $req->{url} =~ m{^http://www.nikkei.co.jp/} && $content =~ m{<h3 class="topNews-ttl3">(.*)</h3>}s )
-#  {
-#    $heading = $1;
-#    $heading =~ s/<.*?>//g;
-#    $heading =~ s/\s+/ /g;
-#    $heading =~ s/^NIKKEI NET：//;
-#  }
-#  if( defined($heading) && $heading =~ /\S/ )
-#  {
-#    $heading =~ s/^\s+//;
-#    $heading =~ s/\s+$//;
-#    $title = defined($title) && $title ne '' ? "$heading - $title" : $heading;
-#  }
-
   if( defined($title) )
   {
     $title = $this->_fixup_title($title);
@@ -1879,6 +1869,7 @@ default: off
 timeout: 3
 
 # 有効にするチャンネルとオプションとURLの設定.
+# 書式: mask: <channel> [<&conf>...] <url>
 #
 # mask: #test@ircnet &test http://*
 # mask: * http://*
@@ -1888,6 +1879,7 @@ mask: * http://*
 #conf-test {
 #  auth-test1 {
 #    url:  http://example.com/*
+#    url:  http://example.org/*
 #    user: test
 #    #pass: test
 #    pass: {BASE64}dGVzdAo=

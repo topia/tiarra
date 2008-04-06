@@ -244,6 +244,7 @@ Tiarra を動かすことをお勧めします。<br />
 <div class="element"><span class="key">timeout</span>:<span class="value">3</span></div>
 <p class="comment">
 &nbsp;有効にするチャンネルとオプションとURLの設定.<br />
+&nbsp;書式: mask: &lt;channel&gt; [&lt;&amp;conf&gt;...] &lt;url&gt;<br />
 <br />
 &nbsp;mask: #test@ircnet &amp;test http://*<br />
 &nbsp;mask: * http://*<br />
@@ -254,6 +255,7 @@ Tiarra を動かすことをお勧めします。<br />
 conf-test {<br />
 &nbsp;&nbsp;auth-test1 {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;url:  http://example.com/*<br />
+&nbsp;&nbsp;&nbsp;&nbsp;url:  http://example.org/*<br />
 &nbsp;&nbsp;&nbsp;&nbsp;user: test<br />
 &nbsp;&nbsp;&nbsp;&nbsp;#pass: test<br />
 &nbsp;&nbsp;&nbsp;&nbsp;pass: {BASE64}dGVzdAo=<br />
