@@ -20,8 +20,7 @@ use Module::Use qw(Tools::HTTPServer Log::Logger);
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
 
-our $DEBUG = 1;
-$|=1;
+our $DEBUG = 0;
 
 our $DEFAULT_MAX_LINES = 100;
 our $DEFAULT_NAME      = '???';
@@ -37,6 +36,8 @@ sub new
 {
   my $pkg  = shift;
   my $this = $pkg->SUPER::new(@_);
+
+  local($DEBUG) = $DEBUG || $this->config->debug;
 
   my $has_lwp = $Tools::HTTPServer::Client::HAS_HTTP_PARSER;
   $this->_runloop->notify_msg(__PACKAGE__.", Tools::HTTPServer uses HTTP::Parser: ".($has_lwp?"yes":"no"));
@@ -222,7 +223,9 @@ sub _trace_msg
   my $sender = shift;
   my $type   = shift;
 
+  local($DEBUG) = $DEBUG || $this->config->debug;
   ##RunLoop->shared_loop->notify_msg(__PACKAGE__."#_trace_msg, ".$msg->command." ($sender/$type)");
+
   $this->{last_sender} = $sender;
   $this->{last_msg}    = $msg;
   $this->{last_line}   = undef;
@@ -910,19 +913,57 @@ package System::WebClient;
 
 =begin tiarra-doc
 
-info:    ログをHTTPで公開.
+info:    ブラウザ上でログを見たり発言したりできます.
 default: off
 #section: important
 
-# 許可する接続元.
-allow: localhost
-allow-localhost {
-  addr: 127.0.0.1
-  channel: #*@*
+# WebClient を起動させる場所の指定.
+bind-addr: 127.0.0.1
+bind-port: 8668
+path: /irc
+css:  /style/style.css
+
+# apacheでReverseProxyさせる場合, httpd.conf に以下のように設定.
+#  ProxyPass        /irc/ http://localhost:8667/irc/
+#  ProxyPassReverse /irc/ http://localhost:8667/irc/
+#  <Location /irc/>
+#  ...
+#  </Location>
+
+# 利用する接続設定の一覧.
+# 空白区切りで評価する順に記述.
+# 使われる設定は,
+# - 接続元 IP が一致する物.
+# - user/passが送られてきていない(認証前/anonymous):
+#   - 認証不要の設定があればその設定を利用.
+#   - 認証不要の設定がなければ 401 Unauthorized.
+# - user/passが送られてきている.
+#   - 一致する設定を利用.
+#   - 一致する設定がなければ 401 Unauthorized.
+#
+allow: private public
+
+# 許可する接続の設定.
+allow-private {
+  # 接続元IPアドレスの制限.
+  host: 127.0.0.1
+  # 認証設定.
+  auth: user pass
+  # 公開するチャンネルの指定.
+  mask: #*@*
+  mask: *@*
+}
+allow-public {
+  host: *
+  auth: user2 pass2 realm
+  mask: #公開チャンネル@ircnet
 }
 
 # デバッグフラグ.
-debug: 1
+debug: 0
+
+max-lines:    100
+name-default: ???
 
 =end tiarra-doc
 
