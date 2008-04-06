@@ -1,7 +1,10 @@
 ## ----------------------------------------------------------------------------
 #  Tools::HTTPClient::SSL.
 #  適当ごしらえのHTTPClient用SSLサポート.
+#  before-select Hook で pop_queue() が呼ばれる動作のみを想定.
+#
 #  LinedINETSocket の I/F を適当に実装.
+#  但し基底クラスはなにもなし(IO::Socketでもない).
 #  Tiarra::Socket系で対処した方がいいのだろうけれど….
 # -----------------------------------------------------------------------------
 # Mastering programmed by YAMASHINA Hio
@@ -15,6 +18,7 @@ use strict;
 use warnings;
 
 our $HAS_SSL;
+our $DEFAULT_EOL = "\r\n";
 
 1;
 
@@ -24,13 +28,17 @@ our $HAS_SSL;
 sub new
 {
   my $pkg  = shift;
+  my $eol  = shift || $DEFAULT_EOL;
+
   my $this = bless {}, $pkg;
+  $this->{eol}  = $eol;
   $this->{host} = undef;
   $this->{port} = undef;
-  $this->{ssl} = undef;
+  $this->{ssl}  = undef;
   $this->{queue}   = [];
   $this->{recvbuf} = '';
   $this->{eof}     = undef;
+  $this->{timer}   = undef;
 
   defined($HAS_SSL) or $this->_load_ssl();
 
@@ -51,6 +59,19 @@ sub _load_ssl
 
 
 # -----------------------------------------------------------------------------
+# $obj->DESTROY().
+#
+sub DESTROY
+{
+  my $this = shift;
+  if( my $timer = $this->{timer} )
+  {
+    $timer->uninstall;
+    $this->{timer} = undef;
+  }
+}
+
+# -----------------------------------------------------------------------------
 # $obj->connect($host, $port).
 #
 sub connect
@@ -64,8 +85,21 @@ sub connect
   $this->{ssl}  = IO::Socket::SSL->new(
     PeerHost => $host,
     PeerPort => $port,
-    Blocking => 0,
+    ($^O eq 'MSWin32' ? () : (Blocking => 0)),
   );
+  if( !$this->{ssl} )
+  {
+    $@ = IO::Socket::SSL::errstr();
+  }
+
+  # select() を抜けるためだけのtimer.
+  # HTTPClient が before-select Hook で動作を起こすので,
+  # そのトリガ用.
+  $this->{timer} = Timer->new(
+    Interval => 1,
+    Code     => sub{},
+    Repeat   => 1
+  )->install;
 
   $this;
 }
@@ -117,6 +151,8 @@ sub pop_queue
 
   if( !@$queue )
   {
+    # 通常なら自分で tiarra-socket/read() コールバックで
+    # 読み込んでおくけれど, 手抜き実装につきここでread.
     $this->_recv();
     $this->_fill_queue();
   }
@@ -133,7 +169,20 @@ sub recvbuf:lvalue
 }
 
 # -----------------------------------------------------------------------------
+# $obj->eol().
+# $obj->eol($eol).
+#
+sub eol
+{
+  my $this = shift;
+  @_ and $this->{eol} = shift;
+  $this->{eol};
+}
+
+# -----------------------------------------------------------------------------
 # $obj->_recv().
+# recvbuf にデータを読み込み.
+# Tiarra::Socket::Buffered の read() に相当.
 #
 sub _recv
 {
@@ -162,7 +211,7 @@ sub _recv
     }
     if( !$r )
     {
-      die "EOF";
+      $this->{eof} = 1;
       last;
     }
     #print "read: $r\n";
@@ -174,17 +223,20 @@ sub _recv
 
 # -----------------------------------------------------------------------------
 # $obj->_fill_queue().
+# recvbuf にたまっているデータを行分割して queue に投入.
+# Tiarra::Socket::Lined の read() に相当.
 #
 sub _fill_queue
 {
   my $this  = shift;
   my $queue = $this->{queue};
-  my $eol   = "\r\n";
-  while( $this->{recvbuf} =~ /^(.*?)$eol/ )
+  my $eol   = $this->{eol} || $DEFAULT_EOL;
+  my $eol_len = length($eol);
+  while( $this->{recvbuf} =~ /^(.*?)\Q$eol/ )
   {
     my $line_len = length($1);
     push(@$queue, substr($this->{recvbuf}, 0, $line_len));
-    substr($this->{recvbuf}, 0, $line_len+length($eol), '');
+    substr($this->{recvbuf}, 0, $line_len+$eol_len, '');
   }
 }
 
