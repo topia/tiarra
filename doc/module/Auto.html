@@ -29,9 +29,9 @@
 <p class="comment">
 &nbsp;エイリアス定義ファイルのパスと、そのエンコーディング。<br />
 &nbsp;このファイルは次のようなフォーマットである。<br />
-&nbsp;1. それぞれの行は「<キー>: <値>」の形式である。<br />
+&nbsp;1. それぞれの行は「&lt;キー&gt;: &lt;値&gt;」の形式である。<br />
 &nbsp;2. 空の行で、各ユーザーを区切る。<br />
-&nbsp;3. <値>はカンマで区切られて複数の値とされる。<br />
+&nbsp;3. &lt;値&gt;はカンマで区切られて複数の値とされる。<br />
 <br />
 &nbsp;エイリアス定義ファイルの例:<br />
 <br />
@@ -49,12 +49,12 @@
 </p>
 <div class="element"><span class="key">confirm</span>:<span class="value">エイリアス確認</span></div>
 <p class="comment">
-「<addで指定したキーワード> user *!*user@*.user.net」のようにして情報を追加。<br />
+「&lt;addで指定したキーワード&gt; user *!*user@*.user.net」のようにして情報を追加。<br />
 発言をした人のエイリアスが未登録だった場合は、userのみ受け付けて新規追加とする。<br />
 </p>
 <div class="element"><span class="key">add</span>:<span class="value">エイリアス追加</span></div>
 <p class="comment">
-「<removeで指定したキーワード> name ユーザー」のようにして情報を削除。<br />
+「&lt;removeで指定したキーワード&gt; name ユーザー」のようにして情報を削除。<br />
 userを全て削除されたエイリアスは他の情報(name等)も含めて消滅する。<br />
 </p>
 <div class="element"><span class="key">remove</span>:<span class="value">エイリアス削除</span></div>
@@ -98,7 +98,7 @@ Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 &nbsp;相手の現在のnickとチャンネル名に置換されます。<br />
 <br />
 &nbsp;コマンド: reply<br />
-&nbsp;書式: <反応する発言のマスク> <それに対する返事><br />
+&nbsp;書式: &lt;反応する発言のマスク&gt; &lt;それに対する返事&gt;<br />
 &nbsp;例:<br />
 </p>
 <div class="element"><span class="key">reply</span>:<span class="value">こんにちは* こんにちは、#(name|nick.now)さん。</span></div>
@@ -107,7 +107,7 @@ Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 &nbsp;発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。<br />
 <br />
 &nbsp;コマンド: channel-reply<br />
-&nbsp;書式: <反応するチャンネルのマスク> <反応する発言のマスク> <それに対する返事><br />
+&nbsp;書式: &lt;反応するチャンネルのマスク&gt; &lt;反応する発言のマスク&gt; &lt;それに対する返事&gt;<br />
 &nbsp;例:<br />
 </p>
 <div class="element"><span class="key">channel-reply</span>:<span class="value">#あいさつ@ircnet こんにちは* こんにちは、#(name|nick.now)さん。</span></div>
@@ -116,7 +116,7 @@ Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 &nbsp;発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。<br />
 <br />
 &nbsp;コマンド: answer-to-myself<br />
-&nbsp;書式: <真偽値><br />
+&nbsp;書式: &lt;真偽値&gt;<br />
 &nbsp;例:<br />
 </p>
 <div class="element"><span class="key">answer-to-myself</span>:<span class="value">on</span></div>
@@ -141,7 +141,7 @@ Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 </p>
 <div class="element"><span class="key">request</span>:<span class="value">計算</span></div>
 <p class="comment">
-使用を許可する人&チャンネルのマスク。<br />
+使用を許可する人&amp;チャンネルのマスク。<br />
 例はTiarraモード時。 [default: なし]<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* +*!*@*</span></div>
@@ -194,7 +194,7 @@ Tiarra を動かすことをお勧めします。<br />
 </p>
 <div class="element"><span class="key">init</span>:<span class="value">計算初期化</span></div>
 <p class="comment">
-初期化を許可する人&チャンネルのマスク。<br />
+初期化を許可する人&amp;チャンネルのマスク。<br />
 例はTiarraモード時。 [default: なし]<br />
 </p>
 <div class="element"><span class="key">init-mask</span>:<span class="value">* +*!*@*</span></div>
@@ -223,7 +223,7 @@ Tiarra を動かすことをお勧めします。<br />
 そこに誰かがJOINする度に特定のメッセージを発言するモジュールです。<br />
 </p>
 <p class="comment">
-書式: <チャンネル名> <メッセージ><br />
+書式: &lt;チャンネル名&gt; &lt;メッセージ&gt;<br />
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">#IRC談話室@ircnet なると消失しました。</span></div>
 
@@ -245,12 +245,12 @@ Tiarra を動かすことをお勧めします。<br />
 <p class="comment">
 &nbsp;有効にするチャンネルとオプションとURLの設定.<br />
 <br />
-&nbsp;mask: #test@ircnet &test http://*<br />
+&nbsp;mask: #test@ircnet &amp;test http://*<br />
 &nbsp;mask: * http://*<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* http://*</span></div>
 <p class="comment">
-&nbsp;&test と設定すると conf-test ブロックの中身が使われる.<br />
+&nbsp;&amp;test と設定すると conf-test ブロックの中身が使われる.<br />
 conf-test {<br />
 &nbsp;&nbsp;auth-test1 {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;url:  http://example.com/*<br />
@@ -301,7 +301,7 @@ Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 &nbsp;発言を行なうチャンネルと、その内容を定義します。<br />
 &nbsp;#(nick.now)と$(channel)は、それぞれ相手の現在のnickとチャンネル名に置換されます。<br />
 <br />
-&nbsp;書式: <チャンネル名> <発言内容><br />
+&nbsp;書式: &lt;チャンネル名&gt; &lt;発言内容&gt;<br />
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">#チャンネル@ircnet   「#ちゃんねる」に移転しました。</span></div>
 
@@ -328,7 +328,7 @@ Fromアドレス。[default: OSのユーザ名]<br />
 </p>
 <div class="element"><span class="key">send</span>:<span class="value">速達伝言</span></div>
 <p class="comment">
-使用を許可する人&チャンネルのマスク。<br />
+使用を許可する人&amp;チャンネルのマスク。<br />
 例はTiarraモード時。 [default: なし]<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* +*!*@*</span></div>
@@ -377,7 +377,7 @@ SMTPのユーザ。指定されれば SMTP Auth を行う [default: なし]<br />
 </p>
 <div class="element"><span class="key">smtpuser</span>:<span class="value">example1</span></div>
 <p class="comment">
-SMTPのパスワード [default: 空パスワード('')]<br />
+SMTPのパスワード [default: 空パスワード(&#39;&#39;)]<br />
 </p>
 <div class="element"><span class="key">smtppass</span>:<span class="value">test-password</span></div>
 <p class="comment">
@@ -385,7 +385,7 @@ SMTPのパスワード [default: 空パスワード('')]<br />
 </p>
 <div class="element"><span class="key">subject</span>:<span class="value">Message from IRC</span></div>
 <p class="comment">
-送信するメールの本文 [default: #(date) << #(from.name|from.nick|from.nick.now) >> #(message)]<br />
+送信するメールの本文 [default: #(date) &lt;&lt; #(from.name|from.nick|from.nick.now) &gt;&gt; #(message)]<br />
 </p>
 <div class="element"><span class="key">format</span>:<span class="value">#(date)に#(from.name|from.nick|from.nick.now)さんから#(message)という伝言です。</span></div>
 <p class="comment">
@@ -414,7 +414,7 @@ POPのユーザ [default: OSのユーザ名]<br />
 </p>
 <div class="element"><span class="key">pop3user</span>:<span class="value">example1</span></div>
 <p class="comment">
-POPのパスワード [default: 空パスワード('')]<br />
+POPのパスワード [default: 空パスワード(&#39;&#39;)]<br />
 </p>
 <div class="element"><span class="key">pop3pass</span>:<span class="value">test-password</span></div>
 <p class="comment">
@@ -596,12 +596,12 @@ formatで指定できるものと同じです。#(message)は削除されたメッセージになります。<b
 <p class="comment">
 メッセージを追加するキーワードを指定します。<br />
 ここで指定したキーワードを発言すると、新しいメッセージを追加します。<br />
-実際の追加方法は「<addで指定したキーワード> <追加するメッセージ>」です。<br />
+実際の追加方法は「&lt;addで指定したキーワード&gt; &lt;追加するメッセージ&gt;」です。<br />
 </p>
 <div class="element"><span class="key">add</span>:<span class="value">ゐみくじ追加</span></div>
 <p class="comment">
 メッセージを削除するキーワードを指定します。<br />
-実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。<br />
+実際の削除方法は「&lt;removeで指定したキーワード&gt; &lt;削除するキーワード&gt;」です。<br />
 </p>
 <div class="element"><span class="key">remove</span>:<span class="value">ゐみくじ削除</span></div>
 <p class="comment">
@@ -635,13 +635,13 @@ Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 <div class="block content">
 <p class="comment">
 データファイルと文字コードを指定します。<br />
-ファイルの中では一行に一つの"反応:メッセージ"を書いて下さい。<br />
+ファイルの中では一行に一つの&quot;反応:メッセージ&quot;を書いて下さい。<br />
 </p>
 <div class="element"><span class="key">file</span>:<span class="value">reply.txt</span></div>
 <div class="element"><span class="key">file-encoding</span>:<span class="value">euc</span></div>
 <p class="comment">
 反応チェックを行うキーワードを指定します。<br />
-実際の指定方法は、「<requestで指定したキーワード> <チェックしたい発言>」です。<br />
+実際の指定方法は、「&lt;requestで指定したキーワード&gt; &lt;チェックしたい発言&gt;」です。<br />
 </p>
 <div class="element"><span class="key">request</span>:<span class="value">反応チェック</span></div>
 <p class="comment">
@@ -687,12 +687,12 @@ formatで指定できるものと同じです。#(message)は削除されたメッセージになります。<b
 <p class="comment">
 メッセージを追加するキーワードを指定します。<br />
 ここで指定したキーワードを発言すると、新しいメッセージを追加します。<br />
-実際の追加方法は「<addで指定したキーワード> <追加するメッセージ>」です。<br />
+実際の追加方法は「&lt;addで指定したキーワード&gt; &lt;追加するメッセージ&gt;」です。<br />
 </p>
 <div class="element"><span class="key">add</span>:<span class="value">反応追加</span></div>
 <p class="comment">
 メッセージを削除するキーワードを指定します。<br />
-実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。<br />
+実際の削除方法は「&lt;removeで指定したキーワード&gt; &lt;削除するキーワード&gt;」です。<br />
 </p>
 <div class="element"><span class="key">remove</span>:<span class="value">反応削除</span></div>
 <p class="comment">
@@ -744,7 +744,7 @@ responseは複数書いておけばランダムに選択されます。<br />
 </p>
 <div class="element"><span class="key">charset</span>:<span class="value">euc</span></div>
 <p class="comment">
-使用を許可する人&チャンネルのマスク。<br />
+使用を許可する人&amp;チャンネルのマスク。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">

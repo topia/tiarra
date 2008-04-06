@@ -2,7 +2,7 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3010 2007-12-10 13:36:55Z topia $ -->
+<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
@@ -66,7 +66,7 @@
 <p class="comment">
 チャンネルの定義。<br />
 また、privの場合は「priv@ネットワーク名」という文字列をチャンネル名の代わりとしてマッチングを行なう。<br />
-書式: mask: <チャンネルのマスク><br />
+書式: mask: &lt;チャンネルのマスク&gt;<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">#example@example</span></div>
 
@@ -82,7 +82,7 @@
           <span class="description">サーバーに初めて接続した時、指定したチャンネルに入るモジュール。</span></div>
         <div class="content">
 	  <p class="comment">
-&nbsp;書式: <チャンネル1>[,<チャンネル2>,...] [<チャンネル1のキー>,...]<br />
+&nbsp;書式: &lt;チャンネル1&gt;[,&lt;チャンネル2&gt;,...] [&lt;チャンネル1のキー&gt;,...]<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;コンマの直後のスペースは無視されます。<br />
 <br />
 &nbsp;例:<br />
@@ -194,7 +194,7 @@ Excess Floodにはならない筈ですが、本格的な防衛BOTに使える程の物ではありません。<
           <span class="description">チャンネルを作成した時に自動的にモードを設定するモジュール。</span></div>
         <div class="content">
 	  <p class="comment">
-書式は<チャンネル名にマッチするマスク> <設定するモード>[,<設定するモード>,...]です。<br />
+書式は&lt;チャンネル名にマッチするマスク&gt; &lt;設定するモード&gt;[,&lt;設定するモード&gt;,...]です。<br />
 #IRC談話室@ircnetなら+t+nを、それ以外なら+nを設定する例。<br />
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">#IRC談話室@ircnet +t</span></div>

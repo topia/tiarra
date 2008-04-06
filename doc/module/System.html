@@ -50,7 +50,7 @@ main/* に対する実行時パッチ<br />
 </p>
 <p class="comment">
 対応している箇所.<br />
-ModuleManager / reload_modules_if_modified / r3004 => r8809<br />
+ModuleManager / reload_modules_if_modified / r3004 =&gt; r8809<br />
 </p>
 <p class="comment">
 /livepatch check で確認.<br />
@@ -70,8 +70,8 @@ ModuleManager / reload_modules_if_modified / r3004 => r8809<br />
           <span class="description">新規にコマンドを追加し、そのコマンドが使われた時に特定の動作をまとめて実行します。</span></div>
         <div class="content">
 	  <p class="comment">
-書式: <コマンド> <動作><br />
-コマンド"switch"を追加して、それが使われると<br />
+書式: &lt;コマンド&gt; &lt;動作&gt;<br />
+コマンド&quot;switch&quot;を追加して、それが使われると<br />
 #a@ircnet,#b@ircnet,#c@ircnetにjoinして、<br />
 #d@ircnet,#e@ircnet,#f@ircnetからpartする例。<br />
 </p>
@@ -187,7 +187,7 @@ CHOCOA の場合、 raw がクライアントで使われてしまうので、<br />
         <div class="content">
 	  <p class="comment">
 リロードを実行するコマンド名。省略されるとコマンドを追加しません。<br />
-例えば"load"を設定すると、"/load"と発言しようとした時にリロードを実行します。<br />
+例えば&quot;load&quot;を設定すると、&quot;/load&quot;と発言しようとした時にリロードを実行します。<br />
 この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された<br />
 コマンド名を設定すべきではありません。<br />
 </p>
@@ -219,9 +219,9 @@ confファイルをリロードしたときに通知します。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">*!*example@example.net</span></div>
 <p class="comment">
-&nbsp;構文: + <nick> <IRC Message><br />
-&nbsp;<nick>は反応するbotのnickを表すマスク。<br />
-&nbsp;<Tiarra::IRC::Message>はサーバーに向けて発行するIRCメッセージ。<br />
+&nbsp;構文: + &lt;nick&gt; &lt;IRC Message&gt;<br />
+&nbsp;&lt;nick&gt;は反応するbotのnickを表すマスク。<br />
+&nbsp;&lt;Tiarra::IRC::Message&gt;はサーバーに向けて発行するIRCメッセージ。<br />
 <br />
 &nbsp;例:<br />
 &nbsp;+ hoge NICK [hoge]<br />
@@ -265,6 +265,31 @@ privでのシャットダウンを許可する人。<br />
       </div>
 
       
+      <hr class="sep" />
+      
+      
+      <div id="module-System::WebClient" class="module">
+        <div class="module-header"><h2 title="ログをHTTPで公開.">System::WebClient</h2>
+          <span class="description">ログをHTTPで公開.</span></div>
+        <div class="content">
+	  <p class="comment">
+許可する接続元.<br />
+</p>
+<div class="element"><span class="key">allow</span>:<span class="value">localhost</span></div>
+<div class="block element"><span class="block key">allow-localhost</span>
+<div class="block content">
+<div class="element"><span class="key">addr</span>:<span class="value">127.0.0.1</span></div>
+<div class="element"><span class="key">channel</span>:<span class="value">#*@*</span></div>
+</div></div>
+<p class="comment">
+デバッグフラグ.<br />
+</p>
+<div class="element"><span class="key">debug</span>:<span class="value">1</span></div>
+
+        </div>
+      </div>
+
+      
       
     </div>
 
@@ -290,6 +315,8 @@ privでのシャットダウンを許可する人。<br />
         <li><a href="#module-System::RemoteControl" title="特定の発言が送られてきたとき、それに反応してIRCコマンドを実行します。">System::RemoteControl</a></li>
         
         <li><a href="#module-System::Shutdown" title="Tiarraを終了させる。">System::Shutdown</a></li>
+        
+        <li><a href="#module-System::WebClient" title="ログをHTTPで公開.">System::WebClient</a></li>
         
         <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
       </ul>

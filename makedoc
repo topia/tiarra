@@ -155,7 +155,7 @@ sub makehtml_mods {
 
 	$t->reset;
 	$t->expand(
-	    group_name => $groupname,
+	    group_name => _escapeHTML($groupname),
 	    css_path => '../default.css',
 	);
 
@@ -235,7 +235,12 @@ sub makehtml_mods {
 
 		    # それでも残っている先頭のスペースを&nbsp;に置換。
 		    @group = map {
-			s/^(\s+)/'&nbsp;' x length($1) if defined $1/e; $_;
+			s{^(\s*)(.*)}{
+			  my $spc = '&nbsp;' x length($1);
+			  my $txt = _escapeHTML($2);
+			  $spc . $txt;
+			}e;
+			$_;
 		    } @group;
 
 		    $html .= qq{<p class="comment">\n};
@@ -258,13 +263,13 @@ sub makehtml_mods {
 
 	    # テンプレを展開
 	    $t->module->expand(
-		content_name => $docpod->pkg_name,
-		description => $unijp->set($docpod->header('info'))->$html_charset,
+		content_name => _escapeHTML($docpod->pkg_name),
+		description  => _escapeHTML($unijp->set($docpod->header('info'))->$html_charset),
 		content => $unijp->set($html)->$html_charset);
 
 	    $t->toc_individual->add(
-		mod_name => $docpod->pkg_name,
-		description => $unijp->set($docpod->header('info'))->$html_charset,
+		mod_name    => _escapeHTML($docpod->pkg_name),
+		description => _escapeHTML($unijp->set($docpod->header('info'))->$html_charset),
 	    );
 
 	    # これが最後の要素でなければ、hrを追加する。
@@ -313,6 +318,7 @@ sub makehtml_mods_toc {
 	my $group_path = "module/$groupname.html";
 
 	$t->toc_group->expand(
+	    map{ _escapeHTML($_) }
 	    group_path => $unijp->set($group_path)->$html_charset,
 	    group_name => $unijp->set($groupname)->$html_charset,
 	    description => $unijp->set($description)->$html_charset,
@@ -322,6 +328,7 @@ sub makehtml_mods_toc {
 	foreach my $moddoc (@{$classified->{$groupname_key}}) {
 	    print $moddoc->pkg_name." belongs to the group `".$groupname."'\n";
 	    $t->toc_group->toc_individual->add(
+		map{ _escapeHTML($_) }
 		group_path => $unijp->set($group_path)->$html_charset,
 		mod_name => $unijp->set($moddoc->pkg_name)->$html_charset,
 		description => $unijp->set($moddoc->header->{info} || '')->$html_charset,
@@ -333,4 +340,15 @@ sub makehtml_mods_toc {
 
     my $fh = IO::File->new('doc/module-toc.html','w');
     $fh->print($t->str);
+}
+
+sub _escapeHTML
+{
+  my $val = shift;
+  $val =~ s/&/&amp;/g;
+  $val =~ s/</&lt;/g;
+  $val =~ s/>/&gt;/g;
+  $val =~ s/"/&quot;/g;
+  $val =~ s/'/&#39;/g;
+  $val;
 }

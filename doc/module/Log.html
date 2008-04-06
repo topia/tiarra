@@ -2,7 +2,7 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3010 2007-12-10 13:36:55Z topia $ -->
+<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
@@ -41,11 +41,11 @@ Log系のモジュールでは、以下のように日付や時刻の置換が行なわれる。<br />
 </p>
 <div class="element"><span class="key">charset</span>:<span class="value">sjis</span></div>
 <p class="comment">
-各行のヘッダのフォーマット。省略されたら'%H:%M'。<br />
+各行のヘッダのフォーマット。省略されたら&#39;%H:%M&#39;。<br />
 </p>
 <div class="element"><span class="key">header</span>:<span class="value">%H:%M:%S</span></div>
 <p class="comment">
-ファイル名のフォーマット。省略されたら'%Y.%m.%d.txt'<br />
+ファイル名のフォーマット。省略されたら&#39;%Y.%m.%d.txt&#39;<br />
 </p>
 <div class="element"><span class="key">filename</span>:<span class="value">%Y.%m.%d.txt</span></div>
 <p class="comment">
@@ -90,11 +90,11 @@ syncを設定すると、即座にログをディスクに書き込むためのコマンドが追加される。<br 
 <div class="element"><span class="key">sync</span>:<span class="value">sync</span></div>
 <p class="comment">
 各チャンネルの設定。チャンネル名の部分はマスクである。<br />
-個人宛てに送られたPRIVMSGやNOTICEはチャンネル名"priv"として検索される。<br />
-記述された順序で検索されるので、全てのチャンネルにマッチする"*"などは最後に書かなければならない。<br />
+個人宛てに送られたPRIVMSGやNOTICEはチャンネル名&quot;priv&quot;として検索される。<br />
+記述された順序で検索されるので、全てのチャンネルにマッチする&quot;*&quot;などは最後に書かなければならない。<br />
 指定されたディレクトリが存在しなかったら、Log::Channelはそれを勝手に作る。<br />
 フォーマットは次の通り。<br />
-channel: <ディレクトリ名> (<チャンネル名> / 'priv')<br />
+channel: &lt;ディレクトリ名&gt; (&lt;チャンネル名&gt; / &#39;priv&#39;)<br />
 例:<br />
 filename: %Y.%m.%d.txt<br />
 channel: IRCDanwasitu #IRC談話室@ircnet<br />
@@ -175,11 +175,11 @@ Log系のモジュールでは、以下のように日付や時刻の置換が行なわれる。<br />
 </p>
 <div class="element"><span class="key">directory</span>:<span class="value">rawlog</span></div>
 <p class="comment">
-各行のヘッダのフォーマット。省略されたら'%H:%M'。<br />
+各行のヘッダのフォーマット。省略されたら&#39;%H:%M&#39;。<br />
 </p>
 <div class="element"><span class="key">header</span>:<span class="value">%H:%M:%S</span></div>
 <p class="comment">
-ファイル名のフォーマット。省略されたら'%Y.%m.%d.txt'<br />
+ファイル名のフォーマット。省略されたら&#39;%Y.%m.%d.txt&#39;<br />
 </p>
 <div class="element"><span class="key">filename</span>:<span class="value">%Y-%m-%d.txt</span></div>
 <p class="comment">
@@ -229,10 +229,10 @@ syncを設定すると、即座にログをディスクに書き込むためのコマンドが追加される。<br 
 <div class="element"><span class="key">sync</span>:<span class="value">sync</span></div>
 <p class="comment">
 各サーバの設定。サーバ名の部分はマスクである。<br />
-記述された順序で検索されるので、全てのサーバにマッチする"*"などは最後に書かなければならない。<br />
+記述された順序で検索されるので、全てのサーバにマッチする&quot;*&quot;などは最後に書かなければならない。<br />
 指定されたディレクトリが存在しなかったら、勝手に作られる。<br />
 フォーマットは次の通り。<br />
-channel: <ディレクトリ名> <サーバ名マスク><br />
+channel: &lt;ディレクトリ名&gt; &lt;サーバ名マスク&gt;<br />
 例:<br />
 filename: %Y-%m-%d.txt<br />
 server: ircnet ircnet<br />
@@ -258,7 +258,7 @@ server: others *<br />
 クライアントオプションの no-recent-logs が指定されていれば送信しません。<br />
 </p>
 <p class="comment">
-各行のヘッダのフォーマット。省略されたら'%H:%M'。<br />
+各行のヘッダのフォーマット。省略されたら&#39;%H:%M&#39;。<br />
 </p>
 <div class="element"><span class="key">header</span>:<span class="value">%H:%M:%S</span></div>
 <p class="comment">
