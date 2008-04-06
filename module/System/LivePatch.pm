@@ -130,7 +130,7 @@ sub _show_history
 
   my $base  = shift @$params;
   my $limit = 3;
-  if( !$base && $base !~ /^0*\d+\z/ )
+  if( !$base || $base !~ /^0*\d+\z/ )
   {
     $base = @$history - $limit + 1;
   }
