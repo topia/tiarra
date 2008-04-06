@@ -24,6 +24,7 @@ our $DEBUG = 0;
 
 our $DEFAULT_MAX_LINES = 100;
 our $DEFAULT_NAME      = '???';
+our $DEFAULT_SHOW_LINES = 20;
 
 1;
 
@@ -82,6 +83,8 @@ sub new
 sub destruct
 {
   my $this = shift;
+
+  local($DEBUG) = $DEBUG || $this->config->debug;
 
   if( my $lsnr = $this->{listener} )
   {
@@ -224,6 +227,7 @@ sub _trace_msg
   my $type   = shift;
 
   local($DEBUG) = $DEBUG || $this->config->debug;
+
   ##RunLoop->shared_loop->notify_msg(__PACKAGE__."#_trace_msg, ".$msg->command." ($sender/$type)");
 
   $this->{last_sender} = $sender;
@@ -373,6 +377,8 @@ sub _on_request
   my $cli  = shift;
   my $req0 = shift;
 
+  local($DEBUG) = $DEBUG || $this->config->debug;
+
   my $peerhost = $cli->sock->peerhost;
   my $peerport = $cli->sock->peerport;
   my $peer = "$peerhost:$peerport";
@@ -444,6 +450,7 @@ sub _on_request
   $this->_debug("$peer: accept.");
   $this->_dispatch($req);
 }
+
 sub _dispatch
 {
   my $this = shift;
@@ -527,6 +534,12 @@ sub _response
   return;
 }
 
+# -----------------------------------------------------------------------------
+# $conflist = $this->_find_conf($cli).
+# $cli: Tools::HTTPServer::Client.
+# $conflist: この接続元に対して利用可能な allow 情報の一覧.
+# この時点ではまだ接続元IPアドレスでのチェックのみ.
+#
 sub _find_conf
 {
   my $this = shift;
@@ -547,7 +560,7 @@ sub _find_conf
     my $allow = {
       name  => $name,
       block => $block,
-      masks => [$block->mask('all')],
+      masks => [$block->mask('all')], # 公開するチャンネルの一覧.
       auth  => $block->auth,
     };
     push(@conflist, $allow);
@@ -558,6 +571,7 @@ sub _find_conf
 
 # -----------------------------------------------------------------------------
 # $val = _decode_value($val).
+# "{B}xxx" とかのデコード.
 #
 sub _decode_value
 {
@@ -582,18 +596,15 @@ sub _decode_value
 }
 
 # -----------------------------------------------------------------------------
-# $bool = $this->_can_show($conflist, $ch_short, $netname).
+# $bool = $this->_can_show($req, $ch_short, $netname).
 #
 sub _can_show
 {
   my $this = shift;
-  my $conflist  = shift;
+  my $req  = shift;
   my $ch_short  = shift;
   my $netname   = shift;
-  if( ref($conflist) eq 'HASH' && $conflist->{conflist} )
-  {
-    $conflist = $conflist->{conflist};
-  }
+  my $conflist = $req->{conflist};
 
   my $ch_full = Multicast::attach($ch_short, $netname);
   foreach my $allow (@$conflist)
@@ -624,7 +635,7 @@ sub _gen_list
   {
     foreach my $ch_short (keys %{$this->{cache}{$netname}})
     {
-      my $ok = $this->_can_show($conflist, $ch_short, $netname);
+      my $ok = $this->_can_show($req, $ch_short, $netname);
       if( $ok )
       {
         push(@{$channels{$netname}}, $ch_short);
@@ -732,20 +743,27 @@ sub _gen_log
   my $ch_short = shift;
 
   # cacheにはいっているのと閲覧許可があるのは確認済.
-  my $cache  = $this->{cache}{$netname}{$ch_short};
-  my $recent = $cache->{recent};
 
-  my $name = '';
+  my $cgi = {};
+  if( $req->{Path} =~ m{\?} )
+  {
+    (undef,my $query) = split(/\?/, $req->{Path});
+    foreach my $pair (split(/[&;]/, $query))
+    {
+      my ($key, $val) = split(/=/, $pair, 2);
+      $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
+      $cgi->{$key} = $val;
+    }
+  }
   if( $req->{Method} eq 'POST' )
   {
-    my $cgi = {};
     foreach my $pair (split(/[&;]/, $req->{Content}))
     {
       my ($key, $val) = split(/=/, $pair, 2);
       $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
       $cgi->{$key} = $val;
     }
-    $name = $cgi->{n} || '';
+    my $name   = $cgi->{n} || '';
     if( my $m = $cgi->{m} )
     {
       $m = ($name || $this->config->name_default || $DEFAULT_NAME) . "> " . $m;
@@ -789,28 +807,120 @@ sub _gen_log
 
   my $content = "";
 
+  if( my $net = $this->_runloop->network($netname) )
+  {
+    if( my $chan = $net->channel($ch_short) )
+    {
+      my $topic = $chan->topic;
+      my $names = $chan->names || {};
+      $names = [ values %$names ];
+      @$names = map{
+        my $pic = $_; # $pic :: PersonInChannel.
+        my $nick  = $pic->person->nick;
+        my $sigil = $pic->priv_symbol;
+        "$sigil$nick";
+      } @$names;
+      @$names = sort @$names;
+      my $topic_esc = $this->_escapeHTML($topic);
+      my $names_esc = $this->_escapeHTML(join(' ', @$names));
+      $content .= "<p>$topic_esc</p>\n";
+      $content .= "<p>$names_esc</p>\n";
+    }
+  }else
+  {
+  }
+
+  my $cache  = $this->{cache}{$netname}{$ch_short};
+  my $recent = $cache->{recent};
+
+  # 表示位置の探索.
+  my $show_lines = $DEFAULT_SHOW_LINES;
+  my $rindex;
+  if( my $rtoken = $cgi->{r} )
+  {
+    my $re = qr/\Q$rtoken\E\z/;
+    my $ymd = '-';
+    foreach my $i (0..$#$recent)
+    {
+      my $info = $recent->[$i];
+      if( $ymd ne $info->{ymd} )
+      {
+        $ymd = $info->{ymd};
+        my $anchor = "L.$ymd";
+        if( $anchor =~ $re )
+        {
+          $rindex = $i;
+          last;
+        }
+      }
+      my $anchor = "L.$ymd.$info->{lineno}";
+      if( $anchor =~ $re )
+      {
+        $rindex = $i;
+        last;
+      }
+    }
+  }else
+  {
+    if( @$recent > $show_lines )
+    {
+      $rindex = @$recent - $show_lines;
+    }
+  }
+  $rindex ||= 0;
+  # $rindex も含めてindex系は [0..$#$recent] の範囲の値.
+
+  my $last;
+  if( $rindex + $show_lines > @$recent )
+  {
+    $last = $#$recent;
+  }else
+  {
+    $last = $rindex + $show_lines - 1;
+  }
+
+  my $next_index = $last < $#$recent ? $last + 1 : $#$recent;
+  my $prev_index = $rindex < $show_lines ? 0 : ($rindex - $show_lines);
+  my ($next_rtoken, $prev_rtoken) = map {
+    my $i = $_;
+    my $info = $recent->[$i];
+    my $anchor = "L.$info->{ymd}.$info->{lineno}";
+    $anchor =~ s/.*-//;
+    $anchor;
+  } $next_index, $prev_index;
+
+  my $nr_cached_lines = @$recent;
+  my $lines2 = $nr_cached_lines==1 ? 'line' : 'lines';
+  $recent = [ @$recent [ $rindex .. $last ] ];
+
   if( @$recent )
   {
     my $nr_recent = @$recent;
     my $lines    = $nr_recent==1 ? 'line' : 'lines';
     $content .= "<p>\n";
-    $content .= "$nr_recent $lines.";
+    $content .= "$nr_recent $lines / $nr_cached_lines $lines2.";
     $content .= "</p>\n";
     $content .= "\n";
 
     my $ymd = '-';
     $content .= "<pre>\n";
+    $content .= qq{[ <b><a href="?r=$prev_rtoken" accesskey="7">&lt;&lt;</a></b> |};
+    $content .= qq{  <b><a href="?r=$next_rtoken" accesskey="9">&gt;&gt;</a></b> ]\n};
+
     foreach my $info (@$recent)
     {
       if( $ymd ne $info->{ymd} )
       {
         $ymd = $info->{ymd};
-        my $anchor = "$ymd";
-        $content .= qq{[<b><a name="$anchor" href="#$anchor">$ymd</a></b>]\n};
+        my $anchor = "L.$ymd";
+        my $rtoken = $ymd;
+        $content .= qq{[<b><a id="$anchor" href="?r=$rtoken">$ymd</a></b>]\n};
       }
       my $line_html = $this->_escapeHTML($info->{formatted});
-      my $anchor = "$ymd.$info->{lineno}";
-      $content .= qq{<a name="$anchor" href="#$anchor">$info->{lineno}</a>/$line_html\n};
+      my $anchor = "L.$ymd.$info->{lineno}";
+      my $rtoken = $anchor;
+      $rtoken =~ s/.*-//;
+      $content .= qq{<a id="$anchor" href="?r=$rtoken">$info->{lineno}</a>/$line_html\n};
     }
     $content .= "</pre>\n";
   }else
@@ -822,13 +932,16 @@ sub _gen_log
 
   my $ch_long = Multicast::attach($ch_short, $netname);
   my $ch_long_esc = $this->_escapeHTML($ch_long);
-  my $name_esc = $this->_escapeHTML($name);
+  my $name_esc = $this->_escapeHTML($cgi->{n} || '');
 
   my $tmpl = $this->_gen_log_html();
   $this->_expand($tmpl,{
     CONTENT => $content,
     CH_LONG => $ch_long_esc,
     NAME    => $name_esc,
+    RTOKEN  => $next_rtoken,
+    NEXT_RTOKEN => $next_rtoken,
+    PREV_RTOKEN => $prev_rtoken,
   });
 }
 sub _gen_log_html
@@ -850,16 +963,17 @@ sub _gen_log_html
 
 <&CONTENT>
 
-<form action="./" method="POST">
+<form action="./" method="post">
 <p>
 talk:<input type="text" name="m" size="60" />
   <input type="submit" value="発言/更新" /><br />
 name:<input type="text" name="n" size="10" value="<&NAME>" /><br />
+<input type="hidden" name="r" size="10" value="<&RTOKEN>" />
 </p>
 </form>
 
 <p>
-<a href="<&TOP_PATH>">戻る</a>
+<a href="<&TOP_PATH>" accesskey="0">戻る</a>
 </p>
 
 </body>
