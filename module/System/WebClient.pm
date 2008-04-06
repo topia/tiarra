@@ -741,6 +741,7 @@ sub _gen_log
   my $req  = shift;
   my $netname  = shift;
   my $ch_short = shift;
+  my $mode = $this->config->mode || 'owner';
 
   # cacheにはいっているのと閲覧許可があるのは確認済.
 
@@ -755,7 +756,7 @@ sub _gen_log
       $cgi->{$key} = $val;
     }
   }
-  if( $req->{Method} eq 'POST' )
+  if( uc($req->{Method}) eq 'POST' )
   {
     foreach my $pair (split(/[&;]/, $req->{Content}))
     {
@@ -766,7 +767,10 @@ sub _gen_log
     my $name   = $cgi->{n} || '';
     if( my $m = $cgi->{m} )
     {
-      $m = ($name || $this->config->name_default || $DEFAULT_NAME) . "> " . $m;
+      if( $mode ne 'owner' )
+      {
+        $m = ($name || $this->config->name_default || $DEFAULT_NAME) . "> " . $m;
+      }
       $m =~ s/[\r\n].*//s;
       my $network = RunLoop->shared_loop->network($netname);
       if( $network )
@@ -934,11 +938,17 @@ sub _gen_log
   my $ch_long_esc = $this->_escapeHTML($ch_long);
   my $name_esc = $this->_escapeHTML($cgi->{n} || '');
 
+  my $name_input_raw = '';
+  if( $mode ne 'owner' )
+  {
+    $name_input_raw = qq{name:<input type="text" name="n" size="10" value="$name_esc" /><br />};
+  }
   my $tmpl = $this->_gen_log_html();
   $this->_expand($tmpl,{
     CONTENT => $content,
     CH_LONG => $ch_long_esc,
     NAME    => $name_esc,
+    NAME_INPUT_RAW => $name_input_raw,
     RTOKEN  => $next_rtoken,
     NEXT_RTOKEN => $next_rtoken,
     PREV_RTOKEN => $prev_rtoken,
@@ -967,7 +977,7 @@ sub _gen_log_html
 <p>
 talk:<input type="text" name="m" size="60" />
   <input type="submit" value="発言/更新" /><br />
-name:<input type="text" name="n" size="10" value="<&NAME>" /><br />
+<&NAME_INPUT_RAW>
 <input type="hidden" name="r" size="10" value="<&RTOKEN>" />
 </p>
 </form>
