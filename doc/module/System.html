@@ -269,22 +269,69 @@ privでのシャットダウンを許可する人。<br />
       
       
       <div id="module-System::WebClient" class="module">
-        <div class="module-header"><h2 title="ログをHTTPで公開.">System::WebClient</h2>
-          <span class="description">ログをHTTPで公開.</span></div>
+        <div class="module-header"><h2 title="ブラウザ上でログを見たり発言したりできます.">System::WebClient</h2>
+          <span class="description">ブラウザ上でログを見たり発言したりできます.</span></div>
         <div class="content">
 	  <p class="comment">
-許可する接続元.<br />
+WebClient を起動させる場所の指定.<br />
 </p>
-<div class="element"><span class="key">allow</span>:<span class="value">localhost</span></div>
-<div class="block element"><span class="block key">allow-localhost</span>
+<div class="element"><span class="key">bind-addr</span>:<span class="value">127.0.0.1</span></div>
+<div class="element"><span class="key">bind-port</span>:<span class="value">8668</span></div>
+<div class="element"><span class="key">path</span>:<span class="value">/irc</span></div>
+<div class="element"><span class="key">css</span>:<span class="value">/style/style.css</span></div>
+<p class="comment">
+apacheでReverseProxyさせる場合, httpd.conf に以下のように設定.<br />
+&nbsp;ProxyPass        /irc/ http://localhost:8667/irc/<br />
+&nbsp;ProxyPassReverse /irc/ http://localhost:8667/irc/<br />
+&nbsp;&lt;Location /irc/&gt;<br />
+&nbsp;...<br />
+&nbsp;&lt;/Location&gt;<br />
+</p>
+<p class="comment">
+&nbsp;利用する接続設定の一覧.<br />
+&nbsp;空白区切りで評価する順に記述.<br />
+&nbsp;使われる設定は,<br />
+&nbsp;- 接続元 IP が一致する物.<br />
+&nbsp;- user/passが送られてきていない(認証前/anonymous):<br />
+&nbsp;&nbsp;&nbsp;- 認証不要の設定があればその設定を利用.<br />
+&nbsp;&nbsp;&nbsp;- 認証不要の設定がなければ 401 Unauthorized.<br />
+&nbsp;- user/passが送られてきている.<br />
+&nbsp;&nbsp;&nbsp;- 一致する設定を利用.<br />
+&nbsp;&nbsp;&nbsp;- 一致する設定がなければ 401 Unauthorized.<br />
+<br />
+</p>
+<div class="element"><span class="key">allow</span>:<span class="value">private public</span></div>
+<p class="comment">
+許可する接続の設定.<br />
+</p>
+<div class="block element"><span class="block key">allow-private</span>
 <div class="block content">
-<div class="element"><span class="key">addr</span>:<span class="value">127.0.0.1</span></div>
-<div class="element"><span class="key">channel</span>:<span class="value">#*@*</span></div>
+<p class="comment">
+接続元IPアドレスの制限.<br />
+</p>
+<div class="element"><span class="key">host</span>:<span class="value">127.0.0.1</span></div>
+<p class="comment">
+認証設定.<br />
+</p>
+<div class="element"><span class="key">auth</span>:<span class="value">user pass</span></div>
+<p class="comment">
+公開するチャンネルの指定.<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">#*@*</span></div>
+<div class="element"><span class="key">mask</span>:<span class="value">*@*</span></div>
+</div></div>
+<div class="block element"><span class="block key">allow-public</span>
+<div class="block content">
+<div class="element"><span class="key">host</span>:<span class="value">*</span></div>
+<div class="element"><span class="key">auth</span>:<span class="value">user2 pass2 realm</span></div>
+<div class="element"><span class="key">mask</span>:<span class="value">#公開チャンネル@ircnet</span></div>
 </div></div>
 <p class="comment">
 デバッグフラグ.<br />
 </p>
-<div class="element"><span class="key">debug</span>:<span class="value">1</span></div>
+<div class="element"><span class="key">debug</span>:<span class="value">0</span></div>
+<div class="element"><span class="key">max-lines</span>:<span class="value">100</span></div>
+<div class="element"><span class="key">name-default</span>:<span class="value">???</span></div>
 
         </div>
       </div>
@@ -316,7 +363,7 @@ privでのシャットダウンを許可する人。<br />
         
         <li><a href="#module-System::Shutdown" title="Tiarraを終了させる。">System::Shutdown</a></li>
         
-        <li><a href="#module-System::WebClient" title="ログをHTTPで公開.">System::WebClient</a></li>
+        <li><a href="#module-System::WebClient" title="ブラウザ上でログを見たり発言したりできます.">System::WebClient</a></li>
         
         <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
       </ul>
