@@ -6,6 +6,21 @@ use strict;
 use warnings;
 use Multicast;
 
+our $MARKER = {
+  myself => {
+    PRIVMSG => ['>','<'],
+    NOTICE  => [')','('],
+  },
+  priv => {
+    PRIVMSG => ['-','-'],
+    NOTICE  => ['=','='],
+  },
+  channel => {
+    PRIVMSG => ['<','>'],
+    NOTICE  => ['(',')'],
+  },
+};
+
 sub new {
     my ($class,$enstringed_callback,$exception_object,@exceptions) = @_;
     # enstringed_callback:
@@ -130,21 +145,29 @@ sub S_NICK {
 	    $msg->param(0));
     };
     my @result;
-    foreach my $ch_name (@{$msg->remark('affected-channels')}) {
+    if( my $ch_short_list = $msg->remark('affected-channels') ){
+    foreach my $ch_name (@$ch_short_list) {
 	push @result,[Multicast::attach($ch_name,$network_name),
 		      $line];
+    }
     }
     @result;
 }
 
+{
+no warnings 'once';
 *S_KILL = \&S_QUIT;
+}
+
 sub S_QUIT {
     my ($this,$msg,$sender) = @_;
     my $network_name = $sender->network_name;
     my @result;
-    foreach my $ch_name (@{$msg->remark('affected-channels')}) {
+    if( my $ch_short_list = $msg->remark('affected-channels') ){
+    foreach my $ch_name (@$ch_short_list) {
 	push @result,[Multicast::attach($ch_name,$network_name),
 		      sprintf '! %s (%s)',$msg->nick,$msg->param(0)];
+    }
     }
     @result;
 }
@@ -156,6 +179,90 @@ sub S_TOPIC {
 	     $msg->param(0),
 	     $msg->nick,
 	     $msg->param(1))];
+}
+
+{
+no warnings 'once';
+*S_PRIVMSG = \&PRIVMSG_or_NOTICE;
+*S_NOTICE  = \&PRIVMSG_or_NOTICE;
+*C_PRIVMSG = \&PRIVMSG_or_NOTICE;
+*C_NOTICE  = \&PRIVMSG_or_NOTICE;
+}
+
+sub PRIVMSG_or_NOTICE
+{
+  my ($this,$msg,$sender) = @_;
+  my $line = $this->_build_message($msg, $sender);
+  my $channel = $line->{is_priv} ? 'priv' : $line->{ch_long};
+  [$channel, $line->{formatted}];
+}
+
+# -----------------------------------------------------------------------------
+# $hashref = $obj->_build_message($msg, $sender).
+# Log/Channel から拝借.
+# ただ
+# - distinguish_myself が省かれている.
+# - PRIVでも相手の名前がchannel名として使われる.
+# - 好きにformat出来るように解析した情報をHASHREFで返している.
+# という点で変更されている.
+#
+sub _build_message
+{
+  my ($this, $msg, $sender) = @_;
+
+  my $raw_target = $msg->param(0);
+  my ($target,$netname,$_explicit) = Multicast::detatch( $raw_target );
+  my $is_priv = Multicast::nick_p($target);
+  my $cmd     = $msg->command;
+
+  my $marker_id;
+  if( $sender->isa('IrcIO::Client') )
+  {
+    $marker_id = 'myself';
+  }elsif( $is_priv )
+  {
+    $marker_id = 'priv';
+  }else
+  {
+    $marker_id = 'channel';
+  }
+  my $marker = $MARKER->{$marker_id}{$cmd};
+  $marker or die "no marker for $marker_id/$cmd";
+
+  my ($speaker, $ch_short);
+  if( $sender->isa('IrcIO::Client') )
+  {
+    # 自分の発言.
+    $speaker  = RunLoop->shared_loop->network( $netname )->current_nick;
+    $ch_short = $target;
+  }else
+  {
+    # 相手の.
+    $speaker  = $msg->nick || $sender->current_nick;
+    $ch_short = $is_priv ? $speaker : $target;
+  }
+  my $ch_long = Multicast::attach($ch_short, $netname);
+
+  my $line = sprintf(
+    '%s%s:%s%s %s',
+    $marker->[0],
+    $ch_long,
+    $speaker,
+    $marker->[1],
+    $msg->param(1),
+  );
+
+  +{
+    marker_id => $marker_id, # 'myself' / 'priv' / 'channel'
+    is_priv   => $is_priv,
+    marker    => $marker,    # ['<', '>'], etc.
+    speaker   => $speaker,
+    ch_long   => $ch_long,
+    ch_short  => $ch_short,
+    netname   => $netname,
+    msg       => $msg->param(1),
+    formatted => $line,
+  };
 }
 
 1;
