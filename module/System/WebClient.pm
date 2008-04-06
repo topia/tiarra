@@ -922,8 +922,7 @@ bind-addr: 127.0.0.1
 bind-port: 8668
 path: /irc
 css:  /style/style.css
-
-# apacheでReverseProxyさせる場合, httpd.conf に以下のように設定.
+# 上の設定をapacheでReverseProxyさせる場合, httpd.conf には次のように設定.
 #  ProxyPass        /irc/ http://localhost:8667/irc/
 #  ProxyPassReverse /irc/ http://localhost:8667/irc/
 #  <Location /irc/>
@@ -931,6 +930,7 @@ css:  /style/style.css
 #  </Location>
 
 # 利用する接続設定の一覧.
+allow: private public
 # 空白区切りで評価する順に記述.
 # 使われる設定は,
 # - 接続元 IP が一致する物.
@@ -941,7 +941,6 @@ css:  /style/style.css
 #   - 一致する設定を利用.
 #   - 一致する設定がなければ 401 Unauthorized.
 #
-allow: private public
 
 # 許可する接続の設定.
 allow-private {
@@ -955,15 +954,18 @@ allow-private {
 }
 allow-public {
   host: *
-  auth: user2 pass2 realm
+  auth: user2 pass2
   mask: #公開チャンネル@ircnet
 }
 
 # デバッグフラグ.
 debug: 0
 
+# 保存する最大行数.
 max-lines:    100
-name-default: ???
+
+# 発言BOXで名前指定しなかったときのデフォルトの名前.
+name-default: (noname)
 
 =end tiarra-doc
 
