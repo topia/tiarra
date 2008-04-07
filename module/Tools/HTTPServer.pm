@@ -18,7 +18,7 @@ use Module::Use qw(Tools::HTTPServer::Client);
 
 use Scalar::Util qw(weaken);
 
-our $DEBUG = 1;
+our $DEBUG = 0;
 
 1;
 
