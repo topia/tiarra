@@ -113,7 +113,7 @@ sub read
   if( $status == 0 )
   {
     my $req = $this->{parser}->object();
-print Dumper($req);use Data::Dumper;
+    #print Dumper($req);use Data::Dumper;
     if( UNIVERSAL::isa($req, 'HTTP::Message') )
     {
       $req = Tools::HTTPParser->_from_lwp($req);
