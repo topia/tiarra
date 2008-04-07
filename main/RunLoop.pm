@@ -903,6 +903,9 @@ sub run {
 	if ($timeout < 0) {
 	    $timeout = 0;
 	}
+	# Windowsだと, select()中にCtrl-Cが効かなくなるので,
+	# !defined($timeout) || $timeout > 閾値 and $timeout = 閾値.
+	# とかで時々ブロック解除した方がよいのかもしれない.
 
 	# 書き込むべきデータがあるソケットだけをsend_selectorに登録する。そうでないソケットは除外。
 	$this->_update_send_selector;
