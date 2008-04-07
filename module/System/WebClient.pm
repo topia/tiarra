@@ -14,8 +14,9 @@ use Module;
 use base 'Module';
 use Tools::HTTPServer;
 use Log::Logger;
+use Auto::Utils;
 use BulletinBoard;
-use Module::Use qw(Tools::HTTPServer Log::Logger);
+use Module::Use qw(Tools::HTTPServer Log::Logger Auto::Utils);
 
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
