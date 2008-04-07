@@ -216,6 +216,12 @@ sub _resolve {
     my $ret = undef;
 
     if ($entry->query_type eq QUERY_ADDR) {
+	if( $entry->query_data eq 'localhost' )
+	{
+		# Win2kだとなぜか問い合わせに失敗するので固定応答.
+		$entry->answer_data( $use_ipv6 ? ['127.0.0.1', '::1'] : '127.0.0.1' );
+		$resolved = 1;
+	}
 	if ($use_ipv6 && !$resolved) {
 	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
 	    my ($saddr, $addr, @addrs, %addrs);
@@ -248,6 +254,12 @@ sub _resolve {
 	    }
 	}
     } elsif ($entry->query_type eq QUERY_HOST) {
+	if( $entry->query_data eq '127.0.0.1' )
+	{
+		# Win2kだとなぜか問い合わせに失敗するので固定応答.
+		$entry->answer_data('localhost');
+		$resolved = 1;
+	}
 	if ($use_ipv6 && !$resolved) {
 	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
 	    my ($saddr, $host, @hosts, %hosts);
