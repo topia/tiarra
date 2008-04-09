@@ -13,10 +13,11 @@ use warnings;
 use Module;
 use base 'Module';
 use Tools::HTTPServer;
+use Tools::HTTPParser;
 use Log::Logger;
 use Auto::Utils;
 use BulletinBoard;
-use Module::Use qw(Tools::HTTPServer Log::Logger Auto::Utils);
+use Module::Use qw(Tools::HTTPServer Tools::HTTPParser Log::Logger Auto::Utils);
 
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
@@ -40,6 +41,7 @@ sub new
   my $this = $pkg->SUPER::new(@_);
 
   local($DEBUG) = $DEBUG || $this->config->debug;
+  $DEBUG and require Data::Dumper;
 
   my $has_lwp = $Tools::HTTPServer::Client::HAS_HTTP_PARSER;
   $this->_runloop->notify_msg(__PACKAGE__.", Tools::HTTPServer uses HTTP::Parser: ".($has_lwp?"yes":"no"));
@@ -70,7 +72,6 @@ sub new
   $this->{path} = $path;
 
   $this->{listener} = undef;
-  $this->{clients}  = [];
 
   $this->_start_listener();
   
@@ -95,10 +96,6 @@ sub destruct
     }
     $lsnr->close();
     $this->{listener} = undef;
-  }
-  while( my $cli = shift @{$this->{clients}})
-  {
-    $cli->close();
   }
 
   # 循環参照の切断.
@@ -342,6 +339,8 @@ sub _log_writer
 
 # -----------------------------------------------------------------------------
 # $this->_start_listener().
+# new()の時に呼ばれる.
+# Tools::HTTPServer を起動.
 #
 sub _start_listener
 {
@@ -365,6 +364,10 @@ sub _start_listener
   $this;
 }
 
+# -----------------------------------------------------------------------------
+# $this->_debug($msg).
+# デバッグメッセージ送信用.
+#
 sub _debug
 {
   my $this = shift;
@@ -372,28 +375,40 @@ sub _debug
   RunLoop->shared_loop->notify_msg($msg);
 }
 
+# -----------------------------------------------------------------------------
+# $this->_on_request($cli, $req).
+# (impl:HTTPServer-callback)
+#
 sub _on_request
 {
   my $this = shift;
   my $cli  = shift;
-  my $req0 = shift;
+  my $req  = shift;
 
   local($DEBUG) = $DEBUG || $this->config->debug;
 
-  my $peerhost = $cli->sock->peerhost;
-  my $peerport = $cli->sock->peerport;
-  my $peer = "$peerhost:$peerport";
+  my $peer = $cli->sock->peerhost .':'. $cli->sock->peerport;
+  foreach my $eff ( $this->config->extract_forwarded_for('all') )
+  {
+    local($Tools::HTTPParser::DEBUG) = $Tools::HTTPParser::DEBUG || $DEBUG;
+    my $allows = [ split( /\s+|\s*,\s*/, $eff ) ];
+    if( @$allows && Tools::HTTPParser->extract_forwarded_for($req, $allows) )
+    {
+      $peer = "$req->{RemoteAddr}($peer)";
+      last;
+    }
+  }
+  $DEBUG and print __PACKAGE__."#_on_request, peer=$peer, ".Data::Dumper->new([$req])->Dump;
 
-  my $conflist = $this->_find_conf($cli);
-  my $req = {
-    %$req0,
+  my $conflist = $this->_find_conf($req);
+  $req = {
+    %$req,
     client    => $cli,
-    peerhost  => $peerhost,
-    peerport  => $peerport,
     peer      => $peer,
     conflist  => $conflist,
     need_auth => 1,
   };
+
 
   if( !@$conflist )
   {
@@ -452,6 +467,7 @@ sub _on_request
   $this->_dispatch($req);
 }
 
+
 sub _dispatch
 {
   my $this = shift;
@@ -495,6 +511,9 @@ sub _dispatch
     #RunLoop->shared_loop->notify_msg(__PACKAGE__."#_dispatch($path), ok ($netname/$ch_short)");
     my $html = $this->_gen_log($req, $netname, $ch_short);
     $this->_response($req, [html=>$html]);
+  }elsif( $path eq '/style/style.css' )
+  {
+    $this->_response($req, [css=>'']);
   }else
   {
     $this->_response($req, 404);
@@ -520,6 +539,17 @@ sub _response
         },
         Content => $html,
       };
+    }elsif( $spec->[0] eq 'css' )
+    {
+      my $css = $spec->[1];
+      $res = {
+        Code => 200,
+        Header => {
+          'Content-Type'   => 'text/css; charset=utf-8',
+          'Content-Length' => length($css),
+        },
+        Content => $css,
+      };
     }else
     {
       die "unkown response spec: $spec->[0]";
@@ -536,16 +566,15 @@ sub _response
 }
 
 # -----------------------------------------------------------------------------
-# $conflist = $this->_find_conf($cli).
-# $cli: Tools::HTTPServer::Client.
+# $conflist = $this->_find_conf($req).
 # $conflist: この接続元に対して利用可能な allow 情報の一覧.
 # この時点ではまだ接続元IPアドレスでのチェックのみ.
 #
 sub _find_conf
 {
   my $this = shift;
-  my $cli  = shift;
-  my $peerhost = $cli->sock->peerhost;
+  my $req  = shift;
+  my $peerhost = $req->{RemoteAddr};
 
   my @conflist;
 
@@ -998,23 +1027,8 @@ HTML
 sub _escapeHTML
 {
   my $this = shift;
-  my $html = shift;
-  $html =~ s/&/&amp;/g;
-  $html =~ s/</&lt;/g;
-  $html =~ s/>/&gt;/g;
-  $html =~ s/"/&quot;/g;
-  $html =~ s/'/&#39;/g;
-  $html;
+  Tools::HTTPParser->escapeHTML(@_);
 }
-
-sub _on_close_client
-{
-  my $this = shift;
-  my $cli  = shift;
-  my $list = $this->{clients};
-  @$list = grep { $_ ne $cli } @$list;
-}
-
 
 # -----------------------------------------------------------------------------
 # End of Module.
@@ -1054,8 +1068,12 @@ css:  /style/style.css
 #  ...
 #  </Location>
 
+# ReverseProxy 利用時の追加設定.
+# 接続元が全部プロキシサーバになっちゃうのでその対応.
+-extract-forwarded-for: 127.0.0.1
+
 # 利用する接続設定の一覧.
-allow: private public
+#
 # 空白区切りで評価する順に記述.
 # 使われる設定は,
 # - 接続元 IP が一致する物.
@@ -1065,7 +1083,7 @@ allow: private public
 # - user/passが送られてきている.
 #   - 一致する設定を利用.
 #   - 一致する設定がなければ 401 Unauthorized.
-#
+allow: private public
 
 # 許可する接続の設定.
 allow-private {
@@ -1084,13 +1102,18 @@ allow-public {
 }
 
 # デバッグフラグ.
-debug: 0
+-debug: 0
 
 # 保存する最大行数.
-max-lines:    100
+-max-lines:    100
+
+# クライアントモード.
+# owner か shared.
+- mode: owner
 
 # 発言BOXで名前指定しなかったときのデフォルトの名前.
-name-default: (noname)
+# mode: shared の時に使われる.
+-name-default: (noname)
 
 =end tiarra-doc
 
