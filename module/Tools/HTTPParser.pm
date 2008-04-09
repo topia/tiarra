@@ -181,6 +181,7 @@ sub add
       {
         die "invalid header(no splitter): $line";
       }
+      $key =~ s/(?:(?<=-)|^)([a-z])/\U$1/g;
       $reply->{Header}{$key} .= $val;
       $this->{prevkey} = $key;
     }
@@ -256,6 +257,7 @@ sub object
 
 # -----------------------------------------------------------------------------
 # $len = $obj->extra().
+# バッファに残っているデータサイズ(数値)を取得.
 #
 sub extra
 {
@@ -265,6 +267,8 @@ sub extra
 
 # -----------------------------------------------------------------------------
 # $str = $pkg->to_string($req).
+# HTTPとして流せるテキストに変換.
+# 要求行/ステータス行も含めた文字列を返します.
 #
 sub to_string
 {
@@ -327,12 +331,14 @@ sub to_string
 }
 
 # -----------------------------------------------------------------------------
-# $req = $obj->from_lwp($lwp_http_request).
-# $res = $obj->from_lwp($lwp_http_response).
+# $req = $pkg->from_lwp($lwp_http_request).
+# $res = $pkg->from_lwp($lwp_http_response).
+# LWPのHTTP::Request/HTTP::ResponseからTools::HTTPParser形式の
+# オブジェクトを生成.
 #
-sub _from_lwp
+sub from_lwp
 {
-  my $this  = shift;
+  my $pkg   = shift;
   my $htreq = shift;
 
   my $proto = $htreq->protocol;
@@ -361,6 +367,144 @@ sub _from_lwp
     $obj->{Message} = $htreq->message;
   }
   $obj;
+}
+
+# -----------------------------------------------------------------------------
+# $bool = $pkg->extract_forwarded_for($req, \@allows).
+# ReverseProxyによって生成されるX-Forwarded-Forヘッダを
+# $req->{RemoteAddr}/$req->{Header}{Host} に展開.
+# @allows: 展開を許可するIPアドレスの一覧(X-Forwarded-Forの逆順).
+# 書き換えると真の値を, 書き換えなかった時はundefの値を返す.
+# 途中までしか一致しなかった時は RemoteAddr="-$addr-" で書き換える.
+#
+sub extract_forwarded_for
+{
+  my $pkg = shift;
+  my $req = shift;
+  my $allows = shift;
+
+  $DEBUG and $pkg->_debug(__PACKAGE__."#_extract_forwarded_for.");
+  $DEBUG and $pkg->_debug("- allow-chain has ".@$allows.(@$allows==1?" server":" servers"));
+  $DEBUG and map{ $pkg->_debug("- allow[$_] = $allows->[$_]") } 0..$#$allows;
+
+  my $hdr  = $req->{Header};
+
+  if( !$req->{RemoteAddr} )
+  {
+    $DEBUG and $pkg->_debug("- no RemoteAddr field on request.");
+    return undef;
+  }
+  if( !$hdr->{'X-Forwarded-For'} )
+  {
+    $DEBUG and $pkg->_debug("- no X-Forwarded-For header.");
+    return undef;
+  }
+  if( !defined($hdr->{'X-Forwarded-Host'}) )
+  {
+    $DEBUG and $pkg->_debug("- no X-Forwarded-Host");
+    return undef;
+  }
+  if( !defined($hdr->{'X-Forwarded-Server'}) )
+  {
+    $DEBUG and $pkg->_debug("- no X-Forwarded-Server");
+    return undef;
+  }
+
+  my @copy_keys = qw(Host X-Forwarded-For X-Forwarded-Host X-Forwarded-Server);
+  my $orig = {
+    map{ exists($hdr->{$_}) ? ($_ => $hdr->{$_}) : () } @copy_keys
+  };
+  exists($req->{RemoteAddr}) and $orig->{RemoteAddr} = $req->{RemoteAddr};
+  $DEBUG and map{ $pkg->_debug("- + $_: ".(defined($orig->{$_}) ? $orig->{$_} : exists($orig->{$_}) ? "{undef}" : "{none}")) } sort keys %$orig;
+
+  # https://192.168.0.3/irc/
+  # ==> http://localhost:8668/irc/
+  # X-Forwarded-Server: fwd.example.com
+  # X-Forwarded-Host:   192.168.0.3
+  # X-Forwarded-For:    192.168.0.10
+
+  # https://192.168.0.3/irc/
+  # ==> https://fwd.example.com/irc2/ (fwd.example.com=10.0.0.4)
+  # ==> http://localhost:8668/irc/
+  # X-Forwarded-Server: fwd.example.com, fwd.example.com
+  # X-Forwarded-Host:   192.168.0.3, fwd.example.com
+  # X-Forwarded-For:    192.168.0.10, 10.0.0.4
+
+  my $cur = {%$orig};
+  my $is_success = 1;
+
+  while( @$allows )
+  {
+    my $allow = shift @$allows;
+    $DEBUG and $pkg->_debug("- next allow: $allow");
+    if( $cur->{RemoteAddr} ne $allow )
+    {
+      $DEBUG and $pkg->_debug("- next forwarder $cur->{RemoteAddr} does not match with next allow $allow");
+      $pkg->_debug(__PACKAGE__.", extract-forwarded-for is cancelled (not allowed, $cur->{RemoteAddr} for $allow)");
+      $is_success = 0;
+      last;
+    }
+    my $next = $cur;
+    # 転送前情報を末尾から取り出し.
+    my @fwd_keys = qw(X-Forwarded-For X-Forwarded-Host X-Forwarded-Server);
+    my @vals = map{
+      ($next->{$_} =~ s/(?:^|\s*,)\s*(\S+)\s*\z//) ? $1 : undef;
+    } @fwd_keys;
+    if( grep{ !defined($_) } @vals )
+    {
+      my ($idx) = grep{ !defined($vals[$_]) } 0..$#vals;
+      my $key   = $fwd_keys[$idx];
+      $DEBUG and $pkg->_debug("- invalid next $key [$next->{$key}]");
+      $pkg->_debug(__PACKAGE__.", extract-forwarded-for is cancelled (short $key)");
+      $is_success = 0;
+      last;
+    }
+    my ($addr, $host, $svr) = @vals;
+    $next->{RemoteAddr} = $addr;
+    $next->{Host}     = $host;
+    $DEBUG and $pkg->_debug("- extract: RemoteAddr=$addr, Host=$host");
+    $cur = $next;
+  }
+
+  # $req に結果を反映.
+  # 変更前のデータもついでに保持.
+  $req->{_extract_orig} = $orig;
+  $req->{RemoteAddr} = delete $cur->{RemoteAddr};
+  %$hdr = ( %$hdr, %$cur );
+  
+  if( !$is_success )
+  {
+    $req->{RemoteAddr} = "-$req->{RemoteAddr}-";
+  }
+  $DEBUG and $pkg->_debug("- extract: RemoteAddr=$req->{RemoteAddr}, Host=$req->{Header}{Host}");
+
+  1;
+}
+
+# -----------------------------------------------------------------------------
+# $txt = $pkg->escapeHTML($html).
+#
+sub escapeHTML
+{
+  my $pkg = shift;
+  my $html = shift;
+  $html =~ s/&/&amp;/g;
+  $html =~ s/</&lt;/g;
+  $html =~ s/>/&gt;/g;
+  $html =~ s/"/&quot;/g;
+  $html =~ s/'/&#39;/g;
+  $html;
+}
+
+# -----------------------------------------------------------------------------
+# $pkg->_debug($msg).
+# デバッグメッセージ送信用.
+#
+sub _debug
+{
+  my $this = shift;
+  my $msg = shift;
+  RunLoop->shared_loop->notify_msg($msg);
 }
 
 # -----------------------------------------------------------------------------

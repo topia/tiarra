@@ -40,6 +40,7 @@ sub new
   my $this   = $pkg->SUPER::new(%opts);
 
   $this->{callback_object} = undef;
+  $this->{remote_addr} = undef;
   if( $HAS_HTTP_PARSER )
   {
     $this->{parser} = HTTP::Parser->new(request=>1);
@@ -68,6 +69,7 @@ sub new
 #   Method   => 'GET' / 'POST',
 #   Header   => {}.
 #   Content  => $content,
+#   RemoteAddr => '127.0.0.1',
 # };
 #
 sub start
@@ -75,6 +77,7 @@ sub start
   my $this = shift;
   my $opts = {@_};
 
+  $this->{remote_addr} = $opts->{Socket}->peerhost;
   $this->attach($opts->{Socket});
   $this->install();
 
@@ -116,8 +119,9 @@ sub read
     #print Dumper($req);use Data::Dumper;
     if( UNIVERSAL::isa($req, 'HTTP::Message') )
     {
-      $req = Tools::HTTPParser->_from_lwp($req);
+      $req = Tools::HTTPParser->from_lwp($req);
     }
+    $req->{RemoteAddr} = $this->{remote_addr};
     $par->_on_request($this, $req);
   }elsif( $status == -2 )
   {

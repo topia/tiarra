@@ -144,6 +144,19 @@ sub read
   $this->_on_accept($sock);
 }
 
+sub close
+{
+  my $this = shift;
+  $this->SUPER::close(@_);
+
+  my $list = $this->{clients};
+  foreach my $cli (@$list)
+  {
+    $cli and $cli->close();
+  }
+  @$list = ();
+}
+
 # -----------------------------------------------------------------------------
 # $this->_on_accept($sock).
 # (private).
@@ -189,6 +202,7 @@ sub _on_request
   my $cli  = shift;
   my $req  = shift;
 
+  # このオブジェクトからのコールバックを起動.
   my $par  = $this->{callback_object};
   if( !$par )
   {
@@ -206,13 +220,22 @@ sub _on_close_client
   my $this = shift;
   my $cli  = shift;
 
+  # 保持しているクライアント一覧から除去.
+  my $list = $this->{clients};
+  @$list = grep { $_ && $_ ne $cli } @$list;
+
+  # このオブジェクトからのコールバックを起動.
   my $par  = $this->{callback_object};
   if( !$par )
   {
     RunLoop->shared_loop->notify_error(__PACKAGE__."->_on_close_client(), no callback_object");
     return;
   }
-  $par->_on_close_client($cli);
+  my $sub = $par->can('_on_close_client');
+  if( $sub )
+  {
+    $par->$sub($cli);
+  }
 }
 
 # -----------------------------------------------------------------------------
