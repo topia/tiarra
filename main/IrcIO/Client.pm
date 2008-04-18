@@ -466,7 +466,7 @@ sub do_namreply {
 	if ($nick_enumeration ne '') {
 	    $flush_func->(
 		$this->construct_irc_message(
-		    Prefix => $this->fullname,
+		    Prefix => $this->_runloop->sysmsg_prefix('system'),
 		    Command => RPL_NAMREPLY,
 		    Params => [$this->_runloop->current_nick,
 			       $ch_property_char,
@@ -525,7 +525,7 @@ sub inform_joinning_channels {
 	if ($ch->topic ne '') {
 	    $this->send_message(
 		$this->construct_irc_message(
-		    Prefix => $this->fullname,
+		    Prefix => $this->_runloop->sysmsg_prefix('system'),
 		    Command => RPL_TOPIC,
 		    Params => [$local_nick,$ch_name,$ch->topic]));
 	}
@@ -533,7 +533,7 @@ sub inform_joinning_channels {
 	if (defined($ch->topic_who)) {
 	    $this->send_message(
 		$this->construct_irc_message(
-		    Prefix => $this->fullname,
+		    Prefix => $this->_runloop->sysmsg_prefix('system'),
 		    Command => RPL_TOPICWHOTIME,
 		    Params => [$local_nick,$ch_name,$ch->topic_who,$ch->topic_time]));
 	}
@@ -546,7 +546,7 @@ sub inform_joinning_channels {
 	# ºÇ¸å¤ËRPL_ENDOFNAMES
 	$this->send_message(
 	    $this->construct_irc_message(
-		Prefix => $this->fullname,
+		Prefix => $this->_runloop->sysmsg_prefix('system'),
 		Command => RPL_ENDOFNAMES,
 		Params => [$local_nick,$ch_name,'End of NAMES list']));
 
