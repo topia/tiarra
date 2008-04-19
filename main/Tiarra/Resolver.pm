@@ -216,8 +216,7 @@ sub _resolve {
     my $ret = undef;
 
     if ($entry->query_type eq QUERY_ADDR) {
-	if( $entry->query_data eq 'localhost' )
-	{
+	if ( $^O =~ /^MSWin32/ && $entry->query_data eq 'localhost' ) {
 		# Win2kだとなぜか問い合わせに失敗するので固定応答.
 		$entry->answer_data( $use_ipv6 ? ['127.0.0.1', '::1'] : '127.0.0.1' );
 		$resolved = 1;
@@ -254,8 +253,7 @@ sub _resolve {
 	    }
 	}
     } elsif ($entry->query_type eq QUERY_HOST) {
-	if( $entry->query_data eq '127.0.0.1' )
-	{
+	if ( $^O =~ /^MSWin32/ && $entry->query_data eq '127.0.0.1' ) {
 		# Win2kだとなぜか問い合わせに失敗するので固定応答.
 		$entry->answer_data('localhost');
 		$resolved = 1;
