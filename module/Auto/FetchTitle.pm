@@ -1044,17 +1044,20 @@ sub _extract_heading_config
 {
   my $config = [
     {
+      # 1. ぷりんと楽譜.
       url        => 'http://www.print-gakufu.com/*',
       recv_limit => 8*1024,
       extract    => qr{<p\s+class="topicPath">(.*?)</p>}s,
       #remove     => qr/^ぷりんと楽譜 総合案内 ＞ /;
     },
     {
+      # 2. zakzak.
       url        => 'http://www.zakzak.co.jp/*',
       recv_limit => 10*1024,
       extract    => qr{<font class="kijimidashi".*?>(.*?)</font>}s,
     },
     {
+      # 3. nikkei.
       url        => 'http://www.nikkei.co.jp/*',
       recv_limit => 16*1024,
       extract => [
@@ -1064,30 +1067,61 @@ sub _extract_heading_config
       remove => qr/^NIKKEI NET：/,
     },
     {
+      # 4. nhkニュース.
       url     => 'http://www*.nhk.or.jp/news/*',
       extract => qr{<p class="newstitle">(.*?)</p>},
     },
     {
+      # 5. creative (timeout).
       url     => 'http://*.creative.com/*',
       timeout => 5,
     },
     {
+      # 6. soundhouse news.
       url        => 'http://www.soundhouse.co.jp/shop/News.asp?NewsNo=*',
       recv_limit => 50*1024,
       extract    => qr{(<td class='honbun'>\s*<font size='\+1'><b>.*?</b></font>.*?)<br>}s,
     },
     {
-      # trac changeset.
+      # 7. trac changeset.
       url        => '*/changeset/*',
       extract    => qr{<dd class="message" id="searchable"><p>(.*?)</p>}s,
     },
     {
+      # 8a. amazon (page size).
       url        => 'http://www.amazon.co.jp/*',
       recv_limit => 15*1024,
     },
     {
+      # 8b. amazon (page size).
       url        => 'http://www.amazon.com/*',
       recv_limit => 15*1024,
+    },
+    {
+      # 9. ニコニコ動画 (メンテ画面).
+      status     => 503,
+      url        => 'http://www.nicovideo.jp/*',
+      extract    => sub{
+        if( m{<div class="mb16p4 TXT12">\s*<p>現在ニコニコ動画は(メンテナンス中)です。</p>\s*<p>(.*?)<br />}s )
+        {
+          "$1: $2";
+        }else
+        {
+          return;
+        }
+      },
+    },
+    {
+      # 10. sanspo.
+      url        => 'http://www.sanspo.com/*',
+      recv_limit => 5*1024,
+      extract    => qr{<h2>(.*?)</h2>}s,
+    },
+    {
+      # 11. sakura.
+      url        => 'http://www.sakura.ad.jp/news/archives/*',
+      recv_limit => 10*1024,
+      extract    => qr{<h3 class="newstitle">(.*?)</h3>}s,
     },
   ];
   $config;
@@ -1106,9 +1140,9 @@ sub _filter_extract_heading_prereq
   my $when  = shift;
   my $type  = shift;
 
-  my $conflist = $this->_extract_heading_config();
+  my $extract_list = $this->_extract_heading_config();
 
-  foreach my $conf (@$conflist)
+  foreach my $conf (@$extract_list)
   {
     Mask::match($conf->{url}, $req->{url}) or next;
     $DEBUG and $this->_debug($req, "debug: - $conf->{url}");
@@ -1146,20 +1180,23 @@ sub _filter_extract_heading_response
     $DEBUG and $this->_debug($req, "debug: - - skip/not ref");
     return;
   }
-  if( $req->{result}{status_code}!=200 )
-  {
-    $DEBUG and $this->_debug($req, "debug: - - skip/not success:$req->{result}{status_code}");
-    return;
-  }
+  my $status = $req->{result}{status_code};
 
-  my $conflist = $this->_extract_heading_config();
+  my $extract_list = $this->_extract_heading_config();
 
   my $heading;
 
-  foreach my $conf (@$conflist)
+  foreach my $conf (@$extract_list)
   {
     Mask::match($conf->{url}, $req->{url}) or next;
     $DEBUG and $this->_debug($req, "debug: - $conf->{url}");
+
+    my $extract_status = $conf->{status} || 200;
+    if( $status != $extract_status )
+    {
+      $DEBUG and $this->_debug($req, "debug: - - status:$status not match with $extract_status");
+      next;
+    }
 
     my $extract_list = $conf->{extract};
     if( ref($extract_list) ne 'ARRAY' )
@@ -1171,8 +1208,17 @@ sub _filter_extract_heading_response
       $DEBUG and $this->_debug($req, "debug: - $_extract");
       my $extract = $_extract; # sharrow-copy.
       $extract = ref($extract) ? $extract : qr/\Q$extract/;
-      my @match = $req->{result}{decoded_content} =~ $extract;
+      my @match;
+      if( ref($extract) eq 'CODE' )
+      {
+        local($_) = $req->{result}{decoded_content};
+        @match = $extract->($req);
+      }else
+      {
+        @match = $req->{result}{decoded_content} =~ $extract;
+      }
       @match or next;
+      @match==1 && !defined($match[0]) and next;
       $heading = $match[0];
       last;
     }
@@ -1418,6 +1464,7 @@ sub _parse_response
     content_type   => undef,
     content_length => undef,
     decoded_content => undef,
+    fetch_length    => undef,
   };
 
   if( !ref($res) )
@@ -1444,7 +1491,9 @@ sub _parse_response
   my $status_msg  = $res->{Message};
   my $headers     = $res->{Header}; # hash-ref.
   my $content     = $res->{Content};
+  $result->{fetch_length} = defined($content) ? length($content) : undef;
   defined($content) or $content = '';
+  my @opts;
 
   $result->{status_code}    = $status_code;
   $result->{content_length} = $headers->{'Content-Length'};
@@ -1482,21 +1531,8 @@ sub _parse_response
   }
   if( int($status_code / 100) != 2 && !$result->{redirect} )
   {
-    my @opts;
-    $status_msg and push(@opts, $status_msg);
+    $result->{title} = $status_msg;
     push(@opts, "http status $status_code");
-    if( $req->{redirected} )
-    {
-      my $redirs = $req->{redirected}==1 ? 'redir' : 'redirs';
-      push(@opts, "$req->{redirected} $redirs");
-    }
-    my $reply = shift @opts;
-    if( @opts )
-    {
-      $reply .= " (".join("; ", @opts).")";
-    }
-    $result->{result} = $reply;
-    return $result;
   }
 
   # detect refresh tag.
@@ -1558,6 +1594,9 @@ sub _parse_response
   {
     $title = $this->_fixup_title($title);
     $result->{title} = $title;
+  }else
+  {
+    $title = $result->{title};
   }
 
   my ($ctype) = split(/[ ;]/, $headers->{'Content-Type'}, 2);
@@ -1594,7 +1633,6 @@ sub _parse_response
     }
   }
 
-  my @opts;
   if( $reply eq '' || $ctype !~ /html/ )
   {
     push(@opts, $ctype);
