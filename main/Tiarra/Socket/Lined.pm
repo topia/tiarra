@@ -21,7 +21,6 @@ sub new {
     $this->eol(utils->get_first_defined(
 	$opts{eol},
 	"\x0d\x0a"));
-    $this->{recv_queue} = [];
     $this;
 }
 
@@ -31,35 +30,23 @@ sub append_line {
     $this->append($line . $this->eol);
 }
 
-sub read {
-    my $this = shift;
-
-    $this->SUPER::read;
-
-    while (1) {
-	my $eol_pos = index($this->recvbuf, $this->eol);
-	if ($eol_pos == -1) {
-	    # 一行分のデータが届いていない。
-	    last;
-	}
-
-	my $current_line = substr($this->recvbuf, 0, $eol_pos);
-	substr($this->recvbuf, 0, $eol_pos + CORE::length($this->eol)) = '';
-
-	push @{$this->{recv_queue}}, $current_line;
-    }
-}
-
 sub pop_queue {
     # このメソッドは受信キュー内の最も古いものを取り出します。
     # キューが空ならundefを返します。
+    # 行単位でないI/Oが必要ならrecvbufを直接操作してください。
     my ($this) = @_;
     $this->flush;	   # 念のためflushをしてbufferを更新しておく。
-    if (@{$this->{recv_queue}} == 0) {
+
+    my $eol_pos = index($this->recvbuf, $this->eol);
+    if ($eol_pos == -1) {
+	# 一行分のデータが届いていない。
 	return undef;
-    } else {
-	return splice @{$this->{recv_queue}},0,1;
     }
+
+    my $line = substr($this->recvbuf, 0, $eol_pos);
+    substr($this->recvbuf, 0, $eol_pos + CORE::length($this->eol)) = '';
+
+    return $line;
 }
 
 1;
