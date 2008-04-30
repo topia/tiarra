@@ -1007,7 +1007,8 @@ sub run {
 				    }
 
 				    my $cmd = $msg->command;
-				    if ($cmd eq 'PRIVMSG' || $cmd eq 'NOTICE') {
+				    if (!$msg->remark('do-not-broadcast-to-clients') &&
+					    $cmd eq 'PRIVMSG' || $cmd eq 'NOTICE') {
 					my $new_msg = undef; # 本当に必要になったら作る。
 					foreach my $client (@{$this->{clients}}) {
 					    if ($client != $socket) {
@@ -1026,7 +1027,9 @@ sub run {
 					}
 				    }
 
-				    Multicast::from_client_to_server($msg,$socket);
+				    if (!$msg->remark('do-not-send-to-server')) {
+					Multicast::from_client_to_server($msg,$socket);
+				    }
 				}
 			    }
 			}
