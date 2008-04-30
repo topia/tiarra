@@ -47,7 +47,7 @@ use Tiarra::TerminateManager;
 use Socket;
 use Carp;
 use Net::hostent;
-use Tiarra::DefineEnumMixin qw(QUERY_HOST QUERY_ADDR QUERY_SADDR);
+use Tiarra::DefineEnumMixin qw(QUERY_HOST QUERY_ADDR QUERY_SADDR QUERY_NAMEINFO);
 my $dataclass = 'Tiarra::Resolver::QueueData';
 our $use_threads;
 our $use_ipv6;
@@ -119,15 +119,31 @@ sub resolve {
     my $entry = $dataclass->new;
     my $do = undef;
     if ($type eq 'addr') {
+	# addr: forward lookup
+	#   query data: hostname
+	#   callback data: [addr1, addr2, ...]
 	$entry->query_type(QUERY_ADDR);
 	$entry->query_data($data);
 	$do = 1;
     } elsif ($type eq 'host') {
+	# host: reverse lookup
+	#   query data: ip address
+	#   callback data: hostname or [host1, host2, ...]
 	$entry->query_type(QUERY_HOST);
 	$entry->query_data($data);
 	$do = 1;
     } elsif ($type eq 'saddr') {
+	# saddr: get socket addr
+	#   query data: [host, port]
+	#   callback data: sockaddr struct
 	$entry->query_type(QUERY_SADDR);
+	$entry->query_data($data);
+	$do = 1;
+    } elsif ($type eq 'nameinfo') {
+	# nameinfo: get address/port from socket addr
+	#   query data: sockaddr struct
+	#   callback data: [address, port]
+	$entry->query_type(QUERY_NAMEINFO);
 	$entry->query_data($data);
 	$do = 1;
     }
@@ -149,6 +165,12 @@ sub resolve {
 
 sub paranoid_check {
     # ip -> host -> ip check
+    # closure: sub {
+    #              my ($status, $hostname, $final_result) = @_;
+    #              if (!$status) { die "paranoid check failed!"; }
+    #              warn "paranoid check successful with: $hostname";
+    #              if (defined $final_result) { /* maybe unnecessary */ }
+    #          }
     my ($class_or_this, $data, $closure, $my_use_threads) = @_;
     my $this = $class_or_this->_this;
 
@@ -301,8 +323,21 @@ sub _resolve {
 	}
 	if (!$resolved) {
 	    my $addr = inet_aton($entry->query_data->[0]);
-	    $entry->answer_data(pack_sockaddr_in($entry->query_data->[1],
-						 $addr));
+	    if (defined $addr) {
+		$entry->answer_data(pack_sockaddr_in($entry->query_data->[1],
+						     $addr));
+		$resolved = 1;
+	    }
+	}
+    } elsif ($entry->query_type eq QUERY_NAMEINFO) {
+	if ($use_ipv6 && !$resolved) {
+	    my ($addr, $port) = getnameinfo($entry->query_data, NI_NUMERICHOST);
+	    $entry->answer_data([$addr, $port]);
+	    $resolved = 1;
+	}
+	if (!$resolved) {
+	    my ($port, $addr) = sockaddr_in($entry->query_data);
+	    $entry->answer_data([$addr, $port]);
 	    $resolved = 1;
 	}
     } else {
