@@ -12,14 +12,14 @@ use strict;
 use warnings;
 use base qw(Module);
 use Module::Use qw(Auto::Utils Tools::HTTPClient);
+use Module::Use qw(Auto::FetchTitle::Plugin);
+use Auto::FetchTitle::Plugin;
 use Auto::Utils;
+use Configuration; # Configuration::Hook.
 use Mask;
 use Multicast;
-use Tiarra::Encoding;
-use Configuration; # Configuration::Hook.
 use Scalar::Util qw(weaken);
-
-# URL Fetch.
+use Tiarra::Encoding;
 use Tools::HTTPClient;
 
 our $VERSION   = '0.02';
@@ -30,7 +30,7 @@ our $RE_WHITESPACES = qr/(?:\s|$U_IDEOGRAPHIC_SPACE)+/;
 
 # デバッグフラグ.
 # configや$this->{debug}の値もlocal()内で反映される.
-our $DEBUG;
+our $DEBUG = 1;
 
 our $ENCODER = 'Unicode::Japanese';
 use Unicode::Japanese;
@@ -54,19 +54,13 @@ our $HAS_IMAGE_EXIFTOOL = do{
   eval{ local($SIG{__DIE__}) = 'DEFAULT'; require Image::ExifTool; };
   !$@;
 };
-our $HAS_TOUHOU_REPLAYFILE = do{
-  eval{ local($SIG{__DIE__}) = 'DEFAULT'; require Touhou::ReplayFile };
-  @$ or Module::Use->import(qw(Touhou::ReplayFile));
-  !$@;
-};
-
-our $PLUGINS;
 
 our $MAX_ACTIVE_REQUESTS        = 3;
 our $MAX_URLS_IN_SINGLE_MESSAGE = 3;
 our $DEFAULT_RECV_LIMIT         = 4*1024; # 4K bytes.
 our $DEFAULT_TIMEOUT            = 3;  # sec.
 our $MAX_REDIRECTS              = 5;
+our $MAX_REDIRECTS_LIMIT        = 20;
 our $PROCESSING_LIMIT_TIME      = 60; # secs.
 
 $|=1;
@@ -120,8 +114,6 @@ sub new
   my $pkg  = shift;
   my $this = $pkg->SUPER::new(@_);
 
-  $PLUGINS = undef;
-
   $this->{loaded_at}     = time;
   $this->{debug}         = $this->config->debug;
 
@@ -130,15 +122,11 @@ sub new
   $this->{reply_timer}   = undef;
 
   $this->{mask} = undef;
+  $this->{plugins} = undef;
+  $this->{hooks}   = undef;
 
   $this->_reload_config();
   $this->_reload_plugins();
-
-  my $weaken_this = $this;
-  weaken($weaken_this);
-  $this->{conf_hook} = Configuration::Hook->new(sub{
-    $weaken_this->_reload_config();
-  })->install('reloaded');
 
   return $this;
 }
@@ -159,6 +147,8 @@ sub destruct
     $this->{conf_hook}->uninstall();
     $this->{conf_hook} = undef;
   }
+
+  $this->run_hook('plugin.finalize', undef);
 }
 
 # -----------------------------------------------------------------------------
@@ -214,51 +204,87 @@ sub plugins
 {
   my $this = shift;
 
-  $PLUGINS or $this->_reload_plugins();
+  if( !$this->{plugins} )
+  {
+    $this->_reload_plugins();
+  }
 
-  @$PLUGINS;
+  @{$this->{plugins}};
 }
 
 # -----------------------------------------------------------------------------
 # $obj->_reload_plugins().
-# reload $PLUGINS list.
+# reload plugins list.
 #
 sub _reload_plugins
 {
   my $this = shift;
 
+  my $loader;
   my @plugins;
   eval{
     local($SIG{__DIE__}) = 'DEFAULT';
     require Module::Pluggable;
-    Module::Pluggable->import(sub_name => '_plugins');
-    @plugins = $this->_plugins;
+    Module::Pluggable->import(sub_name => '_load_plugins', require => 1);
+    @plugins = $this->_load_plugins;
+    @plugins = grep{ !/::SUPER$/ } @plugins;
+    $loader = 'Module::Pluggable';
   };
   if( $@ )
   {
     RunLoop->shared_loop->notify_msg("Module::Pluggable failed: $@");
+    $loader = 'local';
     @plugins = $this->_find_local_plugins;
   }
 
-  RunLoop->shared_loop->notify_msg(__PACKAGE__."#_reload_plugins, plugins:");
+  $this->{plugins} = [];
+  $this->{hooks} = {};
+
+  $this->register_hook(undef, {
+    name   => 'basic',
+    'filter.prereq' => \&_filter_basic_prereq,
+    old    => 1,
+  });
+  $this->register_hook(undef, {
+    name   => 'cookie',
+    'filter.prereq' => \&_filter_cookie_prereq,
+    old    => 1,
+  });
+  $this->register_hook(undef, {
+    name     => 'uploader',
+    'filter.prereq'   => \&_filter_uploader_prereq,
+    'filter.response' => \&_filter_uploader_response,
+    old      => 1,
+  });
+
+  RunLoop->shared_loop->notify_msg(__PACKAGE__."#_reload_plugins, ($loader) plugins:");
   if( @plugins )
   {
     Module::Use->import(@plugins);
     foreach my $pkgname (@plugins)
     {
-      RunLoop->shared_loop->notify_msg("+ $pkgname");
+      my $plugin = {
+        module => $pkgname,
+        object => undef,
+      };
+      eval "require $pkgname; 1"; $@ and RunLoop->shared_loop->notify_msg("load $pkgname: $@");
+      my $obj = eval{ $pkgname->new({}); };
+      if( !$obj )
+      {
+        RunLoop->shared_loop->notify_msg("- $pkgname ".($@?"error $@":"ignore"));
+        next;
+      }
+      RunLoop->shared_loop->notify_msg("+ $pkgname $obj");
+      $plugin->{object} = $obj;
+      push(@{$this->{plugins}}, $plugin);
+      $obj->register($this);
     }
-    #no warnings 'once';
-    #RunLoop->shared_loop->notify_msg('> '.join(", ", keys %Auto::FetchTitle::Plugin::All::USED));
-    #RunLoop->shared_loop->notify_msg('> '.join(", ", our @USE));
-    #RunLoop->shared_loop->notify_msg('> '.eval{Auto::FetchTitle::Plugin::All->new}.$@);
   }else
   {
     RunLoop->shared_loop->notify_msg("- none");
   }
 
-  $PLUGINS = \@plugins;
-  $PLUGINS;
+  $this->run_hook('plugin.initialize', undef);
 }
 
 # -----------------------------------------------------------------------------
@@ -268,19 +294,48 @@ sub _reload_plugins
 sub _find_local_plugins
 {
   my $this = shift;
-  my $dir = 'module/Auto/FetchTitle/Plugin';
+  my $dir     = 'module/Auto/FetchTitle/Plugin';
+  my $modbase = 'Auto::FetchTitle::Plugin';
   if( opendir(my $dh, $dir) )
   {
-    my @plugins = readdir($dh);
+    my @files = readdir($dh);
     closedir($dh);
-    @plugins = grep{ /\.pm\z/ } @plugins;
-    @plugins = map{ "$dir/$_" } @plugins;
+    my @plugins;
+    foreach my $file (@files)
+    {
+      $file =~ /^([a-zA-Z_]\w*)\.pm\z/ or next;
+      my $name    = $1; # untaint.
+      my $modpath = "$dir/$name.pm";
+      my $modname = $modbase.'::'.$name;
+      eval{ local($SIG{__DIE__}) = 'DEFAULT'; require $modpath; };
+      if( $@ )
+      {
+        RunLoop->shared_loop->notify_msg("_find_local_plugins, load $modpath failed: $@");
+        next;
+      }
+      push(@plugins, $modname);
+    }
     return @plugins;
   }else
   {
     RunLoop->shared_loop->notify_msg("_find_local_plugins, opendir($dir): $!");
     return;
   }
+}
+
+sub register_hook
+{
+  my $this    = shift;
+  my $plugin_obj = shift;
+  my $spec    = shift;
+  my $name    = $spec->{name} or die "no hook name for $plugin_obj";
+  $this->{hooks}{$name} and die "hook $name is already registered";
+
+  $spec->{object} = $plugin_obj;
+  weaken($spec->{object});
+
+  $this->{hooks}{$name} = $spec;
+  $plugin_obj->{hook}   = $spec;
 }
 
 # -----------------------------------------------------------------------------
@@ -385,7 +440,8 @@ sub _dispatch
 
     # リクエストの生成.
     my $req = $this->_create_request($full_ch_name, $url, $matched);
-    #$this->_debug("new-request: ".Data::Dumper->new([$req])->Indent(0)->Dump);
+    $req->{cookie_jar} = [];
+    #$this->_debug($req, "new-request: ".Data::Dumper->new([$req])->Indent(0)->Dump);
     $this->_add_request($req);
   }
 
@@ -404,11 +460,16 @@ sub _create_request
   my $url          = shift;
   my $mask_conf    = shift;
 
+  my $anchor;
+  ($url, $anchor) = split(/#/, $url, 2);
   my $req = {
     old          => undef,    # undef for first (non-redirect) request.
+    ini_req      => undef,    # undef for first (non-redirect) request.
     redirected   => undef,    # nr of redirects (integer).
+    applied_filters => undef,    # array-ref.
 
     url          => $url,
+    anchor       => $anchor,
     full_ch_name => $full_ch_name,
     mask         => $mask_conf,
 
@@ -418,10 +479,15 @@ sub _create_request
 
     httpclient   => undef,
     headers      => {},
+    cookies      => [],    # cookies for this request.
     recv_limit   => $DEFAULT_RECV_LIMIT,
+    max_redirects=> undef, # integer.
     timeout      => undef,
     response     => undef,
     result       => undef,
+    method       => undef,
+    content      => undef,
+    cookie_jar   => undef, # session cookies, set at initial _create_request() call.
   };
   $req;
 }
@@ -568,6 +634,8 @@ sub _add_request
 sub _decode_value
 {
   my $val = shift;
+  @_ and $val = shift; # for OO-style.
+
   if( $val && $val =~ s/^\{(.*?)\}// )
   {
     my $type = $1;
@@ -599,10 +667,6 @@ sub _start_request
   $req->{started_at} = time;
   $DEBUG and $this->_debug($req, "debug: start request $req->{full_ch_name} $req->{url}");
 
-  my $headers = $req->{headers};
-  #$headers->{Accept} = 'text/html, application/xml;q=0.9, application/xhtml+xml, text/*'; # */*;q=0.1';
-  $headers->{'User-Agent'} = "FetchTitle/$VERSION";
-
   $this->_request_filter(prereq => $req);
   while( $req->{redirect} && !$req->{response} )
   {
@@ -625,6 +689,8 @@ sub _start_request
     return $req;
   }
 
+  my $headers = $req->{headers};
+
   my $agent_name = $headers->{'User-Agent'};
   if( !defined($agent_name) || $agent_name eq '' )
   {
@@ -632,26 +698,46 @@ sub _start_request
     delete $headers->{'User-Agent'};
   }
 
+  my $cookies = join('; ', map{ "$_->{name}=$_->{value}" } @{$req->{cookies}});
+  if( $req->{headers}{Cookie} )
+  {
+    $req->{headers}{Cookie} = "$cookies; $req->{headers}{Cookie}";
+  }else
+  {
+    if( $cookies )
+    {
+      $req->{headers}{Cookie} = $cookies;
+    }else
+    {
+      delete $req->{headers}{Cookie};
+    }
+  }
+  $DEBUG and $this->_debug($req, "Cookie: ".($req->{headers}{Cookie} || '(none)'));
+
   my $timeout = $req->{timeout} || $this->config->timeout || $DEFAULT_TIMEOUT;
   $DEBUG and $this->_debug($req, "debug: create http-client, timeout=$timeout");
   my $httpclient = Tools::HTTPClient->new(
-    Method  => 'GET',
+    Method  => $req->{method} || 'GET',
     Url     => $req->{url},
     Header  => $headers,
     Timeout => $timeout,
+    Content => $req->{content},
   );
   $DEBUG and $this->_debug($req, "debug: start http-client: $req->{url}");
 
-  weaken($this);
+  weaken(my $_this = $this);
   eval{
     $httpclient->start(
       Callback => sub{
+        my $this = $_this;
+        $DEBUG and print "Callback.this = $this\n";
         $this or return RunLoop->shared_loop->notify_error(__PACKAGE__."#_start_request/httpclient.Callback, object was deleted.");
         local($DEBUG) = $DEBUG || $this->{debug};
         $DEBUG and $this->_debug($req, "debug: http-client finished: @_");
         $this->_request_finished($req, @_);
       },
       ProgressCallback => sub{
+        my $this = $_this;
         $this or return RunLoop->shared_loop->notify_error(__PACKAGE__."#_start_request/httpclient.Callback, object was deleted.");
         local($DEBUG) = $DEBUG || $this->{debug};
         $DEBUG and $this->_debug($req, "debug: http-client progress @_");
@@ -709,6 +795,45 @@ sub _apply_timeout
 }
 
 # -----------------------------------------------------------------------------
+# $obj->_apply_max_redirects($req, $new_val).
+# $req->{max_redirects} に現在値と新しい値の大きな方を設定.
+# 但し MAX_REDIRECTS_LIMIT を上限.
+#
+sub _apply_max_redirects
+{
+  my $this = shift;
+  my $req  = shift;
+  my $new_value = shift;
+  my $cur_value = $req->{max_redirects} || 0;
+
+  $req->{max_redirects} = $new_value > $cur_value ? $new_value : $cur_value;
+  if( $req->{max_redirects} > $MAX_REDIRECTS_LIMIT )
+  {
+    $req->{max_redirects} = $MAX_REDIRECTS_LIMIT;
+  }
+  $DEBUG and $this->_debug($req, "max-redirects: $req->{max_redirects}");
+}
+
+# -----------------------------------------------------------------------------
+# $this->run_hook($hook_name => $arg).
+# フックの実行.
+#
+sub run_hook
+{
+  my $this      = shift;
+  my $hook_name = shift;
+  my $arg       = shift;
+
+  foreach my $plugin ($this->plugins)
+  {
+    my $spec = $plugin->{object}{hook};
+    my $sub = $spec && $spec->{$hook_name};
+    $sub or next;
+    $plugin->$sub($this, $arg);
+  }
+}
+
+# -----------------------------------------------------------------------------
 # $this->_request_filter(prereq   => $req).
 # $this->_request_filter(response => $req).
 # リクエストのフィルタを適用.
@@ -720,32 +845,16 @@ sub _request_filter
   my $req  = shift;
   my $url  = $req->{url};
 
-  our $REQUEST_FILTER ||= {
-    basic => {
-      prereq => \&_filter_basic_prereq,
-    },
-    cookie => {
-      prereq => \&_filter_cookie_prereq,
-    },
-    uploader => {
-      prereq   => \&_filter_uploader_prereq,
-      response => \&_filter_uploader_response,
-    },
-    'touhou-replay' => {
-      prereq   => \&_filter_touhou_replay_prereq,
-      response => \&_filter_touhou_replay_response,
-    },
-    'extract-heading' => {
-      prereq   => \&_filter_extract_heading_prereq,
-      response => \&_filter_extract_heading_response,
-    },
-  };
-
-  if( $when eq 'prereq' && $url =~ m{https?://\w+\.2ch\.net(?:/|$)} )
+  if( $when eq 'prereq' )
   {
-    $DEBUG and $this->_debug($req, "debug: change user-agent for 2ch");
-    $req->{headers}{'User-Agent'} =~ s/libwww-perl/LWP/;
+    $req->{headers}{'User-Agent'} ||= "FetchTitle/$VERSION (tiarra)";
+    if( $url =~ m{https?://\w+\.2ch\.net(?:/|$)} )
+    {
+      $DEBUG and $this->_debug($req, "debug: change user-agent for 2ch");
+      $req->{headers}{'User-Agent'} =~ s/libwww-perl/LWP/;
+    }
   }
+  my $hook_name = "filter.$when";
 
   my $has_extract_heading;
   $DEBUG and $this->_debug($req, "debug: conf check start for $when");
@@ -791,19 +900,39 @@ sub _request_filter
       $has_extract_heading ||= grep {$_ eq 'extract-heading'} @types;
       foreach my $type (@types)
       {
-        if( !$REQUEST_FILTER->{$type} )
+        my $spec = $this->{hooks}{$type};
+        if( !$spec )
         {
           $DEBUG && $type ne '' and $this->_debug($req, "debug: unsupported type: $type");
           next;
         }
-        my $sub = $REQUEST_FILTER->{$type}{$when};
+        my $sub = $spec->{$hook_name};
         if( !$sub )
         {
-          $DEBUG && $type ne '' and $this->_debug($req, "debug: - no sub for $when");
+          $DEBUG && $type ne '' and $this->_debug($req, "debug: - no sub for $hook_name");
           next;
         }
-        $sub->($this, $block, $req, $when, $type);
-        if( $req->{redirect} || $req->{response} )
+        $DEBUG and $this->_debug($req, "debug: call $type/$hook_name");
+        $req->{applied_filters} ||= [];
+        push(@{$req->{applied_filters}}, $type);
+        if( $spec->{old} )
+        {
+          my $old_sub = $sub;
+          $sub = sub{
+            my $obj = shift;
+            my $ctx = shift;
+            my $arg = shift;
+            $old_sub->($ctx, $arg->{block}, $arg->{req}, $arg->{when}, $arg->{type});
+          };
+        }
+        my $arg = {
+          block => $block,
+          req   => $req,
+          when  => $when,
+          type  => $type,
+        };
+        $spec->{object}->$sub($this, $arg);
+        if( $req->{redirect} || ($when eq 'prereq' && $req->{response}) )
         {
           return;
         }
@@ -813,12 +942,23 @@ sub _request_filter
 
   if( !$has_extract_heading )
   {
-    if( my $sub = $REQUEST_FILTER->{'extract-heading'}{$when} )
+    my $type = 'extract-heading';
+    my $spec = $this->{hooks}{$type};
+    my $sub = $spec->{$hook_name};
+    if( $sub )
     {
       my $block = undef;#Configuration::Block->new();
-      my $type = 'extract-heading';
-      $DEBUG and $this->_debug($req, "debug: call $type/$when");
-      $sub->($this, $block, $req, $when, $type);
+      $DEBUG and $this->_debug($req, "debug: call $type/$hook_name (extra)");
+      $req->{applied_filters} ||= [];
+      push(@{$req->{applied_filters}}, $type);
+
+      my $arg = {
+        block => $block,
+        req   => $req,
+        when  => $when,
+        type  => $type,
+      };
+      $spec->{object}->$sub($this, $arg);
     }
   }
 
@@ -967,294 +1107,6 @@ sub _filter_uploader_response
 }
 
 # -----------------------------------------------------------------------------
-# $this->_filter_touhou_replay_prereq($block, $req, $when, $type).
-# (impl:fetchtitle-filter)
-# touhou_replay/prereq.
-#
-sub _filter_touhou_replay_prereq
-{
-  my $this  = shift;
-  my $block = shift;
-  my $req   = shift;
-  my $when  = shift;
-  my $type  = shift;
-
-  if( !$HAS_TOUHOU_REPLAYFILE )
-  {
-    $DEBUG and $this->_debug($req, "debug: - - no Touhou::ReplayFile (private module)");
-    return;
-  }
-
-  $this->_apply_recv_limit($req, 100*1024);
-
-  $this;
-}
-
-# -----------------------------------------------------------------------------
-# $this->_filter_touhou_replay_response($block, $req, $when, $type).
-# (impl:fetchtitle-filter)
-# touhou_replay/response.
-#
-sub _filter_touhou_replay_response
-{
-  my $this  = shift;
-  my $block = shift;
-  my $req   = shift;
-  my $when  = shift;
-  my $type  = shift;
-
-  $HAS_TOUHOU_REPLAYFILE or return;
-
-  my $response = $req->{response};
-  if( !ref($response) )
-  {
-    $DEBUG and $this->_debug($req, "debug: - - skip/not ref");
-    return;
-  }
-  if( $req->{result}{status_code}!=200 )
-  {
-    $DEBUG and $this->_debug($req, "debug: - - skip/not success:$req->{result}{status_code}");
-    return;
-  }
-
-  my @opts;
-
-  my $len = $req->{result}{content_length};
-  if( defined($len) )
-  {
-    $len =~ s/(?<=\d)(?=(\d\d\d)+(?!\d))/,/g;
-    $len = "$len bytes";
-    push(@opts, $len);
-  }
-
-  my $replay = Touhou::ReplayFile->parse($response->{Content});
-  my $reply = $replay->shortdesc();
-  if( @opts )
-  {
-    $reply .= " (".join("; ",@opts).")";
-  }
-  $req->{result}{result} = $reply;
-}
-
-# -----------------------------------------------------------------------------
-# $this->_extract_heading_config().
-# config for extract-heading.
-#
-sub _extract_heading_config
-{
-  my $config = [
-    {
-      # 1. ぷりんと楽譜.
-      url        => 'http://www.print-gakufu.com/*',
-      recv_limit => 8*1024,
-      extract    => qr{<p\s+class="topicPath">(.*?)</p>}s,
-      #remove     => qr/^ぷりんと楽譜 総合案内 ＞ /;
-    },
-    {
-      # 2. zakzak.
-      url        => 'http://www.zakzak.co.jp/*',
-      recv_limit => 10*1024,
-      extract    => qr{<font class="kijimidashi".*?>(.*?)</font>}s,
-    },
-    {
-      # 3. nikkei.
-      url        => 'http://www.nikkei.co.jp/*',
-      recv_limit => 16*1024,
-      extract => [
-        qr{<META NAME="TITLE" CONTENT="(.*?)">}s,
-        qr{<h3 class="topNews-ttl3">(.*?)</h3>}s,
-      ],
-      remove => qr/^NIKKEI NET：/,
-    },
-    {
-      # 4. nhkニュース.
-      url     => 'http://www*.nhk.or.jp/news/*',
-      extract => qr{<p class="newstitle">(.*?)</p>},
-    },
-    {
-      # 5. creative (timeout).
-      url     => 'http://*.creative.com/*',
-      timeout => 5,
-    },
-    {
-      # 6. soundhouse news.
-      url        => 'http://www.soundhouse.co.jp/shop/News.asp?NewsNo=*',
-      recv_limit => 50*1024,
-      extract    => qr{(<td class='honbun'>\s*<font size='\+1'><b>.*?</b></font>.*?)<br>}s,
-    },
-    {
-      # 7. trac changeset.
-      url        => '*/changeset/*',
-      extract    => qr{<dd class="message" id="searchable"><p>(.*?)</p>}s,
-    },
-    {
-      # 8a. amazon (page size).
-      url        => 'http://www.amazon.co.jp/*',
-      recv_limit => 15*1024,
-    },
-    {
-      # 8b. amazon (page size).
-      url        => 'http://www.amazon.com/*',
-      recv_limit => 15*1024,
-    },
-    {
-      # 9. ニコニコ動画 (メンテ画面).
-      status     => 503,
-      url        => 'http://www.nicovideo.jp/*',
-      extract    => sub{
-        if( m{<div class="mb16p4 TXT12">\s*<p>現在ニコニコ動画は(メンテナンス中)です。</p>\s*<p>(.*?)<br />}s )
-        {
-          "$1: $2";
-        }else
-        {
-          return;
-        }
-      },
-    },
-    {
-      # 10. sanspo.
-      url        => 'http://www.sanspo.com/*',
-      recv_limit => 5*1024,
-      extract    => qr{<h2>(.*?)</h2>}s,
-    },
-    {
-      # 11. sakura.
-      url        => 'http://www.sakura.ad.jp/news/archives/*',
-      recv_limit => 10*1024,
-      extract    => qr{<h3 class="newstitle">(.*?)</h3>}s,
-    },
-  ];
-  $config;
-}
-
-# -----------------------------------------------------------------------------
-# $this->_filter_extract_heading_prereq($block, $req, $when, $type).
-# (impl:fetchtitle-filter)
-# extract_heading/prereq.
-#
-sub _filter_extract_heading_prereq
-{
-  my $this  = shift;
-  my $block = shift;
-  my $req   = shift;
-  my $when  = shift;
-  my $type  = shift;
-
-  my $extract_list = $this->_extract_heading_config();
-
-  foreach my $conf (@$extract_list)
-  {
-    Mask::match($conf->{url}, $req->{url}) or next;
-    $DEBUG and $this->_debug($req, "debug: - $conf->{url}");
-    if( my $new_recv_limit = $conf->{recv_limit} )
-    {
-      $this->_apply_recv_limit($req, $new_recv_limit);
-      $DEBUG and $this->_debug($req, "debug: - recv_limit, $new_recv_limit");
-    }
-    if( my $new_timeout = $conf->{timeout} )
-    {
-      $this->_apply_timeout($req, $new_timeout);
-      $DEBUG and $this->_debug($req, "debug: - timeout, $new_timeout");
-    }
-  }
-
-  $this;
-}
-
-# -----------------------------------------------------------------------------
-# $this->_filter_extract_heading_response($block, $req, $when, $type).
-# (impl:fetchtitle-filter)
-# extract_heading/response.
-#
-sub _filter_extract_heading_response
-{
-  my $this  = shift;
-  my $block = shift;
-  my $req   = shift;
-  my $when  = shift;
-  my $type  = shift;
-
-  my $response = $req->{response};
-  if( !ref($response) )
-  {
-    $DEBUG and $this->_debug($req, "debug: - - skip/not ref");
-    return;
-  }
-  my $status = $req->{result}{status_code};
-
-  my $extract_list = $this->_extract_heading_config();
-
-  my $heading;
-
-  foreach my $conf (@$extract_list)
-  {
-    Mask::match($conf->{url}, $req->{url}) or next;
-    $DEBUG and $this->_debug($req, "debug: - $conf->{url}");
-
-    my $extract_status = $conf->{status} || 200;
-    if( $status != $extract_status )
-    {
-      $DEBUG and $this->_debug($req, "debug: - - status:$status not match with $extract_status");
-      next;
-    }
-
-    my $extract_list = $conf->{extract};
-    if( ref($extract_list) ne 'ARRAY' )
-    {
-      $extract_list = [$extract_list];
-    }
-    foreach my $_extract (@$extract_list)
-    {
-      $DEBUG and $this->_debug($req, "debug: - $_extract");
-      my $extract = $_extract; # sharrow-copy.
-      $extract = ref($extract) ? $extract : qr/\Q$extract/;
-      my @match;
-      if( ref($extract) eq 'CODE' )
-      {
-        local($_) = $req->{result}{decoded_content};
-        @match = $extract->($req);
-      }else
-      {
-        @match = $req->{result}{decoded_content} =~ $extract;
-      }
-      @match or next;
-      @match==1 && !defined($match[0]) and next;
-      $heading = $match[0];
-      last;
-    }
-    defined($heading) or next;
-    $DEBUG and $this->_debug($req, "debug: - $heading");
-
-    $heading = $this->_fixup_title($heading);
-
-    my $remove_list = $conf->{remove};
-    if( ref($remove_list) ne 'ARRAY' )
-    {
-      $remove_list = [$remove_list];
-    }
-    foreach my $_remove (@$remove_list)
-    {
-      my $remove = $_remove; # sharrow-copy.
-      $remove = ref($remove) ? $remove : qr/\Q$remove/;
-      $heading =~ s/$remove//;
-    }
-  }
-
-  if( defined($heading) && $heading =~ /\S/ )
-  {
-    $heading =~ s/\s+/ /g;
-    $heading =~ s/^\s+//;
-    $heading =~ s/\s+$//;
-
-    my $title = $req->{result}{result};
-    $title = defined($title) && $title ne '' ? "$heading - $title" : $heading;
-
-    $req->{result}{result} = $title;
-  }
-}
-
-
-# -----------------------------------------------------------------------------
 # $obj->_request_progress($req, $res).
 # 大抵はタイトル取得に全部を落とす必要がないので
 # ある程度取得したら切断しちゃう用.
@@ -1265,7 +1117,7 @@ sub _request_progress
   my $req  = shift;
   my $res  = shift; # HTTPClient response.
   my $rlen = length($res->{Content});
-  $DEBUG and $this->_debug($req, "debug: progress $rlen");
+  $DEBUG and $this->_debug($req, "debug: progress $rlen / $req->{recv_limit}");
   if( $rlen>=$req->{recv_limit} )
   {
     $DEBUG and $this->_debug($req, "debug: stop request.");
@@ -1283,6 +1135,7 @@ sub _request_finished
   my $req  = shift;
   my $res  = shift; # HTTPClient response.
 
+  $DEBUG and print __PACKAGE__."#_request_finished\n";
   $req->{response} = $res;
   $req->{httpclient} = undef;
   $DEBUG and $this->_debug($req, "debug: got response for $req->{full_ch_name} $req->{url}");
@@ -1300,10 +1153,15 @@ sub _close_request
 {
   my $this = shift;
   my $full_ch_name = shift;
-  while( my $reply = $this->_close_head_request($full_ch_name) )
+  $DEBUG and print __PACKAGE__."#_close_request\n";
+  while( my $req = $this->_close_head_request($full_ch_name) )
   {
+    my $reply = $req->{result}{result};
+    $DEBUG and print __PACKAGE__."#_close_head_request, reply = $reply\n";
     $this->_reply($full_ch_name => $reply);
+    #$this->_request_filter(closed => $req);
   }
+  $DEBUG and print __PACKAGE__."#_close_request, done\n";
 }
 
 # -----------------------------------------------------------------------------
@@ -1315,6 +1173,7 @@ sub _close_head_request
 {
   my $this = shift;
   my $full_ch_name = shift;
+  $DEBUG and print __PACKAGE__."#_close_head_request\n";
   if( !$full_ch_name )
   {
     $this->_error("_close_head_request: no ch name");
@@ -1398,7 +1257,7 @@ sub _close_head_request
     }
   }
 
-  $result->{result};
+  $req;
 }
 
 # -----------------------------------------------------------------------------
@@ -1421,25 +1280,70 @@ sub _redirect
   my $full_ch_name = $req->{full_ch_name};
 
   $DEBUG and $this->_debug($req, "debug: _redirect: ($count) $redir->{url}");
+
+  if( $redir->{url} !~ m{/} )
+  {
+    my $base = $req->{url};
+    $base =~ s{[^/]+$}{};
+    $redir->{url} = $base . $redir->{url};
+    $DEBUG and $this->_debug($req, "debug: _redirect: rewrite basename, $redir->{url}");
+  }elsif( $redir->{url} =~ m{^/} )
+  {
+    my ($scheme, $domain, $path) = $this->_parse_url($req);
+    if( !$scheme )
+    {
+      $this->_error("parsing url for redirect is failed: $req->{url}");
+      return;
+    }
+    $redir->{url} = "$scheme://$domain$redir->{url}";
+    $DEBUG and $this->_debug($req, "debug: _redirect: rewrite path-style, $redir->{url}");
+  }
+
   my $matched = $this->_check_mask($full_ch_name, $redir->{url});
   if( !$matched )
   {
+    $DEBUG and $this->_debug($req, "debug: _redirect: not in mask, no redirect");
     return;
   }
 
   # リダイレクトリクエストの生成.
   my $new_req = $this->_create_request($req->{full_ch_name}, $redir->{url}, $matched);
+  my $ini_req = $req->{ini_req} || $req;
   $new_req->{old}        = $req;
+  $new_req->{ini_req}    = $ini_req;
   $new_req->{redirected} = $count;
   $new_req->{requested_at} = $req->{requested_at};
+  $new_req->{cookie_jar} = $ini_req->{cookie_jar};
+  $this->_add_cookie_header($new_req, $ini_req->{cookie_jar});
   if( $redir->{recv_limit} )
   {
     $this->_apply_recv_limit($new_req, $redir->{recv_limit});
   }
-
-  if( $count > $MAX_REDIRECTS )
+  if( $req->{max_redirects} )
   {
-    $new_req->{response} = "too many redirects: $req->{redirected}";
+    $this->_apply_max_redirects($new_req, $req->{max_redirects});
+  }
+  if( $redir->{max_redirects} )
+  {
+    $this->_apply_max_redirects($new_req, $redir->{max_redirects});
+  }
+
+  $redir->{method} and $new_req->{method} = $redir->{method};
+  if( my $h = $redir->{headers} )
+  {
+    @{$new_req->{headers}}{keys %$h} = values %$h;
+  }
+  if( $redir->{content} )
+  {
+    $new_req->{content} = $redir->{content};
+    $new_req->{method}  ||= 'POST';
+    $new_req->{headers}{'Content-Length'} = length($new_req->{content});
+  }
+
+  $new_req->{response} = $redir->{response};
+  if( $count > ($new_req->{max_redirects} || $MAX_REDIRECTS) )
+  {
+    $new_req->{response} ||= "too many redirects: $req->{redirected}";
   }
 
   $new_req;
@@ -1455,6 +1359,7 @@ sub _parse_response
   my $res  = shift;
   my $req  = shift;
   my $full_ch_name = $req->{full_ch_name};
+  $DEBUG and $this->_debug($req, "_parse_response.");
 
   my $result = {
     result         => undef,
@@ -1502,6 +1407,12 @@ sub _parse_response
     $result->{content_length} = length($content);
   }
   $DEBUG and $this->_debug($full_ch_name, "debug: fetch ".length($content)." bytes");
+
+  # extract Cookies;
+  if( $headers->{'Set-Cookie'} )
+  {
+    $this->_extract_cookies($req);
+  }
 
   if( my $loc = $headers->{Location} )
   {
@@ -1587,7 +1498,7 @@ sub _parse_response
   $content = $ENCODER->new($content, $enc)->utf8;
   $result->{decoded_content} = $content;
 
-  my ($title) = $content =~ m{<title>\s*(.*?)\s*</title>}is;
+  my ($title) = $content =~ m{<title\s*>\s*(.*?)\s*</title\s*>}is;
   $DEBUG && !$title and $this->_debug($full_ch_name, "debug: no title elements in document");
 
   if( defined($title) )
@@ -1690,6 +1601,181 @@ sub _parse_response
   $result;
 }
 
+sub _parse_url
+{
+  my $this = shift;
+  my $url  = shift;
+  ref($url) and $url = $url->{url};
+
+  my ($scheme, $domain, $path) = $url =~ m{^(http|https)://(?:[^/]+\@)?([^/]+)(.*)};
+  if( !$scheme )
+  {
+    return;
+  }
+  $path =~ s/[\?#].*//;
+  $path =~ s{[^/]$}{};
+  ($scheme, $domain, $path);
+}
+
+sub _add_cookie_header
+{
+  my $this = shift;
+  my $req  = shift;
+  my $cookie_jar = shift;
+
+  $DEBUG and print __PACKAGE__."#_add_cookie_header, $req->{url}\n";
+
+  my ($scheme, $domain, $path) = $this->_parse_url($req);
+  if( !$scheme )
+  {
+    $this->_error("parsing url for cookie is failed: $req->{url}");
+    return;
+  }
+
+  my $ini_req = $req->{ini_req} || $req;
+  my @send_cookies;
+  foreach my $cookie (@$cookie_jar)
+  {
+    if( $cookie->{domain} ne $domain )
+    {
+      next;
+    }
+    if( $cookie->{_scheme} ne $scheme )
+    {
+      if( $cookie->{_scheme} eq 'https' && $cookie->{secure} )
+      {
+        next;
+      }
+    }
+    if( $path !~ /^\Q$cookie->{path}/ )
+    {
+      next;
+    }
+    push(@send_cookies, $cookie);
+  }
+  if( @send_cookies )
+  {
+    $this->_merge_cookies($req->{cookies}, \@send_cookies);
+  }
+}
+
+sub _extract_cookies
+{
+  my $this = shift;
+  my $req  = shift;
+  $DEBUG and $this->_debug($req, __PACKAGE__."#_extract_cookies, $req->{url}");
+
+  my $res  = $req->{response};
+  my $new_cookies = $res->{ListedHeader}{'Set-Cookie'} || [$res->{Header}{'Set-Cookie'}];
+  my $parsed_cookies = $this->_parse_cookies($req->{url}, $new_cookies);
+
+  if( $parsed_cookies )
+  {
+    $req->{parsed_cookies} = $parsed_cookies;
+
+    my $ini_req = $req->{ini_req} || $req;
+    $this->_merge_cookies($ini_req->{cookie_jar}, $parsed_cookies);
+  }
+}
+
+sub _parse_cookies
+{
+  my $this = shift;
+  my $url  = shift;
+  my $new_cookies = shift;
+
+  ref($url) and $url = $url->{url};
+
+  my ($scheme, $domain, $path) = $this->_parse_url($url);
+  if( !$scheme )
+  {
+    $this->_error("parsing url for cookie is failed: $url");
+    return;
+  }
+
+  my $now = time;
+  my $now_cmp;
+  my @parsed_cookies;
+
+  foreach my $cookie_str (@$new_cookies)
+  {
+    #print "cookie = $cookie_str\n";
+
+    my %attrs = (
+      _url         => $url,
+      _orig        => $cookie_str,
+      _got_at      => $now,
+      _scheme      => undef,
+      domain       => undef,
+      path         => undef,
+      name         => undef,
+      value        => undef,
+      expires      => undef,
+      _expires_cmp => undef,
+      _is_expired  => undef,
+      #secure       => undef,
+      #httponly     => undef,
+    );
+    my $is_first = 1;
+    foreach my $pair (split(/\s*;\s*/, $cookie_str))
+    {
+      my ($key, $val) = split(/\s*=\s*/, $pair, 2);
+      if( $is_first )
+      {
+        $attrs{name}  = $key; # keep encoded.
+        $attrs{value} = $val; # keep encoded.
+        $is_first     = undef;
+      }else
+      {
+        $attrs{lc $key} = defined($val) ? $val : 1;
+      }
+    }
+    if( $attrs{domain} && $attrs{domain} ne $domain )
+    {
+      $this->_error("_parse_cookies, domain $attrs{domain} does not match with one in url $domain, ignore this cookie");
+      next;
+    }
+    $attrs{_scheme}   = $scheme;
+    $attrs{domain}  ||= $domain;
+    $attrs{path}    ||= $path;
+    $attrs{_ident}    = join(';', @attrs{qw(_scheme domain path name)});
+
+    if( $attrs{expires} && $attrs{expires} =~ /^\w+, (\d+)-(\w+)-(\d+) (\d+):(\d+):(\d+) \S+$/ )
+    {
+      my ($mday, $mon, $year, $hour, $min, $sec) = ($1, $2, $3, $4, $5, $6);
+      my %mon_map = map{lc($_)}qw(Jan 1 Feb 2 Mar 3 Apr 4 May 5 Jun 6 Jul 7 Aug 8 Sep 9 Oct 10 Nov 11 Dec 12);
+      $mon = $mon_map{lc$mon} || 99;
+      my $cmp = sprintf('%04d-%02d-%02d %02d:%02d:%02d', $year, $mon, $mday, $hour, $min, $sec);
+      $attrs{_expires_cmp} = $cmp;
+      $now_cmp ||= do{
+        my @tm = localtime();
+        $tm[5] += 1900, $tm[4] += 1;
+        sprintf('%04d-%02d-%02d %02d:%02d:%02d', reverse @tm[0..5]);
+      };
+      $attrs{_is_expired} = $cmp lt $now_cmp; 
+    }
+    push(@parsed_cookies, \%attrs);
+    #$DEBUG and print "new cookie: ".Dumper(\%attrs);
+  }
+  @parsed_cookies ? \@parsed_cookies : undef;
+}
+
+sub _merge_cookies
+{
+  my $this = shift;
+  my $cookie_store   = shift;
+  my $parsed_cookies = shift;
+
+  foreach my $cookie (@$parsed_cookies)
+  {
+    @$cookie_store = grep{ $_->{_ident} ne $cookie->{_ident} } @$cookie_store;
+    if( !$cookie->{_is_expired} )
+    {
+      push(@$cookie_store, $cookie);
+    }
+  }
+}
+
 # -----------------------------------------------------------------------------
 # $title_text = $this->_fixup_title($title_html).
 # htmlから切り出したhtmlパーツのtext化.
@@ -1765,6 +1851,7 @@ sub _reply
   defined($reply_prefix) or $reply_prefix = '';
   defined($reply_suffix) or $reply_suffix = '';
   my $msg = $reply_prefix . $reply . $reply_suffix;
+  $msg =~ s/[\r\n]+/ /g;
 
   # メッセージが追い越しちゃわないように
   # いったんキュー経由.
@@ -1863,6 +1950,7 @@ sub _error
 sub _debug
 {
   my $this         = shift;
+  @_==1 and unshift(@_, '***');
   my $full_ch_name = shift;
   my $reply        = shift;
 
