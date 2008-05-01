@@ -174,6 +174,10 @@ sub add
           die "invalid header(without previous key): $line";
         }
         $reply->{Header}{$prevkey} .= $line;
+        if( $reply->{ListedHeader}{$prevkey} )
+        {
+          $reply->{ListedHeader}{$prevkey}[-1] .= $line;
+        }
         next;
       }
       my ($key, $val) = split(/:\s*/, $line, 2);
@@ -182,7 +186,12 @@ sub add
         die "invalid header(no splitter): $line";
       }
       $key =~ s/(?:(?<=-)|^)([a-z])/\U$1/g;
-      $reply->{Header}{$key} .= $val;
+      if( exists($reply->{Header}{$key}) )
+      {
+        $reply->{ListedHeader}{$key} ||= [ $reply->{Header}{$key} ];
+        push(@{$reply->{ListedHeader}{$key}}, $val);
+      }
+      $reply->{Header}{$key} = $val;
       $this->{prevkey} = $key;
     }
 
