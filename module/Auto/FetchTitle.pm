@@ -189,6 +189,7 @@ sub _reload_config
     }
     my $url_mask = shift @opts || '*';
     my $mask = {
+      _line    => $line,
       ch_mask  => $ch_mask,
       url_mask => $url_mask,
       conf     => \@conf,
@@ -261,14 +262,20 @@ sub _reload_plugins
   if( @plugins )
   {
     Module::Use->import(@plugins);
+    my $plugins_conf = $this->config->plugins;
+    $plugins_conf = ref($plugins_conf) && UNIVERSAL::isa($plugins_conf, 'Configuration::Block') && $plugins_conf;
     foreach my $pkgname (@plugins)
     {
+      my $mininame = $pkgname;
+      $mininame =~ s/^Auto::FetchTitle::Plugin:://;
       my $plugin = {
         module => $pkgname,
         object => undef,
       };
       eval "require $pkgname; 1"; $@ and RunLoop->shared_loop->notify_msg("load $pkgname: $@");
-      my $obj = eval{ $pkgname->new({}); };
+      my $conf = $plugins_conf && $plugins_conf->get($mininame);
+      $conf = ref($conf) && UNIVERSAL::isa($conf, 'Configuration::Block') ? $conf : Configuration::Block->new();
+      my $obj = eval{ $pkgname->new($conf); };
       if( !$obj )
       {
         RunLoop->shared_loop->notify_msg("- $pkgname ".($@?"error $@":"ignore"));
@@ -476,8 +483,10 @@ sub _create_request
     requested_at => time,
     started_at   => undef,
     active       => undef,
+    timer        => undef,
 
     httpclient   => undef,
+    addr_checked => undef,
     headers      => {},
     cookies      => [],    # cookies for this request.
     recv_limit   => $DEFAULT_RECV_LIMIT,
@@ -1116,14 +1125,90 @@ sub _request_progress
   my $this = shift;
   my $req  = shift;
   my $res  = shift; # HTTPClient response.
-  my $rlen = length($res->{Content});
+
+  my $rlen = defined($res->{Content}) ? length($res->{Content}) : 0;
   $DEBUG and $this->_debug($req, "debug: progress $rlen / $req->{recv_limit}");
+
+  if( my $addr = !$req->{addr_checked} && $req->{httpclient}->{addr} )
+  {
+    my $desc  = $this->_addr_check($addr);
+    if( !$desc )
+    {
+      $this->{addr_checked} = 'not local';
+    }else
+    {
+      my $allowed = $this->_is_allowed_local($req, $addr);
+      if( $allowed )
+      {
+        $this->{addr_checked} = "$desc, allowed";
+      }else
+      {
+        $this->{addr_checked} = "$desc, not allowed";
+        $req->{httpclient}->stop();
+        $this->_request_finished($req, "reserved address: $desc");
+      }
+    }
+  }
+
   if( $rlen>=$req->{recv_limit} )
   {
     $DEBUG and $this->_debug($req, "debug: stop request.");
     $req->{httpclient}->stop();
     $this->_request_finished($req, $res);
   }
+}
+
+sub _addr_check
+{
+  my $this = shift;
+  my $addr = shift;
+
+  my @digits = split(/\./, $addr);
+  my $addr_num = ($digits[0] << 24) | ($digits[1] << 16) | ($digits[2] << 8) | $digits[3];
+
+  my $cidrs = $this->_config_reserved_addresses();
+  foreach my $cidr (@$cidrs)
+  {
+    my $a0   = $cidr->[0];
+    my $mask = $cidr->[1];
+    ($addr_num & $mask) == $a0 or next;
+    return $cidr->[3];
+  }
+  return undef;
+}
+
+sub _is_allowed_local
+{
+  my $this = shift;
+  my $req  = shift;
+  my $addr = shift;
+
+  my ($addr_num) = $this->_split_cidr($addr);
+
+  foreach my $conf (@{$req->{mask}{conf}})
+  {
+    my $table = $conf->table;
+    foreach my $key (sort keys %$table)
+    {
+      my $block = $conf->get($key, 'block');
+      foreach my $cidr ($block->allow_local('all'))
+      {
+        my ($a0, $mask) = $this->_split_cidr($cidr);
+        if( !defined($a0) )
+        {
+          $this->_error("invalid cidr: $cidr");
+          next;
+        }
+        if( ($addr_num & $mask) != $a0 )
+        {
+          next;
+        }
+        return $cidr;
+      }
+    }
+  }
+  
+  return undef;
 }
 
 # -----------------------------------------------------------------------------
@@ -1980,6 +2065,77 @@ sub _debug
   $for_client->param(0, $ch_on_client);
   $for_client->remark('fill-prefix-when-sending-to-client', 1);
   RunLoop->shared_loop->broadcast_to_clients($for_client);
+}
+
+# -----------------------------------------------------------------------------
+# $list = $pkg->_config_reserved_addresses().
+#
+sub _config_reserved_addresses
+{
+  my $this = shift || __PACKAGE__;
+
+  our $RESERVED_ADDRESSES ||= [
+    [ 0, 0, '0.0.0.0/8',        'Current network',                     'RFC 1700', ],
+    [ 0, 0, '10.0.0.0/8',       'Private network',                     'RFC 1918', ],
+    [ 0, 0, '14.0.0.0/8',       'Public data networks',                'RFC 1700', ],
+    [ 0, 0, '39.0.0.0/8',       'Reserved',                            'RFC 1797', ],
+    [ 0, 0, '127.0.0.0/8',      'Loopback',                            'RFC 3330', ],
+    [ 0, 0, '128.0.0.0/16',     'Reserved (IANA)',                     'RFC 3330', ],
+    [ 0, 0, '169.254.0.0/16',   'Link-Local',                          'RFC 3927', ],
+    [ 0, 0, '172.16.0.0/12',    'Private network',                     'RFC 1918', ],
+    [ 0, 0, '191.255.0.0/16',   'Reserved (IANA)',                     'RFC 3330', ],
+    [ 0, 0, '192.0.0.0/24',     'Reserved (IANA)',                     'RFC 3330', ],
+    [ 0, 0, '192.0.2.0/24',     'Documentation and example code',      'RFC 3330', ],
+    [ 0, 0, '192.88.99.0/24',   'IPv6 to IPv4 relay',                  'RFC 3068', ],
+    [ 0, 0, '192.168.0.0/16',   'Private network',                     'RFC 1918', ],
+    [ 0, 0, '198.18.0.0/15',    'Network benchmark tests',             'RFC 2544', ],
+    [ 0, 0, '223.255.255.0/24', 'Reserved (IANA)',                     'RFC 3330', ],
+    [ 0, 0, '255.255.255.255',  'Broadcast',                           '',         ],
+    [ 0, 0, '224.0.0.0/4',      'Multicasts (former Class D network)', 'RFC 3171', ],
+    [ 0, 0, '240.0.0.0/4',      'Reserved (former Class E network)',   'RFC 1700', ],
+  ];
+  if( !$RESERVED_ADDRESSES->[-1][0] )
+  {
+    foreach my $info (@$RESERVED_ADDRESSES)
+    {
+      my $cidr = $info->[2];
+      my ($addr, $mask) = $this->_split_cidr($cidr);
+      defined($addr) or die "invalid cidr: $cidr";
+      $info->[0] = $addr;
+      $info->[1] = $mask;
+    }
+  }
+  $RESERVED_ADDRESSES;
+}
+
+# -----------------------------------------------------------------------------
+# ($addr, $mask) = $pkg->_split_cidr($cidr).
+#
+sub _split_cidr
+{
+  my $this = shift;
+  my $cidr = shift;
+
+  my @digits = split(/\D+/, $cidr);
+  my ($addr, $mask);
+  if( @digits == 5 )
+  {
+    $addr = ($digits[0] << 24) | ($digits[1] << 16) | ($digits[2] << 8) | $digits[3];
+    $mask = -1-((1<<(32-$digits[4]))-1);
+  }elsif( @digits == 4 )
+  {
+    $addr = ($digits[0] << 24) | ($digits[1] << 16) | ($digits[2] << 8) | $digits[3];
+    $mask = -1;
+  }else
+  {
+    return ();
+  }
+
+  $mask &= 0xFFFF_FFFF;
+  $addr &= $mask;
+
+  wantarray or die "_split_cidr should call with array-context";
+  ($addr, $mask);
 }
 
 # -----------------------------------------------------------------------------
