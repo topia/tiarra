@@ -46,11 +46,13 @@ sub new {
     $this->{socket} = undef;
     $this->{hook} = undef;
     $this->{timeout_timer} = undef;
+    $this->{shutdown_wr_after_writing} = undef;
 
     $this->{expire_time} = undef; # タイムアウト時刻
 
     $this->{parser} = Tools::HTTPParser->new( response => 1 );
 
+    $DEBUG and print __PACKAGE__."#new, $this, $this->{url}\n";
     $this;
 }
 
@@ -60,8 +62,9 @@ sub new {
 sub DESTROY
 {
   my $this = shift;
-  $DEBUG and print __PACKAGE__."#DESTROY($this).\n";
+  $DEBUG and print __PACKAGE__."#DESTROY($this), $this->{url}.\n";
   $this->stop();
+  $DEBUG and print __PACKAGE__."#DESTROY($this), $this->{url}, done.\n";
 }
 
 # -----------------------------------------------------------------------------
@@ -124,6 +127,12 @@ sub start {
 	$this->{header}{Host} = $host;
     }
 
+    if (!$this->{header}{Connection}) {
+      # HTTP/1.1 だと Keep-Alive がデフォルトだけど,
+      # ひとまず気にしない….
+      $this->{header}{Connection} = 'close';
+    }
+
     # ホスト名にポートが含まれていたら分解。
     my $port = $this->{with_ssl} ? 443 : 80;
     if ($host =~ s/:(\d+)$//) {
@@ -145,6 +154,21 @@ sub start {
     if (!defined $this->{socket}->sock) {
 	# 接続不可能
 	croak "Failed to connect: $host:$port, $@";
+    }
+
+    if( my $clen = $this->{header}{'Content-Length'} )
+    {
+      if( !defined($this->{content}) )
+      {
+        $this->_end("Content-Length: $clen, but no content.");
+        return;
+      }
+      my $alen = length($this->{content});
+      if( $clen != $alen )
+      {
+        $this->_end("Content-Length: $clen, but actual length is $alen");
+        return;
+      }
     }
 
     # 必要ならタイムアウト用のタイマーをインストール
@@ -172,7 +196,9 @@ sub start {
     $this->{socket}->eol("");
     $this->{socket}->send_reserve( Tools::HTTPParser->to_string($req) );
     #$DEBUG and print Dumper($req);use Data::Dumper;
+    #$DEBUG and print "<<sendbuf>>\n".$this->{socket}->sendbuf."<</sendbuf>>\n";;
     $this->{socket}->eol( pack("C*", map{rand(256)}1..32) );
+    $this->{shutdown_wr_after_writing} = $this->{header}{Connection} =~ /close/i || $this->{header}{Connection} !~ /Keep-Alive/i;
 
     $this->{hook} = RunLoop::Hook->new(
 	sub {
@@ -190,11 +216,15 @@ sub _main
 {
   my $this = shift;
 
-  # タイムアウト判定
-  if( $this->{expire_time} and time >= $this->{expire_time} )
+  #$DEBUG and print ">> ".__PACKAGE__."#_main($this) $this->{url} ...\n";
+  #$DEBUG and print "<<sendbuf>>\n".$this->{socket}->sendbuf."<</sendbuf>>\n";;
+
+  if( $this->{shutdown_wr_after_writing} && $this->{socket}->sendbuf eq '' )
   {
-    $this->_end("timeout");
-    return;
+    $this->{shutdown_wr_after_writing} = undef;
+    my $SHUT_WR = 1;
+    $DEBUG and print __PACKAGE__."#_main, shutdown SHUT_WR.\n";
+    $this->{socket}->shutdown($SHUT_WR);
   }
 
   my $progress = '';
@@ -236,10 +266,11 @@ sub _main
     my $success;
     if( $this->{parser}->isa('Tools::HTTPParser') )
     {
-      $success = !$this->{parser}{rest};
+      $success = !defined($this->{parser}{rest}) || $this->{parser}{rest} eq '';
     }else
     {
       $this->{parser}->object->content( $this->{parser}->data );
+      $success = $this->{parser}->extra == 0;
     }
     if( $success )
     {
@@ -248,7 +279,16 @@ sub _main
     {
       $this->_end("unexpected disconnect by server");
     }
+    return;
   }
+
+  # タイムアウト判定
+  if( $this->{expire_time} and time >= $this->{expire_time} )
+  {
+    $this->_end("timeout");
+    return;
+  }
+  #$DEBUG and print ">> ".__PACKAGE__."#_main leave.\n";
 }
 
 # -----------------------------------------------------------------------------
@@ -262,15 +302,17 @@ sub _end {
     $this->stop;
     
     if ($err) {
-	$this->{callback}->($err);
+      $this->{callback}->($err);
     }
     else {
-	my $res = $this->{parser}->object;
-	if( UNIVERSAL::isa($res, 'HTTP::Message') )
-	{
-	  $res = Tools::HTTPParser->_from_lwp($res);
-	}
-	$this->{callback}->($res);
+      my $res = $this->{parser}->object;
+      if( UNIVERSAL::isa($res, 'HTTP::Message') )
+      {
+        $DEBUG and print __PACKAGE__."#stop($this) .. convert from lwp\n";
+        $res = Tools::HTTPParser->_from_lwp($res);
+      }
+      $DEBUG and print __PACKAGE__."#stop($this) .. callback with success\n";
+      $this->{callback}->($res);
     }
 }
 
@@ -290,8 +332,11 @@ sub stop {
     $DEBUG and print __PACKAGE__."#stop($this).\n";
 
     $this->{socket}->disconnect if $this->{socket} && $this->{socket}->connected;
+    #$DEBUG and print __PACKAGE__."#stop($this) .. disconnect ok\n";
     $this->{hook}->uninstall if $this->{hook};
+    #$DEBUG and print __PACKAGE__."#stop($this) .. hook.uninstall ok\n";
     $this->{timeout_timer}->uninstall if $this->{timeout_timer};
+    #$DEBUG and print __PACKAGE__."#stop($this) .. timer.uninstall ok\n";
 
     $this->{socket} =
       $this->{hook} =
