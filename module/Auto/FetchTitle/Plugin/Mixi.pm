@@ -240,9 +240,7 @@ sub filter_prereq
 
   $ctx->_apply_recv_limit($req, 12*1024);
 
-print "mixi-cookies: ".Dumper($this->{cookie_jar});use Data::Dumper;
   $ctx->_add_cookie_header($req, $this->{cookie_jar});
-print "req-cookies: ".Dumper($req->{cookies});use Data::Dumper;
 }
 
 # -----------------------------------------------------------------------------
@@ -309,7 +307,7 @@ sub _do_login
     $value &&= $ctx->_unescapeHTML($value);
     if( $name eq 'email' )
     {
-      $value = $ctx->_decode_value($block->mixi_user);
+      $value = $ctx->_decode_value($this->{config}->mixi_user);
       if( !$value )
       {
         $ctx->_debug($req, "no mixi-user");
@@ -318,7 +316,7 @@ sub _do_login
     }
     if( $name eq 'password' )
     {
-      $value = $ctx->_decode_value($block->mixi_pass);
+      $value = $ctx->_decode_value($this->{config}->mixi_pass);
       if( !$value )
       {
         $ctx->_debug($req, "no mixi-pass");
