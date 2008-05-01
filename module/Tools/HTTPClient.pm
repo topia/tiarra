@@ -41,12 +41,18 @@ sub new {
     $this->{timeout} = $args{Timeout}; # undef可
     $this->{debug}   = $args{Debug};
 
+    $this->{host} = undef;
+    $this->{port} = undef;
+    $this->{addr} = undef;
+    $this->{path} = undef;
+
     $this->{callback} = undef;
     $this->{progress_callback} = undef;
     $this->{socket} = undef;
     $this->{hook} = undef;
     $this->{timeout_timer} = undef;
     $this->{shutdown_wr_after_writing} = undef;
+    $this->{stopped} = undef;
 
     $this->{expire_time} = undef; # タイムアウト時刻
 
@@ -139,47 +145,132 @@ sub start {
 	$port = $1;
     }
 
-    # 接続
-    if( $this->{with_ssl} )
-    {
-      $this->{socket} = Tools::HTTPClient::SSL->new()->connect($host, $port);
-    }else
-    {
-      $this->{socket} = LinedINETSocket->new()->connect($host, $port);
-    }
-    if (!defined $this->{socket}) {
-	# 接続不可能
-	croak "Failed to connect: $host:$port";
-    }
-    if (!defined $this->{socket}->sock) {
-	# 接続不可能
-	croak "Failed to connect: $host:$port, $@";
-    }
+    $this->{host} = $host;
+    $this->{port} = $port;
+    $this->{path} = $path;
 
+    # Content-Length をもっていたらチェック.
     if( my $clen = $this->{header}{'Content-Length'} )
     {
       if( !defined($this->{content}) )
       {
-        $this->_end("Content-Length: $clen, but no content.");
-        return;
+        $this->_delay(sub{ $this->_end("Content-Length: $clen, but no content."); });
+        return $this;
       }
       my $alen = length($this->{content});
       if( $clen != $alen )
       {
-        $this->_end("Content-Length: $clen, but actual length is $alen");
-        return;
+        $this->_delay(sub{ $this->_end_delay("Content-Length: $clen, but actual length is $alen"); });
+        return $this;
       }
     }
 
     # 必要ならタイムアウト用のタイマーをインストール
     if ($this->{timeout}) {
-	$this->{expire_time} = time + $this->{timeout};
-	$this->{timeout_timer} = Timer->new(
-	    After => $this->{timeout},
-	    Code => sub {
-		$this->{timeout_timer} = undef;
-		$this->_main;
-	    })->install;
+        $this->{expire_time} = time + $this->{timeout};
+        $this->{timeout_timer} = Timer->new(
+          After => $this->{timeout},
+          Code => sub {
+              $this->{timeout_timer} = undef;
+              if( $this->{socket} )
+              {
+                $this->_main;
+              }elsif( !$this->{addr} )
+              {
+                $this->_end("dns timeout");
+              }else
+              {
+                $this->_end("timeout");
+              }
+        })->install;
+    }
+
+    if( $this->is_valid_address($host) )
+    {
+      $this->{addr} = $host;
+      $this->_delay( sub { $this->_resolved($host); } );
+    }else
+    {
+      my $dns_reply = \&_dns_reply;
+      Tiarra::Resolver->resolve(addr => $host, sub{ $this->$dns_reply(@_) });
+    }
+    $this;
+}
+
+sub is_valid_address
+{
+  my $this = shift;
+  my $addr = shift;
+
+  # ipv4.
+  if( Socket::inet_aton($addr) )
+  {
+    return $addr;
+  }
+
+  # ipv6.
+  if( defined(&Socket6::inet_pton) && Socket6::inet_pton(Socket6::AF_INET6(), $addr) )
+  {
+    return $addr;
+  }
+
+  undef;
+}
+
+sub _dns_reply
+{
+    my $this = shift;
+    if( !$this->can('new') )
+    {
+      # this module is unloaded.
+      return;
+    }
+    my $resolved = shift;
+    my $addr_list = $resolved->answer_data;
+    my $addr = $addr_list->[0];
+    if( !$addr )
+    {
+      $this->_end("no address for ".$resolved->query_data);
+      return;
+    }
+    $this->_resolved($addr);
+}
+
+sub _resolved
+{
+    my $this = shift;
+    my $addr = shift;
+
+    $this->{addr} = $addr;
+    my $port = $this->{port};
+
+    if( $this->{progress_callback} )
+    {
+      # 進展があったのでコールバック.
+      $this->{progress_callback}->($this->{parser}->object);
+      if( $this->{stopped} )
+      {
+        return;
+      }
+    }
+
+    # 接続
+    if( $this->{with_ssl} )
+    {
+      $this->{socket} = Tools::HTTPClient::SSL->new()->connect($addr, $port);
+    }else
+    {
+      $this->{socket} = LinedINETSocket->new()->connect($addr, $port);
+    }
+    if (!defined $this->{socket}) {
+	# 接続不可能
+	$this->_end("Failure on connection: $this->{host}:$port ($addr)");
+	return;
+    }
+    if (!defined $this->{socket}->sock) {
+	# 接続不可能
+	$this->_end("Failure on connection (*): $this->{host}:$port ($addr)");
+	return;
     }
 
     # リクエストを発行し、フックをかけて終了。
@@ -188,7 +279,7 @@ sub start {
     my $req = {
       Type     => 'request',
       Method   => $this->{method},
-      Path     => $path,
+      Path     => $this->{path},
       Protocol => 'HTTP/1.0',
       Header   => $this->{header},
       ($this->{content} ? (Content  => $this->{content}) : ()),
@@ -308,12 +399,23 @@ sub _end {
       my $res = $this->{parser}->object;
       if( UNIVERSAL::isa($res, 'HTTP::Message') )
       {
-        $DEBUG and print __PACKAGE__."#stop($this) .. convert from lwp\n";
+        $DEBUG and print __PACKAGE__."#_end($this) .. convert from lwp\n";
         $res = Tools::HTTPParser->_from_lwp($res);
       }
-      $DEBUG and print __PACKAGE__."#stop($this) .. callback with success\n";
+      $DEBUG and print __PACKAGE__."#_end($this) .. callback with success\n";
       $this->{callback}->($res);
     }
+}
+
+sub _delay
+{
+  my $this = shift;
+  my $sub  = shift;
+
+  Timer->new(
+    After => -1,
+    Code  => $sub,
+  )->install();
 }
 
 # -----------------------------------------------------------------------------
@@ -337,6 +439,8 @@ sub stop {
     #$DEBUG and print __PACKAGE__."#stop($this) .. hook.uninstall ok\n";
     $this->{timeout_timer}->uninstall if $this->{timeout_timer};
     #$DEBUG and print __PACKAGE__."#stop($this) .. timer.uninstall ok\n";
+
+    $this->{stopped} = 1;
 
     $this->{socket} =
       $this->{hook} =
