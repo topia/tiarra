@@ -30,7 +30,7 @@ our $RE_WHITESPACES = qr/(?:\s|$U_IDEOGRAPHIC_SPACE)+/;
 
 # デバッグフラグ.
 # configや$this->{debug}の値もlocal()内で反映される.
-our $DEBUG = 1;
+our $DEBUG = 0;
 
 our $ENCODER = 'Unicode::Japanese';
 use Unicode::Japanese;
