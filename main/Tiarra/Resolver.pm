@@ -15,6 +15,18 @@ use Tiarra::Utils;
 Tiarra::Utils->define_array_attr_accessor(
     0, qw(id timeout query_type query_data answer_status answer_data));
 
+# attributes:
+#   timeout: not implemented yet
+#   query_type: resolver dependant data
+#   query_data: resolver dependant data
+#   answer_status: status
+#     * ANSWER_OK: resolved
+#     * ANSWER_NOT_FOUND: not found
+#     * ANSWER_TIMEOUT: timeout (not implemented yet)
+#     * ANSWER_NOT_SUPPORTED: not supported type (data: message)
+#     * ANSWER_INTERNAL_ERROR: internal error occurred (data: message)
+#   answer_data: data
+
 sub new {
     my $class = shift;
 
@@ -86,9 +98,14 @@ sub _new {
 					  $class,
 					  $this->{ask_queue},
 					  $this->{reply_queue});
-	$this->{mainloop} = Tiarra::WrapMainLoop->new(
+	$this->{main_timer} = Tiarra::WrapMainLoop->new(
 	    type => 'timer',
-	    interval => 2,
+	    interval => 1,
+	    closure => sub {
+		$this->mainloop;
+	    });
+	$this->{main_loop} = Tiarra::WrapMainLoop->new(
+	    type => 'mainloop',
 	    closure => sub {
 		$this->mainloop;
 	    });
@@ -107,6 +124,7 @@ sub destruct {
 
     $this->{ask_queue}->enqueue(undef);
     $this->{thread}->join;
+    $this->mainloop;
 }
 
 sub resolve {
@@ -153,13 +171,16 @@ sub resolve {
 	$this->{closures}->{$entry->id} = $closure;
 	if ($my_use_threads) {
 	    $this->{ask_queue}->enqueue($entry->serialize);
-	    $this->{mainloop}->lazy_install;
+	    $this->{main_timer}->lazy_install;
+	    $this->{main_loop}->lazy_install;
 	    undef;
 	} else {
 	    $this->_call($this->_resolve($entry));
 	}
     } else {
-	undef;
+	$entry->answer_status($entry->ANSWER_NOT_SUPPORTED);
+	$entry->answer_data("typename '$type' not supported");
+	$closure->($entry);
     }
 }
 
@@ -226,7 +247,8 @@ sub _call {
     $this->{closures}->{$id}->($entry);
     delete $this->{closures}->{$id};
     if (!%{$this->{closures}} && $use_threads) {
-	$this->{mainloop}->lazy_uninstall;
+	$this->{main_timer}->lazy_uninstall;
+	$this->{main_loop}->lazy_uninstall;
     }
     $entry;
 }
@@ -343,6 +365,7 @@ sub _resolve {
     } else {
 	carp 'unsupported query type('.$entry->query_type.')';
 	$entry->answer_status($entry->ANSWER_NOT_SUPPORTED);
+	$entry->answer_data('unsupported query type('.$entry->query_type.')');
     }
 
     if ($resolved) {
