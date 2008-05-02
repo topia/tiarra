@@ -361,19 +361,23 @@ sub want_to_write {
     1;
 }
 
-sub write { shift->proc_sock }
-sub read { shift->proc_sock }
+sub write { shift->proc_sock('write') }
+sub read { shift->proc_sock('read') }
 sub exception { shift->_handle_sock_error }
 
 sub proc_sock {
     my $this = shift;
+    my $state = shift;
 
-    my $select = IO::Select->new($this->sock);
-    if (!$select->can_write(0)) {
+    if ($state eq 'write') {
 	my $error = $this->errno;
 	$this->cleanup;
-	$this->close;
-	$this->_connect_warn_try_next($error, 'cant write');
+	if ($error) {
+	    $this->close;
+	    $this->_connect_warn_try_next($error);
+	} else {
+	    $this->_call;
+	}
     } elsif (!$this->sock->connect($this->{connecting}->{saddr})) {
 	if ($!{EISCONN} ||
 		($this->_is_winsock && (($! == 10022) || $!{EWOULDBLOCK} ||
@@ -385,8 +389,17 @@ sub proc_sock {
 		$this->sock_errno_to_msg($!, 'connection try error'), $!);
 	    $this->_handle_sock_error;
 	}
+    } elsif (!IO::Select->new($this->sock)->can_write(0)) {
+	$this->_warn('cannot write socket error');
+	my $error = $this->errno;
+	$this->cleanup;
+	$this->close;
+	$this->_connect_warn_try_next($error, "cant write on $state");
     } else {
-	$this->_warn('connect successful, why called this?');
+	# ignore first ready-to-read
+	if ($state ne 'read' || $this->{unexpected_want_to_read_count}++) {
+	    $this->_warn("connect successful, why called this on $state?");
+	}
     }
 }
 
