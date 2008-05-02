@@ -199,7 +199,11 @@ sub update_modules {
 	# 作り直すモジュール。
 	# %loaded_modsに古い物が入っているので、破棄する。
 	$show_msg->("Configuration of the module ".$_->block_name." has been changed. It will be restarted.");
-	$loaded_mods{$_->block_name}->destruct;
+	eval {
+	    $loaded_mods{$_->block_name}->destruct;
+	}; if ($@) {
+	    $this->_runloop->notify_error($@);
+	}
 	$this->remove_from_blacklist($_->block_name);
 	$_->block_name => $this->_load($_);
     } @$changed;
