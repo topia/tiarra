@@ -32,7 +32,7 @@ package Timer;
 use strict;
 use warnings;
 use Carp;
-use RunLoop;
+#use RunLoop; # lazy loading
 use Tiarra::Utils;
 utils->define_attr_accessor(0, qw(interval name));
 
@@ -114,7 +114,10 @@ sub install {
 	croak "This Timer has been already installed to RunLoop.\n";
     }
 
-    $runloop = RunLoop->shared_loop unless defined $runloop;
+    if (!defined $runloop) {
+	require RunLoop;
+	$runloop = RunLoop->shared_loop;
+    }
     $runloop->install_timer($this);
 
     $this->{runloop} = $runloop;

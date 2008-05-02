@@ -11,7 +11,7 @@ use strict;
 use warnings;
 use Carp;
 use Tiarra::Utils;
-use RunLoop;
+#use RunLoop; # lazy loading
 use Socket;
 our $is_winsock = $^O =~ /^MSWin32/;
 utils->define_attr_getter(0, qw(sock installed));
@@ -32,6 +32,9 @@ sub new {
 		utils->get_first_defined($opts{_subject}, 'socket').' registered',
 		($opts{_caller} || 0))),
     };
+    if (!defined $this->{runloop}) {
+	require RunLoop;
+    }
     bless $this, $class;
 }
 
