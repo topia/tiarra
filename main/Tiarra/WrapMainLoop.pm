@@ -23,10 +23,11 @@ sub new {
 
     my $this = {
 	installed => 0,
+	interval => 5,
     };
     bless $this, $class;
     $this->type(utils->get_first_defined($opt{type}, 'timer'));
-    $this->interval(utils->get_first_defined($opt{interval}, 5));
+    $this->interval($opt{interval});
     $this->_closure(utils->get_first_defined($opt{closure}, undef));
     $this->name(utils->get_first_defined(
 	$opt{name},
