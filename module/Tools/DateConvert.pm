@@ -91,7 +91,7 @@ sub replace {
     $time = time() unless defined $time;
     my (@times) = localtime($time);
     my ($temp) = $time;
-    local $use_posix;
+    local $use_posix = $use_posix;
     if ($pureperl) { $use_posix = 0; }
 
     $str =~ s/%([+-]\d+[Oo]|.)/_replace_real($1, $time, \$temp, \@times)/eg;
