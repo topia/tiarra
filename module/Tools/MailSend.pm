@@ -54,7 +54,7 @@ sub _get_server_index {
   $data{'use_pop3'} = $arg{'use_pop3'} || 0;
   $data{'pop3_host'} = $arg{'pop3_host'} || 'localhost';
   $data{'pop3_port'} = $arg{'pop3_port'} || getservbyname('pop3', 'tcp') || 110;
-  $data{'pop3_user'} = $arg{'pop3_user'} || (getpwuid($>))[0];
+  $data{'pop3_user'} = $arg{'pop3_user'} || eval { (getpwuid($>))[0]} || '';
   $data{'pop3_pass'} = $arg{'pop3_pass'} || '';
   $data{'pop3_expire'} = $arg{'pop3_expire'} || 0;
   $data{'smtp_host'} = $arg{'smtp_host'} || 'localhost';
