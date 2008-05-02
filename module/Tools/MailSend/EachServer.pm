@@ -31,7 +31,7 @@ sub new {
 	use_pop3  => 0,
 	pop3_host => 'localhost',
 	pop3_port => getservbyname('pop3', 'tcp') || 110,
-	pop3_user => (getpwuid($>))[0],
+	pop3_user => eval { (getpwuid($>))[0] } || '',
 	pop3_pass => '',
 	pop3_expire => 0,
 
@@ -104,7 +104,7 @@ sub get_data {
 	grep {$name eq $_} 
 	    (qw(local cleaner use_pop3), 
 	     (map { 'pop3_' . $_ } qw(host port user pass expire)), 
-	     (map { 'smtp_' . $_ } qw(host port fqdn)));
+	     (map { 'smtp_' . $_ } qw(host port fqdn user pass)));
     return $this->{$name};
 }
 
@@ -550,7 +550,7 @@ sub _do_smtp {
 	    });
 	    $sock->send_reserve('Date: ' . do {
 		# example: Tue, 04 Mar 2003 11:10:24 +0900
-		Tools::DateConvert::replace('%a, %d %b %Y %H:%M:%S %z', time());
+		Tools::DateConvert::replace('%a, %d %b %Y %H:%M:%S %z', time(), 1);
 	    });
 	    $sock->send_reserve('From: ' . $struct->{from}) if defined($struct->{from});
 	    $sock->send_reserve('');
