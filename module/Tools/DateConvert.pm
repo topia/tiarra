@@ -15,7 +15,7 @@ use strict;
 use warnings;
 use Carp;
 
-my ($can_use_posix, $use_posix);
+our ($can_use_posix, $use_posix);
 
 eval 'use POSIX';
 unless ($@) { # successful loading POSIX;
@@ -65,7 +65,7 @@ sub unimport {
     foreach (@_) {
 	if ($_ eq 'PurePerl') {
 	    $use_posix = $can_use_posix;
-	    carp 'can\'t use posix. no longer effective.' unless $use_posix;
+	    #carp 'can\'t use posix. no longer effective.' unless $use_posix;
 	}
     }
 }
@@ -87,10 +87,12 @@ sub force {
 }
 
 sub replace {
-    my ($str, $time) = @_;
+    my ($str, $time, $pureperl) = @_;
     $time = time() unless defined $time;
     my (@times) = localtime($time);
     my ($temp) = $time;
+    local $use_posix;
+    if ($pureperl) { $use_posix = 0; }
 
     $str =~ s/%([+-]\d+[Oo]|.)/_replace_real($1, $time, \$temp, \@times)/eg;
     return $str;
