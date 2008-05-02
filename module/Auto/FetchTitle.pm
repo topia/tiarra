@@ -128,6 +128,14 @@ sub new
   $this->_reload_config();
   $this->_reload_plugins();
 
+  my $weaken_this = $this;
+  weaken($weaken_this);
+  $this->{conf_hook} = Configuration::Hook->new(sub{
+    my $this = $weaken_this or return;
+    $this->_reload_config();
+    $this->_reload_plugins();
+  })->install('reloaded');
+
   return $this;
 }
 
@@ -1145,6 +1153,7 @@ sub _request_progress
       {
         $this->{addr_checked} = "$desc, not allowed";
         $req->{httpclient}->stop();
+        $this->_debug($req, "reserved address: $desc ($addr)");
         $this->_request_finished($req, "reserved address: $desc");
       }
     }
@@ -1163,7 +1172,31 @@ sub _addr_check
   my $this = shift;
   my $addr = shift;
 
-  my @digits = split(/\./, $addr);
+  $DEBUG and print __PACKAGE__."#_addr_check: $addr\n";
+
+  my $ipv4 = $this->_addr_check_ipv4($addr);
+  if( $ipv4 )
+  {
+    return $ipv4;
+  }
+
+  my $ipv6 = $this->_addr_check_ipv6($addr);
+  if( $ipv6 )
+  {
+    return $ipv6;
+  }
+
+  return undef;
+}
+
+sub _addr_check_ipv4
+{
+  my $this = shift;
+  my $addr = shift;
+
+  my @digits = $addr =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)\z/;
+  @digits or  return undef;
+  grep{ $_>255 || /^0./ } @digits and return undef;
   my $addr_num = ($digits[0] << 24) | ($digits[1] << 16) | ($digits[2] << 8) | $digits[3];
 
   my $cidrs = $this->_config_reserved_addresses();
@@ -1174,6 +1207,16 @@ sub _addr_check
     ($addr_num & $mask) == $a0 or next;
     return $cidr->[3];
   }
+  return undef;
+}
+
+sub _addr_check_ipv6
+{
+  my $this = shift;
+  my $addr = shift;
+
+  # not supported.
+
   return undef;
 }
 

@@ -16,6 +16,8 @@ use Module::Use qw(Tools::HTTPClient::SSL);
 use Tools::HTTPParser;
 use Module::Use qw(Tools::HTTPParser);
 
+our $HAS_IPV6 = Tiarra::OptionalModules->ipv6;
+
 # 本当はHTTP::RequestとHTTP::Responseを使いたいが…
 
 our $DEBUG = 0;
@@ -187,8 +189,10 @@ sub start {
 
     if( $this->is_valid_address($host) )
     {
-      $this->{addr} = $host;
-      $this->_delay( sub { $this->_resolved($host); } );
+      $this->_delay( sub { $this->_resolved($host, 'literal'); } );
+    }elsif( my $addr = $this->_resolve_locally($host) )
+    {
+      $this->_delay( sub { $this->_resolved($addr, 'local-resolve'); } );
     }else
     {
       my $dns_reply = \&_dns_reply;
@@ -203,18 +207,43 @@ sub is_valid_address
   my $addr = shift;
 
   # ipv4.
-  if( Socket::inet_aton($addr) )
+  my @ipv4 = $addr =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)\z/;
+  if( @ipv4 && !grep{ $_>255 || /^0./ }@ipv4 )
   {
     return $addr;
   }
 
-  # ipv6.
-  if( defined(&Socket6::inet_pton) && Socket6::inet_pton(Socket6::AF_INET6(), $addr) )
-  {
-    return $addr;
-  }
+  # ipv6 is not supported..
 
   undef;
+}
+
+sub _resolve_locally
+{
+  my $this = shift;
+  my $host = shift;
+
+  my $addr;
+  my $timedout;
+  local($SIG{ALRM}) = sub{ die $timedout="ALRM" };
+  eval{
+    alarm(1); # can interrupt inet_[ap]ton?
+    if( $HAS_IPV6 )
+    {
+      my $dns_reply = \&_dns_reply;
+      my $addr_bin = Socket6::inet_pton(Socket6::AF_INET6(), $host);
+      $addr = $addr_bin && Socket6::inet_ntop(Socket6::AF_INET6(), $addr_bin);
+    }
+    if( !$addr )
+    {
+      my $addr_bin = Socket::inet_aton($host);
+      $addr = $addr_bin && Socket::inet_ntoa($addr_bin);
+    }
+    alarm(0);
+  };
+  $@ && !$timedout and die;
+    
+  return $addr;
 }
 
 sub _dns_reply
@@ -233,16 +262,25 @@ sub _dns_reply
       $this->_end("no address for ".$resolved->query_data);
       return;
     }
-    $this->_resolved($addr);
+    $this->_resolved($addr, 'dns');
 }
 
 sub _resolved
 {
     my $this = shift;
     my $addr = shift;
+    my $resolver = shift;
+
+    $DEBUG and print __PACKAGE__."#_resolved, $resolver / $this->{host} => $addr\n";
 
     $this->{addr} = $addr;
     my $port = $this->{port};
+
+    if( !$this->is_valid_address($addr) )
+    {
+      $this->_end("invalid address: $addr");
+      return;
+    }
 
     if( $this->{progress_callback} )
     {
@@ -290,6 +328,10 @@ sub _resolved
     #$DEBUG and print "<<sendbuf>>\n".$this->{socket}->sendbuf."<</sendbuf>>\n";;
     $this->{socket}->eol( pack("C*", map{rand(256)}1..32) );
     $this->{shutdown_wr_after_writing} = $this->{header}{Connection} =~ /close/i || $this->{header}{Connection} !~ /Keep-Alive/i;
+    if( $this->{host} =~ /google|gmail/ )
+    {
+      $this->{shutdown_wr_after_writing} = undef;
+    }
 
     $this->{hook} = RunLoop::Hook->new(
 	sub {
