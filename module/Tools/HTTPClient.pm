@@ -135,11 +135,12 @@ sub start {
 	$this->{header}{Host} = $host;
     }
 
-    if (!$this->{header}{Connection}) {
-      # HTTP/1.1 だと Keep-Alive がデフォルトだけど,
-      # ひとまず気にしない….
-      $this->{header}{Connection} = 'close';
-    }
+    #googleさん関係でいまいち動かない？
+    #if (!$this->{header}{Connection}) {
+    #  # HTTP/1.1 だと Keep-Alive がデフォルトだけど,
+    #  # ひとまず気にしない….
+    #  $this->{header}{Connection} = 'close';
+    #}
 
     # ホスト名にポートが含まれていたら分解。
     my $port = $this->{with_ssl} ? 443 : 80;
@@ -327,11 +328,13 @@ sub _resolved
     #$DEBUG and print Dumper($req);use Data::Dumper;
     #$DEBUG and print "<<sendbuf>>\n".$this->{socket}->sendbuf."<</sendbuf>>\n";;
     $this->{socket}->eol( pack("C*", map{rand(256)}1..32) );
-    $this->{shutdown_wr_after_writing} = $this->{header}{Connection} =~ /close/i || $this->{header}{Connection} !~ /Keep-Alive/i;
-    if( $this->{host} =~ /google|gmail/ )
-    {
-      $this->{shutdown_wr_after_writing} = undef;
-    }
+
+    #googleさん関係でいまいち動かない？
+    #$this->{shutdown_wr_after_writing} = !$this->{header}{Connection} || $this->{header}{Connection} =~ /close/i || $this->{header}{Connection} !~ /Keep-Alive/i;
+    #if( $this->{host} =~ /google|gmail/ )
+    #{
+    #  $this->{shutdown_wr_after_writing} = undef;
+    #}
 
     $this->{hook} = RunLoop::Hook->new(
 	sub {
@@ -389,6 +392,11 @@ sub _main
     {
       # 進展があったのでコールバック.
       $this->{progress_callback}->($this->{parser}->object);
+      if( $this->{stopped} )
+      {
+        $DEBUG and print "<< (stopped) by progress_callback\n";
+        return;
+      }
     }
   }
 
@@ -399,7 +407,8 @@ sub _main
     my $success;
     if( $this->{parser}->isa('Tools::HTTPParser') )
     {
-      $success = !defined($this->{parser}{rest}) || $this->{parser}{rest} eq '';
+      my $st = $this->{parser}->object->{StreamState};
+      $success = $st =~ /^(body|parsed)\z/ && $this->{parser}{rest} eq '';
     }else
     {
       $this->{parser}->object->content( $this->{parser}->data );
