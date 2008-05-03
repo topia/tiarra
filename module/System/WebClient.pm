@@ -143,13 +143,21 @@ sub _load_cache
     foreach my $channel (values %$channels)
     {
       my $channame = $channel->name;
-      $this->{cache}{$netname}{$channame} ||= {
-        recent => [],
-      };
+      $this->{cache}{$netname}{$channame} ||= $this->_new_cache_entry($netname, $channame);
     }
   }
 }
 
+
+sub _new_cache_entry
+{
+  my $this = shift;
+  my $netname  = shift;
+  my $ch_short = shift;
+  +{
+    recent => [],
+  };
+}
 
 # -----------------------------------------------------------------------------
 # $obj->message_io_hook($msg, $sender, $type).
@@ -318,9 +326,7 @@ sub _log_writer
   my $cache = $this->{cache}{$netname}{$ch_short};
   if( !$cache )
   {
-    $cache = $this->{cache}{$netname}{$ch_short} = {
-      recent => [],
-    };
+    $cache = $this->{cache}{$netname}{$ch_short} = $this->_new_cache_entry($netname, $ch_short);
   }
 
   my $recent = $cache->{recent};
@@ -407,8 +413,31 @@ sub _on_request
     peer      => $peer,
     conflist  => $conflist,
     need_auth => 1,
+    ua_type   => undef,
+    cgi_hash  => undef, # generated on demand.
+    req_param => undef, # generated on demand.
   };
+  if( my $ua = $req->{Header}{'User-Agent'} )
+  {
+    if( $ua =~ /(UP\.Browser|DoCoMo|J-PHONE|Vodafone|SoftBank)/i )
+    {
+      $req->{ua_type} = 'mobile';
+    }else
+    {
+      $req->{ua_type} = 'pc';
+    }
+  }else
+  {
+    $req->{ua_type} = 'pc';
+  }
 
+  if( $req->{Method} !~ /^(GET|POST|HEAD)\z/ )
+  {
+    $this->_debug("$peer: method not allowed: $req->{Method}");
+    # 405 Method Not Allowed
+    $this->_response($req, 405);
+    return;
+  }
 
   if( !@$conflist )
   {
@@ -479,13 +508,31 @@ sub _dispatch
     $this->_response($req, 404);
     return;
   }
+  $path =~ s/\?.*//;
+
   if( $path eq '/' )
   {
-    my $html = $this->_gen_list($req);
-    $this->_response($req, [html=>$html]);
+    my $done = $req->{Method} eq 'POST' && $this->_post_list($req);
+    if( !$done )
+    {
+      my $html = $this->_gen_list($req);
+      $this->_response($req, [html=>$html]);
+    }
   }elsif( $path =~ m{^/log/} )
   {
-    my ($_blank, $_cmd, $netname, $ch_short) = split('/', $path);
+    my ($_blank, $_cmd, $netname, $ch_short, $param) = split('/', $path, 5);
+    if( !defined($param) )
+    {
+      if( !$netname || !$ch_short )
+      {
+        $this->_location($req, "/");
+      }else
+      {
+        $this->_location($req, "/log/$netname/$ch_short/");
+      }
+      return;
+    }
+
     $ch_short =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
     $ch_short =~ s/^=// or $ch_short = '#'.$ch_short;
     if( !$this->{cache}{$netname}{$ch_short} )
@@ -508,9 +555,27 @@ sub _dispatch
       $this->_response($req, 404);
       return;
     }
-    #RunLoop->shared_loop->notify_msg(__PACKAGE__."#_dispatch($path), ok ($netname/$ch_short)");
-    my $html = $this->_gen_log($req, $netname, $ch_short);
-    $this->_response($req, [html=>$html]);
+    #RunLoop->shared_loop->notify_msg(__PACKAGE__."#_dispatch($path), ok ($netname/$ch_short/$param)");
+    if( $param eq '' )
+    {
+      my $done = $req->{Method} eq 'POST' && $this->_post_log($req, $netname, $ch_short);
+      if( !$done )
+      {
+        my $html = $this->_gen_log($req, $netname, $ch_short);
+        $this->_response($req, [html=>$html]);
+      }
+    }elsif( $param eq 'info' )
+    {
+      my $done = $req->{Method} eq 'POST' && $this->_post_chan_info($req, $netname, $ch_short);
+      if( !$done )
+      {
+        my $html = $this->_gen_chan_info($req, $netname, $ch_short);
+        $this->_response($req, [html=>$html]);
+      }
+    }else
+    {
+      $this->_response($req, 404);
+    }
   }elsif( $path eq '/style/style.css' )
   {
     $this->_response($req, [css=>'']);
@@ -563,6 +628,23 @@ sub _response
   $req->{client}->disconnect_after_writing();
 
   return;
+}
+
+sub _location
+{
+  my $this = shift;
+  my $req  = shift;
+  my $path = shift;
+
+  $path = $this->{path} . $path;
+  $path =~ s{//+}{/}g;
+  my $res = {
+    Code => 302,
+    Header => {
+      'Location' => $path,
+    },
+  };
+  $this->_response($req, $res);
 }
 
 # -----------------------------------------------------------------------------
@@ -627,6 +709,8 @@ sub _decode_value
 
 # -----------------------------------------------------------------------------
 # $bool = $this->_can_show($req, $ch_short, $netname).
+# 閲覧可能かの判定.
+# 存在するかどうかは別途確認が必要.
 #
 sub _can_show
 {
@@ -687,8 +771,7 @@ sub _gen_list
       {
         my $link_ch = $channame;
         $link_ch =~ s/^#// or $link_ch = "=$link_ch";
-        my $link = "log/$netname/$link_ch/";
-        $link =~ tr{/}{\0};
+        my $link = "log\0$netname\0$link_ch\0";
         $link =~ s{/}{%2F}g;
         $link =~ tr{\0}{/};
         $link = $this->_escapeHTML($link);
@@ -706,6 +789,7 @@ sub _gen_list
   my $tmpl = $this->_gen_list_html();
   $this->_expand($tmpl, {
     CONTENT => $content,
+    UA_TYPE => $req->{ua_type},
   });
 }
 sub _gen_list_html
@@ -722,14 +806,59 @@ sub _gen_list_html
   <title>channels</title>
 </head>
 <body>
+<div class="main">
+<div class="uatype-<&UA_TYPE>">
 
 <h1>channels</h1>
 
 <&CONTENT>
 
+<form action="./" method="post">
+ENTER: <input type="text" name="enter" value="" />
+<input type="submit" value="入室" /><br />
+</form>
+
+<p>
+[
+<a href="./" accesskey="0">再表示</a>[0]
+]
+</p>
+
+</div>
+</div>
 </body>
 </html>
 HTML
+}
+
+sub _post_list
+{
+  my $this = shift;
+  my $req  = shift;
+
+  my $cgi = $this->_get_cgi_hash($req);
+  if( my $ch_long = $cgi->{enter} )
+  {
+    my ($ch_short, $netname) = Multicast::detach($ch_long);
+    if( !$this->_can_show($req, $ch_short, $netname) )
+    {
+      return;
+    }
+    my $network  = $this->_runloop->network($netname);
+    if( $network )
+    {
+      $this->{cache}{$netname}{$ch_short} ||= $this->_new_cache_entry($netname, $ch_short);
+      $this->_debug("enter: $netname/$ch_short");
+      my $link_ch = $ch_short;
+      $link_ch =~ s/^#// or $link_ch = "=$link_ch";
+      my $link = "log\0$netname\0$link_ch\0";
+      $link =~ s{/}{%2F}g;
+      $link =~ tr{\0}{/};
+      $this->_location($req, $link);
+      return 1;
+    }
+  }
+  return undef;
 }
 
 sub _expand
@@ -771,73 +900,8 @@ sub _gen_log
   my $req  = shift;
   my $netname  = shift;
   my $ch_short = shift;
-  my $mode = $this->config->mode || 'owner';
 
   # cacheにはいっているのと閲覧許可があるのは確認済.
-
-  my $cgi = {};
-  if( $req->{Path} =~ m{\?} )
-  {
-    (undef,my $query) = split(/\?/, $req->{Path});
-    foreach my $pair (split(/[&;]/, $query))
-    {
-      my ($key, $val) = split(/=/, $pair, 2);
-      $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
-      $cgi->{$key} = $val;
-    }
-  }
-  if( uc($req->{Method}) eq 'POST' )
-  {
-    foreach my $pair (split(/[&;]/, $req->{Content}))
-    {
-      my ($key, $val) = split(/=/, $pair, 2);
-      $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
-      $cgi->{$key} = $val;
-    }
-    my $name   = $cgi->{n} || '';
-    if( my $m = $cgi->{m} )
-    {
-      if( $mode ne 'owner' )
-      {
-        $m = ($name || $this->config->name_default || $DEFAULT_NAME) . "> " . $m;
-      }
-      $m =~ s/[\r\n].*//s;
-      my $network = RunLoop->shared_loop->network($netname);
-      if( $network )
-      {
-        my $channel = $network->channel($ch_short);
-        if( $channel )
-        {
-          my $msg_to_send = Auto::Utils->construct_irc_message(
-            Command => 'PRIVMSG',
-            Params  => [ '', $m ],
-          );
-
-          # send to server.
-          #
-          {
-            my $for_server = $msg_to_send->clone;
-            $for_server->param(0, $ch_short);
-            $network->send_message($for_server);
-          }
-
-          # send to clients.
-          #
-          my $ch_on_client = Multicast::attach_for_client($ch_short, $netname);
-          my $for_client = $msg_to_send->clone;
-          $for_client->param(0, $ch_on_client);
-          $for_client->remark('fill-prefix-when-sending-to-client', 1);
-          RunLoop->shared_loop->broadcast_to_clients($for_client);
-        }else
-        {
-          RunLoop->shared_loop->notify_error("no such channel [$ch_short] on network [$netname]");
-        }
-      }else
-      {
-        RunLoop->shared_loop->notify_error("no network to talk: $netname");
-      }
-    }
-  }
 
   my $content = "";
 
@@ -845,7 +909,7 @@ sub _gen_log
   {
     if( my $chan = $net->channel($ch_short) )
     {
-      my $topic = $chan->topic;
+      my $topic = $chan->topic || '(no-topic)';
       my $names = $chan->names || {};
       $names = [ values %$names ];
       @$names = map{
@@ -857,8 +921,10 @@ sub _gen_log
       @$names = sort @$names;
       my $topic_esc = $this->_escapeHTML($topic);
       my $names_esc = $this->_escapeHTML(join(' ', @$names));
-      $content .= "<p>$topic_esc</p>\n";
-      $content .= "<p>$names_esc</p>\n";
+      $content .= "<p>\n";
+      $content .= "<span class=\"chan-topic\">TOPIC: $topic_esc</span><br />\n";
+      #$content .= "<span class=\"chan-names\">member: $names_esc</span><br />\n";
+      $content .= "</p>\n";
     }
   }else
   {
@@ -866,6 +932,7 @@ sub _gen_log
 
   my $cache  = $this->{cache}{$netname}{$ch_short};
   my $recent = $cache->{recent};
+  my $cgi    = $this->_get_cgi_hash($req);
 
   # 表示位置の探索.
   my $show_lines = $DEFAULT_SHOW_LINES;
@@ -927,20 +994,25 @@ sub _gen_log
   my $lines2 = $nr_cached_lines==1 ? 'line' : 'lines';
   $recent = [ @$recent [ $rindex .. $last ] ];
 
+  my $navi_raw = '';
   if( @$recent )
   {
+    my $sort_order = $this->_get_req_param($req, 'sort-order');
+    $this->_debug("sort_order = $sort_order");
+    if( $sort_order ne 'asc' )
+    {
+      @$recent = reverse @$recent;
+    }
     my $nr_recent = @$recent;
     my $lines    = $nr_recent==1 ? 'line' : 'lines';
-    $content .= "<p>\n";
-    $content .= "$nr_recent $lines / $nr_cached_lines $lines2.";
-    $content .= "</p>\n";
-    $content .= "\n";
+    $navi_raw .= "<p>";
+    $navi_raw .= "$nr_recent $lines / $nr_cached_lines $lines2.<br />";
+    $navi_raw .= qq{[ <b><a href="?r=$prev_rtoken" accesskey="7">&lt;&lt;</a></b>[7] |};
+    $navi_raw .= qq{  <b><a href="?r=$next_rtoken" accesskey="9">&gt;&gt;</a></b>[9] ]\n};
+    $navi_raw .= "</p>";
 
-    my $ymd = '-';
-    $content .= "<pre>\n";
-    $content .= qq{[ <b><a href="?r=$prev_rtoken" accesskey="7">&lt;&lt;</a></b> |};
-    $content .= qq{  <b><a href="?r=$next_rtoken" accesskey="9">&gt;&gt;</a></b> ]\n};
-
+    my $ymd = '-'; # first entry should be displayed.
+    $content .= "<pre>";
     foreach my $info (@$recent)
     {
       if( $ymd ne $info->{ymd} )
@@ -951,6 +1023,10 @@ sub _gen_log
         $content .= qq{[<b><a id="$anchor" href="?r=$rtoken">$ymd</a></b>]\n};
       }
       my $line_html = $this->_escapeHTML($info->{formatted});
+      if( $req->{ua_type} ne 'pc' )
+      {
+        $line_html =~ s/^(\d\d:\d\d):\d\d /$1 /;
+      }
       my $anchor = "L.$ymd.$info->{lineno}";
       my $rtoken = $anchor;
       $rtoken =~ s/.*-//;
@@ -968,14 +1044,18 @@ sub _gen_log
   my $ch_long_esc = $this->_escapeHTML($ch_long);
   my $name_esc = $this->_escapeHTML($cgi->{n} || '');
 
+  my $mode = $this->_get_req_param($req, 'mode');
   my $name_input_raw = '';
   if( $mode ne 'owner' )
   {
     $name_input_raw = qq{name:<input type="text" name="n" size="10" value="$name_esc" /><br />};
   }
+
   my $tmpl = $this->_gen_log_html();
-  $this->_expand($tmpl,{
-    CONTENT => $content,
+  $this->_expand($tmpl, {
+    CONTENT_RAW => $content,
+    UA_TYPE     => $req->{ua_type},
+    NAVI_RAW    => $navi_raw,
     CH_LONG => $ch_long_esc,
     NAME    => $name_esc,
     NAME_INPUT_RAW => $name_input_raw,
@@ -998,10 +1078,12 @@ sub _gen_log_html
   <title><&CH_LONG></title>
 </head>
 <body>
+<div class="main">
+<div class="uatype-<&UA_TYPE>">
 
 <h1><&CH_LONG></h1>
 
-<&CONTENT>
+<&CONTENT_RAW>
 
 <form action="./" method="post">
 <p>
@@ -1012,13 +1094,356 @@ talk:<input type="text" name="m" size="60" />
 </p>
 </form>
 
+<&NAVI_RAW>
+
 <p>
-<a href="<&TOP_PATH>" accesskey="0">戻る</a>
+[
+<a href="./?r=<&NEXT_RTOKEN>" accesskey="*">更新</a>[*] |
+<a href="<&TOP_PATH>" accesskey="0">List</a>[0] |
+<a href="info" accesskey="#">info</a>[#]
+]
 </p>
 
+</div>
+</div>
 </body>
 </html>
 HTML
+}
+
+sub _get_req_param
+{
+  my $this = shift;
+  my $req  = shift;
+  my $key  = shift;
+
+  if( !grep{ $key eq $_ } qw(mode sort-order) )
+  {
+    die "invalid req-param [$key]";
+  }
+  if( $req->{req_param}{$key} )
+  {
+    return $req->{req_param}{$key};
+  }
+
+  my $val;
+  foreach my $allow (@{$req->{conflist}})
+  {
+    $val = $allow->{block}->$key;
+    $val or next;
+    $DEBUG and $this->_debug(__PACKAGE__."#_gen_log, $key = $val (by $allow->{name})");
+    last;
+  }
+  $val ||= $this->config->$key;
+  if( $key eq 'mode' )
+  {
+    $val ||= 'owner';
+    if( $val !~ /^(owner|shared)\z/ )
+    {
+      $val = 'owner';
+    }
+  }
+  if( $key eq 'sort-order' )
+  {
+    $val ||= 'asc';
+    $val = $val =~ /^(desc|rev)/ ? 'desc' : 'asc';
+  }
+
+  $req->{req_param}{$key} = $val;
+  $val;
+}
+
+sub _get_cgi_hash
+{
+  my $this = shift;
+  my $req  = shift;
+
+  if( $req->{cgi_hash} )
+  {
+    return $req->{cgi_hash};
+  }
+
+  my $cgi = {};
+
+  if( $req->{Method} eq 'GET' )
+  {
+    if( $req->{Path} =~ m{\?} )
+    {
+      (undef,my $query) = split(/\?/, $req->{Path});
+      foreach my $pair (split(/[&;]/, $query))
+      {
+        my ($key, $val) = split(/=/, $pair, 2);
+        $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
+        $cgi->{$key} = $val;
+      }
+    }
+  }
+
+  if( $req->{Method} eq 'POST' )
+  {
+    foreach my $pair (split(/[&;]/, $req->{Content}))
+    {
+      my ($key, $val) = split(/=/, $pair, 2);
+      $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
+      $cgi->{$key} = $val;
+    }
+  }
+
+  $req->{cgi_hash} = $cgi;
+  $cgi;
+}
+
+sub _post_log
+{
+  my $this = shift;
+  my $req  = shift;
+  my $netname  = shift;
+  my $ch_short = shift;
+
+  my $mode = $this->_get_req_param($req, 'mode');
+
+  my $cgi = $this->_get_cgi_hash($req);
+  my $name   = $cgi->{n} || '';
+  if( my $m = $cgi->{m} )
+  {
+    if( $mode ne 'owner' )
+    {
+      $m = ($name || $this->config->name_default || $DEFAULT_NAME) . "> " . $m;
+    }
+    $m =~ s/[\r\n].*//s;
+    my $network = RunLoop->shared_loop->network($netname);
+    if( $network )
+    {
+      my $channel = $network->channel($ch_short);
+      if( $channel || !Multicast::channel_p($ch_short) )
+      {
+        my $msg_to_send = Auto::Utils->construct_irc_message(
+          Command => 'PRIVMSG',
+          Params  => [ '', $m ],
+        );
+
+        # send to server.
+        #
+        {
+          my $for_server = $msg_to_send->clone;
+          $for_server->param(0, $ch_short);
+          $network->send_message($for_server);
+        }
+
+        # send to clients.
+        #
+        my $ch_on_client = Multicast::attach_for_client($ch_short, $netname);
+        my $for_client = $msg_to_send->clone;
+        $for_client->param(0, $ch_on_client);
+        $for_client->remark('fill-prefix-when-sending-to-client', 1);
+        RunLoop->shared_loop->broadcast_to_clients($for_client);
+      }else
+      {
+        RunLoop->shared_loop->notify_error("no such channel [$ch_short] on network [$netname]");
+      }
+    }else
+    {
+      RunLoop->shared_loop->notify_error("no network to talk: $netname");
+    }
+  }
+  return undef;
+}
+
+# -----------------------------------------------------------------------------
+# $html = $this->_gen_chan_info($req, $netname, $ch_short).
+#
+sub _gen_chan_info
+{
+  my $this = shift;
+  my $req  = shift;
+  my $netname  = shift;
+  my $ch_short = shift;
+
+  my $content_raw = "";
+
+  my ($topic_esc, $names_esc);
+  if( my $net = $this->_runloop->network($netname) )
+  {
+    if( my $chan = $net->channel($ch_short) )
+    {
+      my $topic = $chan->topic || '(none)';
+      my $names = $chan->names || {};
+      $names = [ values %$names ];
+      @$names = map{
+        my $pic = $_; # $pic :: PersonInChannel.
+        my $nick  = $pic->person->nick;
+        my $sigil = $pic->priv_symbol;
+        "$sigil$nick";
+      } @$names;
+      @$names = sort @$names;
+      $topic_esc = $this->_escapeHTML($topic);
+      $names_esc = $this->_escapeHTML(join(' ', @$names));
+    }
+  }else
+  {
+  }
+  $topic_esc ||= '-';
+  $names_esc ||= '-';
+
+  my $in_topic_esc;
+  my $cgi = $this->_get_cgi_hash($req);
+  if( my $in_topic = $cgi->{topic} )
+  {
+    $in_topic_esc = $this->_escapeHTML($in_topic);
+  }else
+  {
+    $in_topic_esc = $topic_esc;
+  }
+
+  my $ch_long = Multicast::attach($ch_short, $netname);
+  my $ch_long_esc = $this->_escapeHTML($ch_long);
+
+  my $tmpl = $this->_tmpl_chan_info();
+  $this->_expand($tmpl, {
+    CONTENT_RAW => $content_raw,
+    UA_TYPE     => $req->{ua_type},
+    CH_LONG   => $ch_long_esc,
+    TOPIC     => $topic_esc,
+    IN_TOPIC  => $in_topic_esc,
+    NAMES     => $names_esc,
+    PART_MSG  => 'Leaving...',
+  });
+}
+sub _tmpl_chan_info
+{
+  <<HTML;
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja-JP">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type"  content="text/css" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" type="text/css" href="<&CSS>" />
+  <title><&CH_LONG></title>
+</head>
+<body>
+<div class="main">
+<div class="uatype-<&UA_TYPE>">
+
+<h1><&CH_LONG></h1>
+
+<&CONTENT_RAW>
+
+<form action="./info" method="post">
+TOPIC: <span class="chan-topic"><&TOPIC></span><br />
+<input type="text" name="topic" value="<&IN_TOPIC>" />
+<input type="submit" value="変更" /><br />
+</form>
+
+<p>
+NAMES: <span class="chan-names"><&NAMES></span><br />
+</p>
+
+<form action="./info" method="post">
+PART: <input type="text" name="part" value="<&PART_MSG>" />
+<input type="submit" value="退室" /><br />
+</form>
+
+<form action="./info" method="post">
+JOIN <input type="text" name="join" value="<&CH_LONG>" />
+<input type="submit" value="入室" /><br />
+</form>
+
+<form action="./info" method="post">
+DELETE <input type="text" name="delete" value="<&CH_LONG>" />
+<input type="submit" value="削除" /><br />
+</form>
+
+<p>
+[
+<a href="./" accesskey="*">戻る</a>[*] |
+<a href="<&TOP_PATH>" accesskey="0">List</a>[0] |
+<a href="info" accesskey="#">再表示</a>[#]
+]
+</p>
+
+</div>
+</div>
+</body>
+</html>
+HTML
+}
+
+sub _post_chan_info
+{
+  my $this = shift;
+  my $req  = shift;
+  my $netname  = shift;
+  my $ch_short = shift;
+
+  my $cgi = $this->_get_cgi_hash($req);
+  if( exists($cgi->{topic}) )
+  {
+    my $msg_to_send = Auto::Utils->construct_irc_message(
+      Command => 'TOPIC',
+      Params  => [ '', $cgi->{topic} ],
+    );
+
+    # send to server.
+    #
+    my $network = RunLoop->shared_loop->network($netname);
+    if( $network )
+    {
+      my $for_server = $msg_to_send->clone;
+      $for_server->param(0, $ch_short);
+      $network->send_message($for_server);
+    }
+  }
+
+  if( exists($cgi->{part}) )
+  {
+    my $msg_to_send = Auto::Utils->construct_irc_message(
+      Command => 'PART',
+      Params  => [ '', $cgi->{part} ],
+    );
+
+    # send to server.
+    #
+    my $network = RunLoop->shared_loop->network($netname);
+    if( $network )
+    {
+      my $for_server = $msg_to_send->clone;
+      $for_server->param(0, $ch_short);
+      $network->send_message($for_server);
+    }
+  }
+
+  if( exists($cgi->{join}) )
+  {
+    my $msg_to_send = Auto::Utils->construct_irc_message(
+      Command => 'JOIN',
+      Params  => [ '' ],
+    );
+
+    # send to server.
+    #
+    my $network = RunLoop->shared_loop->network($netname);
+    if( $network )
+    {
+      my $for_server = $msg_to_send->clone;
+      $for_server->param(0, $ch_short);
+      $network->send_message($for_server);
+    }
+  }
+
+  if( exists($cgi->{'delete'}) )
+  {
+    delete $this->{cache}{$netname}{$ch_short};
+    if( !keys %{$this->{cache}{$netname}} )
+    {
+      delete $this->{cache}{$netname};
+    }
+    $this->_location($req, "/");
+    return 1;
+  }
+
+  return undef;
 }
 
 # -----------------------------------------------------------------------------
@@ -1060,7 +1485,7 @@ default: off
 bind-addr: 127.0.0.1
 bind-port: 8668
 path: /irc
-css:  /style/style.css
+css:  /style/irc-style.css
 # 上の設定をapacheでReverseProxyさせる場合, httpd.conf には次のように設定.
 #  ProxyPass        /irc/ http://localhost:8667/irc/
 #  ProxyPassReverse /irc/ http://localhost:8667/irc/
@@ -1110,6 +1535,10 @@ allow-public {
 # クライアントモード.
 # owner か shared.
 - mode: owner
+
+# ログの方向.
+# asc (旧->新) か desc (新->旧).
+- sort-order: asc
 
 # 発言BOXで名前指定しなかったときのデフォルトの名前.
 # mode: shared の時に使われる.
