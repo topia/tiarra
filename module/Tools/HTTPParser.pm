@@ -46,9 +46,11 @@ our $RET_SUCCESS        = 0;
 
 our %HTTP_STATUS_MESSAGE = (
   200 => 'OK',
+  302 => 'Found',
   401 => 'Unauthorized',
   403 => 'Forbidden',
   404 => 'Not Found',
+  405 => 'Method Not Allowed',
   500 => 'Server Error',
   503 => 'Temporary Unavailable',
 );
