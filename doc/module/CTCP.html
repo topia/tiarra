@@ -2,7 +2,7 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3010 2007-12-10 13:36:55Z topia $ -->
+<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
@@ -26,6 +26,64 @@
 CTCP::Versionのintervalと同じ。<br />
 </p>
 <div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-CTCP::DCC::RewriteAddress" class="module">
+        <div class="module-header"><h2 title="クライアントが送信した CTCP DCC のアドレスを変換する。">CTCP::DCC::RewriteAddress</h2>
+          <span class="description">クライアントが送信した CTCP DCC のアドレスを変換する。</span></div>
+        <div class="content">
+	  <p class="comment">
+CTCP DCC に指定されているアドレスを、 tiarra で取得したものに<br />
+書き換えます。<br />
+</p>
+<p class="comment">
+このモジュールは一旦 CTCP DCC メッセージを破棄するので、<br />
+別のクライアントには送信されません。<br />
+</p>
+<p class="comment">
+変換する DCC タイプ。省略すると全てのDCCを処理する。<br />
+</p>
+<div class="element"><span class="key">type</span>:<span class="value">send chat</span></div>
+<p class="comment">
+変換用アドレスの取得方法を選択する。デフォルト値はありません。<br />
+</p>
+<div class="element"><span class="key">resolver</span>:<span class="value">client-socket server-socket</span></div>
+<div class="block element"><span class="block key">server-socket</span>
+<div class="block content">
+<p class="comment">
+サーバソケットのローカルアドレスを取ります。<br />
+</p>
+<p class="comment">
+client &lt;-&gt; tiarra[this address] &lt;-&gt; server<br />
+</p>
+</div></div>
+<div class="block element"><span class="block key">client-socket</span>
+<div class="block content">
+<p class="comment">
+クライアントソケットのリモートアドレスを取ります。<br />
+</p>
+<p class="comment">
+client [this address]&lt;-&gt; tiarra &lt;-&gt; server<br />
+</p>
+</div></div>
+<div class="block element"><span class="block key">dns</span>
+<div class="block content">
+<p class="comment">
+DNS を引いて決定します。IPアドレスの指定も可能です。<br />
+</p>
+<div class="element"><span class="key">host</span>:<span class="value">example.com</span></div>
+</div></div>
+<div class="block element"><span class="block key">http</span>
+<div class="block content">
+<div class="element"><span class="key">url</span>:<span class="value">http://checkip.dyndns.org/</span></div>
+<div class="element"><span class="key">regex</span>:<span class="value">Current IP Address: (\d+\.\d+\.\d+\.\d+)</span></div>
+</div></div>
 
         </div>
       </div>
@@ -113,6 +171,8 @@ USERINFOとして返すメッセージ。<br />
       <ul class="menu">
         
         <li><a href="#module-CTCP::ClientInfo" title="CTCP CLIENTINFOに応答する。">CTCP::ClientInfo</a></li>
+        
+        <li><a href="#module-CTCP::DCC::RewriteAddress" title="クライアントが送信した CTCP DCC のアドレスを変換する。">CTCP::DCC::RewriteAddress</a></li>
         
         <li><a href="#module-CTCP::Ping" title="CTCP PINGに応答する。">CTCP::Ping</a></li>
         
