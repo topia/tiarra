@@ -527,8 +527,22 @@ sub _check_mask
 
   foreach my $mask (@{$this->{mask}})
   {
-    Mask::match($mask->{ch_mask},  $full_ch_name) or next;
-    Mask::match($mask->{url_mask}, $url)          or next;
+    my $chan_match = Mask::match($mask->{ch_mask},  $full_ch_name);
+    if( !$chan_match )
+    {
+      defined($chan_match) or next;
+      $DEBUG and $this->_debug($full_ch_name, "debug: - channel denied: [$full_ch_name] [$mask->{ch_mask}]");
+      return undef;
+    }
+
+    my $url_match = Mask::match($mask->{url_mask}, $url);
+    if( !$url_match )
+    {
+      defined($url_match) or next;
+      $DEBUG and $this->_debug($full_ch_name, "debug: - url denied: [$url] [$mask->{url_mask}]");
+      return undef;
+    }
+
     return $mask;
   }
   undef;
@@ -1142,16 +1156,16 @@ sub _request_progress
     my $desc  = $this->_addr_check($addr);
     if( !$desc )
     {
-      $this->{addr_checked} = 'not local';
+      $req->{addr_checked} = 'not local';
     }else
     {
       my $allowed = $this->_is_allowed_local($req, $addr);
       if( $allowed )
       {
-        $this->{addr_checked} = "$desc, allowed";
+        $req->{addr_checked} = "$desc, allowed";
       }else
       {
-        $this->{addr_checked} = "$desc, not allowed";
+        $req->{addr_checked} = "$desc, not allowed";
         $req->{httpclient}->stop();
         $this->_debug($req, "reserved address: $desc ($addr)");
         $this->_request_finished($req, "reserved address: $desc");
@@ -2097,6 +2111,7 @@ sub _debug
     Command => 'NOTICE',
     Params  => [ '', $reply_prefix."debug: $reply".$reply_suffix ],
   );
+  $DEBUG and print __PACKAGE__."#_debug, ".$msg_to_send->param(1)."\n";
 
   #$this->_error("_debug: full_ch_name: ".Data::Dumper->new([$full_ch_name])->Indent(0)->Dump);
   my ($ch_short,$net_name) = Multicast::detach($full_ch_name);
