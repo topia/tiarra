@@ -64,7 +64,7 @@ use IO::Handle;
 our $terminated = 0;
 
 # version はバージョン番号
-our $version = '0';
+our $version = '0.1';
 
 # based はベースにしている Tiarra のバージョン(パッケージまたは fork 時用)
 our $based_version = '';
@@ -73,56 +73,37 @@ our $based_version = '';
 our $short_version = '';
 
 
-# オリジナル(based_version が未定義)ならば ChangeLog を検索する。
-&check_changelog unless $based_version;
+# オリジナル(based_version が未定義)ならば svnversion をチェックする。
+&check_svnversion unless $based_version;
 # short_version が未定義なら version の値を使う。
 $short_version ||= $version;
 
 &install_signal_handlers;
 
-sub check_changelog {
+sub check_svnversion {
     use IO::File;
-    my $seek_offset = -300;
-    my $changelog = 'ChangeLog';
+    my $svnversion = '.svnversion';
+    my $svnrevision;
 
     foreach my $file (follow_link($0)) {
 	my $dir = dirname($file);
-	my $path = File::Spec->catfile($dir, $changelog);
+	my $path = File::Spec->catfile($dir, $svnversion);
 	my $fh = IO::File->new($path, 'r');
 	if (defined $fh) {
-	    my $revision = undef;
-	    my $date = undef;
-
-	    $fh->seek($seek_offset, 2);
-	    foreach (<$fh>) {
-		if (/\$\QRevision:\E ([\d.]+) \$/) {
-		    $revision = $1;
-		} elsif (/\$\QDate:\E ([\d\/]+) [\d:]+ \$/) {
-		    $date = $1;
-		}
-	    }
-	    $version .= '+cvs-' . $revision if defined $revision;
-	    $version .= '(' . $date . ')' if defined $date;
-
-	    my $svnversion;
-	    if (-e File::Spec->catfile($dir, '.svnversion')) {
-		my $path = File::Spec->catfile($dir, '.svnversion');
-		my $fh = IO::File->new($path, 'r');
-		$svnversion = <$fh>;
-		chomp $svnversion;
-	    } elsif (-e File::Spec->catdir($dir, '.svn')) {
-		(my $svndir = $dir) =~ s/'/'\''/;
-		do {
-		    # special cleanup for taint check
-		    $ENV{PATH} =~ /^(.*)$/;
-		    local $ENV{PATH} = $1;
-		    $svndir =~ /^(.*)$/;
-		    $svnversion = (`svnversion --no-newline --committed $1` =~ /(\d+[MS]{0,2})$/)[0];
-		};
-	    }
-	    $version .= '+svn-' . $svnversion if defined $svnversion && length $svnversion;
-	    return;
+	    $svnrevision = <$fh>;
+	    chomp $svnrevision;
+	} elsif (-e File::Spec->catdir($dir, '.svn')) {
+	    (my $svndir = $dir) =~ s/'/'\''/;
+	    do {
+		# special cleanup for taint check
+		$ENV{PATH} =~ /^(.*)$/;
+		local $ENV{PATH} = $1;
+		$svndir =~ /^(.*)$/;
+		$svnrevision = (`svnversion --no-newline --committed $1` =~ /(\d+[MS]{0,2})$/)[0];
+	    };
 	}
+	$version .= '+svn-' . $svnrevision if defined $svnrevision && length $svnrevision;
+	return;
     }
 }
 
@@ -199,6 +180,22 @@ sub find_options {
 }
 
 sub main {
+    if (&find_option('debug')) {
+	eval q(sub debug_printmsg{printmsg('debug: '.shift)});
+	eval q(sub debug_mode{1;});
+	$SIG{__WARN__} = sub {
+	    ::printmsg(Carp::longmess(@_));
+	};
+	$SIG{__DIE__} = sub {
+	    die @_ if $_[0] =~ /^[Cc]ouldn't connect/;
+	    die @_ if $_[0] =~ /^network\/.+:\s*Server replied/;
+	    die(Carp::longmess(@_));
+	}
+    } else {
+	eval q(sub debug_printmsg{});
+	eval q(sub debug_mode{0;});
+    }
+
     if (&find_option('help')) {
 	&help;
 	return 0;
@@ -214,22 +211,6 @@ sub main {
     } elsif (&find_option('make-password')) {
 	&make_password;
 	return 0;
-    }
-
-    if (&find_option('debug')) {
-	eval q(sub debug_printmsg{printmsg('debug: '.shift)});
-	eval q(sub debug_mode{1;});
-	$SIG{__WARN__} = sub {
-	    ::printmsg(Carp::longmess(@_));
-	};
-	$SIG{__DIE__} = sub {
-	    die @_ if $_[0] =~ /^[Cc]ouldn't connect/;
-	    die @_ if $_[0] =~ /^network\/.+:\s*Server replied/;
-	    die(Carp::longmess(@_));
-	}
-    } else {
-	eval q(sub debug_printmsg{});
-	eval q(sub debug_mode{0;});
     }
 
     foreach my $pp_define (&find_options(qr/D(.+?)/)) {
@@ -435,7 +416,7 @@ sub shutdown {
 }
 
 my $exitval = main;
-print "cleanup TerminateManager...";
+&debug_mode && print "cleanup TerminateManager...";
 Tiarra::TerminateManager->terminate('main');
-print "done.\n";
+&debug_mode && print "done.\n";
 exit $exitval;
