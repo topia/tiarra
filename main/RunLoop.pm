@@ -21,7 +21,6 @@ use Mask;
 use ModuleManager;
 use Multicast;
 use Timer;
-use ControlPort;
 use Hook;
 use base qw(HookTarget);
 use base qw(Tiarra::IRC::NewMessageMixin);
@@ -31,6 +30,7 @@ use Tiarra::SharedMixin qw(shared shared_loop);
 use Tiarra::Utils;
 use Tiarra::TerminateManager;
 our $_shared_instance;
+#use ControlPort; # lazy load
 
 BEGIN {
     # Time::HiResは使えるか？
@@ -839,6 +839,7 @@ sub run {
 
     # control-socket-nameが指定されていたら、ControlPortを開く。
     if ($conf_general->control_socket_name) {
+	require ControlPort;
 	eval {
 	    $this->{control_port} = ControlPort->new($conf_general->control_socket_name);
 	}; if ($@) {
