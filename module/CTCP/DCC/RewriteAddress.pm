@@ -3,7 +3,6 @@
 # -----------------------------------------------------------------------------
 # Rewrite ip address of CTCP DCC issued by client
 # -----------------------------------------------------------------------------
-
 package CTCP::DCC::RewriteAddress;
 use strict;
 use warnings;
@@ -27,13 +26,9 @@ sub message_arrived {
 	    if ($ctcp =~ m|^DCC (\S*) (.*)$|) {
 		my ($type, $params) = (uc($1), $2);
 		next unless !@permit_types or grep { $type eq $_ } @permit_types;
-		my $closure = $this->rewrite_dcc(
+		my $result = $this->rewrite_dcc(
 		    $msg->clone, $type, $params, $sender);
-		next unless defined $closure;
-		Timer->new(
-		    After => 0,
-		    Code => $closure,
-		   )->install;
+		next unless $result;
 		my $encoded_ctcp = CTCP->make_text($ctcp);
 		$text =~ s/\Q$encoded_ctcp\E//;
 	    }
@@ -49,20 +44,19 @@ sub message_arrived {
     $msg;
 }
 
-our %checkers = (
+our %resolvers = (
     'server-socket' => {
 	resolver => sub {
 	    my ($this, $actions, $sender, $conf, $msg, $addr, $port) = @_;
 	    my $sock = ($this->_runloop->networks_list)[0]->sock;
 	    return undef unless defined $sock;
-	    my $result = Tiarra::Resolver->shared->resolve(
-		'nameinfo', $sock->sockname, sub {}, 0);
-	    if ($result->answer_status eq $result->ANSWER_OK) {
-		$actions->{send_dcc}->($result->answer_data->[0], $port);
-		1;
-	    } else {
-		undef;
-	    }
+
+	    $actions->{resolve}->(
+		nameinfo => $sock->sockname,
+		sub {
+		    $actions->{closure}->(shift->answer_data->[0],
+					  $port);
+		});
 	},
     },
     'client-socket' => {
@@ -70,35 +64,26 @@ our %checkers = (
 	    my ($this, $actions, $sender, $conf, $msg, $addr, $port) = @_;
 	    my $sock = $sender->sock;
 	    return undef unless defined $sock;
-	    my $result = Tiarra::Resolver->shared->resolve(
-		'nameinfo', $sock->peername, sub {}, 0);
-	    if ($result->answer_status eq $result->ANSWER_OK) {
-		$actions->{send_dcc}->($result->answer_data->[0], $port);
-		1;
-	    } else {
-		undef;
-	    }
+
+	    $actions->{resolve}->(
+		nameinfo => $sock->peername,
+		sub {
+		    $actions->{closure}->(shift->answer_data->[0],
+					  $port);
+		});
+	    1;
 	},
     },
     'dns' => {
 	resolver => sub {
 	    my ($this, $actions, $sender, $conf, $msg, $addr, $port) = @_;
 
-	    Tiarra::Resolver->resolve(
-		addr => $conf->host, sub {
-		    my $resolved = shift;
-		    $actions->{step}->(
-			sub {
-			    if ($resolved->answer_status ne
-				    $resolved->ANSWER_OK) {
-				return undef; # next method
-			    }
-			    my $addr = $resolved->answer_data->[0];
-			    $actions->{send_dcc}->($addr, $port);
-			    1;
-			})
+	    $actions->{resolve}->(
+		addr => $conf->host,
+		sub {
+		    $actions->{closure}->(shift->answer_data->[0],
+					  $port);
 		});
-	    1;
 	},
     },
     'http' => {
@@ -121,11 +106,11 @@ our %checkers = (
 				   ::printmsg("http: content: $resp->{Content}");
 				   return undef;
 			       }
-			       $actions->{send_dcc}->($1, $port);
+			       $actions->{closure}->($1, $port);
 			       1;
-
 			   });
 		   });
+	    1;
 	},
     },
    );
@@ -150,56 +135,105 @@ sub octet_to_intaddr {
     $ret;
 }
 
-sub rewrite_dcc {
-    my ($this, $msg, $type, $param, $sender) = @_;
-    if ($param =~ /^(\S*) (\S*) (\S*)(.*)$/) {
-	my ($arg, $addr, $port, $trail) = ($1, $2, $3, $4);
-	$addr = intaddr_to_octet($addr);
-	my $send_dcc = sub {
-	    $this->send_dcc($msg, $type, $arg, $trail, $sender, @_);
-	    1;
-	};
-	my @resolvers = split /\s+/, $this->config->resolver;
-	my $resolver;
-	my $step;
-	my $next;
-	$step = sub {
-	    my $ret = eval { shift->() };
-	    if (!defined $ret) {
-		if ($@) {
-		    ::printmsg("$resolver: error occurred: $@");
+sub get_dcc_address_port {
+    my ($this, $msg, $sender, $addr, $port, $closure, @resolvers) = @_;
+    my $resolver;
+    my $step;
+    my $next;
+
+    $step = sub {
+	my $ret = eval { shift->(@_) };
+	if (!defined $ret) {
+	    if ($@) {
+		::printmsg("$resolver: error occurred: $@");
+	    }
+	    ::printmsg("$resolver: cannot resolved. try next method.");
+	    $next->();
+	} else {
+	    $ret;
+	}
+    };
+
+    my $resolve = sub {
+	my $type = shift;
+	my $data = shift;
+	my $closure = shift;
+	my @args = @_;
+
+	Tiarra::Resolver->resolve(
+	    $type => $data,
+	    sub {
+		my $resolved = shift;
+		my $ret = eval {
+		    if ($resolved->answer_status ne $resolved->ANSWER_OK) {
+			::printmsg("resolver: $type/$data: return not OK");
+			::printmsg("resolver: ". $resolved->answer_data);
+			return undef; # next method
+		    }
+		    $closure->(@args, $resolved, @_);
+		};
+		if (!defined $ret) {
+		    if ($@) {
+			::printmsg("$resolver: error occurred: $@");
+		    }
+		    ::printmsg("$resolver: cannot resolved. try next method.");
+		    $next->();
+		} else {
+		    $ret;
 		}
-		::printmsg("$resolver: cannot resolved. try next method.");
-		$next->();
-	    } else {
-		1;
-	    }
-	};
-	my $actions = {
-	    send_dcc => $send_dcc,
-	    step => $step,
-	};
-	$next = sub {
-	    if (!@resolvers) {
-		## FIXME: cannot resolve
-		::printmsg(__PACKAGE__."/rewrite_dcc: cannot resolve address at all");
-		return undef;
-	    }
-	    $resolver = shift(@resolvers);
-	    $step->(sub { $checkers{$resolver}->{resolver}->(
-		$this, $actions, $sender,
-		$this->config->get($resolver, 'block'), $msg, $addr, $port); });
-	};
-	return $next;
-    }
+	    });
+	1;
+    };
+
+    my $actions = {
+	closure => $closure,
+	step => $step,
+	resolve => $resolve,
+    };
+
+    $next = sub {
+	if (!@resolvers) {
+	    ## FIXME: on cannot resolve
+	    ::printmsg(__PACKAGE__."/rewrite_dcc: cannot resolve address at all");
+	    $closure->();
+	    return undef;
+	}
+	$resolver = shift(@resolvers);
+	$step->(sub { $resolvers{$resolver}->{resolver}->(
+	    $this, $actions, $sender,
+	    $this->config->get($resolver, 'block'), $msg, $addr, $port); });
+    };
+
+    $next->();
 }
 
-sub send_dcc {
-    my ($this, $msg, $type, $arg, $trail, $sender, $addr, $port) = @_;
-    $addr = octet_to_intaddr($addr);
-    $msg->param(1, CTCP->make_text("DCC $type $arg $addr $port$trail"));
-    Multicast::from_client_to_server($msg,$sender);
-    1;
+sub rewrite_dcc {
+    my ($this, $msg, $type, $param, $sender) = @_;
+    if ($param !~ /^(\S*) (\S*) (\S*)(.*)$/) {
+	return undef;
+    }
+
+    my ($arg, $addr, $port, $trail) = ($1, $2, $3, $4);
+    $addr = intaddr_to_octet($addr);
+    my $send_dcc = sub {
+	my ($addr, $port) = @_;
+	$addr = octet_to_intaddr($addr);
+	$msg->param(1, CTCP->make_text("DCC $type $arg $addr $port$trail"));
+	Multicast::from_client_to_server($msg, $sender);
+	1;
+    };
+    my @resolvers = split /\s+/, $this->config->resolver;
+
+    my $closure = sub {
+	my ($newaddr, $newport) = @_;
+	$addr = $newaddr if $newaddr;
+	$port = $newport if $newport;
+
+	$send_dcc->($addr, $port);
+    };
+    $this->get_dcc_address_port(
+	$msg, $sender, $addr, $port, $closure, @resolvers);
+
 }
 
 1;
@@ -210,7 +244,7 @@ default: off
 section: important
 
 # CTCP DCC に指定されているアドレスを、 tiarra で取得したものに
-# 書き換えます。
+# 書き換えます。(EXPERIMENTAL)
 
 # このモジュールは一旦 CTCP DCC メッセージを破棄するので、
 # 別のクライアントには送信されません。
