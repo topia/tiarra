@@ -40,20 +40,26 @@ CTCP::Versionのintervalと同じ。<br />
         <div class="content">
 	  <p class="comment">
 CTCP DCC に指定されているアドレスを、 tiarra で取得したものに<br />
-書き換えます。<br />
+書き換えます。(EXPERIMENTAL)<br />
 </p>
 <p class="comment">
 このモジュールは一旦 CTCP DCC メッセージを破棄するので、<br />
 別のクライアントには送信されません。<br />
 </p>
 <p class="comment">
-変換する DCC タイプ。省略すると全てのDCCを処理する。<br />
+変換する DCC タイプ。 [デフォルト値: CHAT SEND]<br />
 </p>
-<div class="element"><span class="key">type</span>:<span class="value">send chat</span></div>
+<div class="element"><span class="key">type</span>:<span class="value">CHAT SEND</span></div>
 <p class="comment">
 変換用アドレスの取得方法を選択する。デフォルト値はありません。<br />
+以下の取得方法(server-socket client-socket dns http)から<br />
+必要なもの(複数可)を指定してください。<br />
 </p>
-<div class="element"><span class="key">resolver</span>:<span class="value">client-socket server-socket</span></div>
+<div class="element"><span class="key">resolver</span>:<span class="value">client-socket server-socket dns http</span></div>
+<p class="comment">
+取得方法と設定<br />
+なにも設定がないときはブロック自体を省略することもできます。<br />
+</p>
 <div class="block element"><span class="block key">server-socket</span>
 <div class="block content">
 <p class="comment">
