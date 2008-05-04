@@ -94,10 +94,7 @@ sub _new {
     if ($use_threads) {
 	$this->{ask_queue} = Thread::Queue->new;
 	$this->{reply_queue} = Thread::Queue->new;
-	$this->{thread} = threads->create("resolver_thread",
-					  $class,
-					  $this->{ask_queue},
-					  $this->{reply_queue});
+	$this->_check_thread();
 	$this->{main_timer} = Tiarra::WrapMainLoop->new(
 	    type => 'timer',
 	    interval => 1,
@@ -117,6 +114,18 @@ sub _new {
     $this->{id} = 0;
     $this->{closures} = {};
     $this;
+}
+
+sub _check_thread {
+    my $this = shift;
+
+    if (defined $this->{thread} && $this->{thread}->is_running()) {
+	return undef;
+    }
+    $this->{thread} = threads->create("resolver_thread",
+				      ref($this),
+				      $this->{ask_queue},
+				      $this->{reply_queue});
 }
 
 sub destruct {
@@ -172,6 +181,7 @@ sub resolve {
 	$entry->id($this->{id}++);
 	$this->{closures}->{$entry->id} = $closure;
 	if ($use_threads) {
+	    $this->_check_thread();
 	    $this->{ask_queue}->enqueue($entry->serialize);
 	    $this->{main_timer}->lazy_install;
 	    $this->{main_loop}->lazy_install;
@@ -395,13 +405,15 @@ sub resolver_thread {
 	}; if ($@) {
 	    my $err = $@;
 	    $entry->answer_status($entry->ANSWER_INTERNAL_ERROR);
-	    require Data::Dumper;
-	    my $answer_data = $entry->answer_data;
-	    if (defined $answer_data) {
-		$err .= "(answer_data: " .
-		    Data::Dumper->new([$entry->answer_data])->Terse(1)->
-			    Purity(1)->Dump . ")\n";
-	    }
+	    eval {
+		require Data::Dumper;
+		my $answer_data = $entry->answer_data;
+		if (defined $answer_data) {
+		    $err .= "(answer_data: " .
+			Data::Dumper->new([$entry->answer_data])->Terse(1)->
+				Purity(1)->Dump . ")\n";
+		}
+	    };
 	    $entry->answer_data($err);
 	    $reply_queue->enqueue($entry->serialize);
 	}
