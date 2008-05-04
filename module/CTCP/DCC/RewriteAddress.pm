@@ -13,6 +13,17 @@ use Tiarra::Resolver;
 use Module::Use qw(Tools::HTTPClient);
 use Tools::HTTPClient;
 
+
+sub new {
+    my $this = shift->SUPER::new(@_);
+
+    $this->{permit_types} = [map uc, split /\s+/,
+			     ($this->config->type || 'CHAT SEND')];
+    $this->{resolvers} = [map lc, split /\s+/, $this->config->resolver];
+
+    return $this;
+}
+
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
 
@@ -20,12 +31,11 @@ sub message_arrived {
 	$msg->command eq 'PRIVMSG' &&
 	    !defined $msg->nick) {
 
-	my @permit_types = split /\s+/, (uc($this->config->type));
 	my $text = $msg->param(1);
 	foreach my $ctcp (CTCP->extract_from_text("$text")) {
 	    if ($ctcp =~ m|^DCC (\S*) (.*)$|) {
 		my ($type, $params) = (uc($1), $2);
-		next unless !@permit_types or grep { $type eq $_ } @permit_types;
+		next unless grep { $type eq $_ } @{$this->{permit_types}};
 		my $result = $this->rewrite_dcc(
 		    $msg->clone, $type, $params, $sender);
 		next unless $result;
@@ -209,11 +219,12 @@ sub get_dcc_address_port {
 
 sub rewrite_dcc {
     my ($this, $msg, $type, $param, $sender) = @_;
-    if ($param !~ /^(\S*) (\S*) (\S*)(.*)$/) {
+    if ($param !~ /^(\S+) ([\d.]+) (\S+)(.*)$/) {
 	return undef;
     }
 
     my ($arg, $addr, $port, $trail) = ($1, $2, $3, $4);
+
     $addr = intaddr_to_octet($addr);
     my $send_dcc = sub {
 	my ($addr, $port) = @_;
@@ -222,7 +233,6 @@ sub rewrite_dcc {
 	Multicast::from_client_to_server($msg, $sender);
 	1;
     };
-    my @resolvers = split /\s+/, $this->config->resolver;
 
     my $closure = sub {
 	my ($newaddr, $newport) = @_;
@@ -232,7 +242,7 @@ sub rewrite_dcc {
 	$send_dcc->($addr, $port);
     };
     $this->get_dcc_address_port(
-	$msg, $sender, $addr, $port, $closure, @resolvers);
+	$msg, $sender, $addr, $port, $closure, @{$this->{resolvers}});
 
 }
 
@@ -249,12 +259,16 @@ section: important
 # このモジュールは一旦 CTCP DCC メッセージを破棄するので、
 # 別のクライアントには送信されません。
 
-# 変換する DCC タイプ。省略すると全てのDCCを処理する。
-type: send chat
+# 変換する DCC タイプ。 [デフォルト値: CHAT SEND]
+type: CHAT SEND
 
 # 変換用アドレスの取得方法を選択する。デフォルト値はありません。
-resolver: client-socket server-socket
+# 以下の取得方法(server-socket client-socket dns http)から
+# 必要なもの(複数可)を指定してください。
+resolver: client-socket server-socket dns http
 
+# 取得方法と設定
+# なにも設定がないときはブロック自体を省略することもできます。
 server-socket {
   # サーバソケットのローカルアドレスを取ります。
 
