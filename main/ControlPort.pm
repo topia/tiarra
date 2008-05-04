@@ -27,6 +27,7 @@ use IO::Dir;
 use ExternalSocket;
 use Tiarra::Encoding;
 use RunLoop;
+use Tiarra::TerminateManager;
 
 # 複数のパッケージを混在させてるとSelfLoaderが使えない…？
 #use SelfLoader;
@@ -106,10 +107,15 @@ sub open {
 		} @{$this->{clients}};
 	    })->install;
 
+    $this->{destructor} = Tiarra::TerminateManager::Hook->new(
+	sub {
+	    $this->destruct;
+	})->install;
+
     $this;
 }
 
-sub DESTROY {
+sub destruct {
     my $this = shift;
 
     # 切断
