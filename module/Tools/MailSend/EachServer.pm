@@ -550,7 +550,8 @@ sub _do_smtp {
 	    });
 	    $sock->send_reserve('Date: ' . do {
 		# example: Tue, 04 Mar 2003 11:10:24 +0900
-		Tools::DateConvert::replace('%a, %d %b %Y %H:%M:%S %z', time(), 1);
+		Tools::DateConvert::expand('%a, %d %b %Y %H:%M:%S %z',
+					   locale => "C");
 	    });
 	    $sock->send_reserve('From: ' . $struct->{from}) if defined($struct->{from});
 	    $sock->send_reserve('');
