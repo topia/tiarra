@@ -112,13 +112,15 @@ sub expand {
 	if (defined $to_locale && $use_posix) {
 	    eval {
 		$from_locale = POSIX::setlocale(&POSIX::LC_TIME, $to_locale);
-	    }
+	    };
 	}
 	$str =~ s/%([+-]\d+[Oo]|.)/_replace_real($1, $time, \$curtime, \@times)/eg;
     };
     my $err = $@;
-    if ($from_locale) {
-	POSIX::setlocale(&POSIX::LC_TIME, $from_locale);
+    if (defined $from_locale) {
+	eval {
+	    POSIX::setlocale(&POSIX::LC_TIME, $from_locale);
+	};
     }
     if ($err) {
 	die $err;
