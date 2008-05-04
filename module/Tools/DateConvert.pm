@@ -98,6 +98,34 @@ sub replace {
     return $str;
 }
 
+sub expand {
+    my ($str, %opts) = @_;
+    my $time = $opts{time};
+    $time = time() unless defined $time;
+    my (@times) = localtime($time);
+    my $curtime = $time;
+    local $use_posix = $opts{pureperl} ? 0 : $use_posix;
+    my $to_locale = $opts{locale};
+    my $from_locale;
+
+    eval {
+	if (defined $to_locale && $use_posix) {
+	    eval {
+		$from_locale = POSIX::setlocale(&POSIX::LC_TIME, $to_locale);
+	    }
+	}
+	$str =~ s/%([+-]\d+[Oo]|.)/_replace_real($1, $time, \$curtime, \@times)/eg;
+    };
+    my $err = $@;
+    if ($from_locale) {
+	POSIX::setlocale(&POSIX::LC_TIME, $from_locale);
+    }
+    if ($err) {
+	die $err;
+    }
+    return $str;
+}
+
 sub _replace_real {
     my ($tag, $origtime, $time, $times) = @_;
     my ($fmt) = '%02d';
@@ -114,7 +142,7 @@ sub _replace_real {
 	$number = 0 unless defined $number;
 
 	if ($each eq 'O') {	# each day
-	    $$time = $origtime + $number * 3600;
+	    $$time = $origtime + $number * 24 * 3600;
 	} else {		# 'o', each second
 	    $$time = $origtime + $number;
 	}
