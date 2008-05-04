@@ -164,12 +164,14 @@ sub resolve {
 	$entry->query_type(QUERY_NAMEINFO);
 	$entry->query_data($data);
 	$do = 1;
+	$my_use_threads = 0; # thread is not required
     }
+    local $use_threads = $my_use_threads;
     if ($do) {
 	$entry->timeout(0);
 	$entry->id($this->{id}++);
 	$this->{closures}->{$entry->id} = $closure;
-	if ($my_use_threads) {
+	if ($use_threads) {
 	    $this->{ask_queue}->enqueue($entry->serialize);
 	    $this->{main_timer}->lazy_install;
 	    $this->{main_loop}->lazy_install;
@@ -244,7 +246,8 @@ sub _call {
     my ($this, $entry) = @_;
 
     my $id = $entry->id;
-    $this->{closures}->{$id}->($entry);
+    eval { $this->{closures}->{$id}->($entry); };
+    if ($@) { ::printmsg($@); }
     delete $this->{closures}->{$id};
     if (!%{$this->{closures}} && $use_threads) {
 	$this->{main_timer}->lazy_uninstall;
@@ -352,15 +355,20 @@ sub _resolve {
 	    }
 	}
     } elsif ($entry->query_type eq QUERY_NAMEINFO) {
+	my ($addr, $port);
 	if ($use_ipv6 && !$resolved) {
-	    my ($addr, $port) = getnameinfo($entry->query_data, NI_NUMERICHOST);
-	    $entry->answer_data([$addr, $port]);
+	    ($addr, $port) = getnameinfo($entry->query_data, NI_NUMERICHOST);
 	    $resolved = 1;
 	}
 	if (!$resolved) {
-	    my ($port, $addr) = sockaddr_in($entry->query_data);
-	    $entry->answer_data([$addr, $port]);
+	    ($port, $addr) = sockaddr_in($entry->query_data);
 	    $resolved = 1;
+	}
+	if ($resolved) {
+	    my @data;
+	    threads::shared::share(@data) if $use_threads;
+	    @data = ($addr, $port);
+	    $entry->answer_data(\@data);
 	}
     } else {
 	carp 'unsupported query type('.$entry->query_type.')';
@@ -385,9 +393,17 @@ sub resolver_thread {
 	eval {
 	    $reply_queue->enqueue($class->_resolve($entry)->serialize);
 	}; if ($@) {
-	    $data->answer_status($entry->ANSWER_INTERNAL_ERROR);
-	    $data->answer_data($@);
-	    $reply_queue->enqueue($data->serialize);
+	    my $err = $@;
+	    $entry->answer_status($entry->ANSWER_INTERNAL_ERROR);
+	    require Data::Dumper;
+	    my $answer_data = $entry->answer_data;
+	    if (defined $answer_data) {
+		$err .= "(answer_data: " .
+		    Data::Dumper->new([$entry->answer_data])->Terse(1)->
+			    Purity(1)->Dump . ")\n";
+	    }
+	    $entry->answer_data($err);
+	    $reply_queue->enqueue($entry->serialize);
 	}
     }
     return 0;
