@@ -64,7 +64,7 @@ our %resolvers = (
 	    $actions->{resolve}->(
 		nameinfo => $sock->sockname,
 		sub {
-		    $actions->{closure}->(shift->answer_data->[0],
+		    $actions->{callback}->(shift->answer_data->[0],
 					  $port);
 		});
 	},
@@ -78,7 +78,7 @@ our %resolvers = (
 	    $actions->{resolve}->(
 		nameinfo => $sock->peername,
 		sub {
-		    $actions->{closure}->(shift->answer_data->[0],
+		    $actions->{callback}->(shift->answer_data->[0],
 					  $port);
 		});
 	    1;
@@ -91,7 +91,7 @@ our %resolvers = (
 	    $actions->{resolve}->(
 		addr => $conf->host,
 		sub {
-		    $actions->{closure}->(shift->answer_data->[0],
+		    $actions->{callback}->(shift->answer_data->[0],
 					  $port);
 		});
 	},
@@ -116,7 +116,7 @@ our %resolvers = (
 				   ::printmsg("http: content: $resp->{Content}");
 				   return undef;
 			       }
-			       $actions->{closure}->($1, $port);
+			       $actions->{callback}->($1, $port);
 			       1;
 			   });
 		   });
@@ -145,12 +145,25 @@ sub octet_to_intaddr {
     $ret;
 }
 
+# $this->get_dcc_address_port($msg, $msg_sender, $dcc_addr, $dcc_port,
+#                             $callback, @resolvers)
+# callback:
+#   sub {
+#       my ($addr, $port) = @_;
+#       $addr = default_addr unless defined $addr;
+#       $port = default_port unless defined $port;
+#       ...
+#   }
 sub get_dcc_address_port {
-    my ($this, $msg, $sender, $addr, $port, $closure, @resolvers) = @_;
+    my ($this, $msg, $sender, $addr, $port, $callback, @resolvers) = @_;
     my $resolver;
     my $step;
     my $next;
 
+    # resolving step wrapper.
+    # $actions->{step}->(sub { ... }, @args_to_closure)
+    #   closure return undef (or on error): try next method.
+    #   otherwise wrapper return with closure return value.
     $step = sub {
 	my $ret = eval { shift->(@_) };
 	if (!defined $ret) {
@@ -164,10 +177,16 @@ sub get_dcc_address_port {
 	}
     };
 
+    # Tiarra::Resolver->resolve wrapper.
+    # $actions->{resolve}->($type => $data, sub { ... }, @args_to_callback);
+    #   1. resolve answer status is not OK, try next method.
+    #   2. call callback with args: (@args_to_callback, $resolved).
+    #   3. callback return undef, try next method.
+    #   4. otherwise wrapper return with callback return value
     my $resolve = sub {
 	my $type = shift;
 	my $data = shift;
-	my $closure = shift;
+	my $callback = shift;
 	my @args = @_;
 
 	Tiarra::Resolver->resolve(
@@ -180,7 +199,7 @@ sub get_dcc_address_port {
 			::printmsg("resolver: ". $resolved->answer_data);
 			return undef; # next method
 		    }
-		    $closure->(@args, $resolved, @_);
+		    $callback->(@args, $resolved, @_);
 		};
 		if (!defined $ret) {
 		    if ($@) {
@@ -196,7 +215,7 @@ sub get_dcc_address_port {
     };
 
     my $actions = {
-	closure => $closure,
+	callback => $callback,
 	step => $step,
 	resolve => $resolve,
     };
@@ -205,8 +224,7 @@ sub get_dcc_address_port {
 	if (!@resolvers) {
 	    ## FIXME: on cannot resolve
 	    ::printmsg(__PACKAGE__."/rewrite_dcc: cannot resolve address at all");
-	    $closure->();
-	    return undef;
+	    $callback->();
 	}
 	$resolver = shift(@resolvers);
 	$step->(sub { $resolvers{$resolver}->{resolver}->(
@@ -234,7 +252,7 @@ sub rewrite_dcc {
 	1;
     };
 
-    my $closure = sub {
+    my $callback = sub {
 	my ($newaddr, $newport) = @_;
 	$addr = $newaddr if $newaddr;
 	$port = $newport if $newport;
@@ -242,7 +260,7 @@ sub rewrite_dcc {
 	$send_dcc->($addr, $port);
     };
     $this->get_dcc_address_port(
-	$msg, $sender, $addr, $port, $closure, @{$this->{resolvers}});
+	$msg, $sender, $addr, $port, $callback, @{$this->{resolvers}});
 
 }
 
@@ -255,7 +273,9 @@ section: important
 
 # CTCP DCC に指定されているアドレスを、 tiarra で取得したものに
 # 書き換えます。(EXPERIMENTAL)
-
+#
+# IPv4 のみサポートしています。
+#
 # このモジュールは一旦 CTCP DCC メッセージを破棄するので、
 # 別のクライアントには送信されません。
 
@@ -267,17 +287,17 @@ type: CHAT SEND
 # 必要なもの(複数可)を指定してください。
 resolver: client-socket server-socket dns http
 
+
 # 取得方法と設定
 # なにも設定がないときはブロック自体を省略することもできます。
+
 server-socket {
   # サーバソケットのローカルアドレスを取ります。
-
   # client <-> tiarra[this address] <-> server
 }
 
 client-socket {
   # クライアントソケットのリモートアドレスを取ります。
-
   # client [this address]<-> tiarra <-> server
 }
 
@@ -287,8 +307,29 @@ dns {
 }
 
 http {
+  # 現状では単純な GET しかサポートしていません。
+
+  # アクセス先 URL
   url: http://checkip.dyndns.org/
+
+  # IP アドレス取得用 regex
   regex: Current IP Address: (\d+\.\d+\.\d+\.\d+)
 }
+
+# リゾルバの選び方
+#
+#  * tiarra を動作させているサーバとインターネットの間にルータ等があり、
+#    グローバルアドレスがない場合
+#      *-socket は役に立ちません。 http を利用してください。
+#      適当な DDNS を持っていればdns も良いでしょう。
+#
+#  * tiarra がレンタルサーバなどLAN上にないサーバで動作している場合
+#      server-socket, http は役に立ちません。
+#      client-socket がお勧めです。
+#
+#  * tiarra がLAN上にあり、グローバルアドレスのついているホストで
+#    動作している場合
+#      client-socket は役に立ちません。
+#      server-socket がお勧めです。
 
 =cut
