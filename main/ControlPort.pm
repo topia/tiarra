@@ -67,6 +67,21 @@ sub open {
     # ディレクトリ/tmp/tiarra-controlが無ければ作る。
     if (!-d TIARRA_CONTROL_ROOT) {
 	mkdir TIARRA_CONTROL_ROOT or die 'Couldn\'t make directory '.TIARRA_CONTROL_ROOT;
+	# 他のユーザーも作れるようにする。
+	# 最初に作成したユーザーが全ファイルを消すことが出来るが、対処法なし。
+	chmod 01777, TIARRA_CONTROL_ROOT;
+    }
+
+    # ソケットが既に存在した場合は接続してみる。
+    if (-e $filename) {
+	my $sock = IO::Socket::UNIX->new(
+	    Peer => $filename,
+	   );
+	if (!defined $sock) {
+	    # もう使われていない?
+	    unlink $filename;
+	    undef $sock;
+	}
     }
 
     # リスニング用ソケットを開く。
