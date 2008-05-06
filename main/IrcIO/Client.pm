@@ -38,6 +38,8 @@ sub new {
     $this->{options} = {}; # クライアントが接続時に$key=value$で指定したオプション。
     my $addr = $sock->peerhost;
     $this->{client_host} = $this->{client_addr} = $addr;
+    ::printmsg("One client at ".$this->{client_addr}." connected to me. " .
+		   "Please wait to get hostname of this address.");
     Tiarra::Resolver->paranoid_check($addr, sub {
 					 $this->accept(@_);
 				     });
@@ -58,10 +60,10 @@ sub accept {
 	unless (Mask::match($allowed_host,$this->{client_host}) ||
 		Mask::match($allowed_host,$this->{client_addr})) {
 	    # マッチしないのでdie。
-	    die "One client at ".$this->{client_host_repr}." connected to me, but the host is not allowed.\n";
+	    die "Disconnect the client at ".$this->{client_host_repr}.". The host is not allowed.\n";
 	}
     }
-    ::printmsg("One client at ".$this->{client_host_repr}." connected to me.");
+    ::printmsg("Accept the client at ".$this->{client_host_repr}.".");
     $this->install;
     $this;
 }
@@ -249,7 +251,8 @@ sub _receive_while_logging_in {
 	}
 	else {
 	    # パスワードが正しいか、指定されていない。
-	    ::printmsg('Accepted login of '.$this->fullname_from_client.'.');
+	    ::printmsg('Accepted login of '.$this->fullname_from_client.
+			   ', from '.$this->{client_host_repr}.'.');
 	    if ((my $n_options = keys %{$this->{options}}) > 0) {
 		# オプションが指定されていたら表示する。
 		my $options = join ' ; ',map {
