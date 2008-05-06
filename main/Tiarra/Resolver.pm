@@ -63,10 +63,15 @@ use Tiarra::DefineEnumMixin qw(QUERY_HOST QUERY_ADDR QUERY_SADDR QUERY_NAMEINFO)
 my $dataclass = 'Tiarra::Resolver::QueueData';
 our $use_threads;
 our $use_ipv6;
+our $use_threads_state_checking;
 BEGIN {
     $use_threads = Tiarra::OptionalModules->threads;
     if ($use_threads) {
-	eval 'use Thread::Queue';
+	require Thread::Queue;
+	require threads;
+	require threads::shared;
+	## threads 1.33 or earlier, not support $thr->is_running()
+	$use_threads_state_checking = threads->can('is_running');
     }
 
     $use_ipv6 = Tiarra::OptionalModules->ipv6;
@@ -94,7 +99,7 @@ sub _new {
     if ($use_threads) {
 	$this->{ask_queue} = Thread::Queue->new;
 	$this->{reply_queue} = Thread::Queue->new;
-	$this->_check_thread();
+	$this->_create_thread();
 	$this->{main_timer} = Tiarra::WrapMainLoop->new(
 	    type => 'timer',
 	    interval => 1,
@@ -119,9 +124,17 @@ sub _new {
 sub _check_thread {
     my $this = shift;
 
-    if (defined $this->{thread} && $this->{thread}->is_running()) {
+    if (!$use_threads_state_checking ||
+	    (defined $this->{thread} &&
+		 $this->{thread}->is_running())) {
 	return undef;
     }
+    $this->_create_thread;
+}
+
+sub _create_thread {
+    my $this = shift;
+
     $this->{thread} = threads->create("resolver_thread",
 				      ref($this),
 				      $this->{ask_queue},
@@ -273,15 +286,20 @@ sub _resolve {
     my $ret = undef;
 
     if ($entry->query_type eq QUERY_ADDR) {
+	my @addrs;
+	threads::shared::share(@addrs) if $use_threads;
+
 	if ( $^O =~ /^MSWin32/ && $entry->query_data eq 'localhost' ) {
-		# Win2kだとなぜか問い合わせに失敗するので固定応答.
-		$entry->answer_data( $use_ipv6 ? ['127.0.0.1', '::1'] : '127.0.0.1' );
-		$resolved = 1;
+	    # Win2kだとなぜか問い合わせに失敗するので固定応答.
+	    @addrs = ('127.0.0.1');
+	    if ($use_ipv6) {
+		push(@addrs, '::1');
+	    }
+	    $resolved = 1;
 	}
 	if ($use_ipv6 && !$resolved) {
 	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
-	    my ($saddr, $addr, @addrs, %addrs);
-	    threads::shared::share(@addrs) if $use_threads;
+	    my ($saddr, $addr, %addrs);
 	    while (scalar(@res) >= 5) {
 		# check proto,... etc
 		(undef, undef, undef, $saddr, undef, @res) = @res;
@@ -292,7 +310,6 @@ sub _resolve {
 		}
 	    }
 	    if (@addrs) {
-		$entry->answer_data(\@addrs);
 		$resolved = 1;
 	    }
 	}
@@ -300,25 +317,28 @@ sub _resolve {
 	    my $hostent = Net::hostent::gethost($entry->query_data);
 	    if (defined $hostent) {
 		#$entry->answer_data($hostent->addr_list);
-		my @addrs;
-		threads::shared::share(@addrs) if $use_threads;
 		@addrs = map {
 		    inet_ntoa($_);
 		} @{$hostent->addr_list};
-		$entry->answer_data(\@addrs);
 		$resolved = 1;
 	    }
 	}
+
+	if ($resolved) {
+	    $entry->answer_data(\@addrs);
+	}
     } elsif ($entry->query_type eq QUERY_HOST) {
+	my @hosts;
+	threads::shared::share(@hosts) if $use_threads;
+
 	if ( $^O =~ /^MSWin32/ && $entry->query_data eq '127.0.0.1' ) {
 		# Win2kだとなぜか問い合わせに失敗するので固定応答.
-		$entry->answer_data('localhost');
+		@hosts = ('localhost');
 		$resolved = 1;
 	}
 	if ($use_ipv6 && !$resolved) {
 	    my @res = getaddrinfo($entry->query_data, 0, AF_UNSPEC, SOCK_STREAM);
-	    my ($saddr, $host, @hosts, %hosts);
-	    threads::shared::share(@hosts) if $use_threads;
+	    my ($saddr, $host, %hosts);
 	    while (scalar(@res) >= 5) {
 		# check proto,... etc
 		(undef, undef, undef, $saddr, undef, @res) = @res;
@@ -329,20 +349,19 @@ sub _resolve {
 		}
 	    }
 	    if (@hosts) {
-		if (@hosts == 1) {
-		    $entry->answer_data($hosts[0]);
-		} else {
-		    $entry->answer_data(\@hosts);
-		}
 		$resolved = 1;
 	    }
 	}
 	if (!$resolved) {
 	    my $hostent = Net::hostent::gethost($entry->query_data);
 	    if (defined $hostent) {
-		$entry->answer_data($hostent->name);
+		@hosts = ($hostent->name);
 		$resolved = 1;
 	    }
+	}
+
+	if ($resolved) {
+	    $entry->answer_data(@hosts == 1 ? $hosts[0] : \@hosts);
 	}
     } elsif ($entry->query_type eq QUERY_SADDR) {
 	if ($use_ipv6 && !$resolved) {
