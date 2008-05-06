@@ -62,6 +62,15 @@ utils->define_attr_enum_accessor('domain', 'eq',
 #       domain => 'tcp', # default
 #       );
 #   $connector->interrupt;
+# unix:
+#   my $connector = connect->new(
+#       addr => [path],
+#       callback => sub {
+#           # ... same as tcp domain's
+#       },
+#       # optional params
+#       domain => 'unix', # please define this
+#       );
 
 sub new {
     my ($class, %opts) = @_;
@@ -71,10 +80,29 @@ sub new {
     map {
 	$this->$_($opts{$_});
     } qw(host addr port callback bind_addr timeout retry_int retry_count);
-    $this->domain(utils->get_first_defined($opts{domain},
-					   'tcp'));
-    $this->prefer(utils->get_first_defined($opts{prefer},
-					   [qw(ipv6 ipv4)]));
+
+    if (!defined $this->callback) {
+	croak 'callback closure required';
+    }
+
+    $this->domain(utils->get_first_defined($opts{domain}, 'tcp'));
+    $this->prefer($opts{prefer});
+
+    if (!defined $this->prefer) {
+	if ($this->domain_tcp) {
+	    my @prefer;
+	    @prefer = ('ipv4');
+	    if (Tiarra::OptionalModules->ipv6) {
+		unshift(@prefer, 'ipv6')
+	    }
+	    $this->prefer(\@prefer);
+	} elsif ($this->domain_unix) {
+	    $this->prefer(['unix']);
+	} else {
+	    croak 'Unsupported domain: '. $this->domain;
+	}
+    }
+
     $this->{queue} = [];
     $this->connect;
 }
@@ -90,7 +118,6 @@ sub connect {
 	    });
     }
 
-    $this->prefer([qw(unix)]) if $this->domain_unix;
     if (defined $this->addr || $this->domain_unix) {
 	my $entry = Tiarra::Resolver::QueueData->new;
 	$entry->answer_status($entry->ANSWER_OK);
