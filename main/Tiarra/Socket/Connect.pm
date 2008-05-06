@@ -90,7 +90,7 @@ sub connect {
 	    });
     }
 
-    $this->prefer([qw('unix')]) if $this->domain_unix;
+    $this->prefer([qw(unix)]) if $this->domain_unix;
     if (defined $this->addr || $this->domain_unix) {
 	my $entry = Tiarra::Resolver::QueueData->new;
 	$entry->answer_status($entry->ANSWER_OK);
@@ -242,7 +242,7 @@ sub _try_connect_unix {
 
     if (!Tiarra::OptionalModules->unix_dom) {
 	$this->_error(
-	    qq{Host $this->{host} seems to be an Unix Domain Socket address, }.
+	    qq{Address $this->{addr} seems to be an Unix Domain Socket address, }.
 		qq{but Unix Domain Socket support is not enabled. }.
 		    qq{Use other protocol if possible.\n});
     }
