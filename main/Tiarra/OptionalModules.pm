@@ -13,7 +13,7 @@ use Tiarra::Utils;
 our $status = {};
 our %modules = (
     'threads' => [qw(threads threads::shared)],
-    'ipv6' => [qw(IO::Socket::INET6)],
+    'ipv6' => [qw(IO::Socket::INET6 Socket6)],
     'time_hires' => [qw(Time::HiRes)],
     'unix_dom' => [qw(IO::Socket::UNIX)],
     'encode' => [qw(Encode)],
