@@ -63,7 +63,7 @@ sub accept {
 	    die "Disconnect the client at ".$this->{client_host_repr}.". The host is not allowed.\n";
 	}
     }
-    ::printmsg("Accept the client at ".$this->{client_host_repr}.".");
+    ::printmsg("Accepted connection of the client at ".$this->{client_host_repr}.".");
     $this->install;
     $this;
 }
