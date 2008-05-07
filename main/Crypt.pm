@@ -9,9 +9,9 @@ package Crypt;
 use strict;
 use warnings;
 
-use SelfLoader;
-1;
-__DATA__
+#use SelfLoader;
+#1;
+#__DATA__
 
 sub encrypt {
     # saltは省略可能。省略されるとランダムに作られる。
