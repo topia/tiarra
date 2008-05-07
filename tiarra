@@ -115,6 +115,7 @@ sub help {
     print "  --help           print this message\n";
     print "  --version        print version information\n";
     print "  --dumpversion    print version\n";
+    print "  --show-env       print environment information\n";
     print "  --config=<file>  tiarra configuration file; default is 'tiarra.conf'\n";
     print "  --quiet          don't output any messages to stdout and stderr\n";
     print "  --no-fork        don't move to background when started in quiet mode\n";
