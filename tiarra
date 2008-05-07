@@ -350,7 +350,7 @@ sub get_env {
     push @lines, "Optional Modules:";
     push @lines, map "  $_", Tiarra::OptionalModules->repr_modules;
     push @lines, "Bundle Modules:";
-    foreach my $mod (qw(Unicode::Japanese IO::Socket::INET6 enum)) {
+    foreach my $mod (qw(Unicode::Japanese enum)) {
 	my $modfile = $mod . '.pm';
 	$modfile =~ s|::|/|g;
 	eval "require $mod;";
