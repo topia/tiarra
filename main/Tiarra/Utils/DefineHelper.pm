@@ -74,9 +74,10 @@ sub define_function {
     my $code = shift;
     my $funcname;
     no strict 'refs';
+    no warnings qw(redefine prototype);
     foreach (@_) {
 	$funcname = $package.'::'.$_;
-	undef *{$funcname};
+	#undef *{$funcname};
 	*{$funcname} = $code;
     }
     undef;
