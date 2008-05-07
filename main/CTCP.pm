@@ -10,10 +10,10 @@ use Carp;
 use UNIVERSAL;
 use base qw(Tiarra::IRC::NewMessageMixin);
 
-use SelfLoader;
-SelfLoader->load_stubs;
-1;
-__DATA__
+#use SelfLoader;
+#SelfLoader->load_stubs;
+#1;
+#__DATA__
 
 sub extract {
     # PRIVMSGかNOTICEであるIRCMessageにCTCPメッセージが埋め込まれていたら、それを取り出して返す。

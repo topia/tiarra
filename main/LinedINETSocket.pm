@@ -13,10 +13,10 @@ use Tiarra::Utils;
 use Tiarra::Socket::Lined;
 use base qw(Tiarra::Socket::Lined);
 
-use SelfLoader;
-SelfLoader->load_stubs;
-1;
-__DATA__
+#use SelfLoader;
+#SelfLoader->load_stubs;
+#1;
+#__DATA__
 
 # 行単位の入出力を行うINET-tcpソケットです。
 # read, writeはRunLoopによって自動的に行われる他、
