@@ -161,12 +161,12 @@ sub load_protocol {
     return 1 if $this->{protocols}->{$pkg};
     eval 'use ' . $pkg;
     if ($@) {
-	$this->notify_error("load protocol($pkg) error: $@");
+	$this->notify_error("load protocol($pkg) failed: $@");
 	return undef;
     }
     eval 'use Module::Use ($pkg);';
     if ($@) {
-	$this->notify_error("regist using protocol($pkg) error: $@");
+	$this->notify_error("register protocol($pkg) to module manager failed: $@");
 	return undef;
     }
 
