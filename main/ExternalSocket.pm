@@ -81,7 +81,7 @@ sub new {
 		$this->{lc $key} = $opts{$key};
 	    }
 	    else {
-		croak "$this_func, Arg{$key} was illegal reference: ".ref($args{$key})."\n";
+		croak "$this_func, Arg{$key} was illegal reference: ".ref($opts{$key})."\n";
 	    }
 	}
 	elsif ($key ne 'Exception') {
