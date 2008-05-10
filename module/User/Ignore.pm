@@ -10,17 +10,17 @@ use Mask;
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
     
-    # �����饯�饤����Ȥظ�������å���������
+    # 鯖からクライアントへ向かうメッセージか？
     if ($sender->isa('IrcIO::Server')) {
-	# �оݤȤʤ륳�ޥ�ɤ���
+	# 対象となるコマンドか？
 	if (Mask::match(
 		$this->config->command,
 		$msg->command)) {
-	    # ���Ƥ�mask�򥫥�ޤǷҤ��ƥޥå��󥰤�Ԥʤ���
+	    # 全てのmaskをカンマで繋げてマッチングを行なう。
 	    if (Mask::match(
 		    join(',',$this->config->mask('all')),
 		    $msg->prefix || '')) {
-		# �ǽ�Ū�˥ޥå������Τǡ����Υ�å������ϼΤƤ롣
+		# 最終的にマッチしたので、このメッセージは捨てる。
 		return undef;
 	    }
 	}
@@ -30,13 +30,13 @@ sub message_arrived {
 
 1;
 =pod
-info: ���ꤵ�줿�ʹ֤����PRIVMSG��NOTICE���˴����ƥ��饤����Ȥ�����ʤ��褦�ˤ���⥸�塼�롣
+info: 指定された人間からのPRIVMSGやNOTICEを破棄してクライアントへ送らないようにするモジュール。
 default: off
 
-# �оݤȤʤ륳�ޥ�ɤΥޥ�������ά���ˤ�"privmsg,notice"�����ꤵ��Ƥ��롣
-# ������privmsg��notice�ʳ����˴����Ƥ��ޤ��ȡ�(Tiarra��ʿ���Ǥ�)���饤����Ȥ����𤹤롣
+# 対象となるコマンドのマスク。省略時には"privmsg,notice"が設定されている。
+# ただしprivmsgとnotice以外を破棄してしまうと、(Tiarraは平気でも)クライアントが混乱する。
 command: privmsg,notice
 
-# mask��ʣ�������ǽ��������줿���֤ǥޥå��󥰤��Ԥʤ��ޤ���
+# maskは複数定義可能。定義された順番でマッチングが行なわれます。
 mask: example!*@*.example.net
 =cut

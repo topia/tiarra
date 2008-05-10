@@ -67,10 +67,10 @@ sub message_arrived {
 
     if ($msg->command eq 'PRIVMSG') {
 	foreach my $block (@{$this->{config}}) {
-	    # count : ��Ͽ���η׻�
+	    # count : 登録数の計算
 	    if (Mask::match_deep($block->{count_query}, $msg->param(1))) {
 		if (Mask::match_deep_chan($block->{mask}, $msg->prefix, $get_full_ch_name->())) {
-		    # ��Ͽ�������
+		    # 登録数を求める
 		    my $count = scalar $block->{database}->keys;
 		    $reply_anywhere->($block->{count_format}, 'count' => $count);
 		}
@@ -90,7 +90,7 @@ sub message_arrived {
 	    if ($msg_from_modifier_p) {
 		# request
 		if (Mask::match_deep($block->{request}, $keyword)) {
-		    # ���פ���ȿ����ꥹ�Ȥ���
+		    # 一致する反応をリストする
 		    foreach my $key (_search($block, $tail, $block->{max_reply})) {
 			foreach my $message (@{$block->{database}->get_array($key)}) {
 			    $reply_anywhere->($block->{reply_format},
@@ -105,16 +105,16 @@ sub message_arrived {
 		if (defined $tail) {
 		    my ($key, $param) = split(/\s+/, $tail, 2);
 		    if (Mask::match_deep($block->{add}, $keyword)) {
-			# ȯ�����ɲ�
-			# ���οͤ��ѹ�����Ĥ���Ƥ��롣
+			# 発言の追加
+			# この人は変更を許可されている。
 			if (defined $key && defined $param) {
 			    $block->{database}->add_value($key, $param);
 			    $reply_anywhere->($block->{added_format}, 'key' => $key, 'message' => $param);
 			}
 			return $return_value->();
 		    } elsif (Mask::match_deep($block->{remove}, $keyword)) {
-			# ȯ���κ��
-			# ���οͤϺ������Ĥ���Ƥ��롣
+			# 発言の削除
+			# この人は削除を許可されている。
 			if (defined $key) {
 			    my $count = $block->{database}->del_value($key, $param);
 			    $reply_anywhere->(
@@ -142,12 +142,12 @@ sub message_arrived {
 }
 
 sub _search {
-    # key �򸡺�����ؿ���
+    # key を検索する関数。
 
-    # $block	: �����оݤΥ֥��å�
-    # $key	: �������륭��
-    # $count	: ����ȯ���Ŀ�����ά��������ơ�
-    # $rate	: ȯ�����Ƥ�������˺���(��)��Ψ(�ѡ������)����ά�����100%��
+    # $block	: 検索対象のブロック
+    # $key	: 検索するキー
+    # $count	: 最大発見個数。省略すると全て。
+    # $rate	: 発見してもランダムに忘れる(笑)確率(パーセント)。省略すると100%。
     my ($block, $str, $count, $rate) = @_;
 
     my @masks;
@@ -157,7 +157,7 @@ sub _search {
 	    if (!defined $rate || (int(rand() * hex('0xffffffff')) % 100) < $rate) {
 		push(@masks, $mask);
 		if (defined $count && $count <= scalar(@masks)) {
-		    # $count ʬȯ�������Τǽ�λ��
+		    # $count 分発見したので終了。
 		    last;
 		}
 	    }
@@ -170,67 +170,67 @@ sub _search {
 1;
 
 =pod
-info: �����ȯ����ȿ������ȯ���򤷤ޤ���
+info: 特定の発言に反応して発言をします。
 default: off
 
-# Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���
+# Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。
 
-# ���Ѥ���֥��å��������
+# 使用するブロックの定義。
 blocks: std
 
 std {
-  # �ǡ����ե������ʸ�������ɤ���ꤷ�ޤ���
-  # �ե��������Ǥϰ�Ԥ˰�Ĥ�"ȿ��:��å�����"��񤤤Ʋ�������
+  # データファイルと文字コードを指定します。
+  # ファイルの中では一行に一つの"反応:メッセージ"を書いて下さい。
   file: reply.txt
   file-encoding: euc
 
-  # ȿ�������å���Ԥ�������ɤ���ꤷ�ޤ���
-  # �ºݤλ�����ˡ�ϡ���<request�ǻ��ꤷ���������> <�����å�������ȯ��>�פǤ���
-  request: ȿ�������å�
+  # 反応チェックを行うキーワードを指定します。
+  # 実際の指定方法は、「<requestで指定したキーワード> <チェックしたい発言>」です。
+  request: 反応チェック
 
-  # request ��ȿ������Ȥ��Υե����ޥåȤ���ꤷ�ޤ���
-  # #(key) ��������ɡ� #(message) ��ȯ�����ִ�����ޤ���
-  reply-format: ��#(key)�פȤ���ȯ���ˡ�#(message)�פ�ȿ�����ޤ���
+  # request に反応するときのフォーマットを指定します。
+  # #(key) がキーワード、 #(message) が発言に置換されます。
+  reply-format: 「#(key)」という発言に「#(message)」と反応します。
 
-  # request ��ȿ���������Ŀ�����ꤷ�ޤ���
-  # ���ޤ��礭���ͤ���ꤹ��ȡ������å�����ǽ�ˤʤä��ꡢ������ή��Ƽ���ʤΤ����դ��Ƥ���������
+  # request に反応する最大個数を指定します。
+  # あまり大きな値を指定すると、アタックが可能になったり、ログが流れて邪魔なので注意してください。
   max-reply: 5
 
-  # ��å���������Ͽ�����������륭����ɤ���ꤷ�ޤ���
-  count-query: ȿ����Ͽ��
+  # メッセージの登録数を返答するキーワードを指定します。
+  count-query: 反応登録数
 
-  # ��å���������Ͽ������������Ȥ���ȿ������ꤷ�ޤ���
-  # format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(count)����Ͽ���ˤʤ�ޤ���
-  count-format: ȿ����#(count)����Ͽ����Ƥ��ޤ���
+  # メッセージの登録数を返答するときの反応を指定します。
+  # formatで指定できるものと同じです。#(count)は登録数になります。
+  count-format: 反応は#(count)件登録されています。
 
-  # ȿ������ͤΥޥ�����
+  # 反応する人のマスク。
   mask: * *!*@*
   # plum: mask: *!*@*
 
-  # ȿ�����ɲä��줿�Ȥ���ȿ������ꤷ�ޤ���
-  # format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(message)���ɲä��줿��å������ˤʤ�ޤ���
-  added-format: #(name|nick.now): #(key) ���Ф���ȿ�� #(message) ���ɲä��ޤ�����
+  # 反応が追加されたときの反応を指定します。
+  # formatで指定できるものと同じです。#(message)は追加されたメッセージになります。
+  added-format: #(name|nick.now): #(key) に対する反応 #(message) を追加しました。
 
-  # ��å�������������줿�Ȥ���ȿ������ꤷ�ޤ���
-  # format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(message)�Ϻ�����줿��å������ˤʤ�ޤ���
-  removed-format: #(name|nick.now): #(key) #(message;���Ф���ȿ�� %s|;) �� #(count) �������ޤ�����
+  # メッセージが削除されたときの反応を指定します。
+  # formatで指定できるものと同じです。#(message)は削除されたメッセージになります。
+  removed-format: #(name|nick.now): #(key) #(message;に対する反応 %s|;) を #(count) 件削除しました。
 
-  # ȯ����ȿ�������Ψ����ꤷ�ޤ���ɴʬΨ�Ǥ�����ά���줿����100�ȸ�������ޤ���
+  # 発言に反応する確率を指定します。百分率です。省略された場合は100と見做されます。
   rate: 100
 
-  # ��å��������ɲä��륭����ɤ���ꤷ�ޤ���
-  # �����ǻ��ꤷ��������ɤ�ȯ������ȡ���������å��������ɲä��ޤ���
-  # �ºݤ��ɲ���ˡ�ϡ�<add�ǻ��ꤷ���������> <�ɲä����å�����>�פǤ���
-  add: ȿ���ɲ�
+  # メッセージを追加するキーワードを指定します。
+  # ここで指定したキーワードを発言すると、新しいメッセージを追加します。
+  # 実際の追加方法は「<addで指定したキーワード> <追加するメッセージ>」です。
+  add: 反応追加
 
-  # ��å������������륭����ɤ���ꤷ�ޤ���
-  # �ºݤκ����ˡ�ϡ�<remove�ǻ��ꤷ���������> <������륭�����>�פǤ���
-  remove: ȿ�����
+  # メッセージを削除するキーワードを指定します。
+  # 実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。
+  remove: 反応削除
 
-  # add��remove����Ĥ���͡���ά���줿���ϡ�* *!*@*�פȸ������ޤ���
+  # addとremoveを許可する人。省略された場合は「* *!*@*」と見做します。
   modifier: * *!*@*
 
-  # ����ɽ����ĥ����Ĥ��뤫����ά���줿���϶ػߤ��ޤ���
+  # 正規表現拡張を許可するか。省略された場合は禁止します。
   use-re: 1
 }
 =cut

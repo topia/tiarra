@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# ���Υ⥸�塼���ư����˷Ǽ��Ĥ�do-not-touch-mode-of-channels��Ȥ��ޤ���
+# このモジュールは動作時に掲示板のdo-not-touch-mode-of-channelsを使います。
 # -----------------------------------------------------------------------------
 package Channel::Rejoin;
 use strict;
@@ -15,17 +15,17 @@ use NumericReply;
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
-    $this->{sessions} = {}; # �����ͥ�ե�͡��� => ���å�������
-    # ���å������� : HASH
-    # ch_fullname => �����ͥ�ե�͡���
-    # ch_shortname => �����ͥ륷�硼�ȥ͡���
+    $this->{sessions} = {}; # チャンネルフルネーム => セッション情報
+    # セッション情報 : HASH
+    # ch_fullname => チャンネルフルネーム
+    # ch_shortname => チャンネルショートネーム
     # ch => ChannelInfo
     # server => IrcIO::Server
-    # got_mode => ����MODE��������Ƥ��뤫�ɤ�����
-    # got_blist => ����+b�ꥹ�Ȥ�(ά
-    # got_elist => +e(ά
-    # got_Ilist => +I(ά
-    # got_oper => ����PART->JOIN���Ƥ��뤫�ɤ�����
+    # got_mode => 既にMODEを取得しているかどうか。
+    # got_blist => 既に+bリストを(略
+    # got_elist => +e(略
+    # got_Ilist => +I(略
+    # got_oper => 既にPART->JOINしているかどうか。
     # cmd_buf => ARRAY<Tiarra::IRC::Message>
     $this;
 }
@@ -33,7 +33,7 @@ sub new {
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
     if ($sender->isa('IrcIO::Server')) {
-	# PART,KICK,QUIT,KILL�������줾���ͤˤʤ��װ���
+	# PART,KICK,QUIT,KILLが、それぞれ一人になる要因。
 	my $cmd = $msg->command;
 	if ($cmd eq 'PART') {
 	    foreach my $ch_fullname (split /,/,$msg->param(0)) {
@@ -43,14 +43,14 @@ sub message_arrived {
 	    }
 	}
 	elsif ($cmd eq 'KICK') {
-	    # RFC2812�ˤ��ȡ�ʣ���Υ����ͥ�����KICK��å�������
-	    # ���饤����Ȥ��Ϥ�����̵����
+	    # RFC2812によると、複数のチャンネルを持つKICKメッセージが
+	    # クライアントに届く事は無い。
 	    $this->check_channel(
 		scalar Multicast::detatch($msg->param(0)),
 		$sender);
 	}
 	elsif ($cmd eq 'QUIT' || $cmd eq 'KILL') {
-	    # ���affected-channels�˱ƶ��Τ��ä������ͥ�Υꥹ�Ȥ����äƤ���Ϥ���
+	    # 註釈affected-channelsに影響のあったチャンネルのリストが入っているはず。
 	    foreach (@{$msg->remark('affected-channels')}) {
 		$this->check_channel($_,$sender);
 	    }
@@ -64,26 +64,26 @@ sub message_arrived {
 sub check_channel {
     my ($this,$ch_name,$server) = @_;
     if ($ch_name =~ m/^\+/) {
-	# +�����ͥ��@���դ��ʤ���
+	# +チャンネルに@は付かない。
 	return;
     }
     my $ch = $server->channel($ch_name);
     if (!defined $ch) {
-	# ��ʬ�����äƤ��ʤ�
+	# 自分が入っていない
 	return;
     }
     if ($ch->switches('a')) {
-	# +a�����ͥ�Ǥϰ�ͤˤʤä����ɤ�����Ƚ�꤬���ݤǤ����ˡ�
-	# @�����褵�����̣��̵��������褵���ʤ�����˾�ޤ�����
+	# +aチャンネルでは一人になったかどうかの判定が面倒である上に、
+	# @を復活させる意味も無ければ復活させない方が望ましい。
 	return;
     }
     if ($ch->names(undef,undef,'size') > 1) {
-	# ��Ͱʾ夤�롣
+	# 二人以上いる。
 	return;
     }
     my $myself = $ch->names($server->current_nick);
     if (defined $myself && $myself->has_o) {
-	# ��ʬ��@����äƤ��롣
+	# 自分が@を持っている。
 	return;
     }
     $this->rejoin($ch_name,$server);
@@ -96,30 +96,30 @@ sub rejoin {
 	"Channel::Rejoin is going to rejoin to ${ch_fullname}.");
 
     ###############
-    #   ������ή��
+    #   処理の流れ
     ### phase 1 ###
-    # ���å���������
-    # �Ǽ��Ĥˡ֤��Υ����ͥ�Υ⡼�ɤ��ѹ�����ʡפȽ񤭹��ࡣ
-    # TOPIC��Ф��롣
-    # ����switches-are-known�����ʤ�MODE #channel�¹ԡ�
-    # ɬ�פʤ�MODE #channel +b,MODE #channel +e,MODE #channel +I��¹ԡ�
+    # セッション作成。
+    # 掲示板に「このチャンネルのモードを変更するな」と書き込む。
+    # TOPICを覚える。
+    # 備考switches-are-knownが偽ならMODE #channel実行。
+    # 必要ならMODE #channel +b,MODE #channel +e,MODE #channel +Iを実行。
     ### phase 2 ###
-    # 324(mode��ץ饤),368(+b�ꥹ�Ƚ����),
-    # 349(+e�ꥹ�Ƚ����),347(+I�ꥹ�Ƚ����)�򤽤줾��ɬ�פʤ��Ԥġ�
+    # 324(modeリプライ),368(+bリスト終わり),
+    # 349(+eリスト終わり),347(+Iリスト終わり)をそれぞれ必要なら待つ。
     ### phase 3 ###
-    # PART #channel�¹ԡ�
-    # JOIN #channel�¹ԡ�
-    # ��ʬ��JOIN���Ԥġ�
-    # ��������̿��Хåե���ί�ޤä����ޥ�ɤ�¹Ԥ��Ƥ�����Timer���ѡ�
-    #   ̿��Хåե��ˤ�MODE��TOPIC�����äƤ��롣
-    # �Ǽ��Ĥ���ä���
-    # ���å������˴���
+    # PART #channel実行。
+    # JOIN #channel実行。
+    # 自分のJOINを待つ。
+    # 少しずつ命令バッファに溜まったコマンドを実行していく。Timer使用。
+    #   命令バッファにはMODEやTOPICが入っている。
+    # 掲示板から消す。
+    # セッションを破棄。
     ###############
 
-    # �����ͥ����
+    # チャンネル取得
     my $ch = $server->channel($ch_name);
 
-    # ���å������Ͽ
+    # セッション登録
     my $session = $this->{sessions}->{$ch_fullname} = {
 	ch_fullname => $ch_fullname,
 	ch_shortname => $ch_name,
@@ -128,29 +128,29 @@ sub rejoin {
 	cmd_buf => [],
     };
     
-    # do-not-touch-mode-of-channels�����
+    # do-not-touch-mode-of-channelsを取得
     my $untouchables = BulletinBoard->shared->do_not_touch_mode_of_channels;
     if (!defined $untouchables) {
 	$untouchables = {};
 	BulletinBoard->shared->set('do-not-touch-mode-of-channels',$untouchables);
     }
-    # ���Υ����ͥ��ե�͡������Ͽ
+    # このチャンネルをフルネームで登録
     $untouchables->{$ch_fullname} = 1;
     
-    # TOPIC��Ф��롣
+    # TOPICを覚える。
     if ($ch->topic ne '') {
 	push @{$session->{cmd_buf}},$this->construct_irc_message(
 	    Command => 'TOPIC',
 	    Params => [$ch_name,$ch->topic]);
     }
     
-    # ɬ�פʤ�MODE #channel�¹ԡ�
+    # 必要ならMODE #channel実行。
     #if ($ch->remarks('switches-are-known')) {
     #	$session->{got_mode} = 1;
     #	push @{$session->{cmd_buf}},$this->construct_irc_message(
     #	    Command => 'MODE',
     #}
-    # ��äѤ��ᡣ���ݡ��ɱ�BOT�Ȥ��ƻȤ������ä��餳��ʥ⥸�塼��Ȥ�ʤ����ȡ�
+    # やっぱりやめ。面倒。防衛BOTとして使いたかったらこんなモジュール使わないこと。
     #else {
     	$server->send_message(
     	    $this->construct_irc_message(
@@ -158,7 +158,7 @@ sub rejoin {
 		Param => $ch_name));
     #}
     
-    # ɬ�פʤ�+e,+b,+I�¹ԡ�
+    # 必要なら+e,+b,+I実行。
     if ($this->config->save_lists) {
 	foreach (qw/+e +b +I/) {
 	    $server->send_message(
@@ -173,10 +173,10 @@ sub rejoin {
 	    $session->{got_Ilist} = 1;
     }
 
-    # �Ԥ��ʤ���Фʤ�ʤ���ΤϤ��뤫��
+    # 待たなければならないものはあるか？
     if ($this->{got_mode} && $this->{got_elist} &&
 	$this->{got_blist} && $this->{got_Ilist}) {
-	# �⤦����̵����
+	# もう何も無い。
 	$this->part_and_join($session);
     }
 }
@@ -195,7 +195,7 @@ sub part_and_join {
 sub session_work {
     my ($this,$msg,$server) = @_;
     my $session;
-    # �����å����оݤˤʤ�Τ�JOIN,324,368,349,347��
+    # ウォッチの対象になるのはJOIN,324,368,349,347。
 
     my $got_reply = sub {
 	my $type = shift;
@@ -217,7 +217,7 @@ sub session_work {
 	    
 	    my $list = $session->{ch}->$listname();
 	    my $list_size = @$list;
-	    # ���Ĥ��ĤޤȤ�롣
+	    # ３つずつまとめる。
 	    for (my $i = 0; $i < $list_size; $i+=3) {
 		my @masks = ($list->[$i]);
 		push @masks,$list->[$i+1] if $i+1 < $list_size;
@@ -233,7 +233,7 @@ sub session_work {
     };
     
     if ($msg->command eq RPL_CHANNELMODEIS) {
-	# MODE��ץ饤
+	# MODEリプライ
 	$session = $this->{sessions}->{$msg->param(1)};
 	if (defined $session) {
 	    $session->{got_mode} = 1;
@@ -241,7 +241,7 @@ sub session_work {
 	    
 	    my ($params, @params) = $ch->mode_string;
 	    if (length($params) > 1) {
-		# ���ꤹ�٤��⡼�ɤ����롣
+		# 設定すべきモードがある。
 		push @{$session->{cmd_buf}},$this->construct_irc_message(
 		    Command => 'MODE',
 		    Params => [$session->{ch_shortname},
@@ -251,28 +251,28 @@ sub session_work {
 	}
     }
     elsif ($msg->command eq RPL_ENDOFBANLIST) {
-	# +b�ꥹ�Ƚ����
+	# +bリスト終わり
 	$got_reply->('b');
     }
     elsif ($msg->command eq RPL_ENDOFEXCEPTLIST) {
-	# +e�ꥹ�Ƚ����
+	# +eリスト終わり
 	$got_reply->('e');
     }
     elsif ($msg->command eq RPL_ENDOFINVITELIST) {
-	# +I�ꥹ�Ƚ����
+	# +Iリスト終わり
 	$got_reply->('I');
     }
     elsif ($msg->command eq 'JOIN') {
 	$session = $this->{sessions}->{$msg->param(0)};
 	if (defined $session && defined $msg->nick &&
 	    $msg->nick eq RunLoop->shared->current_nick) {
-	    # ����ľ������
-	    $session->{got_oper} = 1; # ���˥��åȤ���Ƥ���Ȧ����ǰ�Τ���
+	    # 入り直した。
+	    $session->{got_oper} = 1; # 既にセットされている筈だが念のため
 	    $this->revive($session);
 	}
     }
 
-    # $session�����Ǥʤ���С�ɬ�פʾ�������·�ä���ǽ�������롣
+    # $sessionが空でなければ、必要な情報が全て揃った可能性がある。
     if (defined $session && !$session->{got_oper} &&
 	$session->{got_mode} && $session->{got_blist} &&
 	$session->{got_elist} && $session->{got_Ilist}) {
@@ -289,7 +289,7 @@ sub revive {
 	    my $timer = shift;
 	    my $cmd_buf = $session->{cmd_buf};
 	    if (@$cmd_buf > 0) {
-		# ���٤���Ĥ�������Ф���
+		# 一度に二つずつ送り出す。
 		my $msg_per_trigger = 2;
 		for (my $i = 0; $i < @$cmd_buf && $i < $msg_per_trigger; $i++) {
 		    $session->{server}->send_message($cmd_buf->[$i]);
@@ -297,13 +297,13 @@ sub revive {
 		splice @$cmd_buf,0,$msg_per_trigger;
 	    }
 	    if (@$cmd_buf == 0) {
-		# cmd_buf�������ä��齪λ��
-		# untouchables����õ�
+		# cmd_bufが空だったら終了。
+		# untouchablesから消去
 		my $untouchables = BulletinBoard->shared->do_not_touch_mode_of_channels;
 		delete $untouchables->{$session->{ch_fullname}};
-		# session�õ�
+		# session消去
 		delete $this->{sessions}->{$session->{ch_fullname}};
-		# �����ޡ��򥢥󥤥󥹥ȡ���
+		# タイマーをアンインストール
 		$timer->uninstall;
 	    }
 	})->install;
@@ -312,15 +312,15 @@ sub revive {
 1;
 
 =pod
-info: �����ͥ륪�ڥ졼�����¤�̵�������Ȥ�����ͤʤ�join��ľ����
+info: チャンネルオペレータ権限を無くしたとき、一人ならjoinし直す。
 default: off
 section: important
 
-# +�����ͥ��+a����Ƥ�������ͥ�ʳ��ǥ����ͥ륪�ڥ졼�����¤��������
-# ��ͤ���ˤʤä��������Υ����ͥ��@�����褵���뤿��˼�ưŪ��join��ľ���⥸�塼�롣
-# �ȥԥå����⡼�ɡ�ban�ꥹ�����Τ���������ͥ�°�������¸���ޤ���
+# +チャンネルや+aされているチャンネル以外でチャンネルオペレータ権限を持たずに
+# 一人きりになった時、そのチャンネルの@を復活させるために自動的にjoinし直すモジュール。
+# トピック、モード、banリスト等のあらゆるチャンネル属性をも保存します。
 
-# +b,+I,+e�ꥹ�Ȥ������Ԥʤ����ɤ�����
-# ���ޤ��Ĺ���ꥹ�Ȥ���������Max Send-Q Exceed����Ȥ���뤫���Τ�ޤ���
+# +b,+I,+eリストの復旧を行なうかどうか。
+# あまりに長いリストを取得するとMax Send-Q Exceedで落とされるかも知れません。
 save-lists: 1
 =cut

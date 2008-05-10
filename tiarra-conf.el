@@ -2,10 +2,10 @@
 ;; ----------------------------------------------------------------------------
 ;; $Id$
 ;; ----------------------------------------------------------------------------
-;; tiarra.confÊÔ½¸ÍÑ¥â¡¼¥É¡£
+;; tiarra.confç·¨é›†ç”¨ãƒ¢ãƒ¼ãƒ‰ã€‚
 ;; ----------------------------------------------------------------------------
 
-;; ¥­¡¼¥Ş¥Ã¥×
+;; ã‚­ãƒ¼ãƒãƒƒãƒ—
 (defvar tiarra-conf-mode-map
   (let ((map (make-keymap)))
     (define-key map "\M-n" 'tiarra-conf-next-block)
@@ -15,21 +15,21 @@
     map)
   "Keymap for tiarra conf mode.")
 
-;; ¹½Ê¸ÄêµÁ
+;; æ§‹æ–‡å®šç¾©
 (defvar tiarra-conf-mode-syntax-table nil
   "Syntax table used while in tiarra conf mode.")
 (if tiarra-conf-mode-syntax-table
-    ()   ; ¹½Ê¸¥Æ¡¼¥Ö¥ë¤¬´ûÂ¸¤Ê¤é¤ĞÚÎ¹¹¤·¤Ê¤¤
+    ()   ; æ§‹æ–‡ãƒ†ãƒ¼ãƒ–ãƒ«ãŒæ—¢å­˜ãªã‚‰ã°è®Šæ›´ã—ãªã„
   (setq tiarra-conf-mode-syntax-table (make-syntax-table))
   (modify-syntax-entry ?{ "(}")
   (modify-syntax-entry ?} "){"))
 
-;; Î¬¸ìÄêµÁ
+;; ç•¥èªå®šç¾©
 (defvar tiarra-conf-mode-abbrev-table nil
   "Abbrev table used while in tiarra conf mode.")
 (define-abbrev-table 'tiarra-conf-mode-abbrev-table ())
 
-;; ¥Õ¥Ã¥¯
+;; ãƒ•ãƒƒã‚¯
 (defvar tiarra-conf-mode-hook nil
   "Normal hook runs when entering tiarra-conf-mode.")
 
@@ -45,25 +45,25 @@ Turning on tiarra-conf-mode runs the normal hook `tiarra-conf-mode-hook'."
   (setq mode-name "Tiarra-Conf")
   (setq major-mode 'tiarra-conf-mode)
 
-  ;; ¥Õ¥©¥ó¥È¥í¥Ã¥¯¤ÎÀßÄê
+  ;; ãƒ•ã‚©ãƒ³ãƒˆãƒ­ãƒƒã‚¯ã®è¨­å®š
   (make-local-variable 'font-lock-defaults)
   (setq tiarra-conf-font-lock-keywords
 	(list '("^[\t ]*#.*$"
-		. font-lock-comment-face) ; ¥³¥á¥ó¥È
+		. font-lock-comment-face) ; ã‚³ãƒ¡ãƒ³ãƒˆ
 	      '("^[\t ]*@.*$"
-		. font-lock-warning-face) ; @Ê¸
+		. font-lock-warning-face) ; @æ–‡
 	      '("^[\t ]*\\+[\t ]+.+$"
-		. font-lock-type-face) ; + ¥â¥¸¥å¡¼¥ë
+		. font-lock-type-face) ; + ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«
 	      '("^[\t ]*-[\t ]+.+$"
-		. font-lock-constant-face) ; - ¥â¥¸¥å¡¼¥ë 
+		. font-lock-constant-face) ; - ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ« 
 	      '("^[\t ]*\\([^:\n]+\\)\\(:\\).*$"
 		(1 font-lock-variable-name-face) ; key
 		(2 font-lock-string-face)) ; ':'
 	      '("^[\t ]*[^{}\n]+"
-		. font-lock-function-name-face))) ; ¥Ö¥í¥Ã¥¯Ì¾
+		. font-lock-function-name-face))) ; ãƒ–ãƒ­ãƒƒã‚¯å
   (setq font-lock-defaults '(tiarra-conf-font-lock-keywords t))
 
-  ;; mmm-mode¤ÎÀßÄê
+  ;; mmm-modeã®è¨­å®š
   (if (featurep 'mmm-auto)
       (progn
 	(mmm-add-group
@@ -82,37 +82,37 @@ Turning on tiarra-conf-mode runs the normal hook `tiarra-conf-mode-hook'."
   (run-hooks 'tiarra-conf-mode-hook))
 
 (defun tiarra-conf-next-token ()
-  "¥«¥ì¥ó¥È¥Ğ¥Ã¥Õ¥¡¤Î¸½ºß¤Î¥«¡¼¥½¥ë°ÌÃÖ¤«¤é¼¡¤Î¥È¡¼¥¯¥ó¤òÃµ¤·¤ÆÊÖ¤¹¡£
-¥«¡¼¥½¥ë¤Ï¤½¤Î¥È¡¼¥¯¥ó¤Î½ª¤Ï¤ê¤Î°ÌÃÖ¤Ø°ÜÆ°¤¹¤ë¡£
+  "ã‚«ãƒ¬ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ã®ç¾åœ¨ã®ã‚«ãƒ¼ã‚½ãƒ«ä½ç½®ã‹ã‚‰æ¬¡ã®ãƒˆãƒ¼ã‚¯ãƒ³ã‚’æ¢ã—ã¦è¿”ã™ã€‚
+ã‚«ãƒ¼ã‚½ãƒ«ã¯ãã®ãƒˆãƒ¼ã‚¯ãƒ³ã®çµ‚ã¯ã‚Šã®ä½ç½®ã¸ç§»å‹•ã™ã‚‹ã€‚
 
-ÊÖ¤µ¤ì¤ë¤Î¤Ï¼¡¤Î¤ä¤¦¤Ê¥ê¥¹¥È¤Ç¤¢¤ë¡£
-\(\"¥È¡¼¥¯¥ó\" '¼ïÎà)
-¼ïÎà:
-  pair       -> ¥­¡¼¤ÈÃÍ¤Î¥Ú¥¢
-  label      -> ¥Ö¥í¥Ã¥¯¤Î¥é¥Ù¥ë
-  blockstart -> ¥Ö¥í¥Ã¥¯¤Î³«»Ïµ­éË
-  blockend   -> ¥Ö¥í¥Ã¥¯¤Î½ªÎ»µ­éË
+è¿”ã•ã‚Œã‚‹ã®ã¯æ¬¡ã®ã‚„ã†ãªãƒªã‚¹ãƒˆã§ã‚ã‚‹ã€‚
+\(\"ãƒˆãƒ¼ã‚¯ãƒ³\" 'ç¨®é¡)
+ç¨®é¡:
+  pair       -> ã‚­ãƒ¼ã¨å€¤ã®ãƒšã‚¢
+  label      -> ãƒ–ãƒ­ãƒƒã‚¯ã®ãƒ©ãƒ™ãƒ«
+  blockstart -> ãƒ–ãƒ­ãƒƒã‚¯ã®é–‹å§‹è¨˜è™Ÿ
+  blockend   -> ãƒ–ãƒ­ãƒƒã‚¯ã®çµ‚äº†è¨˜è™Ÿ
 
-¥È¡¼¥¯¥ó¤¬Ìµ¤±¤ì¤Ğnil¤òÊÖ¤¹¡£"
+ãƒˆãƒ¼ã‚¯ãƒ³ãŒç„¡ã‘ã‚Œã°nilã‚’è¿”ã™ã€‚"
   (catch 'tiarra-conf-next-token
-    ;; ¤Ş¤º¤Ï¶õÇò¤È¥³¥á¥ó¥È¤òÈô¤Ğ¤¹¡£
-    ;; @Ê¸¤â%PRE¤â%CODE¤âÈô¤Ğ¤¹¡£
-    ;; ¡Ä¡Ä¤·¤«¤·¡ÖºÇ¾®°ìÃ×¡×¤Î»È¤Ø¤Ê¤¤Elisp-Regex¤Ç
-    ;; ¤É¤¦¤ä¤Ä¤Æ%PRE¤Ë°ìÃ×¤µ¤»¤¿¤â¤Î¤À¤«Ê¬¤«¤é¤Ê¤¤¡£
-    ;; ½õ¤±¤Æ¡£
+    ;; ã¾ãšã¯ç©ºç™½ã¨ã‚³ãƒ¡ãƒ³ãƒˆã‚’é£›ã°ã™ã€‚
+    ;; @æ–‡ã‚‚%PREã‚‚%CODEã‚‚é£›ã°ã™ã€‚
+    ;; â€¦â€¦ã—ã‹ã—ã€Œæœ€å°ä¸€è‡´ã€ã®ä½¿ã¸ãªã„Elisp-Regexã§
+    ;; ã©ã†ã‚„ã¤ã¦%PREã«ä¸€è‡´ã•ã›ãŸã‚‚ã®ã ã‹åˆ†ã‹ã‚‰ãªã„ã€‚
+    ;; åŠ©ã‘ã¦ã€‚
     (or (re-search-forward "^\\([\n\t ]\\|#.*\\|@.*\\)*" nil t 1)
 	(throw 'tiarra-conf-next-token nil))
     
-    ;; "¥­¡¼: ÃÍ"¤Î·Á¼°¤Ç¤¢¤ì¤Ğ¡¢¹Ô¤Î½ª¤Ï¤ê¤Ş¤Ç¤¬¥È¡¼¥¯¥ó¡£
-    (let* ((keychar "[^{}:\n\t ]") ; ¥­¡¼¤È¤·¤Æµö¤µ¤ì¤ëÊ¸»ú
-	   (pair (concat keychar "+[\t ]*:.*")) ; ¥­¡¼¤ÈÃÍ¤Î¥Ú¥¢
+    ;; "ã‚­ãƒ¼: å€¤"ã®å½¢å¼ã§ã‚ã‚Œã°ã€è¡Œã®çµ‚ã¯ã‚Šã¾ã§ãŒãƒˆãƒ¼ã‚¯ãƒ³ã€‚
+    (let* ((keychar "[^{}:\n\t ]") ; ã‚­ãƒ¼ã¨ã—ã¦è¨±ã•ã‚Œã‚‹æ–‡å­—
+	   (pair (concat keychar "+[\t ]*:.*")) ; ã‚­ãƒ¼ã¨å€¤ã®ãƒšã‚¢
 	   
-	   ;; Ï¢åô¤¹¤ëÆó¤Ä¤Î¥³¥í¥ó¤Ï¡¢ÆÃÎã¤È¤·¤Æ¥é¥Ù¥ëÌ¾¤Ëµö¤¹¡£
-	   (labelchar "\\([^-{}\n\t ]\\|::\\)") ; ¥Ö¥í¥Ã¥¯Ì¾¤È¤·¤Æµö¤µ¤ì¤ëÊ¸»ú
-	   (label (concat "\\(\\(\\+\\|-\\)[\t ]+\\)?" labelchar "+")) ;; ¥Ö¥í¥Ã¥¯¤Î¥é¥Ù¥ë
+	   ;; é€£çºŒã™ã‚‹äºŒã¤ã®ã‚³ãƒ­ãƒ³ã¯ã€ç‰¹ä¾‹ã¨ã—ã¦ãƒ©ãƒ™ãƒ«åã«è¨±ã™ã€‚
+	   (labelchar "\\([^-{}\n\t ]\\|::\\)") ; ãƒ–ãƒ­ãƒƒã‚¯åã¨ã—ã¦è¨±ã•ã‚Œã‚‹æ–‡å­—
+	   (label (concat "\\(\\(\\+\\|-\\)[\t ]+\\)?" labelchar "+")) ;; ãƒ–ãƒ­ãƒƒã‚¯ã®ãƒ©ãƒ™ãƒ«
 	   
-	   (blockstart "{") ;; ¥Ö¥í¥Ã¥¯¤Î³«»Ï
-	   (blockend "}") ;; ¥Ö¥í¥Ã¥¯¤Î½ªÎ»
+	   (blockstart "{") ;; ãƒ–ãƒ­ãƒƒã‚¯ã®é–‹å§‹
+	   (blockend "}") ;; ãƒ–ãƒ­ãƒƒã‚¯ã®çµ‚äº†
 	   
 	   type)
       (setq type
@@ -127,9 +127,9 @@ Turning on tiarra-conf-mode runs the normal hook `tiarra-conf-mode-hook'."
 	  (goto-char (match-end 0)))))))
 
 (defun tiarra-conf-next-block (&optional n)
-  "¼¡¤«¤énÈÖÌÜ¤Î¥Ö¥í¥Ã¥¯¤Î°ÌÃÖ¤Ø¥«¡¼¥½¥ë¤ò°ÜÆ°¤¹¤ë¡£
-n¤Ï¾ÊÎ¬²ÄÇ½¤Ç¡¢¾ÊÎ¬¤µ¤ì¤¿¾ì¹ç¤Ï`1'¡£
-¥Ö¥í¥Ã¥¯¤¬¸«ÉÕ¤«¤Ä¤¿¾ì¹ç¤Ï¡¢¤½¤Î¥é¥Ù¥ë¤Î³«»Ï°ÌÃÖ¤òÊÖ¤¹¡£"
+  "æ¬¡ã‹ã‚‰nç•ªç›®ã®ãƒ–ãƒ­ãƒƒã‚¯ã®ä½ç½®ã¸ã‚«ãƒ¼ã‚½ãƒ«ã‚’ç§»å‹•ã™ã‚‹ã€‚
+nã¯çœç•¥å¯èƒ½ã§ã€çœç•¥ã•ã‚ŒãŸå ´åˆã¯`1'ã€‚
+ãƒ–ãƒ­ãƒƒã‚¯ãŒè¦‹ä»˜ã‹ã¤ãŸå ´åˆã¯ã€ãã®ãƒ©ãƒ™ãƒ«ã®é–‹å§‹ä½ç½®ã‚’è¿”ã™ã€‚"
   (interactive "p")
   (catch 'tiarra-conf-next-block
     (setq n (if (numberp n) n 1))
@@ -139,37 +139,37 @@ n¤Ï¾ÊÎ¬²ÄÇ½¤Ç¡¢¾ÊÎ¬¤µ¤ì¤¿¾ì¹ç¤Ï`1'¡£
     (if (= n 0)
 	(throw 'tiarra-conf-next-block nil))
     
-    ;; ¥«¡¼¥½¥ë¤ò¹Ô¤ÎÀèÆ¬¤Ø°ÜÆ°¡£
+    ;; ã‚«ãƒ¼ã‚½ãƒ«ã‚’è¡Œã®å…ˆé ­ã¸ç§»å‹•ã€‚
     (beginning-of-line)
     
     (let (result token)
-      ;; label¤¬ĞÔ¤ë¤Ş¤Ç¥È¡¼¥¯¥ó¤òÃµ¤¹¡£
+      ;; labelãŒä¾†ã‚‹ã¾ã§ãƒˆãƒ¼ã‚¯ãƒ³ã‚’æ¢ã™ã€‚
       (while (progn
 	       (setq token (tiarra-conf-next-token))
-	       ;; token¤¬nil¤Ş¤¿¤Ïlabel¤Ê¤é½ªÎ»¡£
+	       ;; tokenãŒnilã¾ãŸã¯labelãªã‚‰çµ‚äº†ã€‚
 	       (if (or (null token)
 		       (eq (cadr token) 'label))
 		   nil
-		 ;; label°Ê³°¤Î¥È¡¼¥¯¥ó¤Ê¤Î¤Ç¡¢ºÆÅÙÜıº÷¡£
+		 ;; labelä»¥å¤–ã®ãƒˆãƒ¼ã‚¯ãƒ³ãªã®ã§ã€å†åº¦æª¢ç´¢ã€‚
 		 t)))
       (if (null token)
-	  ;; ¥È¡¼¥¯¥ó¤¬Ìµ¤¤¡£¤³¤³¤Ç½ª¤Ï¤ê¡£
+	  ;; ãƒˆãƒ¼ã‚¯ãƒ³ãŒç„¡ã„ã€‚ã“ã“ã§çµ‚ã¯ã‚Šã€‚
 	  nil
 	(setq result (point))
-	;; "{"¤Î¼¡¤ÎÈó¶õÇòÊ¸»ú¤Ø°ÜÆ°¡£
+	;; "{"ã®æ¬¡ã®éç©ºç™½æ–‡å­—ã¸ç§»å‹•ã€‚
 	(re-search-forward "{" nil t 1)
 	(re-search-forward "[^\n\t ]" nil t 1)
 	(backward-char)
 	
-	;; n¤¬2°Ê¾å¤À¤Ã¤¿¤é¤â¤¦°ìÅÙ¡£
+	;; nãŒ2ä»¥ä¸Šã ã£ãŸã‚‰ã‚‚ã†ä¸€åº¦ã€‚
 	(if (> n 1)
 	    (tiarra-conf-next-block (1- n))
 	  result)))))
 
 (defun tiarra-conf-prev-block (&optional n)
-  "Á°¤«¤énÈÖÌÜ¤Î¥Ö¥í¥Ã¥¯¤Î°ÌÃÖ¤Ø¥«¡¼¥½¥ë¤ò°ÜÆ°¤¹¤ë¡£
-n¤Ï¾ÊÎ¬²ÄÇ½¤Ç¡¢¾ÊÎ¬¤µ¤ì¤¿¾ì¹ç¤Ï`1'¡£
-¥Ö¥í¥Ã¥¯¤¬¸«ÉÕ¤«¤Ä¤¿¾ì¹ç¤Ï¡¢¤½¤Î¥é¥Ù¥ë¤Î³«»Ï°ÌÃÖ¤òÊÖ¤¹¡£"
+  "å‰ã‹ã‚‰nç•ªç›®ã®ãƒ–ãƒ­ãƒƒã‚¯ã®ä½ç½®ã¸ã‚«ãƒ¼ã‚½ãƒ«ã‚’ç§»å‹•ã™ã‚‹ã€‚
+nã¯çœç•¥å¯èƒ½ã§ã€çœç•¥ã•ã‚ŒãŸå ´åˆã¯`1'ã€‚
+ãƒ–ãƒ­ãƒƒã‚¯ãŒè¦‹ä»˜ã‹ã¤ãŸå ´åˆã¯ã€ãã®ãƒ©ãƒ™ãƒ«ã®é–‹å§‹ä½ç½®ã‚’è¿”ã™ã€‚"
   (interactive "p")
   (catch 'tiarra-conf-prev-block
     (setq n (if (numberp n) n 1))
@@ -178,38 +178,38 @@ n¤Ï¾ÊÎ¬²ÄÇ½¤Ç¡¢¾ÊÎ¬¤µ¤ì¤¿¾ì¹ç¤Ï`1'¡£
     (if (< n 0)
 	(throw 'tiarra-conf-prev-block (tiarra-conf-next-block (* -1 n))))
 
-    ;; ¤Ş¤Å¼¡¤Î¥Ö¥í¥Ã¥¯¤òÃµ¤·¤Æ¡¢¤½¤Î°ÌÃÖ¤òµ­Ï¿¤¹¤ë¡£nil¤Ê¤énil¤ÇÎÉ¤¤¡£
+    ;; ã¾ã¥æ¬¡ã®ãƒ–ãƒ­ãƒƒã‚¯ã‚’æ¢ã—ã¦ã€ãã®ä½ç½®ã‚’è¨˜éŒ²ã™ã‚‹ã€‚nilãªã‚‰nilã§è‰¯ã„ã€‚
     (let ((next-block-pos
 	   (save-excursion (tiarra-conf-next-block)))
 	  current-block-pos)
-      ;; °ì¹Ô¤Å¤Ä¥«¡¼¥½¥ë¤òÁ°¤ËÌá¤·¤Ä¤Ä¡¢¡Ö¼¡¤Î¡×¥Ö¥í¥Ã¥¯¤òÃµ¤·¤Æ¤ß¤ë¡£
-      ;; next-block-pos¤è¤ê¤âÁ°¤ËÂ¸ºß¤¹¤ë¥Ö¥í¥Ã¥¯¤ò¸«ÉÕ¤±¤¿¤é¡¢¤½¤³¤Ç»ß¤á¤ë¡£
+      ;; ä¸€è¡Œã¥ã¤ã‚«ãƒ¼ã‚½ãƒ«ã‚’å‰ã«æˆ»ã—ã¤ã¤ã€ã€Œæ¬¡ã®ã€ãƒ–ãƒ­ãƒƒã‚¯ã‚’æ¢ã—ã¦ã¿ã‚‹ã€‚
+      ;; next-block-posã‚ˆã‚Šã‚‚å‰ã«å­˜åœ¨ã™ã‚‹ãƒ–ãƒ­ãƒƒã‚¯ã‚’è¦‹ä»˜ã‘ãŸã‚‰ã€ãã“ã§æ­¢ã‚ã‚‹ã€‚
       (while (progn
 	       (beginning-of-line)
 	       (if (= (point) (point-min))
-		   ;; ¤³¤ì°Ê¾åÁ°¤Ë¤ÏÌá¤ì¤Ê¤¤¡£
+		   ;; ã“ã‚Œä»¥ä¸Šå‰ã«ã¯æˆ»ã‚Œãªã„ã€‚
 		   nil
-		 ;; ¤Ş¤ÀÌá¤ì¤ë¡£
+		 ;; ã¾ã æˆ»ã‚Œã‚‹ã€‚
 		 (previous-line)
 		 (setq current-block-pos
 		       (save-excursion (tiarra-conf-next-block)))
-		 ;; ºÇ½é¤Ë¸«ÉÕ¤±¤¿¡Ö¼¡¤Î¡×¥Ö¥í¥Ã¥¯¤¬nil¤À¤Ä¤¿¤ê¡¢
-		 ;; º£ÑÅ¸«ÉÕ¤±¤¿¡Ö¼¡¤Î¡×¥Ö¥í¥Ã¥¯¤ÈºÇ½é¤Î¤½¤ì¤¬°Û¤Ä¤Æ¤ğ¤¿¤ê¤¹¤ì¤Ğ
-		 ;; ¤³¤ì¤òÊÖ¤·¤Æ½ªÎ»¤¹¤ë¡£¤Ç¤Ê¤±¤ì¤ĞÆ±¤¸»ö¤ò·«ÊÖ¤¹¡£
+		 ;; æœ€åˆã«è¦‹ä»˜ã‘ãŸã€Œæ¬¡ã®ã€ãƒ–ãƒ­ãƒƒã‚¯ãŒnilã ã¤ãŸã‚Šã€
+		 ;; ä»Šå›˜è¦‹ä»˜ã‘ãŸã€Œæ¬¡ã®ã€ãƒ–ãƒ­ãƒƒã‚¯ã¨æœ€åˆã®ãã‚ŒãŒç•°ã¤ã¦ã‚ãŸã‚Šã™ã‚Œã°
+		 ;; ã“ã‚Œã‚’è¿”ã—ã¦çµ‚äº†ã™ã‚‹ã€‚ã§ãªã‘ã‚Œã°åŒã˜äº‹ã‚’ç¹°è¿”ã™ã€‚
 		 (eq current-block-pos next-block-pos))))
 
-      ;; n¤¬2°Ê¾å¤À¤Ä¤¿¤é¤â¤¦°ìÅÙ¡£
+      ;; nãŒ2ä»¥ä¸Šã ã¤ãŸã‚‰ã‚‚ã†ä¸€åº¦ã€‚
       (if (> n 1)
-	  ;; ¥«¡¼¥½¥ë°ÌÃÖ¤òÀèÆ¬¤ØÌá¤¹
+	  ;; ã‚«ãƒ¼ã‚½ãƒ«ä½ç½®ã‚’å…ˆé ­ã¸æˆ»ã™
 	  (progn (beginning-of-line)
 		 (tiarra-conf-prev-block (- n 2)))
-	;; ¥«¡¼¥½¥ë¤òÅ¬ÀÚ¤Ê°ÌÃÖ¤Ø°ÜÆ°¤µ¤»¤ëàª¤À¤±¤Ë
-	;; tiarra-conf-next-block¤ò¸Æ¤Ö¡£
+	;; ã‚«ãƒ¼ã‚½ãƒ«ã‚’é©åˆ‡ãªä½ç½®ã¸ç§»å‹•ã•ã›ã‚‹çˆ²ã ã‘ã«
+	;; tiarra-conf-next-blockã‚’å‘¼ã¶ã€‚
 	(tiarra-conf-next-block)
 	current-block-pos))))
 
 (defun tiarra-conf-join (delimitor sequence)
-  "perl¤Îjoin(delimitor, sequence)¤ÈÆ±¤¸¡£"
+  "perlã®join(delimitor, sequence)ã¨åŒã˜ã€‚"
   (let (result join)
     (setq join (lambda (elem)
 		 (setq result (if (null result)
@@ -219,26 +219,26 @@ n¤Ï¾ÊÎ¬²ÄÇ½¤Ç¡¢¾ÊÎ¬¤µ¤ì¤¿¾ì¹ç¤Ï`1'¡£
     result))
 
 (defun tiarra-conf-jump-to-block ()
-  "¤½¤ÎconfÃæ¤Ë¤¢¤ë¥Ö¥í¥Ã¥¯¤ÎÌ¾Á°¤òÆşÎÏ¤·¡¢¤½¤Î¾ì½ê¤Ë¥¸¥ã¥ó¥×¤¹¤ë¥³¥Ş¥ó¥É¡£"
+  "ãã®confä¸­ã«ã‚ã‚‹ãƒ–ãƒ­ãƒƒã‚¯ã®åå‰ã‚’å…¥åŠ›ã—ã€ãã®å ´æ‰€ã«ã‚¸ãƒ£ãƒ³ãƒ—ã™ã‚‹ã‚³ãƒãƒ³ãƒ‰ã€‚"
   (interactive)
-  (let (comp-list ;; competing-read¤Ç»È¤Õalist ("¥Ö¥í¥Ã¥¯Ì¾" . label¥È¡¼¥¯¥ó¤ÎÄ¾¸å¤Î°ÌÃÖ)
-	parsing-block-stack ;; ("¥Ö¥í¥Ã¥¯Ì¾" ...)
+  (let (comp-list ;; competing-readã§ä½¿ãµalist ("ãƒ–ãƒ­ãƒƒã‚¯å" . labelãƒˆãƒ¼ã‚¯ãƒ³ã®ç›´å¾Œã®ä½ç½®)
+	parsing-block-stack ;; ("ãƒ–ãƒ­ãƒƒã‚¯å" ...)
 	blockname-to-jump
 	point-to-jump)
     (save-excursion
-      ;; ¥«¡¼¥½¥ë¤ò¥Õ¥¡¥¤¥ë¤ÎÀèÆ¬¤Ø
+      ;; ã‚«ãƒ¼ã‚½ãƒ«ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã®å…ˆé ­ã¸
       (goto-char (point-min))
-      ;; °ì¤Ä¤Å¤Ä¥È¡¼¥¯¥ó¤ò¸«¤Æ¹Ô¤¯¡£label¤ò¸«¤¿¤éµ­Ï¿¤¹¤ë¡£
+      ;; ä¸€ã¤ã¥ã¤ãƒˆãƒ¼ã‚¯ãƒ³ã‚’è¦‹ã¦è¡Œãã€‚labelã‚’è¦‹ãŸã‚‰è¨˜éŒ²ã™ã‚‹ã€‚
       (while (let (token type blockname)
 	       (setq token (tiarra-conf-next-token))
 	       (if (null token)
-		   ;; ¤â¤¦¥È¡¼¥¯¥ó¤¬Ìµ¤¤¡£
+		   ;; ã‚‚ã†ãƒˆãƒ¼ã‚¯ãƒ³ãŒç„¡ã„ã€‚
 		   nil
 		 (setq type (cadr token))
 		 (cond ((eq type 'label)
-			;; ÌŞÛ¯¸(¥¢Ï¥)¶²¼
+			;; ï¾Œï¾ï¾›ï½¯ï½¸(ï½¥âˆ€ï½¥)ï½¶ï½²ï½¼
 			(setq blockname (car token))
-			(if (string-match "^[-+][\t ]+" blockname) ; +¤ä-¤Ï¼è¤ë¡£
+			(if (string-match "^[-+][\t ]+" blockname) ; +ã‚„-ã¯å–ã‚‹ã€‚
 			    (setq blockname (replace-match "" nil nil blockname)))
 			(push blockname parsing-block-stack)
 			(setq comp-list
@@ -247,17 +247,17 @@ n¤Ï¾ÊÎ¬²ÄÇ½¤Ç¡¢¾ÊÎ¬¤µ¤ì¤¿¾ì¹ç¤Ï`1'¡£
 					     (tiarra-conf-join " - " (reverse parsing-block-stack))
 					     (point))))))
 		       ((eq type 'blockend)
-			;; ÌŞÛ¯¸(¥£Á¥)¼­³Ø®³
+			;; ï¾Œï¾ï¾›ï½¯ï½¸(ï½¥ï¼¡ï½¥)ï½¼ï½­ï½³ï¾˜ï½®ï½³
 			(pop parsing-block-stack)))
 		 t)))
-      ;; ¥Ö¥í¥Ã¥¯Ì¾¤òÊ¹¤¯¡£
-      (let ((completion-ignore-case t)) ; °ì»şÅª¤Ë¤³¤ÎÚÎÚË¤òt¤Ë¡£Æ°Åª¥¹¥³¡¼¥×¤ÏÊØÍø¤À¤Í¡Ä¡£
+      ;; ãƒ–ãƒ­ãƒƒã‚¯åã‚’èãã€‚
+      (let ((completion-ignore-case t)) ; ä¸€æ™‚çš„ã«ã“ã®è®Šæ•¸ã‚’tã«ã€‚å‹•çš„ã‚¹ã‚³ãƒ¼ãƒ—ã¯ä¾¿åˆ©ã ã­â€¦ã€‚
 	(setq blockname-to-jump (completing-read
-				 "¥¸¥ã¥ó¥×¤¹¤ë¥Ö¥í¥Ã¥¯: "
+				 "ã‚¸ãƒ£ãƒ³ãƒ—ã™ã‚‹ãƒ–ãƒ­ãƒƒã‚¯: "
 				 comp-list nil t)))
       (setq point-to-jump (cdr (assoc blockname-to-jump comp-list))))
     (if point-to-jump
-	;; Å¬ÀÚ¤Ê°ÌÃÖ¤Ø¥«¡¼¥½¥ë¤ò°ÜÆ°
+	;; é©åˆ‡ãªä½ç½®ã¸ã‚«ãƒ¼ã‚½ãƒ«ã‚’ç§»å‹•
 	(progn
 	  (goto-char point-to-jump)
 	  (beginning-of-line)

@@ -49,10 +49,10 @@ sub find_object {
 
     my $object = $this->{objects}->{$path};
     if (defined($object)) {
-	# ¥Õ¥¡¥¤¥ë¤¬Â¸ºß¤·¤¿¤Î¤ÇÊÖ¤¹¡£
+	# ãƒ•ã‚¡ã‚¤ãƒ«ãŒå­˜åœ¨ã—ãŸã®ã§è¿”ã™ã€‚
 	return $object;
     } else {
-	# ¥Õ¥¡¥¤¥ë¤ÏÂ¸ºß¤·¤Ê¤¤¤Î¤Ç¡¢ÅĞÏ¿¤·¤ÆÊÖ¤¹¡£
+	# ãƒ•ã‚¡ã‚¤ãƒ«ã¯å­˜åœ¨ã—ãªã„ã®ã§ã€ç™»éŒ²ã—ã¦è¿”ã™ã€‚
 	return $this->_register_inner($path, %options);
     }
 }
@@ -62,8 +62,8 @@ sub register {
 
     my $object = $this->find_object($path, %options);
     if (defined $object) {
-	# ¥Õ¥¡¥¤¥ë¤òÆÀ¤é¤ì¤¿¡£
-	# »²¾È²ó¿ô¤òÁı¤ä¤·¤ÆÊÖ¤¹¡£
+	# ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å¾—ã‚‰ã‚ŒãŸã€‚
+	# å‚ç…§å›æ•°ã‚’å¢—ã‚„ã—ã¦è¿”ã™ã€‚
 	$object->register;
 	return $object;
     } else {

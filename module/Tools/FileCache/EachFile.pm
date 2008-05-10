@@ -94,7 +94,7 @@ sub AUTOLOAD {
     my ($this, @args) = @_;
 
     if ($AUTOLOAD =~ /::DESTROY$/) {
-	# DESTROY¤ÏÅÁÃ£¤µ¤»¤Ê¤¤¡£
+	# DESTROYã¯ä¼é”ã•ã›ãªã„ã€‚
 	return;
     }
 

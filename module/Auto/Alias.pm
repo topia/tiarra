@@ -25,7 +25,7 @@ sub message_arrived {
     if ($msg->command eq 'PRIVMSG') {
 
 	if (Mask::match($this->config->confirm,$msg->param(1))) {
-	    # ���οͤΥ����ꥢ���������priv���֤���
+	    # その人のエイリアスがあればprivで返す。
 	    my (undef,undef,$reply_as_priv,undef,undef)
 		= Auto::Utils::generate_reply_closures($msg,$sender,\@result, 0); # Alias conversion disable.
 
@@ -80,19 +80,19 @@ sub message_arrived {
 1;
 
 =pod
-info: �桼�������ꥢ������δ�����Ԥʤ��ޤ���
+info: ユーザエイリアス情報の管理を行ないます。
 default: off
 
-# �����ꥢ���ϴ���Ū��name,user����ĤΥե�����ɤ������äƤ��ꡢ
-# ���줾��桼����̾���桼�����ޥ�����ɽ���ޤ���
+# エイリアスは基本的にname,userの二つのフィールドから成っており、
+# それぞれユーザー名、ユーザーマスクを表します。
 
-# �����ꥢ������ե�����Υѥ��ȡ����Υ��󥳡��ǥ��󥰡�
-# ���Υե�����ϼ��Τ褦�ʥե����ޥåȤǤ��롣
-# 1. ���줾��ιԤϡ�<����>: <��>�פη����Ǥ��롣
-# 2. ���ιԤǡ��ƥ桼��������ڤ롣
-# 3. <��>�ϥ���ޤǶ��ڤ���ʣ�����ͤȤ���롣
+# エイリアス定義ファイルのパスと、そのエンコーディング。
+# このファイルは次のようなフォーマットである。
+# 1. それぞれの行は「<キー>: <値>」の形式である。
+# 2. 空の行で、各ユーザーを区切る。
+# 3. <値>はカンマで区切られて複数の値とされる。
 #
-# �����ꥢ������ե��������:
+# エイリアス定義ファイルの例:
 #
 # name: sample
 # user: *!*sample@*.sample.net
@@ -103,30 +103,30 @@ default: off
 alias: alias.txt
 alias-encoding: euc
 
-# ����ȯ���򤷤��ͤΥ����ꥢ������Ͽ����Ƥ���С������priv�����롣
-confirm: �����ꥢ����ǧ
+# この発言をした人のエイリアスが登録されていれば、それをprivで送る。
+confirm: エイリアス確認
 
-# ��<add�ǻ��ꤷ���������> user *!*user@*.user.net�פΤ褦�ˤ��ƾ�����ɲá�
-# ȯ���򤷤��ͤΥ����ꥢ����̤��Ͽ���ä����ϡ�user�Τ߼����դ��ƿ����ɲäȤ��롣
-add: �����ꥢ���ɲ�
+# 「<addで指定したキーワード> user *!*user@*.user.net」のようにして情報を追加。
+# 発言をした人のエイリアスが未登録だった場合は、userのみ受け付けて新規追加とする。
+add: エイリアス追加
 
-# ��<remove�ǻ��ꤷ���������> name �桼�����פΤ褦�ˤ��ƾ��������
-# user�����ƺ�����줿�����ꥢ����¾�ξ���(name��)��ޤ�ƾ��Ǥ��롣
-remove: �����ꥢ�����
+# 「<removeで指定したキーワード> name ユーザー」のようにして情報を削除。
+# userを全て削除されたエイリアスは他の情報(name等)も含めて消滅する。
+remove: エイリアス削除
 
-# ��å��������ɲä��줿�Ȥ���ȿ������ꤷ�ޤ���
-# ������ʥ�å�������ȯ������ݤΥե����ޥåȤ���ꤷ�ޤ���
-# �����ꥢ���ִ���ͭ���Ǥ���#(nick.now)��#(channel)��
-# ���줾������nick�������ͥ�̾���ִ�����ޤ���
-# #(key)��#(value)�ϡ��ɲä��줿�������ͤ��ִ�����ޤ���
-added-format: #(name|nick.now): �����ꥢ�� #(key) �� #(value) ���ɲä��ޤ�����
-add-failed-format: #(name|nick.now): �����ꥢ�� #(key) ���ɲä˼��Ԥ��ޤ�����
+# メッセージが追加されたときの反応を指定します。
+# ランダムなメッセージを発言する際のフォーマットを指定します。
+# エイリアス置換が有効です。#(nick.now)、#(channel)は
+# それぞれ相手のnick、チャンネル名に置換されます。
+# #(key)、#(value)は、追加されたキーと値に置換されます。
+added-format: #(name|nick.now): エイリアス #(key) に #(value) を追加しました。
+add-failed-format: #(name|nick.now): エイリアス #(key) の追加に失敗しました。
 
-# ��å�������������줿�Ȥ���ȿ������ꤷ�ޤ���
-# added-format�ǻ���Ǥ����Τ�Ʊ���Ǥ���
-removed-format: #(name|nick.now): �����ꥢ�� #(key) ���� #(value) �������ޤ�����
-remove-failed-format: #(name|nick.now): �����ꥢ�� #(key) ����κ���˼��Ԥ��ޤ�����
+# メッセージが削除されたときの反応を指定します。
+# added-formatで指定できるものと同じです。
+removed-format: #(name|nick.now): エイリアス #(key) から #(value) を削除しました。
+remove-failed-format: #(name|nick.now): エイリアス #(key) からの削除に失敗しました。
 
-# �����ꥢ�����ɲä�����������Ƥ���͡���ά���줿���ϡ�*!*@*�פȸ�������롣
+# エイリアスの追加や削除が許されている人。省略された場合は「*!*@*」と見做される。
 modifier: *!*@*
 =cut

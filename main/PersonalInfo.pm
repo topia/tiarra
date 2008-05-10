@@ -1,8 +1,8 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# nick,username,userhostÅù¤ò»ı¤Ä¸Ä¿Í¾ğÊóÊİ»ı¥¯¥é¥¹¡£
-# ¤³¤Î¥ª¥Ö¥¸¥§¥¯¥È¤ÏIrcIO::Server¤¬´ÉÍı¤¹¤ë¡£
+# nick,username,userhostç­‰ã‚’æŒã¤å€‹äººæƒ…å ±ä¿æŒã‚¯ãƒ©ã‚¹ã€‚
+# ã“ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¯IrcIO::ServerãŒç®¡ç†ã™ã‚‹ã€‚
 # 
 # my $info = new PersonalInfo(Nick => 'saitama');
 # print $info->nick;
@@ -24,7 +24,7 @@ utils->define_array_attr_accessor(0,
 sub new {
     my ($class,%args) = @_;
 
-    # ºÇÄã¸ÂNick¤µ¤¨»ØÄê¤µ¤ì¤Æ¤¤¤ì¤ĞÎÉ¤¤¡£
+    # æœ€ä½é™Nickã•ãˆæŒ‡å®šã•ã‚Œã¦ã„ã‚Œã°è‰¯ã„ã€‚
     unless (defined $args{Nick}) {
 	croak "PersonalInfo must be created with Nick parameter.\n";
     }

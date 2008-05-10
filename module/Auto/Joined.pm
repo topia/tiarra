@@ -12,7 +12,7 @@ use Multicast;
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
-    $this->{last_message_time} = 0; # �Ǹ�ˤ��Υ⥸�塼�뤬ȯ���������
+    $this->{last_message_time} = 0; # 最後にこのモジュールが発言した時刻。
     $this->{table} = do {
 	my %hash = map {
 	    my ($ch_long,$msg) = m/^(.+?)\s+(.+)$/;
@@ -37,10 +37,10 @@ sub message_arrived {
 
 	foreach (split /,/,$msg->param(0)) {
 	    my ($ch_long) = m/^([^\x07]+)/;
-	    # ���Υ����ͥ�˳�����Ƥ�줿��å������Ϥ��뤫��
+	    # このチャンネルに割り当てられたメッセージはあるか？
 	    my $msg_for_ch = $this->{table}->{$ch_long};
 	    if (defined $msg_for_ch) {
-		# ȯ�����Ƥ���1�ðʾ�ФäƤ���С�ȯ����
+		# 発言してから1秒以上経っていれば、発言。
 		if (time > $this->{last_message_time} + 1) {
 		    $reply_anywhere->($msg_for_ch);
 		    $this->{last_message_time} = time;
@@ -55,14 +55,14 @@ sub message_arrived {
 1;
 
 =pod
-info: ����Υ����ͥ��ï����JOIN�����٤�����Υ�å�������ȯ�����롣
+info: 特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。
 default: off
 
-# Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���
+# Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。
 
-# ȯ����Ԥʤ������ͥ�ȡ��������Ƥ�������ޤ���
-# #(nick.now)��$(channel)�ϡ����줾�����θ��ߤ�nick�ȥ����ͥ�̾���ִ�����ޤ���
+# 発言を行なうチャンネルと、その内容を定義します。
+# #(nick.now)と$(channel)は、それぞれ相手の現在のnickとチャンネル名に置換されます。
 #
-# ��: <�����ͥ�̾> <ȯ������>
--channel: #�����ͥ�@ircnet   ��#�����ͤ�פ˰�ž���ޤ�����
+# 書式: <チャンネル名> <発言内容>
+-channel: #チャンネル@ircnet   「#ちゃんねる」に移転しました。
 =cut

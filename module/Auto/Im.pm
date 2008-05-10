@@ -36,9 +36,9 @@ sub message_arrived {
   my ($this,$msg,$sender) = @_;
   my @result = ($msg);
 
-  # �����С�����Υ�å���������
+  # サーバーからのメッセージか？
   if ($sender->isa('IrcIO::Server')) {
-      # PRIVMSG����
+      # PRIVMSGか？
       if ($msg->command eq 'PRIVMSG') {
 	  my $text = $msg->param(1);
 	  my $full_ch_name = $msg->param(0);
@@ -82,36 +82,36 @@ sub message_arrived {
 1;
 
 =pod
-info: ̾�����ƤФ��ȡ�����ȯ����im.kayac.com����������
+info: 名前が呼ばれると、その発言をim.kayac.comに送信する
 default: off
 
-# ȿ������ͤΥޥ�������ꤷ�ޤ���
-# ��ά�����������ȿ�����ޤ���
+# 反応する人のマスクを指定します。
+# 省略すると全員に反応します。
 mask: * *!*@*
 
-# ȿ�����륭����ɤ�����ɽ���ǻ��ꤷ�ޤ���
-# ʣ�����ꤷ��������ʣ���Ի��ꤷ�Ƥ���������
+# 反応するキーワードを正規表現で指定します。
+# 複数指定したい時は複数行指定してください。
 -regex-keyword: (?i:fugahoge)
 
-# ȿ�����륭����ɤ���ꤷ�ޤ���
-# ʣ�����ꤷ��������,(�����)�Ƕ��ڤ뤫��ʣ���Ի��ꤷ�Ƥ���������
+# 反応するキーワードを指定します。
+# 複数指定したい時は,(コンマ)で区切るか、複数行指定してください。
 keyword: hoge
 
-# im.kayac.com �������å������Υե����ޥåȤ���ꤷ�ޤ���
-# �ǥե������: [tiarra][#(channel):#(nick.now)] #(text)
+# im.kayac.com に送るメッセージのフォーマットを指定します。
+# デフォルト値: [tiarra][#(channel):#(nick.now)] #(text)
 format: [tiarra][#(channel):#(nick.now)] #(text)
 
-# im.kayac.com����Ͽ�����桼��̾�����Ϥ��ޤ���
-# im.kayac.com�ˤĤ��Ƥ� http://im.kayac.com/#docs �򻲹ͤˤ��Ƥ���������
+# im.kayac.comで登録したユーザ名を入力します。
+# im.kayac.comについては http://im.kayac.com/#docs を参考にしてください。
 user: username
 
-# im.kayac.com����̩��ǧ�ڤ����򤷤��������ꤷ�Ƥ���������
-# ��ά�����ǧ�ڤʤ��ˤʤ�ޤ���
+# im.kayac.comで秘密鍵認証を選択した場合は設定してください。
+# 省略すると認証なしになります。
 -secret: some secret
 
-# im.kayac.com�ǥѥ����ǧ�ڤ����򤷤��������ꤷ�Ƥ���������
-# ��ά�����ǧ�ڤʤ��ˤʤ�ޤ���
-# secret ��ξ�����ꤷ������ secret ��ͥ�褵��Ƥ��ޤ���
+# im.kayac.comでパスワード認証を選択した場合は設定してください。
+# 省略すると認証なしになります。
+# secret と両方指定した場合は secret が優先されています。
 -password: some password
 
 =cut

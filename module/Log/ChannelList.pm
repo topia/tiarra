@@ -162,31 +162,31 @@ sub _search_network {
 1;
 
 =pod
-info: �����ͥ�ꥹ�Ȥ�ƥ�ץ졼�Ȥ˱�ä� HTML �����ޤ���
+info: チャンネルリストをテンプレートに沿って HTML 化します。
 default: off
 
-# list ���ޥ�ɤ��¹Ԥ��줿�ݤ�ư��ޤ���
+# list コマンドが実行された際に動作します。
 
-# ���Ϥ������ե�����̾���ͥåȥ��̾���Ȥ�����Υ֥��å�����ꤷ�ޤ�����
+# 出力したいファイル名、ネットワーク名、使う設定のブロックを指定します。。
 networks: ircnet.html ircnet ircnet
 
 
 ircnet {
-  # �ƥ�ץ졼�ȥե��������ꤷ�ޤ���
+  # テンプレートファイルを指定します。
   template: channellist.html.tmpl
 
-  # ���Ϥȥƥ�ץ졼�ȥե������ʸ�������ɤ���ꤷ�ޤ���
+  # 出力とテンプレートファイルの文字コードを指定します。
   charset: euc
 
-  # �����򳫻�/��λ��������Υե����ޥåȤ���ꤷ�ޤ���
-  fetch-starttime: %Yǯ%m��%d�� %H��%Mʬ(���ܻ���)
-  fetch-endtime: %Yǯ%m��%d�� %H��%Mʬ(���ܻ���)
+  # 取得を開始/終了した時刻のフォーマットを指定します。
+  fetch-starttime: %Y年%m月%d日 %H時%M分(日本時間)
+  fetch-endtime: %Y年%m月%d日 %H時%M分(日本時間)
 
-  # ɽ����������ͥ�� mask ����ꤷ�ޤ���
+  # 表示するチャンネルの mask を指定します。
   mask: *
   mask: -re:^\&(AUTH|SERVICES|LOCAL|HASH|SERVERS|NUMERICS|CHANNEL|KILLS|NOTICES|ERRORS)
 
-  # ���Ϥ���ե�����Υ⡼�ɤ���ꤷ�ޤ���
+  # 出力するファイルのモードを指定します。
   mode: 644
 }
 =cut

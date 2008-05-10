@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# ¥Á¥ã¥ó¥Í¥ë¾ğÊó¤òÊİ»ı
+# ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ã‚’ä¿æŒ
 # -----------------------------------------------------------------------------
 package ChannelInfo;
 use strict;
@@ -12,7 +12,7 @@ use Multicast;
 our $AUTOLOAD;
 
 sub new {
-    # name¤Ë»ªÌ¾¤Ş¤ÇÉÕ¤±¤Ê¤¤¤è¤¦¤ËÃí°Õ¡£#channel@ircnet¤ÏNG¡£
+    # nameã«é¯–åã¾ã§ä»˜ã‘ãªã„ã‚ˆã†ã«æ³¨æ„ã€‚#channel@ircnetã¯NGã€‚
     my ($class,$name,$network_name) = @_;
     my $obj = {
 	name => $name,
@@ -21,12 +21,12 @@ sub new {
 	topic_who => undef,
 	topic_time => undef,
 	names => undef, # hash; nick => PersonInChannel
-	switches => undef, # hash; a¤äs¤Ê¤É¤Î¥Á¥ã¥ó¥Í¥ë¥â¡¼¥É¡£¥­¡¼¤¬a¤äs¤Ç¡¢ÃÍ¤Ï¾ï¤Ë1¡£
-	parameters => undef, # hash; l¤äk¤Ê¤É¤Î¥Á¥ã¥ó¥Í¥ë¥â¡¼¥É¡£
-	banlist => undef, # array; +b¥ê¥¹¥È¡£ÃÎ¤é¤Ê¤±¤ì¤Ğ¶õ¡£
-	exceptionlist => undef, # array; +e¥ê¥¹¥È¡£ÃÎ¤é¤Ê¤±¤ì¤Ğ¶õ¡£
-	invitelist => undef, # array; +I¥ê¥¹¥È¡£ÃÎ¤é¤Ê¤±¤ì¤Ğ¶õ¡£
-	remarks => undef, # hash; Tiarra¤¬ÆâÉôÅª¤Ë»ÈÍÑ¤¹¤ëÈ÷¹Í¡£
+	switches => undef, # hash; aã‚„sãªã©ã®ãƒãƒ£ãƒ³ãƒãƒ«ãƒ¢ãƒ¼ãƒ‰ã€‚ã‚­ãƒ¼ãŒaã‚„sã§ã€å€¤ã¯å¸¸ã«1ã€‚
+	parameters => undef, # hash; lã‚„kãªã©ã®ãƒãƒ£ãƒ³ãƒãƒ«ãƒ¢ãƒ¼ãƒ‰ã€‚
+	banlist => undef, # array; +bãƒªã‚¹ãƒˆã€‚çŸ¥ã‚‰ãªã‘ã‚Œã°ç©ºã€‚
+	exceptionlist => undef, # array; +eãƒªã‚¹ãƒˆã€‚çŸ¥ã‚‰ãªã‘ã‚Œã°ç©ºã€‚
+	invitelist => undef, # array; +Iãƒªã‚¹ãƒˆã€‚çŸ¥ã‚‰ãªã‘ã‚Œã°ç©ºã€‚
+	remarks => undef, # hash; TiarraãŒå†…éƒ¨çš„ã«ä½¿ç”¨ã™ã‚‹å‚™è€ƒã€‚
     };
 
     unless (defined $name) {
@@ -37,20 +37,20 @@ sub new {
 }
 
 sub equals {
-    # ¥Á¥ã¥ó¥Í¥ëÌ¾¤È¥µ¡¼¥Ğ¡¼¤¬Æ±¤¸¤Ê¤é¿¿¡£
+    # ãƒãƒ£ãƒ³ãƒãƒ«åã¨ã‚µãƒ¼ãƒãƒ¼ãŒåŒã˜ãªã‚‰çœŸã€‚
     my ($this,$ch) = @_;
     defined $ch && $this->name eq $ch->name &&
 	$this->network_name eq $ch->network_name;
 }
 
 sub fullname {
-    # ¥µ¡¼¥Ğ¡¼Ì¾¤òÉÕ¤±¤ÆÊÖ¤¹¡£
+    # ã‚µãƒ¼ãƒãƒ¼åã‚’ä»˜ã‘ã¦è¿”ã™ã€‚
     my $this = shift;
     scalar Multicast::attach($this->name,$this->network_name);
 }
 
 sub mode_string {
-    # RPL_CHANNELMODEIS ¤Î·Á¼°¤ÇÊÖ¤¹¡£
+    # RPL_CHANNELMODEIS ã®å½¢å¼ã§è¿”ã™ã€‚
     my $this = shift;
 
     my $str = '+';
@@ -107,7 +107,7 @@ my $types = {
     remarks => 'hash',
 };
 sub remarks;
-*remark = \&remarks; # remark¤Ïremarks¤Î¥¨¥¤¥ê¥¢¥¹¡£
+*remark = \&remarks; # remarkã¯remarksã®ã‚¨ã‚¤ãƒªã‚¢ã‚¹ã€‚
 sub AUTOLOAD {
     my ($this,@args) = @_;
     (my $key = $AUTOLOAD) =~ s/^.+?:://g;
@@ -145,7 +145,7 @@ sub AUTOLOAD {
 	my $hash = $this->{$key};
 
 	if (!defined $args[0] && !defined $args[2]) {
-	    # HASH*¤òÊÖ¤¹¡£
+	    # HASH*ã‚’è¿”ã™ã€‚
 	    $this->{$key} = $hash = {} if !$hash;
 	    return $hash;
 	}
@@ -183,7 +183,7 @@ sub AUTOLOAD {
 	# $info->banlist('delete','*!*@*.hoge.net');
 	my $array = $this->{$key};
 	if (@args == 0) {
-	    # ARRAY*¤òÊÖ¤¹¡£
+	    # ARRAY*ã‚’è¿”ã™ã€‚
 	    $this->{$key} = $array = [] if !$array;
 	    return $array;
 	}

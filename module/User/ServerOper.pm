@@ -10,7 +10,7 @@ sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
     $this->{table} = do {
-	# �ͥåȥ��̾ => [���ڥ졼��̾,���ڥ졼���ѥ����]
+	# ネットワーク名 => [オペレータ名,オペレータパスワード]
 	my %hash = map {
 	    my ($network,$id,$pass) = m/^(.+?)\s+(.+?)\s+(.+)$/;
 	    $network => [$id,$pass];
@@ -34,12 +34,12 @@ sub connected_to_server {
 1;
 
 =pod
-info: ����Υͥåȥ������³��������OPER���ޥ�ɤ�ȯ�Ԥ��ޤ���
+info: 特定のネットワークに接続した時、OPERコマンドを発行します。
 default: off
 
-# ��: <�ͥåȥ��̾> <���ڥ졼��̾> <���ڥ졼���ѥ����>
+# 書式: <ネットワーク名> <オペレータ名> <オペレータパスワード>
 #
-# �ͥåȥ��"local"����³�����������ڥ졼��̾oper��
-# ���ڥ졼���ѥ����oper-pass��OPER���ޥ�ɤ�ȯ�Ԥ����㡣
+# ネットワーク"local"に接続した時、オペレータ名oper、
+# オペレータパスワードoper-passでOPERコマンドを発行する例。
 -oper: local oper oper-pass
 =cut

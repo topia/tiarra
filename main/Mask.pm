@@ -11,27 +11,27 @@ use Multicast;
 # -----------------------------------------------------------------------------
 # $bool = match($masks, $str).
 # $bool = match($masks, $str, $match_type, $use_re, $use_flag).
-# ¤É¤ì¤Ë¤â¥Ş¥Ã¥Á¤·¤Ê¤«¤Ã¤¿ºİ¤Ïundef, ¤Ä¤Ş¤êµ¶¤¬¤«¤¨¤ë.
-# ÌÀ¼¨Åª¤ËµñÈİ¤µ¤ì¤¿¾ì¹ç¤Ï 0, ¤Ä¤Ş¤êdefined¤Êµ¶¤¬ÊÖ¤ë.
+# ã©ã‚Œã«ã‚‚ãƒãƒƒãƒã—ãªã‹ã£ãŸéš›ã¯undef, ã¤ã¾ã‚Šå½ãŒã‹ãˆã‚‹.
+# æ˜ç¤ºçš„ã«æ‹’å¦ã•ã‚ŒãŸå ´åˆã¯ 0, ã¤ã¾ã‚Šdefinedãªå½ãŒè¿”ã‚‹.
 #
 sub match {
-  # match¤Ï¥ï¥¤¥ë¥É¥«¡¼¥É¤ò»È¤Ã¤¿¥Ş¥Ã¥Á¥ó¥°¤ò¹Ô¤¦´Ø¿ô¤Ç¤¹¡£
-  # ¥ï¥¤¥ë¥É¥«¡¼¥É°Ê³°¤Ë¤â¡¢+¤ä-¤ò»È¤Ã¤¿½ü³°»ØÄê¤ä¡¢
-  # re: ¤ò»È¤Ã¤¿Àµµ¬É½¸½¥Ş¥Ã¥Á¥ó¥°¤¬¹Ô¤¨¤Ş¤¹¡£
+  # matchã¯ãƒ¯ã‚¤ãƒ«ãƒ‰ã‚«ãƒ¼ãƒ‰ã‚’ä½¿ã£ãŸãƒãƒƒãƒãƒ³ã‚°ã‚’è¡Œã†é–¢æ•°ã§ã™ã€‚
+  # ãƒ¯ã‚¤ãƒ«ãƒ‰ã‚«ãƒ¼ãƒ‰ä»¥å¤–ã«ã‚‚ã€+ã‚„-ã‚’ä½¿ã£ãŸé™¤å¤–æŒ‡å®šã‚„ã€
+  # re: ã‚’ä½¿ã£ãŸæ­£è¦è¡¨ç¾ãƒãƒƒãƒãƒ³ã‚°ãŒè¡Œãˆã¾ã™ã€‚
 
-  # $masks¤Ë¤Ï','(¥³¥ó¥Ş)¤Ç¶èÀÚ¤Ã¤¿¥Ş¥Ã¥Á¥ê¥¹¥È¤òÅÏ¤·¤Æ¤¯¤À¤µ¤¤¡£
-  # ¾ò·ïÃæ¤Ë','(¥³¥ó¥Ş)¤ò»È¤¤¤¿¤¤¾ì¹ç¤Ï'\,'¤È½ñ¤±¤Ş¤¹¡£
+  # $masksã«ã¯','(ã‚³ãƒ³ãƒ)ã§åŒºåˆ‡ã£ãŸãƒãƒƒãƒãƒªã‚¹ãƒˆã‚’æ¸¡ã—ã¦ãã ã•ã„ã€‚
+  # æ¡ä»¶ä¸­ã«','(ã‚³ãƒ³ãƒ)ã‚’ä½¿ã„ãŸã„å ´åˆã¯'\,'ã¨æ›¸ã‘ã¾ã™ã€‚
 
-  # °ú¿ôÌ¾      : [´ûÄêÃÍ] - ÀâÌÀ -
-  # $masks      : [-] ¥«¥ó¥Ş¶èÀÚ¤ê¤Î¥Ş¥Ã¥Á¥ê¥¹¥È.
-  # $str        : [-] ¥Ş¥Ã¥ÁÂĞ¾İ¤ÎÊ¸»úÎó.
-  # $match_type : [0] 0: ºÇ¸å¤Ë¥Ş¥Ã¥Á¤·¤¿ÃÍ¤òÊÖ¤·¤Ş¤¹¡£ 1: ºÇ½é¤Ë¥Ş¥Ã¥Á¤·¤¿ÃÍ¤òÊÖ¤·¤Ş¤¹¡£
-  # $use_re     : [1] 0: Àµµ¬É½¸½¥Ş¥Ã¥Á¤ò»ÈÍÑ¤·¤Ş¤»¤ó¡£ 1: »ÈÍÑ¤·¤Ş¤¹¡£
-  # $use_flag   : [1] 0: +¤ä-¤ò»ÈÍÑ¤·¤Ş¤»¤ó¡£           1: »ÈÍÑ¤·¤Ş¤¹¡£
+  # å¼•æ•°å      : [æ—¢å®šå€¤] - èª¬æ˜ -
+  # $masks      : [-] ã‚«ãƒ³ãƒåŒºåˆ‡ã‚Šã®ãƒãƒƒãƒãƒªã‚¹ãƒˆ.
+  # $str        : [-] ãƒãƒƒãƒå¯¾è±¡ã®æ–‡å­—åˆ—.
+  # $match_type : [0] 0: æœ€å¾Œã«ãƒãƒƒãƒã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚ 1: æœ€åˆã«ãƒãƒƒãƒã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+  # $use_re     : [1] 0: æ­£è¦è¡¨ç¾ãƒãƒƒãƒã‚’ä½¿ç”¨ã—ã¾ã›ã‚“ã€‚ 1: ä½¿ç”¨ã—ã¾ã™ã€‚
+  # $use_flag   : [1] 0: +ã‚„-ã‚’ä½¿ç”¨ã—ã¾ã›ã‚“ã€‚           1: ä½¿ç”¨ã—ã¾ã™ã€‚
 
-  # ÊÖ¤êÃÍ      : { 1 (true)  => + ¤Ë¥Ş¥Ã¥Á,
-  #                 0 (false) => - ¤Ë¥Ş¥Ã¥Á,
-  #                  (undef)  => ¤Ş¤Ã¤¿¤¯¥Ş¥Ã¥Á¤·¤Ê¤«¤Ã¤¿
+  # è¿”ã‚Šå€¤      : { 1 (true)  => + ã«ãƒãƒƒãƒ,
+  #                 0 (false) => - ã«ãƒãƒƒãƒ,
+  #                  (undef)  => ã¾ã£ãŸããƒãƒƒãƒã—ãªã‹ã£ãŸ
   my ($masks, $str, $match_type, $use_re, $use_flag) = @_;
   if (!defined $masks || !defined $str) {
     return undef;
@@ -43,19 +43,19 @@ sub match {
 # -----------------------------------------------------------------------------
 # $bool = match_deep(\@masks_list, $str).
 # $bool = match_deep(\@masks_list, $str, $g_match_type, $match_type, $use_re, $use_flag);
-# @masks ¤Î³ÆÍ×ÁÇ¤ËÂĞ¤·¤Æ match() ¤ò¹Ô¤¦.
+# @masks ã®å„è¦ç´ ã«å¯¾ã—ã¦ match() ã‚’è¡Œã†.
 #
 sub match_deep {
-  # match_deep¤Ï¼¡¤Î¤è¤¦¤Ê¥Ş¥¹¥¯¤Î²ò¼á¤Ë»È¤¤¤Ş¤¹¡£
+  # match_deepã¯æ¬¡ã®ã‚ˆã†ãªãƒã‚¹ã‚¯ã®è§£é‡ˆã«ä½¿ã„ã¾ã™ã€‚
 
   # mask: +*!*@*
   # mask: -example!*
 
-  # °ú¿ôÌ¾             : [´ûÄêÃÍ] - ÀâÌÀ -
-  # $masks_array       : [Ìµ¤·] ¥Ş¥¹¥¯ÇÛÎó¤Î»²¾È¤òÅÏ¤·¤Ş¤¹¡£
+  # å¼•æ•°å             : [æ—¢å®šå€¤] - èª¬æ˜ -
+  # $masks_array       : [ç„¡ã—] ãƒã‚¹ã‚¯é…åˆ—ã®å‚ç…§ã‚’æ¸¡ã—ã¾ã™ã€‚
   #  Mask::match_deep([Mask::mask_array_or_all($this->config->mask('all'))], $msg->prefix)
-  #                    : ¤Î¤è¤¦¤Ë»È¤¤¤Ş¤¹¡£
-  # $global_match_type : [1] 0: ºÇ¸å¤Ë¥Ş¥Ã¥Á¤·¤¿¹Ô¤ÎÃÍ¤òÊÖ¤·¤Ş¤¹¡£ 1: ºÇ½é¤Ë¥Ş¥Ã¥Á¤·¤¿¹Ô¤ÎÃÍ¤òÊÖ¤·¤Ş¤¹¡£
+  #                    : ã®ã‚ˆã†ã«ä½¿ã„ã¾ã™ã€‚
+  # $global_match_type : [1] 0: æœ€å¾Œã«ãƒãƒƒãƒã—ãŸè¡Œã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚ 1: æœ€åˆã«ãƒãƒƒãƒã—ãŸè¡Œã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
   my ($masks_array, $str, $g_match_type, $match_type, $use_re, $use_flag) = @_;
   if (!defined $masks_array) {
     return undef;
@@ -80,8 +80,8 @@ sub match_deep {
 # $bool = match_array(\@masks, $str, $match_type, $use_re, $use_flag).
 #
 sub match_array {
-  # match_array¤Ï¡¢match¤«¤é¸Æ¤Ğ¤ì¤ëÆâÉô´Ø¿ô¤Ç¤¹¤¬¡¢ÉáÄÌ¤Ë¸Æ¤Ó½Ğ¤·¤Æ»È¤¦¤³¤È¤â¤Ç¤­¤Ş¤¹¡£
-  # match ¤È¤Î°ã¤¤¤Ï¡¢¥Ş¥¹¥¯¤ò¥Ş¥¹¥¯ÇÛÎó¤Î»²¾È¤È¤·¤ÆÅÏ¤¹ÅÀ¤Ç¤¹¡£
+  # match_arrayã¯ã€matchã‹ã‚‰å‘¼ã°ã‚Œã‚‹å†…éƒ¨é–¢æ•°ã§ã™ãŒã€æ™®é€šã«å‘¼ã³å‡ºã—ã¦ä½¿ã†ã“ã¨ã‚‚ã§ãã¾ã™ã€‚
+  # match ã¨ã®é•ã„ã¯ã€ãƒã‚¹ã‚¯ã‚’ãƒã‚¹ã‚¯é…åˆ—ã®å‚ç…§ã¨ã—ã¦æ¸¡ã™ç‚¹ã§ã™ã€‚
 
   # $match_type: 0: last matching rule, 1: first matching rule
   # $use_re    : use 're:' feature.
@@ -115,7 +115,7 @@ sub match_array {
     }
 
     if ($use_re && substr($work, 0, 3) eq 're:') {
-      # Àµµ¬É½¸½
+      # æ­£è¦è¡¨ç¾
       $work = substr($work,3);
       # untaint
       $work =~ /\A(.*)\z/s;
@@ -130,7 +130,7 @@ sub match_array {
     }
 
     if ($str =~ m/$work/) {
-      # ¥Ş¥Ã¥Á¤·¤¿
+      # ãƒãƒƒãƒã—ãŸ
       $matched = $include;
       return $matched if  $match_type == 1;
     }
@@ -144,7 +144,7 @@ sub match_array {
 # $mask      = '#{example}@ircnet,-#{example2}@2ch   +*!*@*.example.com'
 # $user_long = 'nick!user@remote'
 # $ch_long   = '#chan@ircnet:*.jp'
-# ¥æ¡¼¥¶Ì¾/¥Á¥ã¥ó¥Í¥ëÌ¾¤Î¥Ş¥Ã¥Á¥ó¥°.
+# ãƒ¦ãƒ¼ã‚¶å/ãƒãƒ£ãƒ³ãƒãƒ«åã®ãƒãƒƒãƒãƒ³ã‚°.
 sub match_chan {
   my ($masks, $str, $chan, $match_type, $use_re, $use_flag) = @_;
   if (!defined $masks || !defined $str) {
@@ -180,7 +180,7 @@ my $CHANMASK_PLUM = 2;
 
 # tiarra Configuration check;
 sub _check_chanmask_conf {
-  # configuration ¤òÆÉ¤ß¡¢chanmask_mode ¤ò·èÄê¤¹¤ë¡£
+  # configuration ã‚’èª­ã¿ã€chanmask_mode ã‚’æ±ºå®šã™ã‚‹ã€‚
   use Configuration;
 
   my $maskmode = Configuration::shared_conf->general->chanmask_mode;
@@ -225,19 +225,19 @@ sub match_array_chan {
     croak 'chanmask_mode is unsupported value!';
   }
 
-  # channel¥Ş¥Ã¥Á¤ò¹Ô¤Ã¤Æ¤«¤éuser¥Ş¥Ã¥Á¤ò¹Ô¤¦¡£
-  # channel¥Ş¥Ã¥Á¤Ç¤Ïflag¤Ï»È¤ï¤Ê¤¤¡£
+  # channelãƒãƒƒãƒã‚’è¡Œã£ã¦ã‹ã‚‰userãƒãƒƒãƒã‚’è¡Œã†ã€‚
+  # channelãƒãƒƒãƒã§ã¯flagã¯ä½¿ã‚ãªã„ã€‚
   my $matched = undef;
   if (Multicast::channel_p($chan)) {
-    # $chan¤¬channel¤Î»ş¤ÏÉáÄÌ¤Ë¥Ş¥Ã¥Á¡£
+    # $chanãŒchannelã®æ™‚ã¯æ™®é€šã«ãƒãƒƒãƒã€‚
     $matched = match_array($chanmask_array, $chan, $match_type, $use_re, $chanmask_use_flag);
   } else {
-    # $chan¤¬channel¤Ç¤Ê¤¤¤È¤­¤ÏprivÅù¤Ê¤Î¤Ç * ¤Ë¥Ş¥Ã¥Á¤µ¤»¤ë¡£
+    # $chanãŒchannelã§ãªã„ã¨ãã¯privç­‰ãªã®ã§ * ã«ãƒãƒƒãƒã•ã›ã‚‹ã€‚
     $matched = match_array($chanmask_array, '*', $match_type, $use_re, $chanmask_use_flag);
   }
 
-  $matched = undef unless $matched; # match¤·¤Ê¤«¤Ã¤¿¤éundef¤òÂåÆş¤¹¤ë
-  # channel¤Ç¥Ş¥Ã¥Á¤·¤Ê¤«¤Ã¤¿¤é¤³¤Î¹Ô¤ÏÌµ»ë¤¹¤ë¡£
+  $matched = undef unless $matched; # matchã—ãªã‹ã£ãŸã‚‰undefã‚’ä»£å…¥ã™ã‚‹
+  # channelã§ãƒãƒƒãƒã—ãªã‹ã£ãŸã‚‰ã“ã®è¡Œã¯ç„¡è¦–ã™ã‚‹ã€‚
   if (defined $matched) {
     $matched = undef;
     $matched = match_array($usermask_array, $str, $match_type, $use_re, $use_flag);
@@ -257,9 +257,9 @@ sub make_regex {
 	$cached;
     }
     else {
-	# ¥­¥ã¥Ã¥·¥å¤µ¤ì¤Æ¤¤¤Ê¤¤¡£
+	# ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã•ã‚Œã¦ã„ãªã„ã€‚
 	if (@cache_keys >= $cache_limit) {
-	    # ¥­¥ã¥Ã¥·¥å¤µ¤ì¤Æ¤¤¤ëÃÍ¤ò¥é¥ó¥À¥à¤Ë°ì¤Ä¾Ã¤¹¡£
+	    # ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã•ã‚Œã¦ã„ã‚‹å€¤ã‚’ãƒ©ãƒ³ãƒ€ãƒ ã«ä¸€ã¤æ¶ˆã™ã€‚
 	    my $to_delete = scalar(splice @cache_keys, int(rand @cache_keys), 1);
 	    delete $cache_table{$to_delete};
 	}
@@ -273,12 +273,12 @@ sub make_regex {
 }
 
 sub compile {
-    # $mask: ¥Ş¥¹¥¯Ê¸»úÎó
-    # $consider_case: ¿¿¤Ê¤é¡¢ÂçÊ¸»ú¾®Ê¸»ú¤ò¶èÊÌ¤¹¤ë¡£
+    # $mask: ãƒã‚¹ã‚¯æ–‡å­—åˆ—
+    # $consider_case: çœŸãªã‚‰ã€å¤§æ–‡å­—å°æ–‡å­—ã‚’åŒºåˆ¥ã™ã‚‹ã€‚
     my ($mask, $consider_case) = @_;
 
     if (!defined $mask) {
-	return qr/(?!)/; # ¥Ş¥Ã¥Á¤·¤Ê¤¤Àµµ¬É½¸½
+	return qr/(?!)/; # ãƒãƒƒãƒã—ãªã„æ­£è¦è¡¨ç¾
     }
 
     my $regex = quotemeta($mask);
@@ -295,7 +295,7 @@ sub compile {
 }
 
 sub _split {
-    # ',' ¤Ç¤ï¤±¤é¤ì¤¿¥Ş¥¹¥¯¤òÇÛÎó¤Ë¤¹¤ë¡£
+    # ',' ã§ã‚ã‘ã‚‰ã‚ŒãŸãƒã‚¹ã‚¯ã‚’é…åˆ—ã«ã™ã‚‹ã€‚
     my $mask = shift;
     return () if !defined $mask;
 
@@ -306,8 +306,8 @@ sub _split {
 }
 
 sub _split_with_chan {
-    # ¥Á¥ã¥ó¥Í¥ëÉÕ¤­¥Ş¥¹¥¯¤òÇÛÎó¤Ë¤¹¤ë¡£
-    # ¥Ñ¥é¥á¡¼¥¿: mask ¥×¥í¥Ñ¥Æ¥£¤ÎÇÛÎó
+    # ãƒãƒ£ãƒ³ãƒãƒ«ä»˜ããƒã‚¹ã‚¯ã‚’é…åˆ—ã«ã™ã‚‹ã€‚
+    # ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿: mask ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã®é…åˆ—
     # output (user-array-ref, channel-array-ref)
     _check_chanmask_conf() if (!defined($chanmask_mode));
 

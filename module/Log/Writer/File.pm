@@ -105,13 +105,13 @@ sub mkdirs {
     my ($this,$file) = @_;
     my (undef,$directories,undef) = File::Spec->splitpath($file);
 
-    # Ä¾ÀÜ¤Î¿Æ¤¬Â¸ºß¤¹¤ë¤«
+    # ç›´æŽ¥ã®è¦ªãŒå­˜åœ¨ã™ã‚‹ã‹
     if ($directories eq '' || -d $directories) {
-	# ¤³¤ì°Ê¾åÃ©¤ì¤Ê¤¤¤«¡¢Â¸ºß¤¹¤ë¤Î¤Ç½ªÎ»¡£
+	# ã“ã‚Œä»¥ä¸Šè¾¿ã‚Œãªã„ã‹ã€å­˜åœ¨ã™ã‚‹ã®ã§çµ‚äº†ã€‚
 	return;
     }
     else {
-	# Â¸ºß¤·¤Ê¤¤¤Î¤ÇºîÀ®
+	# å­˜åœ¨ã—ãªã„ã®ã§ä½œæˆ
 	eval { mkpath($directories, 0, $this->dir_mode) };
 	if ($@) {
 	    $this->_notify_warn("mkpath failed; Couldn't create $directories: $@");

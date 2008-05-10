@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# CTCP flood�к��Τ��ᡢVERSION��USERINFO���ϰ���ȿ�������٤�
-# IrcIO::Server�ˡ�last-ctcp-replied => ȿ������פȤ���remark���դ��롣
-# �����ȿ�������������֤��вᤷ�Ƥ��ʤ���С�CTCP�˱������ʤ���
+# CTCP flood対策のため、VERSION、USERINFO等は一度反応する度に
+# IrcIO::Serverに「last-ctcp-replied => 反応時刻」というremarkを付ける。
+# 前回の反応時から一定時間が経過していなければ、CTCPに応答しない。
 # -----------------------------------------------------------------------------
 package CTCP::Version;
 use strict;
@@ -14,7 +14,7 @@ use Multicast;
 use Config;
 use BulletinBoard;
 
-# ctcp-clientinfo-version������
+# ctcp-clientinfo-versionを設定
 BulletinBoard->shared->ctcp_clientinfo_version('VERSION');
 
 sub message_arrived {
@@ -29,7 +29,7 @@ sub message_arrived {
 
 	    my $last = $sender->remark('last-ctcp-replied');
 	    if (!defined $last || time - $last > ($this->config->interval || 3)) {
-		# �����CTCPȿ�����������ְʾ�вᤷ�Ƥ��롣
+		# 前回のCTCP反応から一定時間以上経過している。
 		my $reply = CTCP::make(
 		    'VERSION Tiarra:'.::version().':perl '.$Config{version}.' on '.$Config{archname},
 		    scalar Multicast::detach($msg->nick)
@@ -46,17 +46,17 @@ sub message_arrived {
 1;
 
 =pod
-info: CTCP VERSION�˱������롣
+info: CTCP VERSIONに応答する。
 default: on
 section: important
 
-# Ϣ³����CTCP�ꥯ�����Ȥ��Ф�������δֳ֡�ñ�̤��á�
-# �㤨��3�ä����ꤷ����硢���ٱ������Ƥ���3�ô֤�
-# CTCP�˰��ڱ������ʤ��ʤ롣�ǥե���Ȥ�3��
+# 連続したCTCPリクエストに対する応答の間隔。単位は秒。
+# 例えば3秒に設定した場合、一度応答してから3秒間は
+# CTCPに一切応答しなくなる。デフォルトは3。
 #
-# �ʤ���CTCP��������ε�Ͽ�ϡ����Ƥ�CTCP�⥸�塼��Ƕ�ͭ����롣
-# �㤨��CTCP VERSION�����ä�ľ���CTCP CLIENTINFO�����ä��Ȥ��Ƥ⡢
-# CTCP::ClientInfo��interval�����ꤵ�줿���֤�᤮�Ƥ��ʤ����
-# ��Ԥϱ������ʤ���
+# なお、CTCP受信時刻の記録は、全てのCTCPモジュールで共有される。
+# 例えばCTCP VERSIONを送った直後にCTCP CLIENTINFOを送ったとしても、
+# CTCP::ClientInfoのintervalで設定された時間を過ぎていなければ
+# 後者は応答しない。
 interval: 3
 =cut

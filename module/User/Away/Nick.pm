@@ -11,7 +11,7 @@ use Multicast;
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
 
-    # ���饤����Ȥ��������ä�NICK�ˤΤ�ȿ�����롣
+    # クライアントから受け取ったNICKにのみ反応する。
     if ($sender->isa('IrcIO::Client') &&
 	$msg->command eq 'NICK') {
 
@@ -48,20 +48,20 @@ sub unset_away {
 
 sub away {
     my ($this,$msg,$away_msg) = @_;
-    # NICK hoge@ircnet�Τ褦�˥ͥåȥ��̾����������Ƥ������ϡ�
-    # ���ƤΥ����С����Ф���AWAY��ȯ�Ԥ��롣
-    # �����Ǥʤ�����������줿�ͥåȥ���ˤΤ�AWAY��ȯ�Ԥ��롣
+    # NICK hoge@ircnetのようにネットワーク名が明示されていた場合は、
+    # 全てのサーバーに対してAWAYを発行する。
+    # そうでなければ明示されたネットワークにのみAWAYを発行する。
     
     my (undef,$network_name,$specified) = Multicast::detach($msg->param(0));
     if ($specified) {
-	# �������줿
+	# 明示された
 	my $network = RunLoop->shared->network($network_name);
 	if (defined $network) {
 	    $network->send_message($away_msg);
 	}
     }
     else {
-	# ��������ʤ��ä�
+	# 明示されなかった
 	RunLoop->shared->broadcast_to_servers($away_msg);
     }
 }
@@ -69,19 +69,19 @@ sub away {
 1;
 
 =pod
-info: �˥å��͡����ѹ��˱����� AWAY �����ꤷ�ޤ���
+info: ニックネーム変更に応じて AWAY を設定します。
 default: off
 section: important
 
-# �˥å��͡�����ѹ������Ȥ��ˡ����Υ˥å��͡�����б�����AWAY��
-# ���ꤵ��Ƥ���С�����AWAY�����ꤷ�ޤ��������Ǥʤ����AWAY����ä��ޤ���
+# ニックネームを変更したときに、そのニックネームに対応するAWAYが
+# 設定されていれば、そのAWAYを設定します。そうでなければAWAYを取り消します。
 
-# ��: <nick�Υޥ���> <���ꤹ��AWAY��å�����>
+# 書式: <nickのマスク> <設定するAWAYメッセージ>
 #
-# nick��hoge_zzz���ѹ�����ȡ��ֿ��Ƥ���פȤ���AWAY�����ꤹ�롣
-# hoge_work�ޤ���hoge_zzz���ѹ��������ϡ��ֻŻ���פȤ���AWAY�����ꤹ�롣
-# ����ʳ���nick���ѹ���������AWAY����ä���
-# ��Ԥ�����ɽ�������Ѥ��ơ�away: re:hoge_(work|zzz) �Ż���פȤ��Ƥ��ɤ���
--away: hoge_zzz           ���Ƥ���
--away: hoge_work,hoge_zzz �Ż���
+# nickをhoge_zzzに変更すると、「寝ている」というAWAYを設定する。
+# hoge_workまたはhoge_zzzに変更した場合は、「仕事中」というAWAYを設定する。
+# それ以外のnickに変更した場合はAWAYを取り消す。
+# 後者は正規表現を利用して「away: re:hoge_(work|zzz) 仕事中」としても良い。
+-away: hoge_zzz           寝ている
+-away: hoge_work,hoge_zzz 仕事中
 =cut

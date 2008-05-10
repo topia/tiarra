@@ -529,14 +529,14 @@ __END__
 
 =begin tiarra-doc
 
-info:    Tiarra ¤ÎÆâÉô¹½Â¤¤ÎÄÉÀ×.
+info:    Tiarra ã®å†…éƒ¨æ§‹é€ ã®è¿½è·¡.
 default: off
 #section: important
 
-# Tiarra ¤ÎÆâÉô¹½Â¤¤ò½ĞÎÏ¤·¤Ş¤¹.
+# Tiarra ã®å†…éƒ¨æ§‹é€ ã‚’å‡ºåŠ›ã—ã¾ã™.
 
-# ¥È¥ê¥¬¡¼ÍÑ¥³¥Ş¥ó¥É.
-# ¥Ç¥Õ¥©¥ë¥È¤Ï debugcore
+# ãƒˆãƒªã‚¬ãƒ¼ç”¨ã‚³ãƒãƒ³ãƒ‰.
+# ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¯ debugcore
 command: debugcore
 
 # [top commands]

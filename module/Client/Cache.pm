@@ -23,7 +23,7 @@ sub new {
 	    my ($hook, $client, $ch_name, $network, $ch) = @_;
 	    if ($ch->remark('switches-are-known') &&
 		    $this->_yesno($this->config->use_mode_cache)) {
-		# �����Ǥ�����϶���Ū���������Ƥߤ�
+		# 送信できる場合は強制的に送信してみる
 		my $remark = $client->remark('mode-cache-state') || {};
 		$this->_send_mode_cache($client,$ch_name,$ch);
 		$remark->{
@@ -38,10 +38,10 @@ sub new {
 sub destruct {
     my ($this) = shift;
 
-    # hook ����
+    # hook を解除
     $this->{hook} and $this->{hook}->uninstall;
 
-    # �����ͥ�ˤĤ��Ƥ��� remark ������
+    # チャンネルについている remark を削除。
     foreach my $network (RunLoop->shared_loop->networks_list) {
 	foreach my $ch ($network->channels_list) {
 	    $ch->remark(__PACKAGE__."/fetching-switches", undef, 'delete');
@@ -51,7 +51,7 @@ sub destruct {
 	}
     }
 
-    # ���饤����ȤˤĤ��Ƥ�ΤϺ�����ʤ���
+    # クライアントについてるのは削除しない。
 }
 
 sub _yesno {
@@ -60,7 +60,7 @@ sub _yesno {
     return $default || 0 if (!defined $value);
     return 0 if ($value =~ /[fn]/); # false/no
     return 1 if ($value =~ /[ty]/); # true/yes
-    return 1 if ($value); # ����Ƚ��
+    return 1 if ($value); # 数値判定
     return 0;
 }
 
@@ -98,7 +98,7 @@ sub message_io_hook {
 	} elsif ($type eq 'in' &&
 		     $msg->command eq RPL_WHOREPLY &&
 			 Multicast::channel_p($msg->param(1))) {
-	    # �������Թ�塢��ĤǤⵢ�äƤ��������Ǽ��ä���
+	    # 処理の都合上、一つでも帰ってきた時点で取り消し。
 	    my $ch = $io->channel($msg->param(1));
 	    if (defined $ch) {
 		$ch->remark(__PACKAGE__."/fetching-who", undef, 'delete');
@@ -120,11 +120,11 @@ sub message_io_hook {
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
 
-    # ����Ϥ���Ƥ����� last ��ȴ����
+    # 条件をはずれていたら last で抜ける
     while (1) {
-	# ���饤����Ȥ���Υ�å���������
+	# クライアントからのメッセージか？
 	last unless ($sender->isa('IrcIO::Client'));
-	# ư��ϵ��Ĥ���Ƥ��뤫?
+	# 動作は許可されているか?
 	last unless ((!defined $sender->option('no-cache')) ||
 			 !$this->_yesno($sender->option('no-cache')));
 	my $fetch_channel_info = sub {
@@ -166,11 +166,11 @@ sub message_arrived {
 	    } else {
 		if ($info{ch}->remark(__PACKAGE__."/fetching-switches") &&
 			($info{ch}->remark(__PACKAGE__."/fetching-switches-expire") >= time())) {
-		    # �������Ƥ��륯�饤����Ȥ����ơ����¤��ڤ�Ƥʤ��ʤ顢
-		    # ����Ͼä����ؾ衣
+		    # 取得しているクライアントがいて、期限が切れてないなら、
+		    # 今回は消して便乗。
 		    return undef;
 		}
-		# �������ˤ��äƤ�餦��
+		# 取得しにいってもらう。
 	    }
 	} elsif ($msg->command eq 'WHO' &&
 		     $this->_yesno($this->config->use_who_cache) &&
@@ -183,8 +183,8 @@ sub message_arrived {
 	    last if !defined $info{ch};
 	    my $remark = $sender->remark('who-cache-used') || {};
 	    if (!exists $remark->{$info{chan_long}}) {
-		# cache �������äƤ��뤫�狼��ʤ����ᡢ
-		# �Ȥꤢ������äƤߤơ�­��ʤ��ä��餢�����롣
+		# cache がそろっているかわからないため、
+		# とりあえず作ってみて、足りなかったらあきらめる。
 		my $message_tmpl = $this->construct_irc_message(
 		    Prefix => RunLoop->shared_loop->sysmsg_prefix('system'),
 		    Command => RPL_WHOREPLY,
@@ -199,12 +199,12 @@ sub message_arrived {
 			my $p_ch = $_;
 			my $p = $p_ch->person;
 
-			# �������ƽ��פǤʤ��塢
-			# ��¤����ñ�ʥǡ�������¤���ޤ���
-			# ���դ��Ƥ���������
+			# たいして重要でない上、
+			# 捏造が簡単なデータは捏造します。
+			# 注意してください。
 			if (!$p->username || !$p->userhost ||
 				!$p->realname || !$p->server) {
-			    # �ǡ�����­���������롣
+			    # データ不足。あきらめる。
 			    die 'cache data not enough';
 			}
 
@@ -239,11 +239,11 @@ sub message_arrived {
 		} else {
 		    if ($info{ch}->remark(__PACKAGE__."/fetching-who") &&
 			    ($info{ch}->remark(__PACKAGE__."/fetching-who-expire") >= time())) {
-			# �������Ƥ��륯�饤����Ȥ����ơ����¤��ڤ�Ƥʤ��ʤ顢
-			# ����Ͼä����ؾ衣
+			# 取得しているクライアントがいて、期限が切れてないなら、
+			# 今回は消して便乗。
 			return undef;
 		    }
-		    # �������ˤ��äƤ�餦��
+		    # 取得しにいってもらう。
 		}
 	    }
 	}
@@ -291,17 +291,17 @@ sub _send_mode_cache {
 
 1;
 =pod
-info: �ǡ����򥭥�å��夷�ƥ����Ф��䤤��碌�ʤ��褦�ˤ���
+info: データをキャッシュしてサーバに問い合わせないようにする
 default: off
 section: important
 
-# ����å������Ѥ��Ƥ⡢�Ȥ���Τ���³��ǽ�ΰ��٤����Ǥ���
-# �����ܤ�����̾��̤�˥����Ф��䤤��碌�ޤ���
-# �ޤ������饤����ȥ��ץ����� no-cache ����ꤹ���ư���ޤ���
+# キャッシュを使用しても、使われるのは接続後最初の一度だけです。
+# 二度目からは通常通りにサーバに問い合わせます。
+# また、クライアントオプションの no-cache を指定すれば動きません。
 
-# mode ����å������Ѥ��뤫
+# mode キャッシュを使用するか
 use-mode-cache: 1
 
-# who ����å������Ѥ��뤫
+# who キャッシュを使用するか
 use-who-cache: 1
 =cut

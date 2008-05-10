@@ -15,7 +15,7 @@
     << Charset: UTF-8
 
     >> TIARRACONTROL/1.0 200 OK
-    >> Value: (¥Í¥Ã¥È¥ï¡¼¥¯ircnet¤Ç¤ÎËÜÌ¾)
+    >> Value: (ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ircnetã§ã®æœ¬å)
     >> Charset: UTF-8
 =cut
 # -----------------------------------------------------------------------------
@@ -29,7 +29,7 @@ use Tiarra::Encoding;
 use RunLoop;
 use Tiarra::TerminateManager;
 
-# Ê£¿ô¤Î¥Ñ¥Ã¥±¡¼¥¸¤òº®ºß¤µ¤»¤Æ¤ë¤ÈSelfLoader¤¬»È¤¨¤Ê¤¤¡Ä¡©
+# è¤‡æ•°ã®ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã‚’æ··åœ¨ã•ã›ã¦ã‚‹ã¨SelfLoaderãŒä½¿ãˆãªã„â€¦ï¼Ÿ
 #use SelfLoader;
 #1;
 #__DATA__
@@ -39,11 +39,11 @@ sub TIARRA_CONTROL_ROOT () { '/tmp/tiarra-control'; }
 sub new {
     my ($class,$sockname) = @_;
 
-    # IO::Socket::UNIX¤òuse¤¹¤ë¡£¼ºÇÔ¤·¤¿¤édie¡£
+    # IO::Socket::UNIXã‚’useã™ã‚‹ã€‚å¤±æ•—ã—ãŸã‚‰dieã€‚
     eval q{
         use IO::Socket::UNIX;
     }; if ($@) {
-	# »È¤¨¤Ê¤¤¡£
+	# ä½¿ãˆãªã„ã€‚
 	die "Tiarra control socket is not available for this environment.\n";
     }
 
@@ -64,27 +64,27 @@ sub open {
     my $this = shift;
     my $filename = $this->{filename};
 
-    # ¥Ç¥£¥ì¥¯¥È¥ê/tmp/tiarra-control¤¬Ìµ¤±¤ì¤Ðºî¤ë¡£
+    # ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª/tmp/tiarra-controlãŒç„¡ã‘ã‚Œã°ä½œã‚‹ã€‚
     if (!-d TIARRA_CONTROL_ROOT) {
 	mkdir TIARRA_CONTROL_ROOT or die 'Couldn\'t make directory '.TIARRA_CONTROL_ROOT;
-	# Â¾¤Î¥æ¡¼¥¶¡¼¤âºî¤ì¤ë¤è¤¦¤Ë¤¹¤ë¡£
-	# ºÇ½é¤ËºîÀ®¤·¤¿¥æ¡¼¥¶¡¼¤¬Á´¥Õ¥¡¥¤¥ë¤ò¾Ã¤¹¤³¤È¤¬½ÐÍè¤ë¤¬¡¢ÂÐ½èË¡¤Ê¤·¡£
+	# ä»–ã®ãƒ¦ãƒ¼ã‚¶ãƒ¼ã‚‚ä½œã‚Œã‚‹ã‚ˆã†ã«ã™ã‚‹ã€‚
+	# æœ€åˆã«ä½œæˆã—ãŸãƒ¦ãƒ¼ã‚¶ãƒ¼ãŒå…¨ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æ¶ˆã™ã“ã¨ãŒå‡ºæ¥ã‚‹ãŒã€å¯¾å‡¦æ³•ãªã—ã€‚
 	chmod 01777, TIARRA_CONTROL_ROOT;
     }
 
-    # ¥½¥±¥Ã¥È¤¬´û¤ËÂ¸ºß¤·¤¿¾ì¹ç¤ÏÀÜÂ³¤·¤Æ¤ß¤ë¡£
+    # ã‚½ã‚±ãƒƒãƒˆãŒæ—¢ã«å­˜åœ¨ã—ãŸå ´åˆã¯æŽ¥ç¶šã—ã¦ã¿ã‚‹ã€‚
     if (-e $filename) {
 	my $sock = IO::Socket::UNIX->new(
 	    Peer => $filename,
 	   );
 	if (!defined $sock) {
-	    # ¤â¤¦»È¤ï¤ì¤Æ¤¤¤Ê¤¤?
+	    # ã‚‚ã†ä½¿ã‚ã‚Œã¦ã„ãªã„?
 	    unlink $filename;
 	    undef $sock;
 	}
     }
 
-    # ¥ê¥¹¥Ë¥ó¥°ÍÑ¥½¥±¥Ã¥È¤ò³«¤¯¡£
+    # ãƒªã‚¹ãƒ‹ãƒ³ã‚°ç”¨ã‚½ã‚±ãƒƒãƒˆã‚’é–‹ãã€‚
     my $sock = IO::Socket::UNIX->new(
 	Type => &SOCK_STREAM,
 	Local => $filename,
@@ -92,7 +92,7 @@ sub open {
     if (!defined $sock) {
 	die "Couldn't make socket $filename: $!";
     }
-    # ¥Ñ¡¼¥ß¥Ã¥·¥ç¥ó¤ò700¤Ë¡£
+    # ãƒ‘ãƒ¼ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚’700ã«ã€‚
     chmod 0700, $filename;
     $this->{server_sock} =
 	ExternalSocket->new(
@@ -107,16 +107,16 @@ sub open {
 	    Write => sub{},
 	    WantToWrite => sub{undef})->install;
 
-    # ¥»¥Ã¥·¥ç¥ó¥Ï¥ó¥É¥ëÍÑ¤Î¥Õ¥Ã¥¯¤ò¤«¤±¤ë¡£
+    # ã‚»ãƒƒã‚·ãƒ§ãƒ³ãƒãƒ³ãƒ‰ãƒ«ç”¨ã®ãƒ•ãƒƒã‚¯ã‚’ã‹ã‘ã‚‹ã€‚
     $this->{session_handle_hook} =
 	RunLoop::Hook->new(
 	    'ControlPort Session Handler',
 	    sub {
-		# ¥»¥Ã¥·¥ç¥ó½èÍý
+		# ã‚»ãƒƒã‚·ãƒ§ãƒ³å‡¦ç†
 		foreach my $client (@{$this->{clients}}) {
 		    $client->main;
 		}
-		# ½ªÎ»¤·¤¿¥»¥Ã¥·¥ç¥ó¤òºï½ü
+		# çµ‚äº†ã—ãŸã‚»ãƒƒã‚·ãƒ§ãƒ³ã‚’å‰Šé™¤
 		@{$this->{clients}} = grep {
 		    $_->is_alive;
 		} @{$this->{clients}};
@@ -133,17 +133,17 @@ sub open {
 sub destruct {
     my $this = shift;
 
-    # ÀÚÃÇ
+    # åˆ‡æ–­
     if (defined $this->{server_sock}) {
 	eval {
 	    $this->{server_sock}->disconnect;
 	};
     }
 
-    # ¤³¤Î¥½¥±¥Ã¥È¥Õ¥¡¥¤¥ë¤òºï½ü
+    # ã“ã®ã‚½ã‚±ãƒƒãƒˆãƒ•ã‚¡ã‚¤ãƒ«ã‚’å‰Šé™¤
     unlink $this->{filename};
 
-    # ¥Ç¥£¥ì¥¯¥È¥ê¤Ë¥½¥±¥Ã¥È¤¬°ì¤Ä¤âÌµ¤¯¤Ê¤Ã¤¿¤é¡¢¤³¤Î¥Ç¥£¥ì¥¯¥È¥ê¤â¾Ã¤¨¤ë¡£
+    # ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«ã‚½ã‚±ãƒƒãƒˆãŒä¸€ã¤ã‚‚ç„¡ããªã£ãŸã‚‰ã€ã“ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚‚æ¶ˆãˆã‚‹ã€‚
     rmdir TIARRA_CONTROL_ROOT;
 
     $this;
@@ -159,10 +159,10 @@ sub new {
     # $sock: IO::Socket
     my ($class,$sock) = @_;
     my $this = $class->SUPER::new(name => 'ControlPort::Session');
-    $this->{method} = undef; # GET¤Þ¤¿¤ÏNOTIFY
-    $this->{module} = undef; # Log::Channel¤Ê¤É¡£'::'¤Ï¥á¥¤¥ó¥×¥í¥°¥é¥à¤òÉ½¤¹¡£
+    $this->{method} = undef; # GETã¾ãŸã¯NOTIFY
+    $this->{module} = undef; # Log::Channelãªã©ã€‚'::'ã¯ãƒ¡ã‚¤ãƒ³ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’è¡¨ã™ã€‚
     $this->{header} = undef; # {key => value}
-    $this->{input_is_frost} = 0; # ¤³¤ì°Ê¾å¤ÎÆþÎÏ¤òÌµ»ë¤¹¤ë¤«¡©
+    $this->{input_is_frost} = 0; # ã“ã‚Œä»¥ä¸Šã®å…¥åŠ›ã‚’ç„¡è¦–ã™ã‚‹ã‹ï¼Ÿ
     bless $this,$class;
     $this->attach($sock);
     $this->install;
@@ -180,9 +180,9 @@ sub main {
 	}
 
 	if (defined $this->{header}) {
-	    # $this->{header}¤¬Â¸ºß¤¹¤ë¤È¤¤¤¦¤³¤È¤Ï¡¢ºÇ½é¤Î¥ê¥¯¥¨¥¹¥È¹Ô¤Ï¤â¤¦¼õ¤±¼è¤Ã¤¿¡£
+	    # $this->{header}ãŒå­˜åœ¨ã™ã‚‹ã¨ã„ã†ã“ã¨ã¯ã€æœ€åˆã®ãƒªã‚¯ã‚¨ã‚¹ãƒˆè¡Œã¯ã‚‚ã†å—ã‘å–ã£ãŸã€‚
 	    if ($line eq '') {
-		# ¶õ¤Î¹Ô¤À¡£¥ê¥¯¥¨¥¹¥È½ª¤ï¤ê¡£
+		# ç©ºã®è¡Œã ã€‚ãƒªã‚¯ã‚¨ã‚¹ãƒˆçµ‚ã‚ã‚Šã€‚
 		$this->respond;
 	    }
 	    else {
@@ -215,9 +215,9 @@ sub main {
 }
 
 sub reply {
-    # $code: 204¤Ê¤É
-    # $str: No Content¤Ê¤É
-    # $header: {key => value} ¾ÊÎ¬²Ä¡£Ê¸»ú¥³¡¼¥É¤ÏUTF-8¡£Sender¤ÈCharset¤ÏÉÔÍ×¡£
+    # $code: 204ãªã©
+    # $str: No Contentãªã©
+    # $header: {key => value} çœç•¥å¯ã€‚æ–‡å­—ã‚³ãƒ¼ãƒ‰ã¯UTF-8ã€‚Senderã¨Charsetã¯ä¸è¦ã€‚
     my ($this,$code,$str,$header) = @_;
 
     $this->append_line("TIARRACONTROL/1.0 $code $str");
@@ -234,7 +234,7 @@ sub reply {
 }
 
 sub charset {
-    # ¥ê¥¯¥¨¥¹¥È¤Ç¼õ¤±¼è¤Ã¤¿Charset¤«¤é¡¢Unicode::Japanese¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°Ì¾¤òÊÖ¤¹¡£
+    # ãƒªã‚¯ã‚¨ã‚¹ãƒˆã§å—ã‘å–ã£ãŸCharsetã‹ã‚‰ã€Unicode::Japaneseã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°åã‚’è¿”ã™ã€‚
     my $this = shift;
 
     if (!defined $this->{header}) {
@@ -284,12 +284,12 @@ sub respond {
 
     my $rep = eval {
 	if ($req->module eq '::') {
-	    # ¥â¥¸¥å¡¼¥ë"::"¤Ï¥á¥¤¥ó¥×¥í¥°¥é¥à¤òÉ½¤¹¡£
-	    # ¸å¤Ç¡£
+	    # ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«"::"ã¯ãƒ¡ã‚¤ãƒ³ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’è¡¨ã™ã€‚
+	    # å¾Œã§ã€‚
 	    die qq{Controlling '::' is not supported yet.\n};
 	}
 	else {
-	    # ¤³¤Î¤è¤¦¤Ê¥â¥¸¥å¡¼¥ë¤ÏÂ¸ºß¤¹¤ë¤«¡©
+	    # ã“ã®ã‚ˆã†ãªãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯å­˜åœ¨ã™ã‚‹ã‹ï¼Ÿ
 	    my $mod = ModuleManager->shared->get($req->module);
 	    if (defined $mod) {
 		my $reply = $mod->control_requested($req);
@@ -368,8 +368,8 @@ use Tiarra::Utils ();
 Tiarra::Utils->define_attr_getter(0, qw(code status));
 
 sub new {
-    # $code: 204¤Ê¤É
-    # $status: No Content¤Ê¤É
+    # $code: 204ãªã©
+    # $status: No Contentãªã©
     my ($class,$code,$status) = @_;
     my $this = $class->SUPER::new;
     $this->{code} = $code;

@@ -2,7 +2,7 @@
 # $Id$
 # -----------------------------------------------------------------------------
 # use shell notify-icon
-# based on win32::TaskTray.pm (Ķ�١���Ver) by Noboruhi
+# based on win32::TaskTray.pm (超ベータVer) by Noboruhi
 # -----------------------------------------------------------------------------
 package System::NotifyIcon::Win32;
 use strict;
@@ -26,10 +26,10 @@ sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
 
-    # ���ܸ�����Ȥ�����ˤ�ʸ���������Ѵ����ʤ��Ȥ����ʤ��Ȼפ��ޤ���
-    # ����Ĥ��Ƥ���������
+    # 日本語等を使うためには文字コード変換しないといけないと思います。
+    # 気をつけてください。
 
-    # �ᥤ�󥦥���ɥ�(�������Ǥϥ��ߡ�)
+    # メインウィンドウ(現時点ではダミー)
     $this->_event_handler_init;
     $this->{main_window} = Win32::GUI::Window->new(
 	-name => __PACKAGE__ . '::MainWindow',
@@ -37,7 +37,7 @@ sub new {
 	-width => 200,
 	-height => 200);
 
-    # ����ƥ����ȥ�˥塼
+    # コンテキストメニュー
     $this->event_handler_register('NotifyIcon_Popup_exit_Click');
     $this->event_handler_register('NotifyIcon_Popup_reload_Click');
     $this->{popup_menu} = Win32::GUI::Menu->new(
@@ -50,7 +50,7 @@ sub new {
     $this->{window_stat} = 1; # start with show
     $this->{console_window} = Win32::GUI::GetPerlWindow();
 
-    # �������ȥ쥤��Ͽ
+    # タスクトレイ登録
     if (defined $this->config->iconfile) {
 	$this->{icon} = new Win32::GUI::Icon($this->config->iconfile);
     }
@@ -160,7 +160,7 @@ sub destruct {
     undef $this->{main_window};
     undef $this->{popup_menu};
     undef $this->{icon};
-    # ��λ���ˤϤ��ʤ餺ɽ��������
+    # 終了時にはかならず表示させる
     Win32::GUI::Show($this->{console_window});
     undef $this->{shell_notifyicon_func};
     $this->_event_handler_destruct;
@@ -169,12 +169,12 @@ sub destruct {
 sub _event_handler_init {
     my $this = shift;
 
-    # ��������ɬ�פȤ���Τ������ޤ�ư���ʤ�
+    # 先に定義を必要とするのか、うまく動かない
     my $autoload = sub {
 	my (@args) = @_;
 
 	if ($AUTOLOAD =~ /::DESTROY$/) {
-	    # DESTROY����ã�����ʤ���
+	    # DESTROYは伝達させない。
 	    return;
 	}
 
@@ -265,15 +265,15 @@ sub _event_handler_destruct {
 }
 
 
-# NotifyIcon �ѤΥ��٥�ȥϥ�ɥ�
+# NotifyIcon 用のイベントハンドラ
 sub Win32Event_NotifyIcon_Click {
     my $this = shift;
 
     $this->{window_stat} = $this->{window_stat} ? 0 : 1;
     if ($this->{window_stat}) {
-	Win32::GUI::Show( $this->{console_window} ); #���󥽡�����Ф�
+	Win32::GUI::Show( $this->{console_window} ); #コンソールをを出す
     } else {
-	Win32::GUI::Hide( $this->{console_window} ); #���󥽡���򱣤�
+	Win32::GUI::Hide( $this->{console_window} ); #コンソールを隠す
     }
     return -1;
 };
@@ -431,26 +431,26 @@ sub init_win32_api {
 
 1;
 =pod
-info: �������ȥ쥤�˥��������ɽ�����롣
+info: タスクトレイにアイコンを表示する。
 default: off
 section: important
 
-# �������ȥ쥤�˥��������ɽ�����ޤ���
-# ����å������ɽ����ɽ�����ڤ��ؤ��뤳�Ȥ��Ǥ���������å������
-# Reload �� Exit ���Ǥ��륳��ƥ����ȥ�˥塼��ɽ�����ޤ���
-# ¿��ȿ�����ߤ����⤷��ޤ��󤬤���ä��ԤƤнФƤ���Ȼפ��ޤ���
+# タスクトレイにアイコンを表示します。
+# クリックすると表示非表示を切り替えることができ、右クリックすると
+# Reload と Exit ができるコンテキストメニューを表示します。
+# 多少反応が鈍いかもしれませんがちょっと待てば出てくると思います。
 
-# Win32::GUI ��ɬ�פȤ��ޤ���
-# ����ƥ����ȥ�˥塼��ɽ�����Ƥ���ֽ�����֥��å����Ƥ��ޤ���
+# Win32::GUI を必要とします。
+# コンテキストメニューは表示している間処理をブロックしています。
 
-# Win32 ���٥�ȥ롼�פ�����������ֳ֤���ꤷ�ޤ���
+# Win32 イベントループを処理する最大間隔を指定します。
 -interval: 2
 
-# �����ΰ��ɽ�����륢���������ꤷ�ޤ���
-# Win32::GUI �����¤Ǥ����Ȥ�����������ե����뤷������Ǥ��ޤ���
+# 通知領域に表示するアイコンを指定します。
+# Win32::GUI の制限でちゃんとしたアイコンファイルしか指定できません。
 iconfile: guiperl.ico
 
-# �⥸�塼�뤬�ɤ߹��ޤ줿�Ȥ��˥��󥽡��륦����ɥ��򱣤����ɤ�����
-# ���ꤷ�ޤ���
+# モジュールが読み込まれたときにコンソールウィンドウを隠すかどうかを
+# 指定します。
 hide-console-on-load: 1
 =cut

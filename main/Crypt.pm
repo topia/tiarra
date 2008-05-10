@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# Ϳ����줿���ޤ��ϥ�����˷��ꤵ�줿salt���Ѥ���ʸ�����crypt���뵡ǽ��
-# ������ʸ�����crypt��������줿ʸ�����ͽ��crypt���줿ʸ�����
-# ��Ӥ��뵡ǽ����ġ�
+# 与えられた、またはランダムに決定されたsaltを用いて文字列をcryptする機能、
+# そして文字列をcryptして得られた文字列を、予めcryptされた文字列と
+# 比較する機能を持つ。
 # -----------------------------------------------------------------------------
 package Crypt;
 use strict;
@@ -14,7 +14,7 @@ use warnings;
 #__DATA__
 
 sub encrypt {
-    # salt�Ͼ�ά��ǽ����ά�����ȥ�����˺���롣
+    # saltは省略可能。省略されるとランダムに作られる。
     my ($str,$salt) = @_;
     $salt = gen_salt() unless defined $salt;
 
@@ -22,7 +22,7 @@ sub encrypt {
 }
 
 sub check {
-    # encrypted��salt��raw��crypt()���Ƥߤơ����פ������ɤ����򿿵��ͤ��֤���
+    # encryptedのsaltでrawをcrypt()してみて、一致したかどうかを真偽値で返す。
     my ($raw,$encrypted) = @_;
 
     return crypt($raw,substr($encrypted,0,2)) eq $encrypted;

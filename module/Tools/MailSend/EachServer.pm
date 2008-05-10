@@ -91,8 +91,8 @@ sub new {
 #--- constant ---
 sub DATA_TYPES {
     return {
-	array => $DATA_TYPE_ARRAY,		# data ¤ËÁ÷¿®¹Ô¤Î raw data ¤òÅÏ¤¹¡£
-	inner_iter => $DATA_TYPE_INNER_ITER,	# data ¤Ë¥³¡¼¥ë¥Ğ¥Ã¥¯´Ø¿ô¤òÅÏ¤¹¡£
+	array => $DATA_TYPE_ARRAY,		# data ã«é€ä¿¡è¡Œã® raw data ã‚’æ¸¡ã™ã€‚
+	inner_iter => $DATA_TYPE_INNER_ITER,	# data ã«ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°ã‚’æ¸¡ã™ã€‚
     };
 }
 
@@ -384,7 +384,7 @@ sub _do_smtp {
 		$this->{local_state} = 'AUTH_START';
 		return $this->_do_smtp('RECURSIVE');
 	    } else {
-		# ¤³¤³¤ÇHELO¤È½èÍı¤ò°ìËÜ²½¤¹¤ë¤¿¤á¤ËSTART_MAIL¤È¤·¤Ærecursive.
+		# ã“ã“ã§HELOã¨å‡¦ç†ã‚’ä¸€æœ¬åŒ–ã™ã‚‹ãŸã‚ã«START_MAILã¨ã—ã¦recursive.
 		$this->{local_state} = 'START_MAIL';
 		return $this->_do_smtp('RECURSIVE');
 	    }
@@ -395,7 +395,7 @@ sub _do_smtp {
 	}
     } elsif ($local_state eq 'HELO') {
 	if ($reply eq '250 ') {
-	    # ¤³¤³¤ÇEHLO¤È½èÍı¤ò°ìËÜ²½¤¹¤ë¤¿¤á¤ËSTART_MAIL¤È¤·¤Ærecursive.
+	    # ã“ã“ã§EHLOã¨å‡¦ç†ã‚’ä¸€æœ¬åŒ–ã™ã‚‹ãŸã‚ã«START_MAILã¨ã—ã¦recursive.
 	    $this->{local_state} = 'START_MAIL';
 	    return $this->_do_smtp('RECURSIVE');
 	} else {
@@ -493,7 +493,7 @@ sub _do_smtp {
 	} else {
 	    #error
 	    $this->_reply_smtp_error(0, $local_state, $line);
-	    return $this->_smtp_send_final(); # smtp mail send ¤¬½ªÎ»¤·¤¿¤â¤Î¤È¤ß¤Ê¤¹¡£
+	    return $this->_smtp_send_final(); # smtp mail send ãŒçµ‚äº†ã—ãŸã‚‚ã®ã¨ã¿ãªã™ã€‚
 	}
     } elsif ($local_state eq 'RCPTTO') {
 	my ($newaddr);
@@ -508,7 +508,7 @@ sub _do_smtp {
 	    # error
 	    $line =~ /\<([^\<\>]*)\>/; # use mail_address entry for error msg.
 	    $this->_reply_smtp_error(0, $local_state, $line, $1);
-	    # Ìµ»ë¤·¤Æ¼¡¤Ø¡£
+	    # ç„¡è¦–ã—ã¦æ¬¡ã¸ã€‚
 	    $newaddr = shift(@{$this->{queue}->[0]->{to_seps}});
 	}
 	if (defined($newaddr)) {
@@ -520,9 +520,9 @@ sub _do_smtp {
 		$sock->send_reserve('DATA');
 	    } else {
 		# no rcpt addrs.
-		# error ¤Ï´û¤Ë¥á¥Ã¥»¡¼¥¸¤òÊÖ¤·¤Æ¤¤¤ë¡£
+		# error ã¯æ—¢ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¿”ã—ã¦ã„ã‚‹ã€‚
 		$this->_reply_smtp_error(0, 'NORCPTTO');
-		return $this->_smtp_send_final(); # smtp mail send ¤¬½ªÎ»¤·¤¿¤â¤Î¤È¤ß¤Ê¤¹¡£
+		return $this->_smtp_send_final(); # smtp mail send ãŒçµ‚äº†ã—ãŸã‚‚ã®ã¨ã¿ãªã™ã€‚
 	    }
 	}
     } elsif ($local_state eq 'DATA') {
@@ -603,7 +603,7 @@ sub _smtp_send_final {
 	    # have key having priority. and queue isn't single.
 	    @{$this->{queue}} = sort { $a->{priority} <=> $b->{priority}} @{$this->{queue}};
 	}
-	# START_MAIL¤Ë¤·¤Ærecursive.
+	# START_MAILã«ã—ã¦recursive.
 	$this->{local_state} = 'START_MAIL';
 	return $this->_do_smtp('RECURSIVE');
     } else {
@@ -631,14 +631,14 @@ sub _close_smtp {
 
 sub _reply_smtp_error {
   my ($this, $session, $state, $line, $info) = @_;
-  # »ÈÍÑ¼Ô¤Ëerror¤òÊÖ¤¹¥á¥½¥Ã¥É¡£$info¤Ë¤ÏÁ÷¿®¼ºÇÔ¤Îmail address¤¬´Ş¤Ş¤ì¤ë¤Ï¤º¤À¤¬¡¢
-  # channel¤Ë¸ş¤«¤Ã¤Æmail address¤ò¹­Êó¤¹¤ë¤³¤È¤Ë¤Ê¤ë¤Î¤Ç»ÈÍÑ¤·¤Ê¤¤¤³¤È¤ò´«¤á¤ë¡£
-  # ¤Ê¤ª¡¢from/to¤Ë¤Ïprivate»ØÄê¤µ¤ì¤¿¤â¤Î¤Ï´Ş¤Ş¤ì¤Ê¤¤¡£
+  # ä½¿ç”¨è€…ã«errorã‚’è¿”ã™ãƒ¡ã‚½ãƒƒãƒ‰ã€‚$infoã«ã¯é€ä¿¡å¤±æ•—ã®mail addressãŒå«ã¾ã‚Œã‚‹ã¯ãšã ãŒã€
+  # channelã«å‘ã‹ã£ã¦mail addressã‚’åºƒå ±ã™ã‚‹ã“ã¨ã«ãªã‚‹ã®ã§ä½¿ç”¨ã—ãªã„ã“ã¨ã‚’å‹§ã‚ã‚‹ã€‚
+  # ãªãŠã€from/toã«ã¯privateæŒ‡å®šã•ã‚ŒãŸã‚‚ã®ã¯å«ã¾ã‚Œãªã„ã€‚
 
-  # state¤Ë¤Ï¼ºÇÔ¤·¤¿¤È¤­¤Î¾õÂÖ¤¬ÅÏ¤µ¤ì¡¢'error-mail' ¤ä 'fatalerror-connect' ¤Î¤è¤¦¤Ë
-  # ¾õÂÖÊÌ¾ÜºÙ¥á¥Ã¥»¡¼¥¸¤òÄêµÁ¤¹¤ë¤³¤È¤¬½ĞÍè¤ë¡£
+  # stateã«ã¯å¤±æ•—ã—ãŸã¨ãã®çŠ¶æ…‹ãŒæ¸¡ã•ã‚Œã€'error-mail' ã‚„ 'fatalerror-connect' ã®ã‚ˆã†ã«
+  # çŠ¶æ…‹åˆ¥è©³ç´°ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å®šç¾©ã™ã‚‹ã“ã¨ãŒå‡ºæ¥ã‚‹ã€‚
 
-  # fatalerror ¤Ï1Á÷¿®¼Ô¤Ë¤Ä¤­1¤Ä¤À¤±ÊÖ¤µ¤ì¤ë(¤Ï¤º)¡£
+  # fatalerror ã¯1é€ä¿¡è€…ã«ã¤ã1ã¤ã ã‘è¿”ã•ã‚Œã‚‹(ã¯ãš)ã€‚
 
   if (defined($session)) {
     my $struct = $this->{queue}->[$session];
@@ -656,8 +656,8 @@ sub _reply_smtp_error {
 
 sub _reply_smtp_ok {
   my ($this, $session) = @_;
-  # »ÈÍÑ¼Ô¤Ëaccept¤òÊÖ¤¹¥á¥½¥Ã¥É¡£
-  # from/to¤Ë¤Ïprivate»ØÄê¤µ¤ì¤¿¤â¤Î¤Ï´Ş¤Ş¤ì¤Ê¤¤¡£
+  # ä½¿ç”¨è€…ã«acceptã‚’è¿”ã™ãƒ¡ã‚½ãƒƒãƒ‰ã€‚
+  # from/toã«ã¯privateæŒ‡å®šã•ã‚ŒãŸã‚‚ã®ã¯å«ã¾ã‚Œãªã„ã€‚
 
   my $struct = $this->{queue}->[$session];
 
@@ -671,7 +671,7 @@ sub mime_unstructured_header_array {
 # contrib
 no strict; # i don't want fix these functions.
 
-# $str ¤ò encoded-word ¤ËÊÑ´¹¤· $line ¤ËÄÉ²Ã¤¹¤ë
+# $str ã‚’ encoded-word ã«å¤‰æ›ã— $line ã«è¿½åŠ ã™ã‚‹
 
 $ascii = '[\x00-\x7F]';
 $twoBytes = '[\x8E\xA1-\xFE][\xA1-\xFE]';
@@ -705,8 +705,8 @@ sub add_encoded_word {
   $result . $line;
 }
 
-# unstructured header $header ¤ò MIME¥¨¥ó¥³¡¼¥É¤¹¤ë
-# add_encoded_word() ¤Ë¤Ä¤¤¤Æ¤Ï¾å¤Î¥¹¥¯¥ê¥×¥È¤ò»²¾È
+# unstructured header $header ã‚’ MIMEã‚¨ãƒ³ã‚³ãƒ¼ãƒ‰ã™ã‚‹
+# add_encoded_word() ã«ã¤ã„ã¦ã¯ä¸Šã®ã‚¹ã‚¯ãƒªãƒ—ãƒˆã‚’å‚ç…§
 
 sub mime_unstructured_header {
   my $oldheader = shift;

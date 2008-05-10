@@ -14,7 +14,7 @@ sub new {
     my $this = $class->SUPER::new(@_);
     $this->{servers} = {}; # servername => channellist
     # channellist : HASH
-    #   shortname => ¥Á¥ã¥ó¥Í¥ë¥·¥ç¡¼¥È¥Í¡¼¥à
+    #   shortname => ãƒãƒ£ãƒ³ãƒãƒ«ã‚·ãƒ§ãƒ¼ãƒˆãƒãƒ¼ãƒ 
     #   key => channel key
     $this->_init;
 }
@@ -22,7 +22,7 @@ sub new {
 sub _init {
     my $this = shift;
     foreach ($this->config->channel('all')) {
-	s/(,)\s+/$1/g; # ¥³¥ó¥Ş¤ÎÄ¾¸å¤Ë¥¹¥Ú¡¼¥¹¤¬¤¢¤Ã¤¿¾ì¹ç¡¢ºï½ü¤¹¤ë
+	s/(,)\s+/$1/g; # ã‚³ãƒ³ãƒã®ç›´å¾Œã«ã‚¹ãƒšãƒ¼ã‚¹ãŒã‚ã£ãŸå ´åˆã€å‰Šé™¤ã™ã‚‹
 	my ($fullname, $key) = split(/\s+/, $_, 2);
 	my @fullnames = split(/\,/, $fullname);
 	my @keys = split(/,/, $key || '');
@@ -56,7 +56,7 @@ sub connected_to_server {
 	    Code => sub {
 		my $timer = shift;
 		if (@$session > 0) {
-		    # °ìÅÙ¤Ë¸Ş¤Ä¤º¤ÄÁ÷¤ê½Ğ¤¹¡£
+		    # ä¸€åº¦ã«äº”ã¤ãšã¤é€ã‚Šå‡ºã™ã€‚
 		    my $msg_per_trigger = 5;
 		    my (@param_chan, @param_key);
 		    for (my $i = 0; $i < @$session && $i < $msg_per_trigger; $i++) {
@@ -84,18 +84,18 @@ sub connected_to_server {
 
 1;
 =pod
-info: ¥µ¡¼¥Ğ¡¼¤Ë½é¤á¤ÆÀÜÂ³¤·¤¿»ş¡¢»ØÄê¤·¤¿¥Á¥ã¥ó¥Í¥ë¤ËÆş¤ë¥â¥¸¥å¡¼¥ë¡£
+info: ã‚µãƒ¼ãƒãƒ¼ã«åˆã‚ã¦æ¥ç¶šã—ãŸæ™‚ã€æŒ‡å®šã—ãŸãƒãƒ£ãƒ³ãƒãƒ«ã«å…¥ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã€‚
 default: off
 section: important
 
-# ½ñ¼°: <¥Á¥ã¥ó¥Í¥ë1>[,<¥Á¥ã¥ó¥Í¥ë2>,...] [<¥Á¥ã¥ó¥Í¥ë1¤Î¥­¡¼>,...]
-#     ¥³¥ó¥Ş¤ÎÄ¾¸å¤Î¥¹¥Ú¡¼¥¹¤ÏÌµ»ë¤µ¤ì¤Ş¤¹¡£
+# æ›¸å¼: <ãƒãƒ£ãƒ³ãƒãƒ«1>[,<ãƒãƒ£ãƒ³ãƒãƒ«2>,...] [<ãƒãƒ£ãƒ³ãƒãƒ«1ã®ã‚­ãƒ¼>,...]
+#     ã‚³ãƒ³ãƒã®ç›´å¾Œã®ã‚¹ãƒšãƒ¼ã‚¹ã¯ç„¡è¦–ã•ã‚Œã¾ã™ã€‚
 #
-# Îã:
-#   ¡Ö#aaaaa@ircnet¡×¤Ë¡Öaaaaa¡×¤È¤¤¤¦¥­¡¼¤ÇÆş¤ë¡£
+# ä¾‹:
+#   ã€Œ#aaaaa@ircnetã€ã«ã€Œaaaaaã€ã¨ã„ã†ã‚­ãƒ¼ã§å…¥ã‚‹ã€‚
 -channel: #aaaaa@ircnet aaaaa
 #
-#   ¡Ö#aaaaa@ircnet¡×¡¢¡Ö#bbbbb@ircnet:*.jp¡×¡¢¡Ö#ccccc@ircnet¡×¡¢¡Ö#ddddd@ircnet¡×¤Î4¤Ä¤Î¥Á¥ã¥ó¥Í¥ë¤ËÆş¤ë¡£
+#   ã€Œ#aaaaa@ircnetã€ã€ã€Œ#bbbbb@ircnet:*.jpã€ã€ã€Œ#ccccc@ircnetã€ã€ã€Œ#ddddd@ircnetã€ã®4ã¤ã®ãƒãƒ£ãƒ³ãƒãƒ«ã«å…¥ã‚‹ã€‚
 -channel: #aaaaa@ircnet,#bbbbb@ircnet:*.jp, #ccccc@ircnet
 -channel: #ddddd@ircnet
 =cut

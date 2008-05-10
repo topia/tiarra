@@ -1,8 +1,8 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# IrcIO::Client¤Ï¥¯¥é¥¤¥¢¥ó¥È¤«¤é¤ÎÀÜÂ³¤ò¼õ¤±¡¢
-# IRC¥á¥Ã¥»¡¼¥¸¤ò¤ä¤ê¼è¤ê¤¹¤ë¥¯¥é¥¹¤Ç¤¹¡£
+# IrcIO::Clientã¯ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‹ã‚‰ã®æ¥ç¶šã‚’å—ã‘ã€
+# IRCãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’ã‚„ã‚Šå–ã‚Šã™ã‚‹ã‚¯ãƒ©ã‚¹ã§ã™ã€‚
 # -----------------------------------------------------------------------------
 package IrcIO::Client;
 use strict;
@@ -21,9 +21,9 @@ utils->define_attr_getter(0, qw(logging_in username),
 			  qw(client_host client_addr client_host_repr));
 
 
-# Ê£¿ô¤Î¥Ñ¥Ã¥±¡¼¥¸¤òº®ºß¤µ¤»¤Æ¤ë¤ÈSelfLoader¤¬»È¤¨¤Ê¤¤¡Ä¡©
+# è¤‡æ•°ã®ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã‚’æ··åœ¨ã•ã›ã¦ã‚‹ã¨SelfLoaderãŒä½¿ãˆãªã„â€¦ï¼Ÿ
 #use SelfLoader;
-#SelfLoader->load_stubs; # ¤³¤Î¥¯¥é¥¹¤Ë¤Ï¿Æ¥¯¥é¥¹¤¬¤¢¤ë¤«¤é¡£(SelfLoader¤Îpod¤ò»²¾È)
+#SelfLoader->load_stubs; # ã“ã®ã‚¯ãƒ©ã‚¹ã«ã¯è¦ªã‚¯ãƒ©ã‚¹ãŒã‚ã‚‹ã‹ã‚‰ã€‚(SelfLoaderã®podã‚’å‚ç…§)
 #1;
 #__DATA__
 
@@ -31,11 +31,11 @@ sub new {
     my ($class,$runloop,$sock) = @_;
     my $this = $class->SUPER::new($runloop);
     $this->attach($sock);
-    $this->{pass_received} = ''; # ¥¯¥é¥¤¥¢¥ó¥È¤«¤é¼õ¤±¼è¤Ã¤¿¥Ñ¥¹¥ï¡¼¥É
-    $this->{nick} = ''; # ¥í¥°¥¤¥ó»ş¤Ë¥¯¥é¥¤¥¢¥ó¥È¤«¤é¼õ¤±¼è¤Ã¤¿nick¡£ÊÑ¹¹¤µ¤ì¤Ê¤¤¡£
-    $this->{username} = ''; # Æ±username
-    $this->{logging_in} = 1; # ¥í¥°¥¤¥óÃæ¤Ê¤é1
-    $this->{options} = {}; # ¥¯¥é¥¤¥¢¥ó¥È¤¬ÀÜÂ³»ş¤Ë$key=value$¤Ç»ØÄê¤·¤¿¥ª¥×¥·¥ç¥ó¡£
+    $this->{pass_received} = ''; # ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‹ã‚‰å—ã‘å–ã£ãŸãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰
+    $this->{nick} = ''; # ãƒ­ã‚°ã‚¤ãƒ³æ™‚ã«ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‹ã‚‰å—ã‘å–ã£ãŸnickã€‚å¤‰æ›´ã•ã‚Œãªã„ã€‚
+    $this->{username} = ''; # åŒusername
+    $this->{logging_in} = 1; # ãƒ­ã‚°ã‚¤ãƒ³ä¸­ãªã‚‰1
+    $this->{options} = {}; # ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒæ¥ç¶šæ™‚ã«$key=value$ã§æŒ‡å®šã—ãŸã‚ªãƒ—ã‚·ãƒ§ãƒ³ã€‚
     my $addr = $sock->peerhost;
     $this->{client_host} = $this->{client_addr} = $addr;
     ::printmsg("One client at ".$this->{client_addr}." connected to me. " .
@@ -54,12 +54,12 @@ sub accept {
 	host => $this->{client_host},
 	addr => $this->{client_addr});
 
-    # ¤³¤Î¥Û¥¹¥È¤«¤é¤ÎÀÜÂ³¤Ïµö²Ä¤µ¤ì¤Æ¤¤¤ë¤«¡©
+    # ã“ã®ãƒ›ã‚¹ãƒˆã‹ã‚‰ã®æ¥ç¶šã¯è¨±å¯ã•ã‚Œã¦ã„ã‚‹ã‹ï¼Ÿ
     my $allowed_host = $this->_conf_general->client_allowed;
     if (defined $allowed_host) {
 	unless (Mask::match($allowed_host,$this->{client_host}) ||
 		Mask::match($allowed_host,$this->{client_addr})) {
-	    # ¥Ş¥Ã¥Á¤·¤Ê¤¤¤Î¤Çdie¡£
+	    # ãƒãƒƒãƒã—ãªã„ã®ã§dieã€‚
 	    die "Disconnect the client at ".$this->{client_host_repr}.". The host is not allowed.\n";
 	}
     }
@@ -82,7 +82,7 @@ sub disconnect {
 }
 
 sub fullname {
-    # ¤³¤Î¥¯¥é¥¤¥¢¥ó¥È¤òtiarra¤«¤é¸«¤¿nick!username@userhost¤Î·Á¼°¤ÇÉ½¸½¤¹¤ë¡£
+    # ã“ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚’tiarraã‹ã‚‰è¦‹ãŸnick!username@userhostã®å½¢å¼ã§è¡¨ç¾ã™ã‚‹ã€‚
     my ($this,$type) = @_;
     if (defined $type && $type eq 'error') {
 	$this->_runloop->current_nick.'['.$this->{username}.'@'.$this->{client_host}.']';
@@ -93,8 +93,8 @@ sub fullname {
 }
 
 sub fullname_from_client {
-    # ¤³¤Î¥¯¥é¥¤¥¢¥ó¥È¤ò¥¯¥é¥¤¥¢¥ó¥È¤«¤é¸«¤¿nick!username@userhost¤Î·Á¼°¤ÇÉ½¸½¤¹¤ë¡£
-    # ¤³¤Î´Ø¿ô¤¬ÊÖ¤¹nick¤Ï½é¤á¤Ë¼õ¤±¼è¤Ã¤¿¤â¤Î¤Ç¤¢¤ëÅÀ¤ËÃí°Õ¡£
+    # ã“ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚’ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‹ã‚‰è¦‹ãŸnick!username@userhostã®å½¢å¼ã§è¡¨ç¾ã™ã‚‹ã€‚
+    # ã“ã®é–¢æ•°ãŒè¿”ã™nickã¯åˆã‚ã«å—ã‘å–ã£ãŸã‚‚ã®ã§ã‚ã‚‹ç‚¹ã«æ³¨æ„ã€‚
     my $this = shift;
     $this->{nick}.'!'.$this->{username}.'@'.$this->{client_host};
 }
@@ -104,13 +104,13 @@ sub parse_realname {
     return if !defined $realname;
     # $key=value;key=value;...$
     #
-    # °Ê²¼¤ÏÁ´¤ÆÍ­¸ú¤Ç¡¢Æ±¤¸°ÕÌ£¤Ç¤¢¤ë¡£
+    # ä»¥ä¸‹ã¯å…¨ã¦æœ‰åŠ¹ã§ã€åŒã˜æ„å‘³ã§ã‚ã‚‹ã€‚
     # $ foo = bar; key=  value$
     # $ foo=bar;key=value $
     # $foo    =bar;key=  value    $
 
-    my $key = qr{[^=:]+?}; # ¥­¡¼¤È¤·¤Æµö¤µ¤ì¤ë¥Ñ¥¿¡¼¥ó
-    my $value = qr{[^;]*?}; # ÃÍ¤È¤·¤Æµö¤µ¤ì¤ë¥Ñ¥¿¡¼¥ó
+    my $key = qr{[^=:]+?}; # ã‚­ãƒ¼ã¨ã—ã¦è¨±ã•ã‚Œã‚‹ãƒ‘ã‚¿ãƒ¼ãƒ³
+    my $value = qr{[^;]*?}; # å€¤ã¨ã—ã¦è¨±ã•ã‚Œã‚‹ãƒ‘ã‚¿ãƒ¼ãƒ³
     my $sep = qr{[:=]};
     my $lastpair = qr{$key\s*$sep\s*$value};
     my $pair = qr{$lastpair\s*;};
@@ -126,8 +126,8 @@ sub parse_realname {
 }
 
 sub option {
-    # ¥í¥°¥¤¥ó»ş¤Ë$key=value$¤Ç»ØÄê¤µ¤ì¤¿¥ª¥×¥·¥ç¥ó¤ò¼èÆÀ¤¹¤ë¡£
-    # »ØÄê¤µ¤ì¤¿¥­¡¼¤ËÂĞ¤¹¤ëÃÍ¤¬Â¸ºß¤·¤Ê¤«¤Ã¤¿¾ì¹ç¤Ïundef¤òÊÖ¤¹¡£
+    # ãƒ­ã‚°ã‚¤ãƒ³æ™‚ã«$key=value$ã§æŒ‡å®šã•ã‚ŒãŸã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’å–å¾—ã™ã‚‹ã€‚
+    # æŒ‡å®šã•ã‚ŒãŸã‚­ãƒ¼ã«å¯¾ã™ã‚‹å€¤ãŒå­˜åœ¨ã—ãªã‹ã£ãŸå ´åˆã¯undefã‚’è¿”ã™ã€‚
     my ($this,$key) = @_;
     if (defined $key) {
 	$this->{options}->{$key};
@@ -163,7 +163,7 @@ sub option_or_default_multiple {
 sub send_message {
     my ($this,$msg) = @_;
 
-    # ³Æ¥â¥¸¥å¡¼¥ë¤ËÄÌÃÎ
+    # å„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«é€šçŸ¥
     #$this->_runloop->notify_modules('notification_of_message_io',$msg,$this,'out');
 
     $this->SUPER::send_message(
@@ -176,7 +176,7 @@ sub read {
     $this->SUPER::read(
 	$this->option_or_default_multiple('encoding', ['in-', ''], 'client-'));
 
-    # ÀÜÂ³¤¬ÀÚ¤ì¤¿¤é¡¢³Æ¥â¥¸¥å¡¼¥ë¤ØÄÌÃÎ
+    # æ¥ç¶šãŒåˆ‡ã‚ŒãŸã‚‰ã€å„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¸é€šçŸ¥
     if (!$this->connected) {
 	$this->_runloop->notify_modules('client_detached',$this);
     }
@@ -186,12 +186,12 @@ sub pop_queue {
     my $this = shift;
     my $msg = $this->SUPER::pop_queue;
 
-    # ¥¯¥é¥¤¥¢¥ó¥È¤¬¥í¥°¥¤¥óÃæ¤Ê¤é¡¢¥í¥°¥¤¥ó¤ò¼õ¤±ÉÕ¤±¤ë¡£
+    # ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒãƒ­ã‚°ã‚¤ãƒ³ä¸­ãªã‚‰ã€ãƒ­ã‚°ã‚¤ãƒ³ã‚’å—ã‘ä»˜ã‘ã‚‹ã€‚
     if (defined $msg) {
-	# ³Æ¥â¥¸¥å¡¼¥ë¤ËÄÌÃÎ
+	# å„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«é€šçŸ¥
 	#$this->_runloop->notify_modules('notification_of_message_io',$msg,$this,'in');
 
-	# ¥í¥°¥¤¥óºî¶ÈÃæ¤«¡©
+	# ãƒ­ã‚°ã‚¤ãƒ³ä½œæ¥­ä¸­ã‹ï¼Ÿ
 	if ($this->{logging_in}) {
 	    return $this->_receive_while_logging_in($msg);
 	}
@@ -205,7 +205,7 @@ sub pop_queue {
 sub _receive_while_logging_in {
     my ($this,$msg) = @_;
 
-    # NICKµÚ¤ÓUSER¤ò¼õ¤±¼è¤Ã¤¿»şÅÀ¤Ç¤½¤Î¥í¥°¥¤¥ó¤ÎÀµÅöÀ­¤ò³ÎÇ§¤·¡¢ºî¶È¤ò½ªÎ»¤¹¤ë¡£
+    # NICKåŠã³USERã‚’å—ã‘å–ã£ãŸæ™‚ç‚¹ã§ãã®ãƒ­ã‚°ã‚¤ãƒ³ã®æ­£å½“æ€§ã‚’ç¢ºèªã—ã€ä½œæ¥­ã‚’çµ‚äº†ã™ã‚‹ã€‚
     my $command = $msg->command;
     if ($command eq 'PASS') {
 	$this->{pass_received} = $msg->params->[0];
@@ -232,12 +232,12 @@ sub _receive_while_logging_in {
     }
 
     if ($this->{nick} ne '' && $this->{username} ne '') {
-	# general/tiarra-password¤ò¼èÆÀ
+	# general/tiarra-passwordã‚’å–å¾—
 	my $valid_password = $this->_conf_general->tiarra_password;
 	my $prefix = $this->_runloop->sysmsg_prefix('system');
 	if (defined $valid_password && $valid_password ne '' &&
 	    ! Crypt::check($this->{pass_received},$valid_password)) {
-	    # ¥Ñ¥¹¥ï¡¼¥É¤¬Àµ¤·¤¯¤Ê¤¤¡£
+	    # ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ãŒæ­£ã—ããªã„ã€‚
 	    ::printmsg("Refused login of ".$this->fullname_from_client." because of bad password.");
 
 	    $this->send_message(
@@ -250,11 +250,11 @@ sub _receive_while_logging_in {
 		$this->disconnect_after_writing;
 	}
 	else {
-	    # ¥Ñ¥¹¥ï¡¼¥É¤¬Àµ¤·¤¤¤«¡¢»ØÄê¤µ¤ì¤Æ¤¤¤Ê¤¤¡£
+	    # ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ãŒæ­£ã—ã„ã‹ã€æŒ‡å®šã•ã‚Œã¦ã„ãªã„ã€‚
 	    ::printmsg('Accepted login of '.$this->fullname_from_client.
 			   ', from '.$this->{client_host_repr}.'.');
 	    if ((my $n_options = keys %{$this->{options}}) > 0) {
-		# ¥ª¥×¥·¥ç¥ó¤¬»ØÄê¤µ¤ì¤Æ¤¤¤¿¤éÉ½¼¨¤¹¤ë¡£
+		# ã‚ªãƒ—ã‚·ãƒ§ãƒ³ãŒæŒ‡å®šã•ã‚Œã¦ã„ãŸã‚‰è¡¨ç¤ºã™ã‚‹ã€‚
 		my $options = join ' ; ',map {
 		    "$_ = $this->{options}->{$_}";
 		} keys %{$this->{options}};
@@ -262,7 +262,7 @@ sub _receive_while_logging_in {
 	    }
 	    $this->{logging_in} = 0;
 
-	    # ¼Âºİ¤Ë¤Ï¥ë¡¼¥×¤Ç¤Ï¤Ê¤¤¡£
+	    # å®Ÿéš›ã«ã¯ãƒ«ãƒ¼ãƒ—ã§ã¯ãªã„ã€‚
 	    while (1) {
 		$this->send_message(
 		    $this->construct_irc_message(Prefix => $prefix,
@@ -271,7 +271,7 @@ sub _receive_while_logging_in {
 
 		my $current_nick = $this->_runloop->current_nick;
 		if ($this->{nick} ne $current_nick) {
-		    # ¥¯¥é¥¤¥¢¥ó¥È¤¬Á÷¤Ã¤Æ¤­¤¿nick¤È¥í¡¼¥«¥ë¤Înick¤¬¿©¤¤°ã¤Ã¤Æ¤¤¤ë¤Î¤ÇÀµ¤·¤¤nick¤ò¶µ¤¨¤ë¡£
+		    # ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒé€ã£ã¦ããŸnickã¨ãƒ­ãƒ¼ã‚«ãƒ«ã®nickãŒé£Ÿã„é•ã£ã¦ã„ã‚‹ã®ã§æ­£ã—ã„nickã‚’æ•™ãˆã‚‹ã€‚
 		    $this->send_message(
 			$this->construct_irc_message(Prefix => $this->fullname_from_client,
 						     Command => 'NICK',
@@ -290,7 +290,7 @@ sub _receive_while_logging_in {
 		};
 
 		map {
-		    # ¥í¡¼¥«¥ënick¤È¥°¥í¡¼¥Ğ¥ënick¤¬¿©¤¤°ã¤Ã¤Æ¤¤¤¿¤é¤½¤Î»İ¤òÅÁ¤¨¤ë¡£
+		    # ãƒ­ãƒ¼ã‚«ãƒ«nickã¨ã‚°ãƒ­ãƒ¼ãƒãƒ«nickãŒé£Ÿã„é•ã£ã¦ã„ãŸã‚‰ãã®æ—¨ã‚’ä¼ãˆã‚‹ã€‚
 		    my $network_name = $_->network_name;
 		    my $global_nick = $_->current_nick;
 		    if ($global_nick ne $current_nick) {
@@ -334,7 +334,7 @@ sub _receive_while_logging_in {
 			    my $value = $network->isupport->{$key};
 			    my $str = length($value) ? ($key.'='.$value) : $key;
 			    $length += length($str) + 1; # $str and space
-			    # Í¾Íµ¤ò¸«¤Æ400¥Ğ¥¤¥È¤ò±Û¤¨¤¿¤é¹Ô¤òÊ¬¤±¤ë¡£
+			    # ä½™è£•ã‚’è¦‹ã¦400ãƒã‚¤ãƒˆã‚’è¶ŠãˆãŸã‚‰è¡Œã‚’åˆ†ã‘ã‚‹ã€‚
 			    if ($length >= 400 || scalar(@params) >= $max_params) {
 				$flush_msg->();
 				$length = length($str);
@@ -350,39 +350,39 @@ sub _receive_while_logging_in {
 		}
 		$send_message->(RPL_ENDOFMOTD, "End of MOTD command.");
 
-		# ¥¯¥é¥¤¥¢¥ó¥È¤Ë½ĞÎÏ¡£
-		# ¤½¤Î·ë²ÌÀÚÃÇ¤µ¤ì¤¿¤é¥ë¡¼¥×¤òÈ´¤±¤ë¡£
+		# ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«å‡ºåŠ›ã€‚
+		# ãã®çµæœåˆ‡æ–­ã•ã‚ŒãŸã‚‰ãƒ«ãƒ¼ãƒ—ã‚’æŠœã‘ã‚‹ã€‚
 		$this->flush;
 		last unless $this->connected;
 
-		# join¤·¤Æ¤¤¤ëÁ´¤Æ¤Î¥Á¥ã¥ó¥Í¥ë¤Î¾ğÊó¤ò¥¯¥é¥¤¥¢¥ó¥ÈÁ÷¤ë¡£
+		# joinã—ã¦ã„ã‚‹å…¨ã¦ã®ãƒãƒ£ãƒ³ãƒãƒ«ã®æƒ…å ±ã‚’ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆé€ã‚‹ã€‚
 		$this->inform_joinning_channels;
 
-		# ÀÚÃÇ¤µ¤ì¤Æ¤¤¤¿¤é¥ë¡¼¥×¤òÈ´¤±¤ë¡£
+		# åˆ‡æ–­ã•ã‚Œã¦ã„ãŸã‚‰ãƒ«ãƒ¼ãƒ—ã‚’æŠœã‘ã‚‹ã€‚
 		last unless $this->connected;
 
-		# ³Æ¥â¥¸¥å¡¼¥ë¤Ë¥¯¥é¥¤¥¢¥ó¥ÈÄÉ²Ã¤ÎÄÌÃÎ¤ò½Ğ¤¹¡£
+		# å„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆè¿½åŠ ã®é€šçŸ¥ã‚’å‡ºã™ã€‚
 		$this->_runloop->notify_modules('client_attached',$this);
 
-		# É¬¤º¥ë¡¼¥×¤òÈ´¤±¤ë¡£
+		# å¿…ãšãƒ«ãƒ¼ãƒ—ã‚’æŠœã‘ã‚‹ã€‚
 		last;
 	    }
 	}
     }
-    # ¥í¥°¥¤¥óºî¶ÈÃæ¤Ë¥¯¥é¥¤¥¢¥ó¥È¤«¤é¼õ¤±¼è¤Ã¤¿¤¤¤«¤Ê¤ë¥á¥Ã¥»¡¼¥¸¤â¥µ¡¼¥Ğ¡¼¤Ë¤ÏÁ÷¤é¤Ê¤¤¡£
+    # ãƒ­ã‚°ã‚¤ãƒ³ä½œæ¥­ä¸­ã«ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‹ã‚‰å—ã‘å–ã£ãŸã„ã‹ãªã‚‹ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚‚ã‚µãƒ¼ãƒãƒ¼ã«ã¯é€ã‚‰ãªã„ã€‚
     return undef;
 }
 
 sub _receive_after_logged_in {
     my ($this,$msg) = @_;
 
-    # ¥í¥°¥¤¥óÃæ¤Ç¤Ê¤¤¡£
+    # ãƒ­ã‚°ã‚¤ãƒ³ä¸­ã§ãªã„ã€‚
     my $command = $msg->command;
 
     if ($command eq 'NICK') {
 	if (defined $msg->params) {
-	    # ·Á¼°¤¬Àµ¤·¤¤¸Â¤êNICK¤Ë¤Ï¾ï¤ËÀ®¸ù¤·¤Æ¡¢RunLoop¤Î¥«¥ì¥ó¥Ènick¤¬ÊÑ¹¹¤Ë¤Ê¤ë¡£
-	    # ¤¿¤À¤·¥Í¥Ã¥È¥ï¡¼¥¯Ì¾¤¬ÌÀ¼¨¤µ¤ì¤Æ¤¤¤¿¾ì¹ç¤Ï¥«¥ì¥ó¥È¤òÊÑ¹¹¤·¤Ê¤¤¡£
+	    # å½¢å¼ãŒæ­£ã—ã„é™ã‚ŠNICKã«ã¯å¸¸ã«æˆåŠŸã—ã¦ã€RunLoopã®ã‚«ãƒ¬ãƒ³ãƒˆnickãŒå¤‰æ›´ã«ãªã‚‹ã€‚
+	    # ãŸã ã—ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯åãŒæ˜ç¤ºã•ã‚Œã¦ã„ãŸå ´åˆã¯ã‚«ãƒ¬ãƒ³ãƒˆã‚’å¤‰æ›´ã—ãªã„ã€‚
 	    my $rawnick = $msg->params->[0];
 	    my ($nick,undef,$specified) = Multicast::detach($rawnick);
 	    if (Multicast::nick_p($nick)) {
@@ -406,7 +406,7 @@ sub _receive_after_logged_in {
 			Params => [$this->_runloop->current_nick,
 				   $rawnick,
 				   'Erroneous nickname']));
-		# ¤³¤ì¤Ï»ª¤ËÁ÷¤é¤Ê¤¤¡£
+		# ã“ã‚Œã¯é¯–ã«é€ã‚‰ãªã„ã€‚
 		$msg = undef;
 	    }
 	} else {
@@ -416,7 +416,7 @@ sub _receive_after_logged_in {
 		    Command => ERR_NONICKNAMEGIVEN,
 		    Params => [$this->_runloop->current_nick,
 			       'No nickname given']));
-	    # ¤³¤ì¤Ï»ª¤ËÁ÷¤é¤Ê¤¤¡£
+	    # ã“ã‚Œã¯é¯–ã«é€ã‚‰ãªã„ã€‚
 	    $msg = undef;
 	}
     }
@@ -429,10 +429,10 @@ sub _receive_after_logged_in {
 			   Param => 'Closing Link: '.$this->fullname('error').' ('.$quit_message.')'));
 	$this->disconnect_after_writing;
 
-	# ÀÜÂ³¤¬ÀÚ¤ì¤¿»ö¤Ë¤¹¤ë¡£
+	# æ¥ç¶šãŒåˆ‡ã‚ŒãŸäº‹ã«ã™ã‚‹ã€‚
 	$this->_runloop->notify_modules('client_detached',$this);
 
-	# ¤³¤ì¤Ï»ª¤ËÁ÷¤é¤Ê¤¤¡£
+	# ã“ã‚Œã¯é¯–ã«é€ã‚‰ãªã„ã€‚
 	$msg = undef;
     }
     else {
@@ -463,7 +463,7 @@ sub do_namreply {
 	    '=';
 	}
     };
-    # Í¾Íµ¤ò¸«¤Ænick¤ÎÎóµóÉô¤¬ $max_length(¥Ç¥Õ¥©¥ë¥È:400) ¥Ğ¥¤¥È¤ò±Û¤¨¤¿¤é¹Ô¤òÊ¬¤±¤ë¡£
+    # ä½™è£•ã‚’è¦‹ã¦nickã®åˆ—æŒ™éƒ¨ãŒ $max_length(ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ:400) ãƒã‚¤ãƒˆã‚’è¶ŠãˆãŸã‚‰è¡Œã‚’åˆ†ã‘ã‚‹ã€‚
     my $nick_enumeration = '';
     my $flush_enum_buffer = sub {
 	if ($nick_enumeration ne '') {
@@ -518,13 +518,13 @@ sub inform_joinning_channels {
 	my ($network, $ch) = @_;
 	my $ch_name = Multicast::attach_for_client($ch->name, $network->network_name);
 
-	# ¤Ş¤ºJOIN
+	# ã¾ãšJOIN
 	$this->send_message(
 	    $this->construct_irc_message(
 		Prefix => $this->fullname,
 		Command => 'JOIN',
 		Param => $ch_name));
-	# ¼¡¤ËRPL_TOPIC(¤¢¤ì¤Ğ)
+	# æ¬¡ã«RPL_TOPIC(ã‚ã‚Œã°)
 	if ($ch->topic ne '') {
 	    $this->send_message(
 		$this->construct_irc_message(
@@ -532,7 +532,7 @@ sub inform_joinning_channels {
 		    Command => RPL_TOPIC,
 		    Params => [$local_nick,$ch_name,$ch->topic]));
 	}
-	# ¼¡¤ËRPL_TOPICWHOTIME(¤¢¤ì¤Ğ)
+	# æ¬¡ã«RPL_TOPICWHOTIME(ã‚ã‚Œã°)
 	if (defined($ch->topic_who)) {
 	    $this->send_message(
 		$this->construct_irc_message(
@@ -540,30 +540,30 @@ sub inform_joinning_channels {
 		    Command => RPL_TOPICWHOTIME,
 		    Params => [$local_nick,$ch_name,$ch->topic_who,$ch->topic_time]));
 	}
-	# ¼¡¤ËRPL_NAMREPLY
+	# æ¬¡ã«RPL_NAMREPLY
 	my $flush_namreply = sub {
 	    my $msg = shift;
 	    $this->send_message($msg);
 	};
 	$this->do_namreply($ch, $network, undef, $flush_namreply);
-	# ºÇ¸å¤ËRPL_ENDOFNAMES
+	# æœ€å¾Œã«RPL_ENDOFNAMES
 	$this->send_message(
 	    $this->construct_irc_message(
 		Prefix => $this->_runloop->sysmsg_prefix('system'),
 		Command => RPL_ENDOFNAMES,
 		Params => [$local_nick,$ch_name,'End of NAMES list']));
 
-	# channel-info¥Õ¥Ã¥¯¤Î°ú¿ô¤Ï (IrcIO::Client, Á÷¿®ÍÑ¥Á¥ã¥ó¥Í¥ëÌ¾, ¥Í¥Ã¥È¥ï¡¼¥¯, ChannelInfo)
+	# channel-infoãƒ•ãƒƒã‚¯ã®å¼•æ•°ã¯ (IrcIO::Client, é€ä¿¡ç”¨ãƒãƒ£ãƒ³ãƒãƒ«å, ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯, ChannelInfo)
 	eval {
 	    IrcIO::Client::HookTarget->shared->call(
 		'channel-info', $this, $ch_name, $network, $ch);
 	}; if ($@) {
-	    # ¥¨¥é¡¼¥á¥Ã¥»¡¼¥¸¤ÏÉ½¼¨¤¹¤ë¤¬¡¢Á÷¿®½èÍı¤ÏÂ³¤±¤ë
+	    # ã‚¨ãƒ©ãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã¯è¡¨ç¤ºã™ã‚‹ãŒã€é€ä¿¡å‡¦ç†ã¯ç¶šã‘ã‚‹
 	    $this->_runloop->notify_error(__PACKAGE__." hook call error: $@");
 	}
 
-	# ¥¯¥é¥¤¥¢¥ó¥È¤Ë½ĞÎÏ¡£
-	# ¤½¤Î·ë²ÌÀÚÃÇ¤µ¤ì¤¿¤é´Ø¿ô¤òÈ´¤±¤ë¡£
+	# ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«å‡ºåŠ›ã€‚
+	# ãã®çµæœåˆ‡æ–­ã•ã‚ŒãŸã‚‰é–¢æ•°ã‚’æŠœã‘ã‚‹ã€‚
 	$this->flush;
 	last CONNECTING unless $this->connected;
     };
@@ -579,7 +579,7 @@ sub inform_joinning_channels {
 
  CONNECTING:
     while (1) {
-	# Mask ¤ò»È¤Ã¤Æ¡¢¥Ş¥Ã¥Á¤·¤¿¤â¤Î¤ò½ĞÎÏ
+	# Mask ã‚’ä½¿ã£ã¦ã€ãƒãƒƒãƒã—ãŸã‚‚ã®ã‚’å‡ºåŠ›
 	foreach ($this->_conf_networks->
 		     fixed_channels('block')->channel('all')) {
 	    my $mask = $_;
@@ -592,7 +592,7 @@ sub inform_joinning_channels {
 	    }
 	}
 
-	# ¤Î¤³¤ê¤ò½ĞÎÏ
+	# ã®ã“ã‚Šã‚’å‡ºåŠ›
 	foreach (values %channels) {
 	    $send_channelinfo->(@$_);
 	}
@@ -602,14 +602,14 @@ sub inform_joinning_channels {
 }
 
 # -----------------------------------------------------------------------------
-# ¥¯¥é¥¤¥¢¥ó¥È¤Ë¥Á¥ã¥ó¥Í¥ë¾ğÊó(JOIN,TOPIC,NAMESÅù)¤òÅÏ¤·¤¿Ä¾¸å¤Ë¸Æ¤Ğ¤ì¤ë¥Õ¥Ã¥¯¡£
-# ¥Á¥ã¥ó¥Í¥ëÌ¾(multi server mode¤Ê¤é¥Í¥Ã¥È¥ï¡¼¥¯Ì¾ÉÕ¤­)¤ò°ú¿ô¤È¤·¤Æ¡¢
-# ¥Á¥ã¥ó¥Í¥ë°ì¤Ä¤Ë¤Ä¤­°ìÅÙ¤º¤Ä¸Æ¤Ğ¤ì¤ë¡£
+# ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±(JOIN,TOPIC,NAMESç­‰)ã‚’æ¸¡ã—ãŸç›´å¾Œã«å‘¼ã°ã‚Œã‚‹ãƒ•ãƒƒã‚¯ã€‚
+# ãƒãƒ£ãƒ³ãƒãƒ«å(multi server modeãªã‚‰ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯åä»˜ã)ã‚’å¼•æ•°ã¨ã—ã¦ã€
+# ãƒãƒ£ãƒ³ãƒãƒ«ä¸€ã¤ã«ã¤ãä¸€åº¦ãšã¤å‘¼ã°ã‚Œã‚‹ã€‚
 #
 # my $hook = IrcIO::Client::Hook->new(sub {
 #     my $hook_itself = shift;
-#     # ²¿¤é¤«¤Î½èÍı¤ò¹Ô¤Ê¤¦¡£
-# })->install('channel-info'); # ¥Á¥ã¥ó¥Í¥ë¾ğÊóÅ¾Á÷»ş¤Ë¤³¤Î¥Õ¥Ã¥¯¤ò¸Æ¤Ö¡£
+#     # ä½•ã‚‰ã‹ã®å‡¦ç†ã‚’è¡Œãªã†ã€‚
+# })->install('channel-info'); # ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±è»¢é€æ™‚ã«ã“ã®ãƒ•ãƒƒã‚¯ã‚’å‘¼ã¶ã€‚
 # -----------------------------------------------------------------------------
 package IrcIO::Client::Hook;
 use FunctionalVariable;

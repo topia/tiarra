@@ -31,15 +31,15 @@ sub append_line {
 }
 
 sub pop_queue {
-    # ���Υ᥽�åɤϼ������塼��κǤ�Ť���Τ���Ф��ޤ���
-    # ���塼�����ʤ�undef���֤��ޤ���
-    # ��ñ�̤Ǥʤ�I/O��ɬ�פʤ�recvbuf��ľ�����Ƥ���������
+    # このメソッドは受信キュー内の最も古いものを取り出します。
+    # キューが空ならundefを返します。
+    # 行単位でないI/Oが必要ならrecvbufを直接操作してください。
     my ($this) = @_;
-    $this->flush;	   # ǰ�Τ���flush�򤷤�buffer�򹹿����Ƥ�����
+    $this->flush;	   # 念のためflushをしてbufferを更新しておく。
 
     my $eol_pos = index($this->recvbuf, $this->eol);
     if ($eol_pos == -1) {
-	# ���ʬ�Υǡ������Ϥ��Ƥ��ʤ���
+	# 一行分のデータが届いていない。
 	return undef;
     }
 

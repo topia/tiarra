@@ -29,23 +29,23 @@ sub message_arrived {
 				  Params => [$get_raw_ch_name->(),'+o',$msg->nick]));
     };
 
-    # �����饯�饤����Ȥؤ�PRIVMSG�ǡ�����request�˥ޥå����Ƥ��뤫��
+    # 鯖からクライアントへのPRIVMSGで、かつrequestにマッチしているか？
     if ($sender->isa('IrcIO::Server') &&
 	$msg->command eq 'PRIVMSG' &&
 	Mask::match_array([$this->config->request('all')],$msg->param(1), 1)) {
-	# ���ꤵ�줿�����ͥ�ϴ��Τ�������������С�priv�ǤϤʤ�����
+	# 指定されたチャンネルは既知か？言い換えれば、privではないか？
 	my $ch_name = $msg->param(0);
 	my ($ch_name_plain) = Multicast::detatch($ch_name);
 	my $ch = $sender->channel($ch_name_plain);
 	if (defined $ch) {
-	    # ���ꤵ�줿�����ͥ�ˡ��׵�Ԥ����äƤ��뤫��
+	    # 指定されたチャンネルに、要求者は入っているか？
 	    if (defined $ch->names($msg->nick)) {
-		# �ʤ�Ȥ��Ϥ��Ƥ��ɤ��Τʤ��Ϥ���
+		# なるとを渡しても良いのなら渡す。
 		if (Mask::match_deep_chan([$this->config->mask('all')],$msg->prefix,$get_full_ch_name->())) {
-		    # ��ʬ�Ϥʤ�Ȥ���äƤ뤫��
+		    # 自分はなるとを持ってるか？
 		    my $myself = $ch->names($sender->current_nick);
 		    if ($myself->has_o) {
-			# ���Ϥʤ�Ȥ���äƤ��뤫��
+			# 相手はなるとを持っているか？
 			my $target = $ch->names($msg->nick);
 			if ($target->has_o) {
 			    $reply->($this->config->oper('random'));
@@ -72,62 +72,62 @@ sub message_arrived {
 1;
 
 =pod
-info: �����ʸ�����ȯ�������ͤ�+o���롣
+info: 特定の文字列を発言した人を+oする。
 default: off
 section: important
 
-# Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���
+# Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。
 
-# +o���׵᤹��ʸ����(�ޥ���)����ꤷ�ޤ���
-request: �ʤ�ȴ�ۤ�
+# +oを要求する文字列(マスク)を指定します。
+request: なると寄越せ
 
-# �����ͥ륪�ڥ졼�����¤��׵ᤷ���ͤ��׵ᤵ�줿�����ͥ뤬
-# �����ǻ��ꤷ���ޥ����˰��פ��ʤ��ä�����
-# deny�ǻ��ꤷ��ʸ�����ȯ������+o����ޤ���
-# ��ά���줿����ï�ˤ�+o���ޤ���
-# �񼰤ϡ֥����ͥ� ȯ���ԡפǤ���
-# �ޥå��󥰤Υ��르�ꥺ��ϼ����̤�Ǥ���
-# 1. �����ͥ�̾�˥ޥå�����mask��������ƽ����
-# 2. ���ޤä������ȯ���ԥޥ�����������줿��˥���ޤǷ�礹��
-# 3. ���Τ褦�ˤ����������줿�ޥ�����ȯ���ԤΥޥå��󥰤�Ԥʤ�����̤�+o��ǽ���Ȥ��롣
-# ��1:
+# チャンネルオペレータ権限を要求した人と要求されたチャンネルが
+# ここで指定したマスクに一致しなかった場合は
+# denyで指定した文字列を発言し、+oをやめます。
+# 省略された場合は誰にも+oしません。
+# 書式は「チャンネル 発言者」です。
+# マッチングのアルゴリズムは次の通りです。
+# 1. チャンネル名にマッチするmask定義を全て集める
+# 2. 集まった定義の発言者マスクを、定義された順にカンマで結合する
+# 3. そのようにして生成されたマスクで発言者のマッチングを行ない、結果を+o可能性とする。
+# 例1:
 # mask: *@2ch* *!*@*
 # mask: #*@ircnet* *!*@*.hoge.jp
-# ������Ǥϥͥåȥ�� 2ch �����ƤΥ����ͥ��ï�ˤǤ� +o ����
-# �ͥåȥ�� ircnet �� # �ǻϤޤ����ƤΥ����ͥ�ǥۥ���̾ *.hoge.jp �οͤ�+o���ޤ���
-# #*@ircnet���ȡ�#hoge@ircnet:*.jp�פʤɤ˥ޥå����ʤ��ʤ�ޤ���
-# ��2:
+# この例ではネットワーク 2ch の全てのチャンネルで誰にでも +o し、
+# ネットワーク ircnet の # で始まる全てのチャンネルでホスト名 *.hoge.jp の人に+oします。
+# #*@ircnetだと「#hoge@ircnet:*.jp」などにマッチしなくなります。
+# 例2:
 # mask: #hoge@ircnet -*!*@*,+*!*@*.hoge.jp
 # mask: *            +*!*@*
-# ����Ū�����ƤΥ����ͥ��ï�ˤǤ� +o ���뤬���㳰Ū��#hoge@ircnet�Ǥ�
-# �ۥ���̾ *.hoge.jp �οͤˤ��� +o ���ʤ���
-# ���ν����岼�դˤ���ȡ����ƤΥ����ͥ�����Ƥοͤ� +o ������ˤʤ�ޤ���
-# ���Τʤ�ǽ��* +*!*@*�����Ƥοͤ˥ޥå����뤫��Ǥ���
+# 基本的に全てのチャンネルで誰にでも +o するが、例外的に#hoge@ircnetでは
+# ホスト名 *.hoge.jp の人にしか +o しない。
+# この順序を上下逆にすると、全てのチャンネルで全ての人を +o する事になります。
+# 何故なら最初の* +*!*@*が全ての人にマッチするからです。
 mask: * *!*@*
 
-# +o���׵ᤷ���ͤ�ºݤ�+o������������ǻ��ꤷ��ȯ���򤷤Ƥ���+o���ޤ���
-# #(name|nick)�Τ褦�ʥ����ꥢ���ִ���Ԥ��ޤ���
-# �����ꥢ���ʳ��Ǥ⡢#(nick.now)������nick�ˡ�#(channel)��
-# ���Υ����ͥ�̾�ˤ��줾���ִ����ޤ���
-message: λ��
+# +oを要求した人を実際に+oする時、ここで指定した発言をしてから+oします。
+# #(name|nick)のようなエイリアス置換を行います。
+# エイリアス以外でも、#(nick.now)を相手のnickに、#(channel)を
+# そのチャンネル名にそれぞれ置換します。
+message: 了解
 
-# +o���׵ᤵ�줿��+o���٤����ǤϤʤ��ä�����ȯ����
-# ��ά���줿�鲿������ޤ���
-deny: �Ǥ��
+# +oを要求されたが+oすべき相手ではなかった場合の発言。
+# 省略されたら何も喋りません。
+deny: 断わる
 
-# +o���׵ᤵ�줿�����ϴ��˥����ͥ륪�ڥ졼�����¤���äƤ�������ȯ����
-# ��ά���줿��deny�����ꤵ�줿��Τ�Ȥ��ޤ���
-oper: ����@����äƤ���
+# +oを要求されたが相手は既にチャンネルオペレータ権限を持っていた場合の発言。
+# 省略されたらdenyに設定されたものを使います。
+oper: 既に@を持っている
 
-# +o���׵ᤵ�줿����ʬ�ϥ����ͥ륪�ڥ졼�����¤���äƤ��ʤ��ä�����ȯ����
-# ��ά���줿��deny�����ꤵ�줿��Τ�Ȥ��ޤ���
-not-oper: @��̵��
+# +oを要求されたが自分はチャンネルオペレータ権限を持っていなかった場合の発言。
+# 省略されたらdenyに設定されたものを使います。
+not-oper: @が無い
 
-# �����ͥ���Ф��ƤǤʤ���ʬ���Ф���+o���׵��Ԥʤä�����ȯ����
-# ��ά���줿��deny�����ꤵ�줿��Τ�Ȥ��ޤ���
-private: �����ͥ���׵᤻��
+# チャンネルに対してでなく自分に対して+oの要求を行なった場合の発言。
+# 省略されたらdenyに設定されたものを使います。
+private: チャンネルで要求せよ
 
-# �����ͥ�γ�����+o���׵ᤵ�줿����ȯ����+n�����ͥ�Ǥϵ�����ޤ���
-# ��ά���줿��deny�����ꤵ�줿��Τ�Ȥ��ޤ���
-out: �����ͥ�����äƤ��ʤ�
+# チャンネルの外から+oを要求された場合の発言。+nチャンネルでは起こりません。
+# 省略されたらdenyに設定されたものを使います。
+out: チャンネルに入っていない
 =cut

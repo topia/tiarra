@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# BulletinBoard¤Îctcp-clientinfo-¤Ç»Ï¤Ş¤ëÃÍ¤òÃµ¤·¡¢¤½¤ì¤òCLIENTINFO¤È¤·¤Æ±şÅú¤¹¤ë¡£
+# BulletinBoardã®ctcp-clientinfo-ã§å§‹ã¾ã‚‹å€¤ã‚’æ¢ã—ã€ãã‚Œã‚’CLIENTINFOã¨ã—ã¦å¿œç­”ã™ã‚‹ã€‚
 # -----------------------------------------------------------------------------
 package CTCP::ClientInfo;
 use strict;
@@ -11,7 +11,7 @@ use CTCP;
 use Multicast;
 use BulletinBoard;
 
-# CLIENTINFOÀßÄê
+# CLIENTINFOè¨­å®š
 BulletinBoard->shared->ctcp_clientinfo_clientinfo('CLIENTINFO');
 
 sub message_arrived {
@@ -26,7 +26,7 @@ sub message_arrived {
 
 	    my $last = $sender->remark('last-ctcp-replied');
 	    if (!defined $last || time - $last > ($this->config->interval || 3)) {
-		# Á°²ó¤ÎCTCPÈ¿±ş¤«¤é°ìÄê»ş´Ö°Ê¾å·Ğ²á¤·¤Æ¤¤¤ë¡£
+		# å‰å›ã®CTCPåå¿œã‹ã‚‰ä¸€å®šæ™‚é–“ä»¥ä¸ŠçµŒéã—ã¦ã„ã‚‹ã€‚
 
 		my $clientinfo = join(
 		    ' ',
@@ -52,10 +52,10 @@ sub message_arrived {
 1;
 
 =pod
-info: CTCP CLIENTINFO¤Ë±şÅú¤¹¤ë¡£
+info: CTCP CLIENTINFOã«å¿œç­”ã™ã‚‹ã€‚
 default: off
 section: important
 
-# CTCP::Version¤Îinterval¤ÈÆ±¤¸¡£
+# CTCP::Versionã®intervalã¨åŒã˜ã€‚
 interval: 3
 =cut

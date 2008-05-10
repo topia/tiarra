@@ -1,11 +1,11 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# ¤³¤Î¥¯¥é¥¹¤ÏTiarra¤Î¥á¥¤¥ó¥ë¡¼¥×¤ò¼ÂÁõ¤·¤Ş¤¹¡£
-# select()¤ò¼Â¹Ô¤·¡¢¥µ¡¼¥Ğ¡¼¤ä¥¯¥é¥¤¥¢¥ó¥È¤È¤ÎI/O¤ò¹Ô¤¦¤Î¤Ï¤³¤Î¥¯¥é¥¹¤Ç¤¹¡£
+# ã“ã®ã‚¯ãƒ©ã‚¹ã¯Tiarraã®ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—ã‚’å®Ÿè£…ã—ã¾ã™ã€‚
+# select()ã‚’å®Ÿè¡Œã—ã€ã‚µãƒ¼ãƒãƒ¼ã‚„ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã¨ã®I/Oã‚’è¡Œã†ã®ã¯ã“ã®ã‚¯ãƒ©ã‚¹ã§ã™ã€‚
 # -----------------------------------------------------------------------------
-# ¥Õ¥Ã¥¯`before-select'µÚ¤Ó`after-select'¤¬»ÈÍÑ²ÄÇ½¤Ç¤¹¡£
-# ¤³¤ì¤é¤Î¥Õ¥Ã¥¯¤Ï¡¢¤½¤ì¤¾¤ìselect()¼Â¹ÔÄ¾Á°¤ÈÄ¾¸å¤Ë¸Æ¤Ğ¤ì¤Ş¤¹¡£
+# ãƒ•ãƒƒã‚¯`before-select'åŠã³`after-select'ãŒä½¿ç”¨å¯èƒ½ã§ã™ã€‚
+# ã“ã‚Œã‚‰ã®ãƒ•ãƒƒã‚¯ã¯ã€ãã‚Œãã‚Œselect()å®Ÿè¡Œç›´å‰ã¨ç›´å¾Œã«å‘¼ã°ã‚Œã¾ã™ã€‚
 # -----------------------------------------------------------------------------
 package RunLoop;
 use strict;
@@ -33,11 +33,11 @@ our $_shared_instance;
 #use ControlPort; # lazy load
 
 BEGIN {
-    # Time::HiRes¤Ï»È¤¨¤ë¤«¡©
+    # Time::HiResã¯ä½¿ãˆã‚‹ã‹ï¼Ÿ
     eval q{
         use Time::HiRes qw(time);
     }; if ($@) {
-	# »È¤¨¤Ê¤¤¡£
+	# ä½¿ãˆãªã„ã€‚
     }
 }
 
@@ -59,19 +59,19 @@ sub new {
     %$this = (
 	%$this,
 
-	# ¼õ¿®ÍÑ¥»¥ì¥¯¥¿¡£¤¢¤é¤æ¤ë¥½¥±¥Ã¥È¤Ï¾ï¤Ë¼õ¿®¤ÎÉ¬Í×¤¬¤¢¤ë¤¿¤á¡¢¤¢¤é¤æ¤ë¥½¥±¥Ã¥È¤¬ÅĞÏ¿¤µ¤ì¤Æ¤¤¤ë¡£
+	# å—ä¿¡ç”¨ã‚»ãƒ¬ã‚¯ã‚¿ã€‚ã‚ã‚‰ã‚†ã‚‹ã‚½ã‚±ãƒƒãƒˆã¯å¸¸ã«å—ä¿¡ã®å¿…è¦ãŒã‚ã‚‹ãŸã‚ã€ã‚ã‚‰ã‚†ã‚‹ã‚½ã‚±ãƒƒãƒˆãŒç™»éŒ²ã•ã‚Œã¦ã„ã‚‹ã€‚
 	receive_selector => new IO::Select,
 
-	# Á÷¿®ÍÑ¥»¥ì¥¯¥¿¡£¥½¥±¥Ã¥È¤ËÂĞ¤·¤ÆÁ÷¿®¤¹¤Ù¤­¥Ç¡¼¥¿¤¬¤¢¤ë¾ì¹ç¤Ï¸Â¤é¤ì¤Æ¤¤¤Æ¡¢¤½¤Î¾ì¹ç¤Ë¤Î¤ßÅĞÏ¿¤µ¤ì¤Æ½ª¤ï¤ê¼¡Âèºï½ü¤µ¤ì¤ë¡£
+	# é€ä¿¡ç”¨ã‚»ãƒ¬ã‚¯ã‚¿ã€‚ã‚½ã‚±ãƒƒãƒˆã«å¯¾ã—ã¦é€ä¿¡ã™ã¹ããƒ‡ãƒ¼ã‚¿ãŒã‚ã‚‹å ´åˆã¯é™ã‚‰ã‚Œã¦ã„ã¦ã€ãã®å ´åˆã«ã®ã¿ç™»éŒ²ã•ã‚Œã¦çµ‚ã‚ã‚Šæ¬¡ç¬¬å‰Šé™¤ã•ã‚Œã‚‹ã€‚
 	send_selector => new IO::Select,
 
-	# Tiarra¤¬¥ê¥¹¥Ë¥ó¥°¤·¤Æ¥¯¥é¥¤¥¢¥ó¥È¤ò¼õ¤±ÉÕ¤±¤ë¤¿¤á¤Î¥½¥±¥Ã¥È¡£IO::Socket¡£
+	# TiarraãŒãƒªã‚¹ãƒ‹ãƒ³ã‚°ã—ã¦ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚’å—ã‘ä»˜ã‘ã‚‹ãŸã‚ã®ã‚½ã‚±ãƒƒãƒˆã€‚IO::Socketã€‚
 	tiarra_server_socket => undef,
 
-	# ¸½ºß¤Înick¡£Á´¤Æ¤Î¥µ¡¼¥Ğ¡¼¤È¥¯¥é¥¤¥¢¥ó¥È¤Î´Ö¤ÇÀ°¹çÀ­¤òÊİ¤Á¤Ä¤Änick¤òÊÑ¹¹¤¹¤ë¼êÃÊ¤ò¡¢RunLoop¤¬ÍÑ°Õ¤¹¤ë¡£
+	# ç¾åœ¨ã®nickã€‚å…¨ã¦ã®ã‚µãƒ¼ãƒãƒ¼ã¨ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®é–“ã§æ•´åˆæ€§ã‚’ä¿ã¡ã¤ã¤nickã‚’å¤‰æ›´ã™ã‚‹æ‰‹æ®µã‚’ã€RunLoopãŒç”¨æ„ã™ã‚‹ã€‚
 	current_nick => $this->_conf_general->nick,
 
-	# »ª¤«¤éÀÚÃÇ¤µ¤ì¤¿»ş¤ÎÆ°ºî¡£
+	# é¯–ã‹ã‚‰åˆ‡æ–­ã•ã‚ŒãŸæ™‚ã®å‹•ä½œã€‚
 	action_on_disconnected => do {
 	    my $actions = {
 		'part-and-join' => \&_action_part_and_join,
@@ -91,19 +91,19 @@ sub new {
 	    }
 	},
 
-	multi_server_mode => 1, # ¥Ş¥ë¥Á¥µ¡¼¥Ğ¡¼¥â¡¼¥É¤ËÆş¤Ã¤Æ¤¤¤ë¤«Èİ¤«
+	multi_server_mode => 1, # ãƒãƒ«ãƒã‚µãƒ¼ãƒãƒ¼ãƒ¢ãƒ¼ãƒ‰ã«å…¥ã£ã¦ã„ã‚‹ã‹å¦ã‹
 
-	default_network => undef, # ¥Ç¥Õ¥©¥ë¥È¤Î¥Í¥Ã¥È¥ï¡¼¥¯Ì¾
-	networks => {}, # ¥Í¥Ã¥È¥ï¡¼¥¯Ì¾ ¢ª IrcIO::Server
-	clients => [], # ÀÜÂ³¤µ¤ì¤Æ¤¤¤ëÁ´¤Æ¤Î¥¯¥é¥¤¥¢¥ó¥È IrcIO::Client
+	default_network => undef, # ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯å
+	networks => {}, # ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯å â†’ IrcIO::Server
+	clients => [], # æ¥ç¶šã•ã‚Œã¦ã„ã‚‹å…¨ã¦ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆ IrcIO::Client
 
-	timers => [], # ¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ëÁ´¤Æ¤ÎTimer
-	sockets => [], # ¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ëÁ´¤Æ¤ÎTiarra::Socket
-	socks_to_cleanup => [], # ¥¯¥ê¡¼¥ó¥¢¥Ã¥×Í½Äê¤ÎSocket(not Tiarra::Socket)
+	timers => [], # ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ã‚‹å…¨ã¦ã®Timer
+	sockets => [], # ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ã‚‹å…¨ã¦ã®Tiarra::Socket
+	socks_to_cleanup => [], # ã‚¯ãƒªãƒ¼ãƒ³ã‚¢ãƒƒãƒ—äºˆå®šã®Socket(not Tiarra::Socket)
 
-	conf_reloaded_hook => undef, # ¤³¤Î²¼¤Ç¥¤¥ó¥¹¥È¡¼¥ë¤¹¤ë¥Õ¥Ã¥¯
+	conf_reloaded_hook => undef, # ã“ã®ä¸‹ã§ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã™ã‚‹ãƒ•ãƒƒã‚¯
 
-	terminating => 0, # Àµ¤Î¤È¤­¤Ï½ªÎ»½èÍıÃæ¡£
+	terminating => 0, # æ­£ã®ã¨ãã¯çµ‚äº†å‡¦ç†ä¸­ã€‚
        );
 
     $this->{conf_reloaded_hook} = Configuration::Hook->new(
@@ -149,17 +149,17 @@ utils->define_attr_getter(1, qw(default_network clients),
 			  [qw(multi_server_mode_p multi_server_mode)],
 			  [qw(_mod_manager mod_manager)]);
 
-# ¥¯¥é¥¤¥¢¥ó¥È¤«¤é¸«¤¿¡¢¸½ºß¤Înick¡£
-# ¤³¤Înick¤Ï¼Âºİ¤Ë»È¤ï¤ì¤Æ¤¤¤ënick¤È¤Ï°Û¤Ê¤Ã¤Æ¤¤¤ë¾ì¹ç¤¬¤¢¤ë¡£
-# ¤¹¤Ê¤ï¤Á¡¢´õË¾¤Înick¤¬´û¤Ë»È¤ï¤ì¤Æ¤¤¤¿¾ì¹ç¤Ç¤¢¤ë¡£
+# ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‹ã‚‰è¦‹ãŸã€ç¾åœ¨ã®nickã€‚
+# ã“ã®nickã¯å®Ÿéš›ã«ä½¿ã‚ã‚Œã¦ã„ã‚‹nickã¨ã¯ç•°ãªã£ã¦ã„ã‚‹å ´åˆãŒã‚ã‚‹ã€‚
+# ã™ãªã‚ã¡ã€å¸Œæœ›ã®nickãŒæ—¢ã«ä½¿ã‚ã‚Œã¦ã„ãŸå ´åˆã§ã‚ã‚‹ã€‚
 utils->define_attr_getter(1, qw(current_nick));
 
 sub networks_list { values %{shift->networks(@_)}; }
 sub clients_list { @{shift->clients}; }
 
 sub channel {
-    # $ch_long: ¥Í¥Ã¥È¥ï¡¼¥¯Ì¾½¤¾şÉÕ¤­¥Á¥ã¥ó¥Í¥ëÌ¾
-    # ¸«ÉÕ¤«¤Ã¤¿¤éChannelInfo¡¢¸«ÉÕ¤«¤é¤Ê¤±¤ì¤Ğundef¤òÊÖ¤¹¡£
+    # $ch_long: ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯åä¿®é£¾ä»˜ããƒãƒ£ãƒ³ãƒãƒ«å
+    # è¦‹ä»˜ã‹ã£ãŸã‚‰ChannelInfoã€è¦‹ä»˜ã‹ã‚‰ãªã‘ã‚Œã°undefã‚’è¿”ã™ã€‚
     my ($class_or_this,$ch_long) = @_;
     my $this = $class_or_this->_this;
 
@@ -197,11 +197,11 @@ sub sysmsg_prefix {
     my ($class_or_this,$purpose,$category) = @_;
     my $this = $class_or_this->_this;
     $category = (caller)[0] . (defined $category ? "::$category" : '');
-    # $purpose ¤Ï¡¢¤³¤Î´Ø¿ô¤ÇÆÀ¤¿ prefix ¤ò²¿¤Ë»È¤¦¤«¤ò¼¨¤¹¡£
-    #     ¤¤¤Ş¤Î¤È¤³¤í system(NumericReply ¤Ê¤É)/priv/channel
-    # $category ¤Ï¡¢Âç¤Ş¤«¤Ê¥«¥Æ¥´¥ê¡£
-    #     ¤¤¤Ş¤Î¤È¤³¤í log/system/notify ¤¬¤¢¤ë¤¬¡¢
-    #     ÌÀ³Î¤Ê»ÅÍÍ¤Ï¤Ş¤À¤Ê¤¤¡£
+    # $purpose ã¯ã€ã“ã®é–¢æ•°ã§å¾—ãŸ prefix ã‚’ä½•ã«ä½¿ã†ã‹ã‚’ç¤ºã™ã€‚
+    #     ã„ã¾ã®ã¨ã“ã‚ system(NumericReply ãªã©)/priv/channel
+    # $category ã¯ã€å¤§ã¾ã‹ãªã‚«ãƒ†ã‚´ãƒªã€‚
+    #     ã„ã¾ã®ã¨ã“ã‚ log/system/notify ãŒã‚ã‚‹ãŒã€
+    #     æ˜ç¢ºãªä»•æ§˜ã¯ã¾ã ãªã„ã€‚
 
     if (Mask::match_array([
 	$this->_conf_general->sysmsg_prefix_use_masks('block')->
@@ -217,11 +217,11 @@ sub _config_changed {
     my ($this, $init) = @_;
 
     my ($old, $new);
-    # ¥Ş¥ë¥Á¥µ¡¼¥Ğ¡¼¥â¡¼¥É¤ÎOn/Off¤¬ÊÑ¤ï¤Ã¤¿¤«¡©
+    # ãƒãƒ«ãƒã‚µãƒ¼ãƒãƒ¼ãƒ¢ãƒ¼ãƒ‰ã®On/OffãŒå¤‰ã‚ã£ãŸã‹ï¼Ÿ
     $old = $this->{multi_server_mode};
     $new = utils->cond_yesno($this->_conf_networks->multi_server_mode);
     if ($old != $new) {
-	# ÊÑ¤ï¤Ã¤¿
+	# å¤‰ã‚ã£ãŸ
 	if ($init) {
 	    $this->{multi_server_mode} = $new;
 	} else {
@@ -232,8 +232,8 @@ sub _config_changed {
 
 sub _multi_server_mode_changed {
     my $this = shift;
-    # °ìÃ¶Á´¤Æ¤Î¥Á¥ã¥ó¥Í¥ë¤Ë¤Ä¤¤¤ÆPART¤òÈ¯¹Ô¤·¤¿¸å¡¢
-    # ¥â¡¼¥É¤òÊÑ¤¨ÀÜÂ³Ãæ¥Í¥Ã¥È¥ï¡¼¥¯¤ò¹¹¿·¤·¡¢NICK¤ÈJOIN¤òÈ¯¹Ô¤¹¤ë¡£
+    # ä¸€æ—¦å…¨ã¦ã®ãƒãƒ£ãƒ³ãƒãƒ«ã«ã¤ã„ã¦PARTã‚’ç™ºè¡Œã—ãŸå¾Œã€
+    # ãƒ¢ãƒ¼ãƒ‰ã‚’å¤‰ãˆæ¥ç¶šä¸­ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã‚’æ›´æ–°ã—ã€NICKã¨JOINã‚’ç™ºè¡Œã™ã‚‹ã€‚
     my $new = !$this->{multi_server_mode};
 
     foreach my $string (
@@ -267,7 +267,7 @@ sub _multi_server_mode_changed {
 		    Params => [
 			do {
 			    if ($new) {
-				# ¤³¤ì¤Ş¤Ç¤Ï¥Í¥Ã¥È¥ï¡¼¥¯Ì¾¤¬ÉÕ¤¤¤Æ¤¤¤Ê¤«¤Ã¤¿¡£
+				# ã“ã‚Œã¾ã§ã¯ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯åãŒä»˜ã„ã¦ã„ãªã‹ã£ãŸã€‚
 				$ch->name;
 			    }
 			    else {
@@ -301,7 +301,7 @@ sub _multi_server_mode_changed {
 
 sub _update_send_selector {
     my $this = shift;
-    # Á÷¿®¤¹¤ëÉ¬Í×¤Î¤¢¤ëTiarra::Socket¤À¤±¤òÈ´¤­½Ğ¤·¡¢¤½¤Î¥½¥±¥Ã¥È¤òÁ÷¿®¥»¥ì¥¯¥¿¤ËÅĞÏ¿¤¹¤ë¡£
+    # é€ä¿¡ã™ã‚‹å¿…è¦ã®ã‚ã‚‹Tiarra::Socketã ã‘ã‚’æŠœãå‡ºã—ã€ãã®ã‚½ã‚±ãƒƒãƒˆã‚’é€ä¿¡ã‚»ãƒ¬ã‚¯ã‚¿ã«ç™»éŒ²ã™ã‚‹ã€‚
 
     my $sel = $this->{send_selector} = IO::Select->new;
     foreach my $socket (@{$this->{sockets}}) {
@@ -312,9 +312,9 @@ sub _update_send_selector {
 }
 
 sub _cleanup_closed_link {
-    # networks¤Èclients¤ÎÃæ¤«¤éÀÚÃÇ¤µ¤ì¤¿¥ê¥ó¥¯¤òÃµ¤·¡¢
-    # ¤½¤Î¥½¥±¥Ã¥È¤ò¥»¥ì¥¯¥¿¤«¤é³°¤¹¡£
-    # networks¤Ê¤é¥¯¥é¥¤¥¢¥ó¥È¤ËÁ³¤ë¤Ù¤­ÄÌÃÎ¤ò¤·¡¢ºÆÀÜÂ³¤¹¤ë¥¿¥¤¥Ş¡¼¤ò¥¤¥ó¥¹¥È¡¼¥ë¤¹¤ë¡£
+    # networksã¨clientsã®ä¸­ã‹ã‚‰åˆ‡æ–­ã•ã‚ŒãŸãƒªãƒ³ã‚¯ã‚’æ¢ã—ã€
+    # ãã®ã‚½ã‚±ãƒƒãƒˆã‚’ã‚»ãƒ¬ã‚¯ã‚¿ã‹ã‚‰å¤–ã™ã€‚
+    # networksãªã‚‰ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«ç„¶ã‚‹ã¹ãé€šçŸ¥ã‚’ã—ã€å†æ¥ç¶šã™ã‚‹ã‚¿ã‚¤ãƒãƒ¼ã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã™ã‚‹ã€‚
     my $this = shift;
 
     my $do_update_networks_after = 0;
@@ -347,8 +347,8 @@ sub _cleanup_closed_link {
 }
 
 sub _action_part_and_join {
-    # $event: 'connected' ¼ã¤·¤¯¤Ï 'disconnected'
-    # º£¤Î¤È¤³¤í¡¢¤³¤Î¥á¥½¥Ã¥É¤Ïconf¤«¤é¤Îºï½ü¤Ë¤è¤ëÀÚÃÇ»ş¤Ë¤âÎ®ÍÑ¤µ¤ì¤Æ¤¤¤ë¡£
+    # $event: 'connected' è‹¥ã—ãã¯ 'disconnected'
+    # ä»Šã®ã¨ã“ã‚ã€ã“ã®ãƒ¡ã‚½ãƒƒãƒ‰ã¯confã‹ã‚‰ã®å‰Šé™¤ã«ã‚ˆã‚‹åˆ‡æ–­æ™‚ã«ã‚‚æµç”¨ã•ã‚Œã¦ã„ã‚‹ã€‚
     my ($this,$network,$event) = @_;
     my $network_name = $network->network_name;
     if ($event eq 'connected') {
@@ -397,7 +397,7 @@ sub _action_message_for_each {
 	my $msg = $this->construct_irc_message(
 	    Prefix => $this->sysmsg_prefix(qw(channel system)),
 	    Command => 'NOTICE',
-	    Params => ['', # ¥Á¥ã¥ó¥Í¥ëÌ¾¤Ï¸å¤ÇÀßÄê¡£
+	    Params => ['', # ãƒãƒ£ãƒ³ãƒãƒ«åã¯å¾Œã§è¨­å®šã€‚
 		       '*** The connection has been revived between '.$network->network_name.'.']);
 	foreach my $ch (values %{$network->channels}) {
 	    $msg->param(0,Multicast::attach_for_client($ch->name,$network_name));
@@ -408,7 +408,7 @@ sub _action_message_for_each {
 	my $msg = $this->construct_irc_message(
 	    Prefix => $this->sysmsg_prefix(qw(channel system)),
 	    Command => 'NOTICE',
-	    Params => ['', # ¥Á¥ã¥ó¥Í¥ëÌ¾¤Ï¸å¤ÇÀßÄê¡£
+	    Params => ['', # ãƒãƒ£ãƒ³ãƒãƒ«åã¯å¾Œã§è¨­å®šã€‚
 		       '*** The connection has been broken between '.$network->network_name.'.']);
 	foreach my $ch (values %{$network->channels}) {
 	    $msg->param(0,Multicast::attach_for_client($ch->name,$network_name));
@@ -418,12 +418,12 @@ sub _action_message_for_each {
 }
 sub _rejoin_all_channels {
     my ($this,$network) = @_;
-    # network¤¬µ­²±¤·¤Æ¤¤¤ëÁ´¤Æ¤Î¥Á¥ã¥ó¥Í¥ë¤ËJOIN¤¹¤ë¡£
-    # ¤½¤â¤½¤âJOIN¤·¤Æ¤¤¤Ê¤¤¥Á¥ã¥ó¥Í¥ë¤ÏÄÌ¾ïIrcIO::Server¤Ïµ­²±¤·¤Æ¤¤¤Ê¤¤¤¬¡¢
-    # ¥µ¡¼¥Ğ¡¼¤«¤éÀÚÃÇ¤µ¤ì¤¿»ş¤À¤±¤ÏÎã³°¤Ç¤¢¤ë¡£
-    # ¾°¡¢Ãğ¼ákicked-out¤¬ÉÕ¤±¤é¤ì¤Æ¤¤¤ë¥Á¥ã¥ó¥Í¥ë¤Ë¤ÏJOIN¤·¤Ê¤¤¡£
-    my @ch_with_key; # ¥Ñ¥¹¥ï¡¼¥É¤ò»ı¤Ã¤¿¥Á¥ã¥ó¥Í¥ë¤ÎÇÛÎó¡£Í×ÁÇ¤Ï["¥Á¥ã¥ó¥Í¥ëÌ¾","¥Ñ¥¹¥ï¡¼¥É"]
-    my @ch_without_key; # ¥Ñ¥¹¥ï¡¼¥É¤ò»ı¤¿¤Ê¤¤¥Á¥ã¥ó¥Í¥ë¤ÎÇÛÎó¡£Í×ÁÇ¤Ï"¥Á¥ã¥ó¥Í¥ëÌ¾"
+    # networkãŒè¨˜æ†¶ã—ã¦ã„ã‚‹å…¨ã¦ã®ãƒãƒ£ãƒ³ãƒãƒ«ã«JOINã™ã‚‹ã€‚
+    # ãã‚‚ãã‚‚JOINã—ã¦ã„ãªã„ãƒãƒ£ãƒ³ãƒãƒ«ã¯é€šå¸¸IrcIO::Serverã¯è¨˜æ†¶ã—ã¦ã„ãªã„ãŒã€
+    # ã‚µãƒ¼ãƒãƒ¼ã‹ã‚‰åˆ‡æ–­ã•ã‚ŒãŸæ™‚ã ã‘ã¯ä¾‹å¤–ã§ã‚ã‚‹ã€‚
+    # å°šã€è¨»é‡ˆkicked-outãŒä»˜ã‘ã‚‰ã‚Œã¦ã„ã‚‹ãƒãƒ£ãƒ³ãƒãƒ«ã«ã¯JOINã—ãªã„ã€‚
+    my @ch_with_key; # ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã‚’æŒã£ãŸãƒãƒ£ãƒ³ãƒãƒ«ã®é…åˆ—ã€‚è¦ç´ ã¯["ãƒãƒ£ãƒ³ãƒãƒ«å","ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰"]
+    my @ch_without_key; # ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã‚’æŒãŸãªã„ãƒãƒ£ãƒ³ãƒãƒ«ã®é…åˆ—ã€‚è¦ç´ ã¯"ãƒãƒ£ãƒ³ãƒãƒ«å"
     foreach my $ch (values %{$network->channels}) {
 	next if $ch->remarks('kicked-out');
 
@@ -435,7 +435,7 @@ sub _rejoin_all_channels {
 	    push @ch_without_key,$ch->name;
 	}
     }
-    # JOIN¼Â¹Ô
+    # JOINå®Ÿè¡Œ
     my ($buf_ch,$buf_key) = ('','');
     my $buf_flush = sub {
 	return if ($buf_ch eq '');
@@ -458,16 +458,16 @@ sub _rejoin_all_channels {
 	$buf_ch .= ($buf_ch eq '' ? $ch : ",$ch");
 	$buf_key .= ($buf_key eq '' ? $key : ",$key") if defined $key;
 	if (length($buf_ch) + length($buf_key) > 400) {
-	    # 400¥Ğ¥¤¥È¤ò±Û¤¨¤¿¤é¼«Æ°¤Ç¥Õ¥é¥Ã¥·¥å¤¹¤ë¡£
+	    # 400ãƒã‚¤ãƒˆã‚’è¶ŠãˆãŸã‚‰è‡ªå‹•ã§ãƒ•ãƒ©ãƒƒã‚·ãƒ¥ã™ã‚‹ã€‚
 	    $buf_flush->();
 	}
     };
-    # ¥Ñ¥¹¥ï¡¼¥ÉÉÕ¤­¤Î¥Á¥ã¥ó¥Í¥ë¤ËJOIN
+    # ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ä»˜ãã®ãƒãƒ£ãƒ³ãƒãƒ«ã«JOIN
     foreach (@ch_with_key) {
 	$buf_put->($_->[0],$_->[1]);
     }
     $buf_flush->();
-    # ¥Ñ¥¹¥ï¡¼¥ÉÌµ¤·¤Î¥Á¥ã¥ó¥Í¥ë¤ËJOIN
+    # ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ç„¡ã—ã®ãƒãƒ£ãƒ³ãƒãƒ«ã«JOIN
     foreach (@ch_without_key) {
 	$buf_put->($_);
     }
@@ -476,17 +476,17 @@ sub _rejoin_all_channels {
 
 sub update_networks {
     my $this = shift;
-    # networks/name¤òÆÉ¤ß¡¢¤½¤ÎÃæ¤Ë¤Ş¤ÀÀÜÂ³¤·¤Æ¤¤¤Ê¤¤¥Í¥Ã¥È¥ï¡¼¥¯¤¬¤¢¤ì¤Ğ¤½¤ì¤òÀÜÂ³¤·¡¢
-    # ÀÜÂ³Ãæ¤Î¥Í¥Ã¥È¥ï¡¼¥¯¤Ç´û¤Ënetworks/name¤ËÎóµó¤µ¤ì¤Æ¤¤¤Ê¤¤¤â¤Î¤¬¤¢¤ì¤Ğ¤½¤ì¤òÀÚÃÇ¤¹¤ë¡£
+    # networks/nameã‚’èª­ã¿ã€ãã®ä¸­ã«ã¾ã æ¥ç¶šã—ã¦ã„ãªã„ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãŒã‚ã‚Œã°ãã‚Œã‚’æ¥ç¶šã—ã€
+    # æ¥ç¶šä¸­ã®ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã§æ—¢ã«networks/nameã«åˆ—æŒ™ã•ã‚Œã¦ã„ãªã„ã‚‚ã®ãŒã‚ã‚Œã°ãã‚Œã‚’åˆ‡æ–­ã™ã‚‹ã€‚
     my @net_names = $this->_conf_networks->name('all');
-    my $do_update_networks_after = 0; # ÉÃ¿ô
+    my $do_update_networks_after = 0; # ç§’æ•°
     my $do_cleanup_closed_links_after = 0;
-    my $host_tried = {}; # {ÀÜÂ³¤ò»î¤ß¤¿¥Û¥¹¥ÈÌ¾ => 1}
+    my $host_tried = {}; # {æ¥ç¶šã‚’è©¦ã¿ãŸãƒ›ã‚¹ãƒˆå => 1}
 
     $this->{default_network} = $this->_conf_networks->default;
 
-    # ¥Ş¥ë¥Á¥µ¡¼¥Ğ¡¼¥â¡¼¥É¤Ç¤Ê¤±¤ì¤Ğ¡¢@net_names¤ÎÍ×ÁÇ¤Ï°ì¤Ä¤Ë¸Â¤é¤ì¤ë¤Ù¤­¡£
-    # ¤½¤¦¤Ç¤Ê¤±¤ì¤Ğ·Ù¹ğ¤ò½Ğ¤·¡¢ÀèÆ¬¤Î¤â¤Î¤À¤±¤ò»Ä¤·¤Æ¸å¤Ï¼Î¤Æ¤ë¡£
+    # ãƒãƒ«ãƒã‚µãƒ¼ãƒãƒ¼ãƒ¢ãƒ¼ãƒ‰ã§ãªã‘ã‚Œã°ã€@net_namesã®è¦ç´ ã¯ä¸€ã¤ã«é™ã‚‰ã‚Œã‚‹ã¹ãã€‚
+    # ãã†ã§ãªã‘ã‚Œã°è­¦å‘Šã‚’å‡ºã—ã€å…ˆé ­ã®ã‚‚ã®ã ã‘ã‚’æ®‹ã—ã¦å¾Œã¯æ¨ã¦ã‚‹ã€‚
     if (!$this->{multi_server_mode}) {
 	if (@net_names > 1) {
 	    $this->notify_warn(
@@ -506,22 +506,22 @@ sub update_networks {
 	$network = $this->network($net_name);
 	eval {
 	    if (!defined $network) {
-		# ¿·¤·¤¤¥Í¥Ã¥È¥ï¡¼¥¯
+		# æ–°ã—ã„ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯
 		$network = IrcIO::Server->new($this, $net_name);
-		$this->{networks}->{$net_name} = $network; # networks¤ËÅĞÏ¿
+		$this->{networks}->{$net_name} = $network; # networksã«ç™»éŒ²
 	    }
 	    else {
 		if ($network->state_connected || $network->state_connecting) {
-		    # ´û¤ËÀÜÂ³¤µ¤ì¤Æ¤¤¤ë¡£
-		    # ¤³¤Î¥µ¡¼¥Ğ¡¼¤Ë¤Ä¤¤¤Æ¤ÎÀßÄê¤¬ÊÑ¤ï¤Ã¤Æ¤¤¤¿¤é¡¢°ìÃ¶ÀÜÂ³¤òÀÚ¤ë¡£
+		    # æ—¢ã«æ¥ç¶šã•ã‚Œã¦ã„ã‚‹ã€‚
+		    # ã“ã®ã‚µãƒ¼ãƒãƒ¼ã«ã¤ã„ã¦ã®è¨­å®šãŒå¤‰ã‚ã£ã¦ã„ãŸã‚‰ã€ä¸€æ—¦æ¥ç¶šã‚’åˆ‡ã‚‹ã€‚
 		    if (!$net_conf->equals($network->config)) {
 			$network->state_reconnecting(1);
 			$network->quit(
 			    $this->_conf_messages->quit->netconf_changed_reconnect);
 		    }
 		} elsif ($network->state_terminated) {
-		    # ½ªÎ»¤·¤Æ¤¤¤ë
-		    # ¤³¤Î¥µ¡¼¥Ğ¡¼¤Ë¤Ä¤¤¤Æ¤ÎÀßÄê¤¬ÊÑ¤ï¤Ã¤Æ¤¤¤¿¤é¡¢ÀÜÂ³¤¹¤ë¡£
+		    # çµ‚äº†ã—ã¦ã„ã‚‹
+		    # ã“ã®ã‚µãƒ¼ãƒãƒ¼ã«ã¤ã„ã¦ã®è¨­å®šãŒå¤‰ã‚ã£ã¦ã„ãŸã‚‰ã€æ¥ç¶šã™ã‚‹ã€‚
 		    if (!$net_conf->equals($network->config)) {
 			$this->reconnect_server($net_name);
 		    }
@@ -533,7 +533,7 @@ sub update_networks {
 	    } else {
 		$this->notify_error($@);
 	    }
-	    # ¥¿¥¤¥Ş¡¼ºî¤êÄ¾¤·¡£
+	    # ã‚¿ã‚¤ãƒãƒ¼ä½œã‚Šç›´ã—ã€‚
 	    $do_update_networks_after = 3;
 	}
     }
@@ -546,15 +546,15 @@ sub update_networks {
     my @nets_to_forget;
     my $is_there_in_net_names = sub {
 	my $network_name = shift;
-	# ¤³¤Î¥Í¥Ã¥È¥ï¡¼¥¯¤Ï@net_namesÆâ¤ËÎóµó¤µ¤ì¤Æ¤¤¤ë¤«¡©
+	# ã“ã®ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã¯@net_nameså†…ã«åˆ—æŒ™ã•ã‚Œã¦ã„ã‚‹ã‹ï¼Ÿ
 	foreach my $enumerated_net (@net_names) {
 	    return 1 if $network_name eq $enumerated_net;
 	}
 	return 0;
     };
-    # networks¤«¤éÉÔÍ×¤Ê¥Í¥Ã¥È¥ï¡¼¥¯¤òºï½ü
+    # networksã‹ã‚‰ä¸è¦ãªãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã‚’å‰Šé™¤
     while (my ($net_name,$server) = each %{$this->{networks}}) {
-	# Æş¤Ã¤Æ¤¤¤Ê¤«¤Ã¤¿¤éselector¤«¤é³°¤·¤ÆÀÚÃÇ¤¹¤ë¡£
+	# å…¥ã£ã¦ã„ãªã‹ã£ãŸã‚‰selectorã‹ã‚‰å¤–ã—ã¦åˆ‡æ–­ã™ã‚‹ã€‚
 	unless ($is_there_in_net_names->($net_name)) {
 	    push @nets_to_disconnect,$net_name;
 	}
@@ -583,7 +583,7 @@ sub terminate_server {
 }
 
 sub reconnect_server {
-    # terminate/disconnect(¥µ¡¼¥Ğ¤«¤é)¤µ¤ì¤¿¥µ¡¼¥Ğ¤ØÀÜÂ³¤·¤Ê¤ª¤¹¡£
+    # terminate/disconnect(ã‚µãƒ¼ãƒã‹ã‚‰)ã•ã‚ŒãŸã‚µãƒ¼ãƒã¸æ¥ç¶šã—ãªãŠã™ã€‚
     my ($class_or_this,$network_name) = @_;
     my $this = $class_or_this->_this;
     my $network = $this->network($network_name);
@@ -592,8 +592,8 @@ sub reconnect_server {
 }
 
 sub disconnect_server {
-    # »ØÄê¤µ¤ì¤¿¥µ¡¼¥Ğ¡¼¤È¤ÎÀÜÂ³¤òÀÚ¤ë¡£
-    # fd¤Î´Æ»ë¤ò¤ä¤á¤Æ¤·¤Ş¤¦¤Î¤Ç¡¢¤³¤Î¸åIrcIO::Server¤Îreceive¤Ï¤â¤¦¸Æ¤Ğ¤ì¤Ê¤¤»ö¤ËÃí°Õ¡£
+    # æŒ‡å®šã•ã‚ŒãŸã‚µãƒ¼ãƒãƒ¼ã¨ã®æ¥ç¶šã‚’åˆ‡ã‚‹ã€‚
+    # fdã®ç›£è¦–ã‚’ã‚„ã‚ã¦ã—ã¾ã†ã®ã§ã€ã“ã®å¾ŒIrcIO::Serverã®receiveã¯ã‚‚ã†å‘¼ã°ã‚Œãªã„äº‹ã«æ³¨æ„ã€‚
     # $server: IrcIO::Server
     my ($class_or_this,$server) = @_;
     my $this = $class_or_this;
@@ -601,7 +601,7 @@ sub disconnect_server {
 }
 
 sub close_client {
-    # »ØÄê¤·¤¿¥¯¥é¥¤¥¢¥ó¥È¤È¤ÎÀÜÂ³¤òÀÚ¤ë¡£
+    # æŒ‡å®šã—ãŸã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã¨ã®æ¥ç¶šã‚’åˆ‡ã‚‹ã€‚
     # $client: IrcIO::Client
     my ($class_or_this, $client, $message) = @_;
     my $this = $class_or_this->_this;
@@ -618,7 +618,7 @@ sub close_client {
 sub reconnected_server {
     my ($class_or_this,$network) = @_;
     my $this = $class_or_this->_this;
-    # ºÆÀÜÂ³¤À¤Ã¤¿¾ì¹ç¤Î½èÍı
+    # å†æ¥ç¶šã ã£ãŸå ´åˆã®å‡¦ç†
     $this->{action_on_disconnected}->($this,$network,'connected');
 }
 
@@ -635,7 +635,7 @@ sub install_socket {
     }
 
     push @{$this->{sockets}},$socket;
-    $this->register_receive_socket($socket->sock); # ¼õ¿®¥»¥ì¥¯¥¿¤ËÅĞÏ¿
+    $this->register_receive_socket($socket->sock); # å—ä¿¡ã‚»ãƒ¬ã‚¯ã‚¿ã«ç™»éŒ²
     undef;
 }
 
@@ -648,7 +648,7 @@ sub uninstall_socket {
     for (my $i = 0; $i < @{$this->{sockets}}; $i++) {
 	if ($this->{sockets}->[$i] == $socket) {
 	    splice @{$this->{sockets}},$i,1;
-	    $this->unregister_receive_socket($socket->sock); # ¼õ¿®¥»¥ì¥¯¥¿¤«¤éÅĞÏ¿²ò½ü
+	    $this->unregister_receive_socket($socket->sock); # å—ä¿¡ã‚»ãƒ¬ã‚¯ã‚¿ã‹ã‚‰ç™»éŒ²è§£é™¤
 	    push @{$this->{socks_to_cleanup}},$socket->sock;
 	    $i--;
 	}
@@ -657,14 +657,14 @@ sub uninstall_socket {
 }
 
 sub register_receive_socket {
-    # ÆâÉô API ¤Ç¤¹¡£³°Éô¤«¤é»È¤¦¤È¤­¤Ï Tiarra::Socket ¤Ş¤¿¤Ï
-    # ExternalSocket ¤ò»ÈÍÑ¤·¤Æ¤¯¤À¤µ¤¤¡£
+    # å†…éƒ¨ API ã§ã™ã€‚å¤–éƒ¨ã‹ã‚‰ä½¿ã†ã¨ãã¯ Tiarra::Socket ã¾ãŸã¯
+    # ExternalSocket ã‚’ä½¿ç”¨ã—ã¦ãã ã•ã„ã€‚
     shift->{receive_selector}->add(@_);
 }
 
 sub unregister_receive_socket {
-    # ÆâÉô API ¤Ç¤¹¡£³°Éô¤«¤é»È¤¦¤È¤­¤Ï Tiarra::Socket ¤Ş¤¿¤Ï
-    # ExternalSocket ¤ò»ÈÍÑ¤·¤Æ¤¯¤À¤µ¤¤¡£
+    # å†…éƒ¨ API ã§ã™ã€‚å¤–éƒ¨ã‹ã‚‰ä½¿ã†ã¨ãã¯ Tiarra::Socket ã¾ãŸã¯
+    # ExternalSocket ã‚’ä½¿ç”¨ã—ã¦ãã ã•ã„ã€‚
     shift->{receive_selector}->remove(@_);
 }
 
@@ -698,8 +698,8 @@ sub uninstall_timer {
 }
 
 sub get_earliest_timer {
-    # ÅĞÏ¿¤µ¤ì¤Æ¤¤¤ëÃæ¤ÇºÇ¤âµ¯Æ°»ş´Ö¤ÎÁá¤¤¥¿¥¤¥Ş¡¼¤òÊÖ¤¹¡£
-    # ¥¿¥¤¥Ş¡¼¤¬°ì¤Ä¤âÌµ¤±¤ì¤Ğundef¤òÊÖ¤¹¡£
+    # ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹ä¸­ã§æœ€ã‚‚èµ·å‹•æ™‚é–“ã®æ—©ã„ã‚¿ã‚¤ãƒãƒ¼ã‚’è¿”ã™ã€‚
+    # ã‚¿ã‚¤ãƒãƒ¼ãŒä¸€ã¤ã‚‚ç„¡ã‘ã‚Œã°undefã‚’è¿”ã™ã€‚
     my $this = shift;
     return undef if (scalar(@{$this->{timers}}) == 0);
 
@@ -715,13 +715,13 @@ sub get_earliest_timer {
 sub _execute_all_timers_to_fire {
     my $this = shift;
 
-    # execute¤¹¤Ù¤­¥¿¥¤¥Ş¡¼¤ò½¸¤á¤ë
+    # executeã™ã¹ãã‚¿ã‚¤ãƒãƒ¼ã‚’é›†ã‚ã‚‹
     my @timers_to_execute = ();
     foreach my $timer (@{$this->{timers}}) {
 	push @timers_to_execute,$timer if $timer->time_to_fire <= time;
     }
 
-    # ¼Â¹Ô
+    # å®Ÿè¡Œ
     foreach my $timer (@timers_to_execute) {
 	$timer->execute;
     }
@@ -731,23 +731,23 @@ sub run {
     my $this = shift->_this;
     my $conf_general = $this->_conf_general;
 
-    # config ¤«¤é½é´ü²½
+    # config ã‹ã‚‰åˆæœŸåŒ–
     $this->_config_changed(1);
 
     # FIXME: only shared
     $this->{mod_manager} =
 	ModuleManager->shared($this);
 
-    # ¤Ş¤º¤Ïtiarra-port¤òlisten¤¹¤ë¥½¥±¥Ã¥È¤òºî¤ë¡£
-    # ¾ÊÎ¬¤µ¤ì¤Æ¤¤¤¿¤élisten¤·¤Ê¤¤¡£
-    # ¤³¤ÎÃÍ¤¬¿ôÃÍ¤Ç¤Ê¤«¤Ã¤¿¤édie¡£
+    # ã¾ãšã¯tiarra-portã‚’listenã™ã‚‹ã‚½ã‚±ãƒƒãƒˆã‚’ä½œã‚‹ã€‚
+    # çœç•¥ã•ã‚Œã¦ã„ãŸã‚‰listenã—ãªã„ã€‚
+    # ã“ã®å€¤ãŒæ•°å€¤ã§ãªã‹ã£ãŸã‚‰dieã€‚
     my $tiarra_port = $conf_general->tiarra_port;
     if (defined $tiarra_port) {
 	if ($tiarra_port !~ /^\d+/) {
 	    die "general/tiarra-port must be integer. '$tiarra_port' is invalid.\n";
 	}
 
-	# v4¤Èv6¤Î²¿¤ì¤ò»È¤¦¤«¡©
+	# v4ã¨v6ã®ä½•ã‚Œã‚’ä½¿ã†ã‹ï¼Ÿ
 	my @serversocket_args = (
 	    LocalPort => $tiarra_port,
 	    Proto => 'tcp',
@@ -791,22 +791,22 @@ sub run {
 	if (defined $tiarra_server_socket) {
 	    $tiarra_server_socket->autoflush(1);
 	    $this->{tiarra_server_socket} = $tiarra_server_socket;
-	    $this->register_receive_socket($tiarra_server_socket); # ¥»¥ì¥¯¥¿¤ËÅĞÏ¿¡£
+	    $this->register_receive_socket($tiarra_server_socket); # ã‚»ãƒ¬ã‚¯ã‚¿ã«ç™»éŒ²ã€‚
 	    main::printmsg("Tiarra started listening ${tiarra_port}/tcp. (IP$ip_version)");
 	}
 	else {
-	    # ¥½¥±¥Ã¥Èºî¤ì¤Ê¤«¤Ã¤¿¡£
+	    # ã‚½ã‚±ãƒƒãƒˆä½œã‚Œãªã‹ã£ãŸã€‚
 	    die "Couldn't make server socket to listen ${tiarra_port}/tcp. (IP$ip_version)\n";
 	}
     }
 
-    # »ª¤ËÀÜÂ³
+    # é¯–ã«æ¥ç¶š
     $this->update_networks;
 
-    # 3Ê¬Ëè¤ËÁ´¤Æ¤Î»ª¤È¥¯¥é¥¤¥¢¥ó¥È¤ËPING¤òÁ÷¤ë¥¿¥¤¥Ş¡¼¤ò¥¤¥ó¥¹¥È¡¼¥ë¡£
-    # ¤³¤ì¤ÏtcpÀÜÂ³¤ÎÀÚÃÇ¤Ëµ¤ÉÕ¤«¤Ê¤¤»ö¤¬¤¢¤ë¤¿¤á¡£
-    # ±şÅú¤ÎPONG¤Ï¼Î¤Æ¤ë¡£¤³¤Î¤¿¤á¤ËPONGÇË´ş¥«¥¦¥ó¥¿¤ò¥¤¥ó¥¯¥ê¥á¥ó¥È¤¹¤ë¡£
-    # PONGÇË´ş¥«¥¦¥ó¥¿¤ÏIrcIO::Server¤Îremark¤Ç¡¢¥­¡¼¤Ï'pong-drop-counter'
+    # 3åˆ†æ¯ã«å…¨ã¦ã®é¯–ã¨ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«PINGã‚’é€ã‚‹ã‚¿ã‚¤ãƒãƒ¼ã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã€‚
+    # ã“ã‚Œã¯tcpæ¥ç¶šã®åˆ‡æ–­ã«æ°—ä»˜ã‹ãªã„äº‹ãŒã‚ã‚‹ãŸã‚ã€‚
+    # å¿œç­”ã®PONGã¯æ¨ã¦ã‚‹ã€‚ã“ã®ãŸã‚ã«PONGç ´æ£„ã‚«ã‚¦ãƒ³ã‚¿ã‚’ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆã™ã‚‹ã€‚
+    # PONGç ´æ£„ã‚«ã‚¦ãƒ³ã‚¿ã¯IrcIO::Serverã®remarkã§ã€ã‚­ãƒ¼ã¯'pong-drop-counter'
     Timer->new(
 	Interval => 3 * 60,
 	Code => sub {
@@ -837,7 +837,7 @@ sub run {
 	Name => __PACKAGE__ . '/send ping',
     )->install;
 
-    # control-socket-name¤¬»ØÄê¤µ¤ì¤Æ¤¤¤¿¤é¡¢ControlPort¤ò³«¤¯¡£
+    # control-socket-nameãŒæŒ‡å®šã•ã‚Œã¦ã„ãŸã‚‰ã€ControlPortã‚’é–‹ãã€‚
     if ($conf_general->control_socket_name) {
 	require ControlPort;
 	eval {
@@ -876,26 +876,26 @@ sub run {
     };
 
     while (1) {
-	# ½èÍı¤ÎÎ®¤ì
+	# å‡¦ç†ã®æµã‚Œ
 	#
-	# ½ñ¤­¤³¤ß²ÄÇ½¤Ê¥½¥±¥Ã¥È¤ò½¸¤á¤Æ¡¢É¬Í×¤¬¤¢¤ì¤Ğ½ñ¤­¹ş¤à¡£
-	# ¼¡¤ËÆÉ¤ß¹ş¤ß²ÄÇ½¤Ê¥½¥±¥Ã¥È¤ò½¸¤á¤Æ¡¢(ÆÉ¤àÉ¬Í×¤Ï¾ï¤Ë¤¢¤ë¤Î¤Ç)ÆÉ¤à¡£
-	# ÆÉ¤ó¤À¾ì¹ç¤ÏÄÌ¾ïTiarra::IRC::Message¤ÎÇÛÎó¤¬ÊÖ¤Ã¤Æ¤¯¤ë¤Î¤Ç¡¢
-	# É¬Í×¤ÊÁ´¤Æ¤Î¥×¥é¥°¥¤¥ó¤Ë½çÈÖ¤ËÄÌ¤¹¡£(¥×¥é¥°¥¤¥ó¤Ï¥Õ¥£¥ë¥¿¡¼¤È¤·¤Æ¹Í¤¨¤ë¡£)
-	# ¤½¤ì¤¬¥µ¡¼¥Ğ¡¼¤«¤éÆÉ¤ó¤À¥á¥Ã¥»¡¼¥¸¤À¤Ã¤¿¤Ê¤é¡¢¥×¥é¥°¥¤¥ó¤òÄÌ¤·¤¿¸å¡¢ÀÜÂ³¤µ¤ì¤Æ¤¤¤ëÁ´¤Æ¤Î¥¯¥é¥¤¥¢¥ó¥È¤Ë¤½¤ì¤òÅ¾Á÷¤¹¤ë¡£
-	# ¥¯¥é¥¤¥¢¥ó¥È¤¬°ì¤Ä¤âÀÜÂ³¤µ¤ì¤Æ¤¤¤Ê¤±¤ì¤Ğ¡¢¤½¤ÎTiarra::IRC::Message·²¤Ï¼Î¤Æ¤ë¡£
-	# ¥¯¥é¥¤¥¢¥ó¥È¤«¤éÆÉ¤ó¤À¥á¥Ã¥»¡¼¥¸¤À¤Ã¤¿¤Ê¤é¡¢¥×¥é¥°¥¤¥ó¤òÄÌ¤·¤¿¸å¡¢ÅÏ¤¹¤Ù¤­¥µ¡¼¥Ğ¡¼¤ËÅ¾Á÷¤¹¤ë¡£
+	# æ›¸ãã“ã¿å¯èƒ½ãªã‚½ã‚±ãƒƒãƒˆã‚’é›†ã‚ã¦ã€å¿…è¦ãŒã‚ã‚Œã°æ›¸ãè¾¼ã‚€ã€‚
+	# æ¬¡ã«èª­ã¿è¾¼ã¿å¯èƒ½ãªã‚½ã‚±ãƒƒãƒˆã‚’é›†ã‚ã¦ã€(èª­ã‚€å¿…è¦ã¯å¸¸ã«ã‚ã‚‹ã®ã§)èª­ã‚€ã€‚
+	# èª­ã‚“ã å ´åˆã¯é€šå¸¸Tiarra::IRC::Messageã®é…åˆ—ãŒè¿”ã£ã¦ãã‚‹ã®ã§ã€
+	# å¿…è¦ãªå…¨ã¦ã®ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã«é †ç•ªã«é€šã™ã€‚(ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã¯ãƒ•ã‚£ãƒ«ã‚¿ãƒ¼ã¨ã—ã¦è€ƒãˆã‚‹ã€‚)
+	# ãã‚ŒãŒã‚µãƒ¼ãƒãƒ¼ã‹ã‚‰èª­ã‚“ã ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã ã£ãŸãªã‚‰ã€ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã‚’é€šã—ãŸå¾Œã€æ¥ç¶šã•ã‚Œã¦ã„ã‚‹å…¨ã¦ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«ãã‚Œã‚’è»¢é€ã™ã‚‹ã€‚
+	# ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒä¸€ã¤ã‚‚æ¥ç¶šã•ã‚Œã¦ã„ãªã‘ã‚Œã°ã€ãã®Tiarra::IRC::Messageç¾¤ã¯æ¨ã¦ã‚‹ã€‚
+	# ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‹ã‚‰èª­ã‚“ã ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã ã£ãŸãªã‚‰ã€ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã‚’é€šã—ãŸå¾Œã€æ¸¡ã™ã¹ãã‚µãƒ¼ãƒãƒ¼ã«è»¢é€ã™ã‚‹ã€‚
 	#
-	# select¤Ë¤ª¤±¤ë¥¿¥¤¥à¥¢¥¦¥È¤Ï¼¡¤Î¤è¤¦¤Ë¤¹¤ë¡£
-	# (ÉáÃÊ¤Ï²¿¤«¤·¤éÅĞÏ¿¤µ¤ì¤Æ¤¤¤ë¤È»×¤¦¤¬)¥¿¥¤¥Ş¡¼¤¬°ì¤Ä¤âÅĞÏ¿¤µ¤ì¤Æ¤¤¤Ê¤±¤ì¤Ğ¡¢¥¿¥¤¥à¥¢¥¦¥È¤Ïundef¤Ç¤¢¤ë¡£¤¹¤Ê¤ï¤Á¥¿¥¤¥à¥¢¥¦¥È¤·¤Ê¤¤¡£
-	# ¥¿¥¤¥Ş¡¼¤¬°ì¤Ä¤Ç¤âÅĞÏ¿¤µ¤ì¤Æ¤¤¤¿¾ì¹ç¤Ï¡¢Á´¤Æ¤Î¥¿¥¤¥Ş¡¼¤ÎÃæ¤ÇºÇ¤âÈ¯Æ°»ş´Ö¤¬Áá¤¤¤â¤Î¤òÄ´¤Ù¡¢
-	# ¤½¤ì¤¬È¯Æ°¤¹¤ë¤Ş¤Ç¤Î»ş´Ö¤òselect¤Î¥¿¥¤¥à¥¢¥¦¥È»ş´Ö¤È¤¹¤ë¡£
+	# selectã«ãŠã‘ã‚‹ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã¯æ¬¡ã®ã‚ˆã†ã«ã™ã‚‹ã€‚
+	# (æ™®æ®µã¯ä½•ã‹ã—ã‚‰ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹ã¨æ€ã†ãŒ)ã‚¿ã‚¤ãƒãƒ¼ãŒä¸€ã¤ã‚‚ç™»éŒ²ã•ã‚Œã¦ã„ãªã‘ã‚Œã°ã€ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã¯undefã§ã‚ã‚‹ã€‚ã™ãªã‚ã¡ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã—ãªã„ã€‚
+	# ã‚¿ã‚¤ãƒãƒ¼ãŒä¸€ã¤ã§ã‚‚ç™»éŒ²ã•ã‚Œã¦ã„ãŸå ´åˆã¯ã€å…¨ã¦ã®ã‚¿ã‚¤ãƒãƒ¼ã®ä¸­ã§æœ€ã‚‚ç™ºå‹•æ™‚é–“ãŒæ—©ã„ã‚‚ã®ã‚’èª¿ã¹ã€
+	# ãã‚ŒãŒç™ºå‹•ã™ã‚‹ã¾ã§ã®æ™‚é–“ã‚’selectã®ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆæ™‚é–“ã¨ã™ã‚‹ã€‚
 
-	# selectÁ°¥Õ¥Ã¥¯¤ò¸Æ¤Ö
+	# selectå‰ãƒ•ãƒƒã‚¯ã‚’å‘¼ã¶
 	$this->call_hooks('before-select');
 
-	# ¥Õ¥Ã¥¯Æâ¤Ç¥¿¥¤¥Ş¡¼¤òinstall/È¯Æ°»ş¹ïÊÑ¹¹¤ò¤·¤¿¾ì¹ç¤ËÈ÷¤¨¡¢
-	# ¥¿¥¤¥à¥¢¥¦¥È¤Î·×»»¤Ïbefore-select¥Õ¥Ã¥¯¤Î¼Â¹Ô¸å¤Ë¤¹¤ë¡£
+	# ãƒ•ãƒƒã‚¯å†…ã§ã‚¿ã‚¤ãƒãƒ¼ã‚’install/ç™ºå‹•æ™‚åˆ»å¤‰æ›´ã‚’ã—ãŸå ´åˆã«å‚™ãˆã€
+	# ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã®è¨ˆç®—ã¯before-selectãƒ•ãƒƒã‚¯ã®å®Ÿè¡Œå¾Œã«ã™ã‚‹ã€‚
 	my $timeout = undef;
 	my $eariest_timer = $this->get_earliest_timer;
 	if (defined $eariest_timer) {
@@ -904,26 +904,26 @@ sub run {
 	if ($timeout < 0) {
 	    $timeout = 0;
 	}
-	# Windows¤À¤È, select()Ãæ¤ËCtrl-C¤¬¸ú¤«¤Ê¤¯¤Ê¤ë¤Î¤Ç,
-	# !defined($timeout) || $timeout > ïçÃÍ and $timeout = ïçÃÍ.
-	# ¤È¤«¤Ç»ş¡¹¥Ö¥í¥Ã¥¯²ò½ü¤·¤¿Êı¤¬¤è¤¤¤Î¤«¤â¤·¤ì¤Ê¤¤.
+	# Windowsã ã¨, select()ä¸­ã«Ctrl-CãŒåŠ¹ã‹ãªããªã‚‹ã®ã§,
+	# !defined($timeout) || $timeout > é–¾å€¤ and $timeout = é–¾å€¤.
+	# ã¨ã‹ã§æ™‚ã€…ãƒ–ãƒ­ãƒƒã‚¯è§£é™¤ã—ãŸæ–¹ãŒã‚ˆã„ã®ã‹ã‚‚ã—ã‚Œãªã„.
 
-	# ½ñ¤­¹ş¤à¤Ù¤­¥Ç¡¼¥¿¤¬¤¢¤ë¥½¥±¥Ã¥È¤À¤±¤òsend_selector¤ËÅĞÏ¿¤¹¤ë¡£¤½¤¦¤Ç¤Ê¤¤¥½¥±¥Ã¥È¤Ï½ü³°¡£
+	# æ›¸ãè¾¼ã‚€ã¹ããƒ‡ãƒ¼ã‚¿ãŒã‚ã‚‹ã‚½ã‚±ãƒƒãƒˆã ã‘ã‚’send_selectorã«ç™»éŒ²ã™ã‚‹ã€‚ãã†ã§ãªã„ã‚½ã‚±ãƒƒãƒˆã¯é™¤å¤–ã€‚
 	$this->_update_send_selector;
 
-	# select¼Â¹Ô
+	# selectå®Ÿè¡Œ
 	my $time_before_select = CORE::time;
 	my ($readable_socks,$writable_socks,$has_exception_socks) =
 	    IO::Select->select($this->{receive_selector},$this->{send_selector},$this->{receive_selector},$timeout);
 	$zerotime_warn->(CORE::time - $time_before_select);
-	# select¸å¥Õ¥Ã¥¯¤ò¸Æ¤Ö
+	# selectå¾Œãƒ•ãƒƒã‚¯ã‚’å‘¼ã¶
 	$this->call_hooks('after-select');
 
 	foreach my $sock ($this->{receive_selector}->can_read(0)) {
 	    if (defined $this->{tiarra_server_socket} &&
 		$sock == $this->{tiarra_server_socket}) {
 
-		# ¥¯¥é¥¤¥¢¥ó¥È¤«¤é¤Î¿·µ¬¤ÎÀÜÂ³
+		# ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‹ã‚‰ã®æ–°è¦ã®æ¥ç¶š
 		my $new_sock = $sock->accept;
 		if (defined $new_sock) {
 		    if (!$this->{terminating}) {
@@ -963,11 +963,11 @@ sub run {
 				next;
 			    }
 
-			    # ¤³¤Î¥á¥Ã¥»¡¼¥¸¤¬PONG¤Ç¤¢¤ì¤Ğpong-drop-counter¤ò¸«¤ë¡£
+			    # ã“ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒPONGã§ã‚ã‚Œã°pong-drop-counterã‚’è¦‹ã‚‹ã€‚
 			    if ($msg->command eq 'PONG') {
 				my $cntr = $socket->remark('pong-drop-counter');
 				if (defined $cntr && $cntr > 0) {
-				    # ¤³¤ÎPONG¤Ï¼Î¤Æ¤ë¡£
+				    # ã“ã®PONGã¯æ¨ã¦ã‚‹ã€‚
 				    $cntr--;
 				    $socket->remark('pong-drop-counter',$cntr);
 				    next;
@@ -975,33 +975,33 @@ sub run {
 			    }
 
 			    if ($socket->isa("IrcIO::Server")) {
-				# ¥á¥Ã¥»¡¼¥¸¤òMulticast¤Î¥Õ¥£¥ë¥¿¤ËÄÌ¤¹¡£
+				# ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’Multicastã®ãƒ•ã‚£ãƒ«ã‚¿ã«é€šã™ã€‚
 				my @received_messages =
 				    Multicast::from_server_to_client($msg,$socket);
-				# ¥â¥¸¥å¡¼¥ë¤òÄÌ¤¹¡£
+				# ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’é€šã™ã€‚
 				my $filtered_messages = $this->_apply_filters(\@received_messages,$socket);
-				# ¥·¥ó¥°¥ë¥µ¡¼¥Ğ¡¼¥â¡¼¥É¤Ê¤é¡¢¥Í¥Ã¥È¥ï¡¼¥¯Ì¾¤ò¼è¤ê³°¤¹¡£
+				# ã‚·ãƒ³ã‚°ãƒ«ã‚µãƒ¼ãƒãƒ¼ãƒ¢ãƒ¼ãƒ‰ãªã‚‰ã€ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯åã‚’å–ã‚Šå¤–ã™ã€‚
 				if (!$this->{multi_server_mode}) {
 				    @$filtered_messages = map {
 					Multicast::detach_network_name($_, $socket);
 				    } @$filtered_messages;
 				}
-				# Ãğ¼ádo-not-send-to-clients => 1¤¬ÉÕ¤¤¤Æ¤¤¤Ê¤¤¥á¥Ã¥»¡¼¥¸¤ò³Æ¥¯¥é¥¤¥¢¥ó¥È¤ËÁ÷¤ë¡£
+				# è¨»é‡ˆdo-not-send-to-clients => 1ãŒä»˜ã„ã¦ã„ãªã„ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å„ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«é€ã‚‹ã€‚
 				$this->broadcast_to_clients(
 				    grep {
 					!($_->remark('do-not-send-to-clients'));
 				    } @$filtered_messages);
 			    }
 			    else {
-				# ¥·¥ó¥°¥ë¥µ¡¼¥Ğ¡¼¥â¡¼¥É¤Ê¤é¡¢¥á¥Ã¥»¡¼¥¸¤òMulticast¤Î¥Õ¥£¥ë¥¿¤ËÄÌ¤¹¡£
+				# ã‚·ãƒ³ã‚°ãƒ«ã‚µãƒ¼ãƒãƒ¼ãƒ¢ãƒ¼ãƒ‰ãªã‚‰ã€ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’Multicastã®ãƒ•ã‚£ãƒ«ã‚¿ã«é€šã™ã€‚
 				my @received_messages =
 				    (!$this->{multi_server_mode}) ? Multicast::from_server_to_client($msg,$this->networks_list) : $msg;
 
-				# ¥â¥¸¥å¡¼¥ë¤òÄÌ¤¹¡£
+				# ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’é€šã™ã€‚
 				my $filtered_messages = $this->_apply_filters(\@received_messages,$socket);
-				# ÂĞ¾İ¤È¤Ê¤ë»ª¤ËÁ÷¤ë¡£
-				# NOTICEµÚ¤ÓPRIVMSG¤ÏÊÖÅú¤¬ÊÖ¤Ã¤Æ¤³¤Ê¤¤¤Î¤Ç¡¢Æ±»ş¤Ë¤³¤ì°Ê³°¤Î¥¯¥é¥¤¥¢¥ó¥È¤ËÅ¾Á÷¤¹¤ë¡£
-				# Ãğ¼ádo-not-send-to-servers => 1¤¬ÉÕ¤¤¤Æ¤¤¤ë¥á¥Ã¥»¡¼¥¸¤Ï¤³¤³¤ÇÇË´ş¤¹¤ë¡£
+				# å¯¾è±¡ã¨ãªã‚‹é¯–ã«é€ã‚‹ã€‚
+				# NOTICEåŠã³PRIVMSGã¯è¿”ç­”ãŒè¿”ã£ã¦ã“ãªã„ã®ã§ã€åŒæ™‚ã«ã“ã‚Œä»¥å¤–ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«è»¢é€ã™ã‚‹ã€‚
+				# è¨»é‡ˆdo-not-send-to-servers => 1ãŒä»˜ã„ã¦ã„ã‚‹ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã¯ã“ã“ã§ç ´æ£„ã™ã‚‹ã€‚
 				foreach my $msg (@$filtered_messages) {
 				    if ($msg->remark('do-not-send-to-servers')) {
 					next;
@@ -1010,14 +1010,14 @@ sub run {
 				    my $cmd = $msg->command;
 				    if (!$msg->remark('do-not-broadcast-to-clients') &&
 					    $cmd eq 'PRIVMSG' || $cmd eq 'NOTICE') {
-					my $new_msg = undef; # ËÜÅö¤ËÉ¬Í×¤Ë¤Ê¤Ã¤¿¤éºî¤ë¡£
+					my $new_msg = undef; # æœ¬å½“ã«å¿…è¦ã«ãªã£ãŸã‚‰ä½œã‚‹ã€‚
 					foreach my $client (@{$this->{clients}}) {
 					    if ($client != $socket) {
 						unless (defined $new_msg) {
-						    # ¤Ş¤Àºî¤Ã¤Æ¤Ê¤«¤Ã¤¿
+						    # ã¾ã ä½œã£ã¦ãªã‹ã£ãŸ
 						    $new_msg = $msg->clone;
 						    $new_msg->prefix($socket->fullname);
-						    # ¥·¥ó¥°¥ë¥µ¡¼¥Ğ¡¼¥â¡¼¥É¤Ê¤é¡¢¥Í¥Ã¥È¥ï¡¼¥¯Ì¾¤ò¼è¤ê³°¤¹¡£
+						    # ã‚·ãƒ³ã‚°ãƒ«ã‚µãƒ¼ãƒãƒ¼ãƒ¢ãƒ¼ãƒ‰ãªã‚‰ã€ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯åã‚’å–ã‚Šå¤–ã™ã€‚
 						    if (!$this->{multi_server_mode}) {
 							Multicast::detach_network_name($new_msg,$this->networks_list);
 						    }
@@ -1075,16 +1075,16 @@ sub run {
 	    }
 	}
 
-	# ÀÚÃÇ¤µ¤ì¤¿¥½¥±¥Ã¥È¤òÃµ¤·¤Æ¡¢Á³¤ë¤Ù¤­½èÍı¤ò¹Ô¤Ê¤¦¡£
+	# åˆ‡æ–­ã•ã‚ŒãŸã‚½ã‚±ãƒƒãƒˆã‚’æ¢ã—ã¦ã€ç„¶ã‚‹ã¹ãå‡¦ç†ã‚’è¡Œãªã†ã€‚
 	$this->_cleanup_closed_link;
 	
-	# È¯Æ°¤¹¤Ù¤­Á´¤Æ¤Î¥¿¥¤¥Ş¡¼¤òÈ¯Æ°¤µ¤»¤ë
+	# ç™ºå‹•ã™ã¹ãå…¨ã¦ã®ã‚¿ã‚¤ãƒãƒ¼ã‚’ç™ºå‹•ã•ã›ã‚‹
 	$this->_execute_all_timers_to_fire;
 
-	# Tiarra::Socket ¤Î¥¯¥ê¡¼¥ó¥¢¥Ã¥×
+	# Tiarra::Socket ã®ã‚¯ãƒªãƒ¼ãƒ³ã‚¢ãƒƒãƒ—
 	$this->{socks_to_cleanup} = [];
 
-	# ½ªÎ»½èÍıÃæ¤Ç¥µ¡¼¥Ğ¤â¥¯¥é¥¤¥¢¥ó¥È¤â¤¤¤Ê¤¯¤Ê¤ì¤Ğ¥ë¡¼¥×½ªÎ»¡£
+	# çµ‚äº†å‡¦ç†ä¸­ã§ã‚µãƒ¼ãƒã‚‚ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚‚ã„ãªããªã‚Œã°ãƒ«ãƒ¼ãƒ—çµ‚äº†ã€‚
 	if ($this->{terminating}) {
 	    if ((scalar $this->networks_list('even-if-not-connected') <= 0) &&
 		    (scalar $this->clients_list <= 0)
@@ -1093,7 +1093,7 @@ sub run {
 	    } else {
 		++$this->{terminating};
 		if ($this->{terminating} >= 400) {
-		    # quit loop ¤Ç¤½¤ó¤Ê¤Ë²ó¤ë¤È¤Ï»×¤¨¤Ê¤¤¡£
+		    # quit loop ã§ãã‚“ãªã«å›ã‚‹ã¨ã¯æ€ãˆãªã„ã€‚
 		    $this->notify_error(
 			"very long terminating loop!".
 			    "(".$this->{terminating}." count(s))\n".
@@ -1108,10 +1108,10 @@ sub run {
 	}
     }
 
-    # ½ªÎ»½èÍı
+    # çµ‚äº†å‡¦ç†
     if (defined $this->{tiarra_server_socket}) {
 	$this->{tiarra_server_socket}->close;
-	$this->unregister_receive_socket($this->{tiarra_server_socket}); # ¼õ¿®¥»¥ì¥¯¥¿¤«¤éÅĞÏ¿²ò½ü
+	$this->unregister_receive_socket($this->{tiarra_server_socket}); # å—ä¿¡ã‚»ãƒ¬ã‚¯ã‚¿ã‹ã‚‰ç™»éŒ²è§£é™¤
     }
     undef $this->{control_port};
     $this->_mod_manager->terminate;
@@ -1131,9 +1131,9 @@ sub terminate {
 }
 
 sub broadcast_to_clients {
-    # Tiarra::IRC::Message¤ò¥í¥°¥¤¥óÃæ¤Ç¤Ê¤¤Á´¤Æ¤Î¥¯¥é¥¤¥¢¥ó¥È¤ËÁ÷¿®¤¹¤ë¡£
-    # fill-prefix-when-sending-to-client¤È¤¤¤¦Ãğ¼á¤¬ÉÕ¤¤¤Æ¤¤¤¿¤é¡¢
-    # Prefix¤ò¤½¤Î¥¯¥é¥¤¥¢¥ó¥È¤Îfullname¤ËÀßÄê¤¹¤ë¡£
+    # Tiarra::IRC::Messageã‚’ãƒ­ã‚°ã‚¤ãƒ³ä¸­ã§ãªã„å…¨ã¦ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«é€ä¿¡ã™ã‚‹ã€‚
+    # fill-prefix-when-sending-to-clientã¨ã„ã†è¨»é‡ˆãŒä»˜ã„ã¦ã„ãŸã‚‰ã€
+    # Prefixã‚’ãã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®fullnameã«è¨­å®šã™ã‚‹ã€‚
     my ($class_or_this,@messages) = @_;
     my $this = $class_or_this->_this;
     foreach my $client (@{$this->{clients}}) {
@@ -1151,7 +1151,7 @@ sub broadcast_to_clients {
 }
 
 sub broadcast_to_servers {
-    # IRC¥á¥Ã¥»¡¼¥¸¤òÁ´¤Æ¤Î¥µ¡¼¥Ğ¡¼¤ËÁ÷¿®¤¹¤ë¡£
+    # IRCãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å…¨ã¦ã®ã‚µãƒ¼ãƒãƒ¼ã«é€ä¿¡ã™ã‚‹ã€‚
     my ($class_or_this,@messages) = @_;
     my $this = $class_or_this->_this;
     foreach my $network ($this->networks_list) {
@@ -1176,28 +1176,28 @@ sub notify_modules {
 }
 
 sub apply_filters {
-    # @extra_args: ¥â¥¸¥å¡¼¥ë¤ËÁ÷¤é¤ì¤ëÂèÆó°ú¿ô°Ê¹ß¡£Âè°ì°ú¿ô¤Ï¾ï¤ËTiarra::IRC::Message¡£
+    # @extra_args: ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«é€ã‚‰ã‚Œã‚‹ç¬¬äºŒå¼•æ•°ä»¥é™ã€‚ç¬¬ä¸€å¼•æ•°ã¯å¸¸ã«Tiarra::IRC::Messageã€‚
     my ($this, $src_messages, $method, @extra_args) = @_;
 
     my $source = $src_messages;
     my $filtered = [];
     foreach my $mod (@{$this->_mod_manager->get_modules}) {
-	# (ÉáÄÌ¤Ê¤¤¤Ï¤º¤À¤¬) $mod ¤¬ undef ¤À¤Ã¤¿¤é¤³¤Î¥â¥¸¥å¡¼¥ë¤ò¤È¤Ğ¤¹¡£
+	# (æ™®é€šãªã„ã¯ãšã ãŒ) $mod ãŒ undef ã ã£ãŸã‚‰ã“ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ã¨ã°ã™ã€‚
 	next unless defined $mod;
-	# source¤¬¶õ¤À¤Ã¤¿¤é¤³¤³¤Ç½ª¤ï¤ê¡£
+	# sourceãŒç©ºã ã£ãŸã‚‰ã“ã“ã§çµ‚ã‚ã‚Šã€‚
 	if (scalar(@$source) == 0) {
 	    return $source;
 	}
 
 	foreach my $src (@$source) {
 	    my @reply = ();
-	    # ¼Â¹Ô
+	    # å®Ÿè¡Œ
 	    eval {
 		@reply = $mod->$method($src, @extra_args);
 	    }; if ($@) {
 		my $modname = ref($mod);
 		my $error = $@;
-		# ¥Ö¥é¥Ã¥¯¥ê¥¹¥È¤ËÆş¤ì¤Æ¤ª¤¯
+		# ãƒ–ãƒ©ãƒƒã‚¯ãƒªã‚¹ãƒˆã«å…¥ã‚Œã¦ãŠã
 		$this->_mod_manager->add_to_blacklist($modname);
 		$this->notify_error(
 		    "Exception in ".$modname.".\n".
@@ -1209,8 +1209,8 @@ sub apply_filters {
 	    }
 	    
 	    if (defined $reply[0]) {
-		# ÃÍ¤¬°ì¤Ä°Ê¾åÊÖ¤Ã¤Æ¤­¤¿¡£
-		# Á´¤ÆTiarra::IRC::Message¤Î¥ª¥Ö¥¸¥§¥¯¥È¤Ê¤éÎÉ¤¤¤¬¡¢¤½¤¦¤Ç¤Ê¤±¤ì¤Ğ¥¨¥é¡¼¡£
+		# å€¤ãŒä¸€ã¤ä»¥ä¸Šè¿”ã£ã¦ããŸã€‚
+		# å…¨ã¦Tiarra::IRC::Messageã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãªã‚‰è‰¯ã„ãŒã€ãã†ã§ãªã‘ã‚Œã°ã‚¨ãƒ©ãƒ¼ã€‚
 		foreach my $msg_reply (@reply) {
 		    unless (UNIVERSAL::isa($msg_reply,$this->irc_message_class)) {
 			$this->notify_error(
@@ -1220,12 +1220,12 @@ sub apply_filters {
 		    }
 		}
 		
-		# ¤³¤ì¤òfiltered¤ËÄÉ²Ã¡£
+		# ã“ã‚Œã‚’filteredã«è¿½åŠ ã€‚
 		push @$filtered,@reply;
 	    }
 	}
 
-	# ¼¡¤Îsource¤Ïfiltered¤Ë¡£filtered¤Ï¶õ¤ÎÇÛÎó¤Ë¡£
+	# æ¬¡ã®sourceã¯filteredã«ã€‚filteredã¯ç©ºã®é…åˆ—ã«ã€‚
 	$source = $filtered;
 	$filtered = [];
     }
@@ -1233,7 +1233,7 @@ sub apply_filters {
 }
 
 sub _apply_filters {
-    # src_messages¤ÏÊÑ¹¹¤·¤Ê¤¤¡£
+    # src_messagesã¯å¤‰æ›´ã—ãªã„ã€‚
     my ($this, $src_messages, $sender) = @_;
     $this->apply_filters(
 	$src_messages, 'message_arrived', $sender);
@@ -1248,17 +1248,17 @@ sub notify_warn {
     $class_or_this->notify_msg(":: WARNING :: $str");
 }
 sub notify_msg {
-    # ÅÏ¤µ¤ì¤¿Ê¸»úÎó¤òSTDOUT¤Ë½ĞÎÏ¤¹¤ë¤ÈÆ±»ş¤ËÁ´¥¯¥é¥¤¥¢¥ó¥È¤ËNOTICE¤¹¤ë¡£
-    # ²ş¹Ô¥³¡¼¥ÉLF¤Ç¹Ô¤òÊ¬³ä¤¹¤ë¡£
-    # Ê¸»ú¥³¡¼¥É¤ÏUTF-8¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤é¤Ê¤¤¡£
+    # æ¸¡ã•ã‚ŒãŸæ–‡å­—åˆ—ã‚’STDOUTã«å‡ºåŠ›ã™ã‚‹ã¨åŒæ™‚ã«å…¨ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«NOTICEã™ã‚‹ã€‚
+    # æ”¹è¡Œã‚³ãƒ¼ãƒ‰LFã§è¡Œã‚’åˆ†å‰²ã™ã‚‹ã€‚
+    # æ–‡å­—ã‚³ãƒ¼ãƒ‰ã¯UTF-8ã§ãªã‘ã‚Œã°ãªã‚‰ãªã„ã€‚
     my ($class_or_this,$str) = @_;
     my $this = $class_or_this->_this;
-    $str =~ s/\n+$//s; # ËöÈø¤ÎLF¤Ï¾Ãµî
+    $str =~ s/\n+$//s; # æœ«å°¾ã®LFã¯æ¶ˆå»
 
-    # STDOUT¤Ø
+    # STDOUTã¸
     ::printmsg($str);
 
-    # ¥¯¥é¥¤¥¢¥ó¥È¤Ø
+    # ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã¸
     my $needed_sending = $this->_conf_general->notice_error_messages;
     if ($needed_sending) {
 	my $client_charset = $this->_conf_general->client_out_encoding;
@@ -1277,12 +1277,12 @@ sub notify_msg {
 }
 
 # -----------------------------------------------------------------------------
-# RunLoop¤¬°ì²ó¼Â¹Ô¤µ¤ì¤ëÅÙ¤Ë¸Æ¤Ğ¤ì¤ë¥Õ¥Ã¥¯¡£
+# RunLoopãŒä¸€å›å®Ÿè¡Œã•ã‚Œã‚‹åº¦ã«å‘¼ã°ã‚Œã‚‹ãƒ•ãƒƒã‚¯ã€‚
 #
 # my $hook = RunLoop::Hook->new(sub {
 #     my $hook_itself = shift;
-#     # ²¿¤é¤«¤Î½èÍı¤ò¹Ô¤Ê¤¦¡£
-# })->install('after-select'); # select¼Â¹ÔÄ¾¸å¤Ë¤³¤Î¥Õ¥Ã¥¯¤ò¸Æ¤Ö¡£
+#     # ä½•ã‚‰ã‹ã®å‡¦ç†ã‚’è¡Œãªã†ã€‚
+# })->install('after-select'); # selectå®Ÿè¡Œç›´å¾Œã«ã“ã®ãƒ•ãƒƒã‚¯ã‚’å‘¼ã¶ã€‚
 # -----------------------------------------------------------------------------
 package RunLoop::Hook;
 use FunctionalVariable;

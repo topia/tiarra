@@ -1,11 +1,11 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# ¤³¤Î¥¯¥é¥¹¤Ï¥Õ¥Ã¥¯`reloaded'¤òÍÑ°Õ¤·¤Ş¤¹¡£
-# ¥Õ¥Ã¥¯`reloaded'¤Ï¡¢ÀßÄê¥Õ¥¡¥¤¥ë¤¬¥ê¥í¡¼¥É¤µ¤ì¤¿»ş¤Ë¸Æ¤Ğ¤ì¤Ş¤¹¡£
+# ã“ã®ã‚¯ãƒ©ã‚¹ã¯ãƒ•ãƒƒã‚¯`reloaded'ã‚’ç”¨æ„ã—ã¾ã™ã€‚
+# ãƒ•ãƒƒã‚¯`reloaded'ã¯ã€è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ãŒãƒªãƒ­ãƒ¼ãƒ‰ã•ã‚ŒãŸæ™‚ã«å‘¼ã°ã‚Œã¾ã™ã€‚
 # -----------------------------------------------------------------------------
 package Configuration;
-# ConfigurationµÚ¤ÓConfiguration::Block¤ÏUTF-8¥Ğ¥¤¥ÈÎó¤Ç¥Ç¡¼¥¿¤òÊİ»ı¤·¤Ş¤¹¡£
+# ConfigurationåŠã³Configuration::Blockã¯UTF-8ãƒã‚¤ãƒˆåˆ—ã§ãƒ‡ãƒ¼ã‚¿ã‚’ä¿æŒã—ã¾ã™ã€‚
 use strict;
 use warnings;
 use UNIVERSAL;
@@ -18,19 +18,19 @@ our @ISA = 'HookTarget';
 our $AUTOLOAD;
 use Tiarra::SharedMixin qw(shared shared_conf);
 our $_shared_instance;
-# ÃÍ¤ò¼èÆÀ¤¹¤ë¤Ë¤Ïget¥á¥½¥Ã¥É¤òÍÑ¤¤¤ëÂ¾¡¢¥¨¥ó¥È¥êÌ¾¤ò¤½¤Î¤Ş¤Ş¥á¥½¥Ã¥É¤È¤·¤Æ¸Æ¤Ö»ö¤â½ĞÍè¤Ş¤¹¡£
+# å€¤ã‚’å–å¾—ã™ã‚‹ã«ã¯getãƒ¡ã‚½ãƒƒãƒ‰ã‚’ç”¨ã„ã‚‹ä»–ã€ã‚¨ãƒ³ãƒˆãƒªåã‚’ãã®ã¾ã¾ãƒ¡ã‚½ãƒƒãƒ‰ã¨ã—ã¦å‘¼ã¶äº‹ã‚‚å‡ºæ¥ã¾ã™ã€‚
 #
 # $conf->hoge;
-# ¥Ö¥í¥Ã¥¯hoge¤òÊÖ¤¹¡£hoge¤¬Ì¤ÄêµÁ¤Ê¤éundefÃÍ¤òÊÖ¤¹¡£
+# ãƒ–ãƒ­ãƒƒã‚¯hogeã‚’è¿”ã™ã€‚hogeãŒæœªå®šç¾©ãªã‚‰undefå€¤ã‚’è¿”ã™ã€‚
 
 sub _new {
     my ($class) = @_;
     my $obj = {
-	conf_file => '', # conf¥Õ¥¡¥¤¥ë¤Ø¤Î¥Ñ¥¹
-	time_on_load => 0, # ºÇ¸å¤Ëload¤¬¼Â¹Ô¤µ¤ì¤¿»ş¹ï¡£
-	blocks => {}, # ÈÆÍÑ¥Ö¥í¥Ã¥¯Ì¾ -> Configuration::Block ¤³¤³¤Ë¥â¥¸¥å¡¼¥ëÀßÄê¤ÏÆş¤é¤Ê¤¤¡£
-	modules => [], # +¤Ç»ØÄê¤µ¤ì¤¿¥â¥¸¥å¡¼¥ë¤ÎConfiguration::Block
-	included_files => [], # include ¤µ¤ì¤¿¤¹¤Ù¤Æ¤Î¥Õ¥¡¥¤¥ë(ÌÌÅİ¤Ê¤Î¤Ç conf_file ¤ò´Ş¤à)
+	conf_file => '', # confãƒ•ã‚¡ã‚¤ãƒ«ã¸ã®ãƒ‘ã‚¹
+	time_on_load => 0, # æœ€å¾Œã«loadãŒå®Ÿè¡Œã•ã‚ŒãŸæ™‚åˆ»ã€‚
+	blocks => {}, # æ±ç”¨ãƒ–ãƒ­ãƒƒã‚¯å -> Configuration::Block ã“ã“ã«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«è¨­å®šã¯å…¥ã‚‰ãªã„ã€‚
+	modules => [], # +ã§æŒ‡å®šã•ã‚ŒãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®Configuration::Block
+	included_files => [], # include ã•ã‚ŒãŸã™ã¹ã¦ã®ãƒ•ã‚¡ã‚¤ãƒ«(é¢å€’ãªã®ã§ conf_file ã‚’å«ã‚€)
     };
     bless $obj,$class;
     $obj;
@@ -39,7 +39,7 @@ sub _new {
 sub get {
     my ($class_or_this,$block_name) = @_;
     my $this = $class_or_this->_this;
-    # ÈÆÍÑ¥Ö¥í¥Ã¥¯¤ò¸¡º÷
+    # æ±ç”¨ãƒ–ãƒ­ãƒƒã‚¯ã‚’æ¤œç´¢
 
     if (!defined $block_name) {
 	carp "Configuration->get, Arg[0] is undef.\n";
@@ -51,7 +51,7 @@ sub get {
 sub find_module_conf {
     my ($class_or_this,$module_name,$option) = @_;
     my $this = $class_or_this->_this;
-    # ¥â¥¸¥å¡¼¥ë¤ÎÀßÄê¤ò¸¡º÷
+    # ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®è¨­å®šã‚’æ¤œç´¢
     foreach my $conf (@{$this->{modules}}) {
 	return $conf if $conf->block_name eq $module_name;
     }
@@ -63,15 +63,15 @@ sub find_module_conf {
 }
 
 sub get_list_of_modules {
-    # conf¤Ç»ØÄê¤µ¤ì¤¿½çÈÖ¤Ç¡¢+¤È¤µ¤ì¤¿Á´¤Æ¤Î¥â¥¸¥å¡¼¥ë¤Î
-    # Configuration::Block¤ò»ı¤ÄÇÛÎó¤ò»Ø¤¹¥ê¥Õ¥¡¥ì¥ó¥¹¤òÊÖ¤¹¡£
+    # confã§æŒ‡å®šã•ã‚ŒãŸé †ç•ªã§ã€+ã¨ã•ã‚ŒãŸå…¨ã¦ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®
+    # Configuration::Blockã‚’æŒã¤é…åˆ—ã‚’æŒ‡ã™ãƒªãƒ•ã‚¡ãƒ¬ãƒ³ã‚¹ã‚’è¿”ã™ã€‚
     shift->_this->{modules};
 }
 
 sub check_if_updated {
-    # ºÇ¸å¤Ëload¤ò¼Â¹Ô¤·¤Æ¤«¤éconf¥Õ¥¡¥¤¥ë¤¬¹¹¿·¤µ¤ì¤¿¤«¡£
-    # °ìÅÙ¤âload¤·¤Æ¤¤¤Ê¤±¤ì¤ĞÉ¬¤º1¤òÊÖ¤¹¡£
-    # ¥Õ¥¡¥¤¥ëÌ¾¤¬ÊİÂ¸¤µ¤ì¤Æ¤¤¤Ê¤±¤ì¤ĞÉ¬¤º0¤òÊÖ¤¹¡£
+    # æœ€å¾Œã«loadã‚’å®Ÿè¡Œã—ã¦ã‹ã‚‰confãƒ•ã‚¡ã‚¤ãƒ«ãŒæ›´æ–°ã•ã‚ŒãŸã‹ã€‚
+    # ä¸€åº¦ã‚‚loadã—ã¦ã„ãªã‘ã‚Œã°å¿…ãš1ã‚’è¿”ã™ã€‚
+    # ãƒ•ã‚¡ã‚¤ãƒ«åãŒä¿å­˜ã•ã‚Œã¦ã„ãªã‘ã‚Œã°å¿…ãš0ã‚’è¿”ã™ã€‚
     my $this = shift->_this;
     if ($this->{time_on_load} == 0) {
 	1;
@@ -89,20 +89,20 @@ sub check_if_updated {
 }
 
 sub load {
-    # conf¥Õ¥¡¥¤¥ë¤òÆÉ¤à¡£¥Õ¥¡¥¤¥ë¤Ø¤Î¥Ñ¥¹¤ò¾ÊÎ¬¤¹¤ë¤È¡¢
-    # Á°²ó¤Îload»ş¤Ë»ØÄê¤µ¤ì¤¿¥Ñ¥¹¤«¤é¥ê¥í¡¼¥É¤¹¤ë¡£
-    # ¥Õ¥¡¥¤¥ëÌ¾¤ÎÂå¤ï¤ê¤ËIO::Handle¤Î¥ª¥Ö¥¸¥§¥¯¥È¤òÅÏ¤·¤Æ¤âÎÉ¤¤¡£
-    # ¤½¤Î¾ì¹ç¤Ï¥ê¥í¡¼¥É¤ÏÉÔ²ÄÇ½¤Ë¤Ê¤ë¡£
+    # confãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã‚€ã€‚ãƒ•ã‚¡ã‚¤ãƒ«ã¸ã®ãƒ‘ã‚¹ã‚’çœç•¥ã™ã‚‹ã¨ã€
+    # å‰å›ã®loadæ™‚ã«æŒ‡å®šã•ã‚ŒãŸãƒ‘ã‚¹ã‹ã‚‰ãƒªãƒ­ãƒ¼ãƒ‰ã™ã‚‹ã€‚
+    # ãƒ•ã‚¡ã‚¤ãƒ«åã®ä»£ã‚ã‚Šã«IO::Handleã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æ¸¡ã—ã¦ã‚‚è‰¯ã„ã€‚
+    # ãã®å ´åˆã¯ãƒªãƒ­ãƒ¼ãƒ‰ã¯ä¸å¯èƒ½ã«ãªã‚‹ã€‚
     my ($class_or_this,$conf_file) = @_;
     my $this = $class_or_this->_this;
     my $this_is_reload = !defined $conf_file;
 
     if (defined $conf_file) {
 	if (ref($conf_file) && UNIVERSAL::isa($conf_file,'IO::Handle')) {
-	    # IO::Handle¤À¤Ã¤¿¾ì¹ç¤ÏÊİÂ¸¤·¤Æ¤ª¤±¤Ê¤¤¡£
+	    # IO::Handleã ã£ãŸå ´åˆã¯ä¿å­˜ã—ã¦ãŠã‘ãªã„ã€‚
 	    $this->{conf_file} = undef;
 	} else {
-	    # ¥Õ¥¡¥¤¥ëÌ¾¤Ê¤Î¤ÇÊİÂ¸¤·¤Æ¤ª¤¯¡£
+	    # ãƒ•ã‚¡ã‚¤ãƒ«åãªã®ã§ä¿å­˜ã—ã¦ãŠãã€‚
 	    $this->{conf_file} = $conf_file;
 	}
     } else {
@@ -115,16 +115,16 @@ sub load {
 
     $this->{time_on_load} = time;
 
-    # ¥×¥ê¥×¥í¥»¥¹¤·¤Æ¤«¤é¥Ñ¡¼¥¹
+    # ãƒ—ãƒªãƒ—ãƒ­ã‚»ã‚¹ã—ã¦ã‹ã‚‰ãƒ‘ãƒ¼ã‚¹
     my $preprocessor = Configuration::Preprocessor->new;
     my $body = $preprocessor->execute($conf_file);
     my $parser = Configuration::Parser->new($body);
     my $parsed = $parser->parsed;
 
-    # ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤ÃÍ¤Ï¥Ç¥Õ¥©¥ë¥ÈÃÍ¤ÇËä¤á¤ë¡£
+    # å®šç¾©ã•ã‚Œã¦ã„ãªã„å€¤ã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã§åŸ‹ã‚ã‚‹ã€‚
     $this->_complete_table_with_defaults($parsed);
 
-    # general->conf-encoding¤ò¸«¤ÆÊ¸»ú¥³¡¼¥É¤òUTF-8¤ËÊÑ´¹
+    # general->conf-encodingã‚’è¦‹ã¦æ–‡å­—ã‚³ãƒ¼ãƒ‰ã‚’UTF-8ã«å¤‰æ›
     my $conf_encoding = do {
 	my $result;
 	foreach my $block (@$parsed) {
@@ -139,45 +139,45 @@ sub load {
 	$block->reinterpret_encoding($conf_encoding);
     }
 
-    # ¤È¤ê¤¢¤¨¤º¥â¥¸¥å¡¼¥ë¤Î¥Ö¥í¥Ã¥¯¤È¤½¤¦¤Ç¤Ê¤¤¤â¤Î¤ËÊ¬¤±¤ë¡£
+    # ã¨ã‚Šã‚ãˆãšãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒ–ãƒ­ãƒƒã‚¯ã¨ãã†ã§ãªã„ã‚‚ã®ã«åˆ†ã‘ã‚‹ã€‚
     my $blocks = {};
     my $modules = [];
     foreach my $block (@$parsed) {
 	my $blockname = $block->block_name;
 
 	if ($blockname =~ m/^-/) {
-	    # -¥Ö¥í¥Ã¥¯¤Ê¤Î¤Ç¼Î¤Æ¤ë¡£
+	    # -ãƒ–ãƒ­ãƒƒã‚¯ãªã®ã§æ¨ã¦ã‚‹ã€‚
 	    next;
 	} elsif ($blockname =~ m/^\+/) {
-	    # +¥Ö¥í¥Ã¥¯¤Ê¤Î¤Ç+¤ò¾Ã¤·¤ÆÅĞÏ¿
+	    # +ãƒ–ãƒ­ãƒƒã‚¯ãªã®ã§+ã‚’æ¶ˆã—ã¦ç™»éŒ²
 	    $blockname =~ s/^\+\s*//;
 	    $block->block_name($blockname);
 
 	    push @$modules,$block;
 	} else {
-	    # ÉáÄÌ¤Î¥Ö¥í¥Ã¥¯¡£
+	    # æ™®é€šã®ãƒ–ãƒ­ãƒƒã‚¯ã€‚
 	    $blocks->{$blockname} = $block;
 	}
     }
 
-    $this->_check_required_definitions($blocks); # ¾ÊÎ¬ÉÔ²ÄÇ½¤ÊÄêµÁ¤òÄ´¤Ù¡¢¤â¤·Í­¤ì¤Ğdie¤¹¤ë¡£
-    $this->_check_duplicated_modules($modules); # Æ±¤¸¥â¥¸¥å¡¼¥ë¤¬Ê£¿ô²óÄêµÁ¤µ¤ì¤Æ¤¤¤¿¤édie¤¹¤ë¡£
+    $this->_check_required_definitions($blocks); # çœç•¥ä¸å¯èƒ½ãªå®šç¾©ã‚’èª¿ã¹ã€ã‚‚ã—æœ‰ã‚Œã°dieã™ã‚‹ã€‚
+    $this->_check_duplicated_modules($modules); # åŒã˜ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒè¤‡æ•°å›å®šç¾©ã•ã‚Œã¦ã„ãŸã‚‰dieã™ã‚‹ã€‚
 
-    # ¤³¤³¤Ş¤Çdie¤»¤º¤ËÍè¤ì¤¿¤È¤¤¤¦»ö¤Ï¡¢²¿¤â¥¨¥é¡¼¤¬½Ğ¤Ê¤«¤Ã¤¿¤È¤¤¤¦»ö¡£
-    # $this¤ËÅĞÏ¿¤¹¤ë»ö¤Ç³ÎÄê¤¹¤ë¡£
+    # ã“ã“ã¾ã§dieã›ãšã«æ¥ã‚ŒãŸã¨ã„ã†äº‹ã¯ã€ä½•ã‚‚ã‚¨ãƒ©ãƒ¼ãŒå‡ºãªã‹ã£ãŸã¨ã„ã†äº‹ã€‚
+    # $thisã«ç™»éŒ²ã™ã‚‹äº‹ã§ç¢ºå®šã™ã‚‹ã€‚
     $this->{blocks} = $blocks;
     $this->{modules} = $modules;
     $this->{included_files} = [$preprocessor->included_files]
-	if (defined $this->{conf_file}); # ¥ê¥í¡¼¥É²ÄÇ½¤Ê¾ì¹ç¤Ï include_files ¤òÅĞÏ¿¤¹¤ë¡£
+	if (defined $this->{conf_file}); # ãƒªãƒ­ãƒ¼ãƒ‰å¯èƒ½ãªå ´åˆã¯ include_files ã‚’ç™»éŒ²ã™ã‚‹ã€‚
 
-    # ¥ê¥í¡¼¥É¤·¤¿¾ì¹ç¤Ï¥Õ¥Ã¥¯¤ò¸Æ¤Ö¡£
+    # ãƒªãƒ­ãƒ¼ãƒ‰ã—ãŸå ´åˆã¯ãƒ•ãƒƒã‚¯ã‚’å‘¼ã¶ã€‚
     if ($this_is_reload) {
 	$this->call_hooks('reloaded');
     }
 }
 
 
-# ¥Ç¥Õ¥©¥ë¥ÈÃÍ¤Î¥Æ¡¼¥Ö¥ë¡£
+# ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã®ãƒ†ãƒ¼ãƒ–ãƒ«ã€‚
 my $defaults = {
     general => {
 	'conf-encoding' => 'auto',
@@ -185,14 +185,14 @@ my $defaults = {
 	'server-out-encoding' => 'jis',
 	'client-in-encoding' => 'jis',
 	'client-out-encoding' => 'jis',
-	'stdout-encoding' => 'euc',
+	'stdout-encoding' => 'utf8',
 	'sysmsg-prefix' => 'tiarra',
 	'sysmsg-prefix-use-masks' => {
 	    'system' => '*',
 	    'priv' => '',
 	    'channel' => '*',
 	},
-	# nick-fix-mode ¤Î¥Ç¥Õ¥©¥ë¥ÈÃÍ¤â¸å¤ÇÊÌ½èÍı¡£
+	# nick-fix-mode ã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã‚‚å¾Œã§åˆ¥å‡¦ç†ã€‚
 	'messages' => {
 	    'quit' => {
 		'netconf-changed-reconnect' =>
@@ -204,7 +204,7 @@ my $defaults = {
     },
     networks => {
 	'name' => 'main',
-	# default¤Î¥Ç¥Õ¥©¥ë¥ÈÃÍ¤ÏÆÃ¼ì¤Ê¤Î¤Ç¸å¤ÇÊÌ½èÍı¡£
+	# defaultã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã¯ç‰¹æ®Šãªã®ã§å¾Œã§åˆ¥å‡¦ç†ã€‚
 	'multi-server-mode' => 1,
 	'channel-network-separator' => '@',
 	'action-when-disconnected' => 'part-and-join',
@@ -230,7 +230,7 @@ sub _complete_table_with_defaults {
 	});
     }
 
-    # networks¤Îdefault¤À¤±¤ÏÊÌ½èÍı¡£
+    # networksã®defaultã ã‘ã¯åˆ¥å‡¦ç†ã€‚
     my $networks = $root_block->networks;
     if (!defined $networks->default) {
 	$networks->set('default',$networks->name);
@@ -244,9 +244,9 @@ sub _complete_block_with_defaults {
     my ($this, $blocks, $defaults) = @_;
 
     while (my ($default_block_name,$default_block) = each %$defaults) {
-	# ¤³¤Î¥Ö¥í¥Ã¥¯¤ÏÂ¸ºß¤·¤Æ¤¤¤ë¤«¡©
+	# ã“ã®ãƒ–ãƒ­ãƒƒã‚¯ã¯å­˜åœ¨ã—ã¦ã„ã‚‹ã‹ï¼Ÿ
 	unless (defined $blocks->get($default_block_name)) {
-	    # ¥Ö¥í¥Ã¥¯¤´¤È¾ÊÎ¬¤µ¤ì¤Æ¤¤¤¿¤Î¤Ç¶õ¤Î¥Ö¥í¥Ã¥¯¤òÄêµÁ¡£
+	    # ãƒ–ãƒ­ãƒƒã‚¯ã”ã¨çœç•¥ã•ã‚Œã¦ã„ãŸã®ã§ç©ºã®ãƒ–ãƒ­ãƒƒã‚¯ã‚’å®šç¾©ã€‚
 	    $blocks->set($default_block_name,
 			 Configuration::Block->new($default_block_name));
 	}
@@ -256,9 +256,9 @@ sub _complete_block_with_defaults {
 	while (my ($default_key,$default_value) = each %{$default_block}) {
 	    if ((!ref($default_value)) ||
 		    (ref($default_value) eq 'ARRAY')) {
-		# ¤³¤ÎÃÍ¤ÏÂ¸ºß¤·¤Æ¤¤¤ë¤«¡©
+		# ã“ã®å€¤ã¯å­˜åœ¨ã—ã¦ã„ã‚‹ã‹ï¼Ÿ
 		if (!defined $block->get($default_key)) {
-		    # ÃÍ¤¬¾ÊÎ¬¤µ¤ì¤Æ¤¤¤¿¤Î¤ÇÃÍ¤òÄêµÁ¡£
+		    # å€¤ãŒçœç•¥ã•ã‚Œã¦ã„ãŸã®ã§å€¤ã‚’å®šç¾©ã€‚
 		    $block->set($default_key,$default_value);
 		}
 	    } elsif (ref($default_value) eq 'HASH') {
@@ -273,7 +273,7 @@ sub _complete_block_with_defaults {
 
 my $required = {
     general => ['nick','user','name'],
-    # [¥Í¥Ã¥È¥ï¡¼¥¯Ì¾]¤Îhost,port¤ÏÊÌ½èÍı¡£
+    # [ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯å]ã®host,portã¯åˆ¥å‡¦ç†ã€‚
 };
 my $required_in_each_networks = ['host','port'];
 sub _check_required_definitions {
@@ -287,17 +287,17 @@ sub _check_required_definitions {
 	die "Required definition '$key' in block '$block_name' was not found.\n";
     };
     
-    # $required¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤ë¤â¤Î¤Ë´Ø¤·¤Æ¥Á¥§¥Ã¥¯¤ò¹Ô¤Ê¤¦¡£
+    # $requiredã§å®šç¾©ã•ã‚Œã¦ã„ã‚‹ã‚‚ã®ã«é–¢ã—ã¦ãƒã‚§ãƒƒã‚¯ã‚’è¡Œãªã†ã€‚
     while (my ($required_block_name,$required_keys) = each %{$required}) {
 	foreach my $required_key (@{$required_keys}) {
 	    unless ($blocks->{$required_block_name}->get($required_key)) {
-		# É¬Í×¤À¤È¤µ¤ì¤Æ¤¤¤ë¤Î¤ËÄêµÁ¤¬Ìµ¤«¤Ã¤¿¡£
+		# å¿…è¦ã ã¨ã•ã‚Œã¦ã„ã‚‹ã®ã«å®šç¾©ãŒç„¡ã‹ã£ãŸã€‚
 		$error->($required_block_name,$required_key);
 	    }
 	}
     }
     
-    # ³Æ¥Í¥Ã¥È¥ï¡¼¥¯¤Îhost¤Èport¤ò¥Á¥§¥Ã¥¯¡£
+    # å„ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã®hostã¨portã‚’ãƒã‚§ãƒƒã‚¯ã€‚
     my @network_names = $blocks->{networks}->name('all');
     foreach my $network_name (@network_names) {
 	foreach my $required_key (@{$required_in_each_networks}) {
@@ -306,7 +306,7 @@ sub _check_required_definitions {
 		die "Block $network_name was not found. It was enumerated in networks/name.\n";
 	    }
 	    if (!defined $blocks->{$network_name}->get($required_key)) {
-		# É¬Í×¤À¤È¤µ¤ì¤Æ¤¤¤ë¤Î¤ËÄêµÁ¤¬Ìµ¤«¤Ã¤¿¡£
+		# å¿…è¦ã ã¨ã•ã‚Œã¦ã„ã‚‹ã®ã«å®šç¾©ãŒç„¡ã‹ã£ãŸã€‚
 		$error->($network_name,$required_key);
 	    }
 	}
@@ -332,7 +332,7 @@ sub _check_duplicated_modules {
 sub AUTOLOAD {
     my $this = shift;
     if ($AUTOLOAD =~ /::DESTROY$/) {
-	# DESTROY¤ÏÅÁÃ£¤µ¤»¤Ê¤¤¡£
+	# DESTROYã¯ä¼é”ã•ã›ãªã„ã€‚
 	return;
     }
 

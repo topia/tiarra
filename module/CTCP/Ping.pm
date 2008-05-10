@@ -10,7 +10,7 @@ use Multicast;
 use Config;
 use BulletinBoard;
 
-# ctcp-clientinfo-ping¤òÀßÄê
+# ctcp-clientinfo-pingã‚’è¨­å®š
 BulletinBoard->shared->ctcp_clientinfo_ping('PING');
 
 sub message_arrived {
@@ -25,7 +25,7 @@ sub message_arrived {
 
 	    my $last = $sender->remark('last-ctcp-replied');
 	    if (!defined $last || time - $last > ($this->config->interval || 3)) {
-		# Á°²ó¤ÎCTCPÈ¿±ş¤«¤é°ìÄê»ş´Ö°Ê¾å·Ğ²á¤·¤Æ¤¤¤ë¡£
+		# å‰å›ã®CTCPåå¿œã‹ã‚‰ä¸€å®šæ™‚é–“ä»¥ä¸ŠçµŒéã—ã¦ã„ã‚‹ã€‚
 		my $reply = CTCP::make(
 		    $ctcp,
 		    scalar Multicast::detach($msg->nick)
@@ -42,10 +42,10 @@ sub message_arrived {
 1;
 
 =pod
-info: CTCP PING¤Ë±şÅú¤¹¤ë¡£
+info: CTCP PINGã«å¿œç­”ã™ã‚‹ã€‚
 default: off
 section: important
 
-# CTCP::Version¤Îinterval¤ÈÆ±¤¸¡£
+# CTCP::Versionã®intervalã¨åŒã˜ã€‚
 interval: 3
 =cut

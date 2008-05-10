@@ -12,7 +12,7 @@ use Multicast;
 use Config;
 use BulletinBoard;
 
-# ctcp-clientinfo-time¤òÀßÄê
+# ctcp-clientinfo-timeã‚’è¨­å®š
 BulletinBoard->shared->ctcp_clientinfo_time('TIME');
 
 sub message_arrived {
@@ -27,7 +27,7 @@ sub message_arrived {
 
 	    my $last = $sender->remark('last-ctcp-replied');
 	    if (!defined $last || time - $last > ($this->config->interval || 3)) {
-		# Á°²ó¤ÎCTCPÈ¿±ş¤«¤é°ìÄê»ş´Ö°Ê¾å·Ğ²á¤·¤Æ¤¤¤ë¡£
+		# å‰å›ã®CTCPåå¿œã‹ã‚‰ä¸€å®šæ™‚é–“ä»¥ä¸ŠçµŒéã—ã¦ã„ã‚‹ã€‚
 		my $reply = CTCP::make(
 		    'TIME :'.Tools::DateConvert::replace('%a, %Y/%m/%d %H:%M:%S %z'),
 		    scalar Multicast::detach($msg->nick)
@@ -44,10 +44,10 @@ sub message_arrived {
 1;
 
 =pod
-info: CTCP TIME¤Ë±şÅú¤¹¤ë¡£
+info: CTCP TIMEã«å¿œç­”ã™ã‚‹ã€‚
 default: off
 section: important
 
-# CTCP::Version¤Îinterval¤ÈÆ±¤¸¡£
+# CTCP::Versionã®intervalã¨åŒã˜ã€‚
 interval: 3
 =cut

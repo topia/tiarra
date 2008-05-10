@@ -49,30 +49,30 @@ sub is_target {
 
 1;
 =pod
-info: IRC ��å������ˤ���ä��ѹ���ä��ơ����饤����ȤΥХ�����������
+info: IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する
 default: off
 
-# �ä����ս񤭤��ʤ����ϥǥե���Ȥ�ͭ���Ǥ���
-# �ޤ��� Client::GetVersion ��Ʊ��������Ƥ����������Ǥ���
-# �Ȥꤢ���� obsolete �Ǥ������Υ⥸�塼��Ǽ�������Ƥ�����ǽ��
-# Client::Conservative �ˤ�äƼ¸��Ǥ��ޤ���
-# Client::Conservative �Ǽ������ƤϤ����ʤ��褦�ʤ�Τ����ä����Τ�
-# ���Υ⥸�塼����н褷�ޤ���
+# 特に注意書きがない場合はデフォルトで有効です。
+# また、 Client::GetVersion も同時に入れておくと便利です。
+# とりあえず obsolete です。このモジュールで実装されていた機能は
+# Client::Conservative によって実現できます。
+# Client::Conservative で実装してはいけないようなものがあった場合のみ
+# このモジュールで対処します。
 
 # WoolChat:
-#  �б����Ƥ����å�����:
-#   NICK(������ɬ��)
-#  ����:
-#   NICK ����³ľ��ˤ�ȯ�Ԥ���뤿�ᡢ Client::GetVersion �Ǥ�Ƚ�̤ޤ�
-#   �ԤƤޤ��󡣳������饤����ȤΥ��ץ���� client-type �� woolchat ��
-#   ���ꤷ�Ƥ�����������̾��� $client-type=woolchat$ �Ƚ񤱤� OK �Ǥ���
+#  対応しているメッセージ:
+#   NICK(コロンが必須)
+#  説明:
+#   NICK は接続直後にも発行されるため、 Client::GetVersion での判別まで
+#   待てません。該当クライアントのオプション client-type に woolchat と
+#   指定してください。実名欄に $client-type=woolchat$ と書けば OK です。
 enable-woolchat: 1
 
 # X-Chat:
-#  �б����Ƥ����å�����:
-#   RPL_WHOISUSER(������ɬ��)
-#  ����:
-#   WHOIS �� realname �˥��ڡ��������äƤ��ʤ��Ⱥǽ�ΰ�ʸ��������ޤ���
+#  対応しているメッセージ:
+#   RPL_WHOISUSER(コロンが必須)
+#  説明:
+#   WHOIS の realname にスペースが入っていないと最初の一文字が削られます。
 enable-xchat: 1
 
 =cut

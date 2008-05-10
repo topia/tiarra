@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# IRCMessage�椫��CTCP��å���������Ф����ꡢCTCP��å����������IRCMessage���ä��ꡣ
+# IRCMessage中からCTCPメッセージを取り出したり、CTCPメッセージを持つIRCMessageを作ったり。
 # -----------------------------------------------------------------------------
 package CTCP;
 use strict;
@@ -16,10 +16,10 @@ use base qw(Tiarra::IRC::NewMessageMixin);
 #__DATA__
 
 sub extract {
-    # PRIVMSG��NOTICE�Ǥ���IRCMessage��CTCP��å������������ޤ�Ƥ����顢�������Ф����֤���
-    # '\x01CTCP VERSION\x01\x01CTCP USERINFO\x01'�Τ褦�˰�ĤΥ�å��������ʣ����CTCP��å��������ޤޤ�Ƥ������ϡ�
-    # �����顼����ƥ����Ȥʤ�ǽ�˸��դ��ä���Τ������֤������󥳥�ƥ����Ȥʤ鸫�դ��ä�������Ƥ��֤���
-    # CTCP��å���������Ф��ʤ��ä����ϡ�undef(�����顼)�ޤ��϶�����(����)���֤���
+    # PRIVMSGかNOTICEであるIRCMessageにCTCPメッセージが埋め込まれていたら、それを取り出して返す。
+    # '\x01CTCP VERSION\x01\x01CTCP USERINFO\x01'のように一つのメッセージ中に複数のCTCPメッセージが含まれていた場合は、
+    # スカラーコンテクストなら最初に見付かったものだけを返し、配列コンテクストなら見付かったもの全てを返す。
+    # CTCPメッセージを取り出せなかった場合は、undef(スカラー)または空配列(配列)を返す。
     my $msg = shift;
 
     if (!defined $msg) {
@@ -35,11 +35,11 @@ sub extract {
 }
 
 sub make {
-    # CTCP��å�������ޤ�Tiarra::IRC::Message���ä��֤���
+    # CTCPメッセージを含むTiarra::IRC::Messageを作って返す。
     #
-    # $message: �ޤ��CTCP��å�����
-    # $target : ���Tiarra::IRC::Message�κǽ�Υѥ�᡼����nick������ͥ�̾������롣
-    # $command: PRIVMSG��NOTICE�Τ������ɤ���Υ��ޥ�ɤǺ�뤫����ά���줿����NOTICE�ˤʤ롣
+    # $message: 含めるCTCPメッセージ
+    # $target : 作るTiarra::IRC::Messageの最初のパラメータ。nickやチャンネル名を入れる。
+    # $command: PRIVMSGとNOTICEのうち、どちらのコマンドで作るか。省略された場合はNOTICEになる。
     my ($message,$target,$command) = @_;
 
     if (!defined $target) {

@@ -1,33 +1,33 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# FunctionalVariable�ϡ�Ϳ����줿Ǥ�դδؿ���ե���󥹤�Ƥ֤褦��
-# �ѿ��˽����ؿ���tie�����������ޤ���Tie::Scalar�Ȥΰ㤤�ϡ������ؿ���
-# ����ѥ�����ǤϤʤ����������˷�������Ǥ���
+# FunctionalVariableは、与えられた任意の関数リファレンスを呼ぶように
+# 変数に処理関数をtieする事が出来ます。Tie::Scalarとの違いは、処理関数を
+# コンパイル時ではなく、生成時に決められる事です。
 # -----------------------------------------------------------------------------
-# �Ȥ���:
+# 使い方:
 #
-# �����顼�ѿ��˳�����Ƥ���:
+# スカラー変数に割り当てる場合:
 # my $foo;
 # FunctionalVariable::tie(
 #     \$foo,
 #     FETCH => sub {
-#         # FETCH�Ͼ�ά��ǽ
+#         # FETCHは省略可能
 #         return 500;
 #     },
 #     STORE => sub {
-#         # STORE���ά��ǽ
+#         # STOREも省略可能
 #         print shift;
 #     },
 # );
-# print "$foo\n"; # "500\n"�����
-# $foo = 10;      # "10"�����
+# print "$foo\n"; # "500\n"を出力
+# $foo = 10;      # "10"を出力
 # -----------------------------------------------------------------------------
-# ����ư��:
+# 内部動作:
 #
-# FunctionalVariable::tie��¹Ԥ���ȡ������ѿ��ˤ�FunctionalVariable����
-# ���֥������Ȥ�tie����롣FunctionalVariable::FETCH����¾�ϡ�tie�¹Ի���
-# ���ꤵ�줿�ؿ��˼ºݤν�����Ѿ����롣
+# FunctionalVariable::tieを実行すると、その変数にはFunctionalVariable型の
+# オブジェクトがtieされる。FunctionalVariable::FETCHその他は、tie実行時に
+# 指定された関数に実際の処理を委譲する。
 # -----------------------------------------------------------------------------
 package FunctionalVariable;
 use strict;
@@ -35,11 +35,11 @@ use warnings;
 use Carp;
 
 sub tie {
-    # $variable: tie�����ѿ��ؤλ���
-    # @functions: �ؿ���
+    # $variable: tieする変数への参照
+    # @functions: 関数群
     my ($variable, @functions) = @_;
 
-    # @functions�θ���
+    # @functionsの検査
     my $functions = eval {
 	my $funcs = {@functions};
 	while (my ($key, $value) = each %$funcs) {
@@ -81,7 +81,7 @@ sub FETCH {
 	$f->();
     }
     else {
-	# FETCH���������Ƥ��ʤ��Τʤ顢undef�Ǥ��֤�¾̵����
+	# FETCHが定義されていないのなら、undefでも返す他無い。
 	undef;
     }
 }
@@ -92,7 +92,7 @@ sub STORE {
     if (defined $f) {
 	$f->($value);
     }
-    # STORE���������Ƥ��ʤ��Τʤ顢���⤷�ʤ���
+    # STOREが定義されていないのなら、何もしない。
 }
 
 1;

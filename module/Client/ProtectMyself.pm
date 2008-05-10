@@ -101,15 +101,15 @@ sub message_io_hook {
 
 1;
 =pod
-info: °Õ¿Þ¤»¤º¼«Ê¬¤Î¥Ë¥Ã¥¯¤¬ÊÑ¤ï¤Ã¤Æ¤·¤Þ¤¦¤Î¤òËÉ»ß¤¹¤ë
+info: æ„å›³ã›ãšè‡ªåˆ†ã®ãƒ‹ãƒƒã‚¯ãŒå¤‰ã‚ã£ã¦ã—ã¾ã†ã®ã‚’é˜²æ­¢ã™ã‚‹
 default: off
 
-# {nick,part,quit,join}-format: ¤½¤ì¤¾¤ì¤Î¥á¥Ã¥»¡¼¥¸¤Î¥Õ¥©¡¼¥Þ¥Ã¥È¤ò»ØÄê¤·¤Þ¤¹¡£
-# {nick,user,host,prefix}.now ¤Ê¤É¤Ï¤É¤³¤Ç¤â»È¤¨¤Þ¤¹¡£
-# ¤½¤Î¤Û¤«¤Ë¤Ï
-#  target   : É½¼¨¤¹¤ë¥Á¥ã¥ó¥Í¥ë(¤Þ¤¿¤Ï¥Ë¥Ã¥¯)¡£
-#  nick.new : nick-format ¤Î¤ß¡£¿·¤·¤¤¥Ë¥Ã¥¯¡£
-#  message  : part ¤È quit ¡£¥á¥Ã¥»¡¼¥¸¡£
+# {nick,part,quit,join}-format: ãã‚Œãžã‚Œã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®ãƒ•ã‚©ãƒ¼ãƒžãƒƒãƒˆã‚’æŒ‡å®šã—ã¾ã™ã€‚
+# {nick,user,host,prefix}.now ãªã©ã¯ã©ã“ã§ã‚‚ä½¿ãˆã¾ã™ã€‚
+# ãã®ã»ã‹ã«ã¯
+#  target   : è¡¨ç¤ºã™ã‚‹ãƒãƒ£ãƒ³ãƒãƒ«(ã¾ãŸã¯ãƒ‹ãƒƒã‚¯)ã€‚
+#  nick.new : nick-format ã®ã¿ã€‚æ–°ã—ã„ãƒ‹ãƒƒã‚¯ã€‚
+#  message  : part ã¨ quit ã€‚ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã€‚
 
 nick-format: Nick changed #(nick.now) -> #(nick.new)
 part-format: Part #(nick.now) (#(message)) from #(target)

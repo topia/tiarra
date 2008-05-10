@@ -13,7 +13,7 @@ sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
     $this->{queue} = {}; # network name => [IRCmessage,...]
-    $this->{timer} = undef; # queue¤¬¶õ¤Ç¤Ê¤¤»ş¤À¤±É¬Í×¤Ë¤Ê¤ëTimer
+    $this->{timer} = undef; # queueãŒç©ºã§ãªã„æ™‚ã ã‘å¿…è¦ã«ãªã‚‹Timer
     $this;
 }
 
@@ -36,7 +36,7 @@ sub message_arrived {
 	    my $myself = $ch->names($sender->current_nick);
 	    if ($myself->has_o &&
 		Mask::match_deep_chan([$this->config->mask('all')],$msg->prefix,$ch_full)) {
-		# kick¥­¥å¡¼¤ËÆş¤ì¤ë¡£
+		# kickã‚­ãƒ¥ãƒ¼ã«å…¥ã‚Œã‚‹ã€‚
 		$this->enqueue(
 		    $sender->network_name, $this->construct_irc_message(
 			Command => 'KICK',
@@ -63,16 +63,16 @@ sub enqueue {
 
 sub prepare_timer {
     my $this = shift;
-    # ¥­¥å¡¼¾Ã²½¥¿¥¤¥Ş¡¼¤¬Â¸ºß¤·¤Ê¤±¤ì¤Ğºî¤ë¡£
+    # ã‚­ãƒ¥ãƒ¼æ¶ˆåŒ–ã‚¿ã‚¤ãƒãƒ¼ãŒå­˜åœ¨ã—ãªã‘ã‚Œã°ä½œã‚‹ã€‚
     if (!defined $this->{timer}) {
 	$this->{timer} = Timer->new(
-	    Interval => 0, # ¸å¤ÇÚÎ¤Ø¤ë
+	    Interval => 0, # å¾Œã§è®Šã¸ã‚‹
 	    Repeat => 1,
 	    Code => sub {
 		my $timer = shift;
 		$timer->interval(1);
 
-		# »ªËè¤Ë1¤Ä¤Å¤Ä¾Ã²½¤¹¤ë¡£
+		# é¯–æ¯ã«1ã¤ã¥ã¤æ¶ˆåŒ–ã™ã‚‹ã€‚
 		my $queue_has_elem;
 		while (my ($network_name, $queue) = each %{$this->{queue}}) {
 		    my $server = RunLoop->shared->network($network_name);
@@ -84,7 +84,7 @@ sub prepare_timer {
 		    }
 		}
 
-		# Á´¤Æ¤Î¥­¥å¡¼¤¬¶õ¤Ë¤Ê¤Ä¤¿¤é½ªÎ»¡£
+		# å…¨ã¦ã®ã‚­ãƒ¥ãƒ¼ãŒç©ºã«ãªã¤ãŸã‚‰çµ‚äº†ã€‚
 		if (!$queue_has_elem) {
 		    $timer->uninstall;
 		    $this->{timer} = undef;

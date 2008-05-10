@@ -10,15 +10,15 @@ use UNIVERSAL;
 our $AUTOLOAD;
 
 sub new {
-    # $fpath: �ƥ�ץ졼�ȤȤ��ƻ��Ѥ���ե�����
-    # $strip_empty_line (��ά��ǽ): <!begin>��<!end>��ľ��β��Ԥ������뤫�ɤ�����
+    # $fpath: テンプレートとして使用するファイル
+    # $strip_empty_line (省略可能): <!begin>や<!end>の直後の改行を削除するかどうか。
     my ($class,$fpath,$strip_empty_line) = @_;
     my $this = {
-	original => undef, # �꡼�դ�<!mark:foo>���ִ�������ȡ�
-	current => undef, # <&foo>���ִ�������Τ�Ρ�
-	leaves => {}, # {̾�� => Template}
-	parent => undef, # ���줬�ȥåץ�٥�Ǥʤ���С���(Template)��
-	leafname => undef, # ���줬�ȥåץ�٥�Ǥʤ���С��꡼��̾��
+	original => undef, # リーフを<!mark:foo>に置換した中身。
+	current => undef, # <&foo>を置換した後のもの。
+	leaves => {}, # {名前 => Template}
+	parent => undef, # これがトップレベルでなければ、親(Template)。
+	leafname => undef, # これがトップレベルでなければ、リーフ名。
     };
     bless $this,$class;
 
@@ -29,8 +29,8 @@ sub new {
     close($fh);
     ungensym($fh);
 
-    # <!begin:foo>��<!end:foo>��ľ�夬���ԥ����ɤʤ顢�����ä���
-    # ���β��ԥ����ɤ���Ϥޤ륹�ڡ����ޤ��ϥ��֤⡢����ǥ�Ȥȸ������ƾä���
+    # <!begin:foo>や<!end:foo>の直後が改行コードなら、それを消す。
+    # その改行コードから始まるスペースまたはタブも、インデントと見做して消す。
     if ($strip_empty_line) {
 	$source =~ s/(<!begin:.+?>|<!end:.+?>)\x0d?\x0a[ \t]*/$1/g;
     }
@@ -47,12 +47,12 @@ sub reset {
 
 sub expand {
     # $t->expand({foo => '---' , bar => '+++'});
-    # �⤷����
+    # もしくは
     # $t->expand(foo => '---' , bar => '+++');
 
-    # ���Υ᥽�åɤϡ�������˸���줿���������������
-    # �ϥ��ե�˥ե�����Хå������������ޤ���
-    # �Ĥޤꡢ<&foo-bar>�Ȥ��������򡢥���̾"foo_bar"�ǻ��ꤹ���������ޤ���
+    # このメソッドは、キー内に現われたアンダースコアを
+    # ハイフンにフォールバックする事が出来ます。
+    # つまり、<&foo-bar>というタグを、キー名"foo_bar"で指定する事が出来ます。
     my $this = shift;
     my $hash = do {
 	if (@_ == 1 && UNIVERSAL::isa($_[0],'HASH')) {
@@ -67,8 +67,8 @@ sub expand {
 	}
     };
     while (my ($key,$value) = each %$hash) {
-	# $key,$value���˥����顼�ͤǤʤ���Фʤ�ʤ���
-	# ��ե��ʤ饨�顼��
+	# $key,$value共にスカラー値でなければならない。
+	# リファならエラー。
 	if (!defined $value) {
 	    croak "Values must not be undef; key: $key";
 	}
@@ -80,10 +80,10 @@ sub expand {
 	}
 
 	if ($this->{current} !~ s/<\&\Q$key\E>/$value/g) {
-	    # ̵�������������������ϥ��ե���Ѥ��Ƥߤ롣
+	    # 無い。アンダースコアをハイフンに変えてみる。
 	    (my $tred_key = $key) =~ tr/_/-/;
 	    if ($this->{current} !~ s/<\&\Q$tred_key\E>/$value/g) {
-		# ���Τ褦�ʥ�����¸�ߤ��ʤ��ä����ٹ�
+		# そのようなキーは存在しなかった。警告。
 		carp "No <\&$key> are in template, or you have replaced it already.";
 	    }
 	}
@@ -94,7 +94,7 @@ sub expand {
 sub add {
     my $this = shift;
     
-    # �����������expand���롣
+    # 引数があればexpandする。
     if (@_ > 0) {
 	eval {
 	    $this->expand(@_);
@@ -103,16 +103,16 @@ sub add {
 	}
     }
 
-    # �Ƥ�¸�ߤ��ʤ����croak��
+    # 親が存在しなければcroak。
     if (!defined $this->{parent}) {
 	croak "This template doesn't have its parent.";
     }
 
-    # �Ƥ�<!mark:foo>��ľ���ˡ����Υ꡼�դ�������
+    # 親の<!mark:foo>の直前に、このリーフを挿入。
     my $str = $this->str;
     $this->{parent}{current} =~ s/(<!mark:\Q$this->{leafname}\E>)/$str$1/g;
 
-    # �ꥻ�å�
+    # リセット
     $this->reset;
 
     $this;
@@ -122,12 +122,12 @@ sub str {
     my $this = shift;
     my $result = $this->{current};
 
-    # ̤�ִ���<&foo>������Ф����ä���carp��
+    # 未置換の<&foo>があればそれを消してcarp。
     while ($result =~ s/<\&(.+?)>//) {
 	carp "Unexpanded tag: <\&$1>";
     }
 
-    # <!mark:foo>��ä���
+    # <!mark:foo>を消す。
     $result =~ s/<!mark:.+?>//g;
 
     $result;
@@ -142,7 +142,7 @@ sub AUTOLOAD {
     my $this = shift;
     (my $leafname = $AUTOLOAD) =~ s/.+?:://g;
 
-    # ��������������ϥϥ��ե���ִ���
+    # アンダースコアはハイフンに置換。
     $leafname =~ tr/_/-/;
     $this->{leaves}{$leafname};
 }
@@ -164,12 +164,12 @@ sub _new_leaf {
 sub _load {
     my ($this,$source) = @_;
 
-    # <!begin:foo> ... <!end:foo>��<!mark:foo>���ִ����Ĥġ����Υ꡼�դ���¸��
+    # <!begin:foo> ... <!end:foo>を<!mark:foo>に置換しつつ、そのリーフを保存。
     while ($source =~ s/<!begin:(.+?)>(.+?)<!end:\1>/<!mark:$1>/s) {
 	my ($leafname,$source) = ($1,$2);
 	
 	if (defined $this->{leaves}{$leafname}) {
-	    # ���ˤ��Υ꡼�դ��������Ƥ�����croak��
+	    # 既にこのリーフが定義されていたらcroak。
 	    croak "duplicated leaves in template: $leafname";
 	}
 	else {

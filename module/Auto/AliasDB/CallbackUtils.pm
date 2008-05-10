@@ -146,7 +146,7 @@ sub JoinedListConvert {
     foreach my $table (@$hashtables) {
 	my @values = @{Auto::AliasDB::get_array($table, $name)};
 	if (@values) {
-	    # È¯¸«
+	    # ç™ºè¦‹
 	    return join($sep, @values);
 	}
     }
