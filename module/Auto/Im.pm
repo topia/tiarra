@@ -20,8 +20,8 @@ sub new {
   }
 
   my $regex = join '|', (
-      (map "(?:$_)", $this->config->regex_keyword('all')),
-      (map "(?i:$_)", map quotemeta, split /,/, $this->config->keyword('all')),
+      (map { "(?:$_)" } $this->config->regex_keyword('all')),
+      (map { "(?i:\Q$_\E)" } map { split /,/ } $this->config->keyword('all')),
      );
   eval {
       $this->{regex} = qr/$regex/;
