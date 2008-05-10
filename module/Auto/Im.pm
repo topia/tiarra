@@ -41,9 +41,11 @@ sub message_arrived {
       # PRIVMSGか？
       if ($msg->command eq 'PRIVMSG') {
 	  my $text = $msg->param(1);
+	  my $full_ch_name = $msg->param(0);
 
-	  if ($text =~ $this->{regex}) {
-	      my $full_ch_name = $msg->param(0);
+	  if ($text =~ $this->{regex} && Mask::match_deep_chan(
+	      [$this->config->mask('all')],$msg->prefix,$full_ch_name)) {
+
 	      my $url = "http://im.kayac.com/api/post/" . $this->config->user;
 	      my $text = Auto::AliasDB->stdreplace(
 		  $msg->prefix,
@@ -52,19 +54,16 @@ sub message_arrived {
 		  channel => $full_ch_name,
 		  text => $text,
 		 );
-	      my $req;
+	      my @data = (message => $text);
 	      if ($this->config->secret) {
-		  $req = POST $url,
-		      [ message => $text,
-			sig => Digest::SHA->new(1)
-			    ->add($text . $this->config->secret)->hexdigest ];
-	      } else {
-		  $req = POST $url,
-		      [ message => $text ];
+		  push(@data, sig => Digest::SHA->new(1)
+			   ->add($text . $this->config->secret)->hexdigest);
+	      } elsif ($this->config->password) {
+		  push(@data, password => $this->config->password);
 	      }
 	      my $runloop = $this->_runloop;
 	      Tools::HTTPClient->new(
-		  Request => $req,
+		  Request => POST($url, \@data),
 		 )->start(
 		     Callback => sub {
 			 my $stat = shift;
@@ -86,6 +85,10 @@ sub message_arrived {
 info: 名前が呼ばれると、その発言をim.kayac.comに送信する
 default: off
 
+# 反応する人のマスクを指定します。
+# 省略すると全員に反応します。
+mask: * *!*@*
+
 # 反応するキーワードを正規表現で指定します。
 # 複数指定したい時は複数行指定してください。
 -regex-keyword: (?i:fugahoge)
@@ -95,10 +98,20 @@ default: off
 keyword: hoge
 
 # im.kayac.com に送るメッセージのフォーマットを指定します。
+# デフォルト値: [tiarra][#(channel):#(nick.now)] #(text)
 format: [tiarra][#(channel):#(nick.now)] #(text)
 
 # im.kayac.comで登録したユーザ名を入力します。
 # im.kayac.comについては http://im.kayac.com/#docs を参考にしてください。
 user: username
+
+# im.kayac.comで秘密鍵認証を選択した場合は設定してください。
+# 省略すると認証なしになります。
+-secret: some secret
+
+# im.kayac.comでパスワード認証を選択した場合は設定してください。
+# 省略すると認証なしになります。
+# secret と両方指定した場合は secret が優先されています。
+-password: some password
 
 =cut
