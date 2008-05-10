@@ -35,10 +35,12 @@ sub new {
 	if (!$req->isa('HTTP::Request')) {
 	    croak "Argument `Request' must be HTTP::Request object.";
 	}
-	$args{Method} = $req->method;
-	$args{Url} = $req->uri;
+	$args{Method}  = $req->method;
+	$args{Url}     = $req->uri->as_string;
 	$args{Content} = $req->content;
-	$args{Header} = $req->headers;
+	$args{Header}  = {};
+	# NON-CANONICALIZED FIELD NAMES と複数行・複数値は非サポート。
+	$req->headers->scan(sub{ $args{Header}->{$_[0]} = $_[1]; });
     }
     if (!$args{Method}) {
 	croak "Argument `Method' is required";
