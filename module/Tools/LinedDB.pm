@@ -20,7 +20,7 @@ sub new {
       unless !defined($arg{$key}) || (ref($arg{$key}) eq 'CODE');
   }
 
-  # Compare ¤â Hash ¤â´ûÄê¤ò»È¤¦¾ì¹ç¤Ï¡¢ Hash ¤Ë¤Ï _do_nothing ¤ò»È¤¦¡£
+  # Compare ã‚‚ Hash ã‚‚æ—¢å®šã‚’ä½¿ã†å ´åˆã¯ã€ Hash ã«ã¯ _do_nothing ã‚’ä½¿ã†ã€‚
   $arg{'Hash'} = \&_do_nothing if !defined($arg{'Compare'}) && !defined($arg{'Hash'});
 
   my $this =
@@ -33,10 +33,10 @@ sub new {
      compare_func => $arg{'Compare'} || \&_do_compare_default,
      update_callback => $arg{'Update'} || \&_do_nothing,
      hash_func => $arg{'Hash'},
-     time => undef, # ¥Õ¥¡¥¤¥ë¤ÎºÇ½ªÆÉ¤ß¹ş¤ß»ş¹ï
+     time => undef, # ãƒ•ã‚¡ã‚¤ãƒ«ã®æœ€çµ‚èª­ã¿è¾¼ã¿æ™‚åˆ»
     };
 
-  # Build ¤¬»ØÄê¤µ¤ì¤Æ¤¤¤ë¤Î¤Ë Compare ¤¬´ûÄê¤Î¤È¤­¤Ï build ¤·¤Æ¤«¤é compare ¤¹¤ë¡£
+  # Build ãŒæŒ‡å®šã•ã‚Œã¦ã„ã‚‹ã®ã« Compare ãŒæ—¢å®šã®ã¨ãã¯ build ã—ã¦ã‹ã‚‰ compare ã™ã‚‹ã€‚
   if (defined($arg{'Build'}) && !defined($arg{'Compare'})) {
     $this->{compare_func} = sub {
       return _do_compare_default(map {
@@ -277,10 +277,10 @@ sub simplify {
   } else {
     # compare mode.
 
-    # hash_func ¤¬ÅĞÏ¿¤µ¤ì¤Æ¤Ê¤¤¾ì¹ç¡¢hash ¤ò»È¤Ã¤¿À°Íı¤Ï compare_func ¤ÎÄêµÁ¤Ë°Í¤ë¤Î¤ÇÉÔ²Ä¡£
-    # Ã±½ã¤ËÈæ³Ó¤¹¤ë¤³¤È¤Ë¤Ê¤ë¤¿¤á¡¢Èó¾ï¤Ë½Å¤¯¤Ê¤ë¤Ç¤¢¤í¤¦¡£
+    # hash_func ãŒç™»éŒ²ã•ã‚Œã¦ãªã„å ´åˆã€hash ã‚’ä½¿ã£ãŸæ•´ç†ã¯ compare_func ã®å®šç¾©ã«ä¾ã‚‹ã®ã§ä¸å¯ã€‚
+    # å˜ç´”ã«æ¯”è¼ƒã™ã‚‹ã“ã¨ã«ãªã‚‹ãŸã‚ã€éå¸¸ã«é‡ããªã‚‹ã§ã‚ã‚ã†ã€‚
 
-    # Ì¤¼ÂÁõ¡£
+    # æœªå®Ÿè£…ã€‚
     croak('not specified hash function. this mode hasn\'t implemented yet.');
   }
 
@@ -289,12 +289,12 @@ sub simplify {
 }
 
 sub _do_nothing {
-  # ¤Ê¤Ë¤â¤»¤º¤¿¤ÀÃÍ¤òÊÖ¤¹
+  # ãªã«ã‚‚ã›ãšãŸã å€¤ã‚’è¿”ã™
   return wantarray ? @_ : $_[0];
 }
 
 sub _do_compare_default {
-  # ¥Ç¥Õ¥©¥ë¥È¤ÎÈæ³Ó´Ø¿ô¡£
+  # ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®æ¯”è¼ƒé–¢æ•°ã€‚
   my ($a, $b) = @_;
 
   return ($a cmp $b);

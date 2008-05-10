@@ -18,16 +18,16 @@ use base qw(Tiarra::Socket::Lined);
 #1;
 #__DATA__
 
-# ¹ÔÃ±°Ì¤ÎÆş½ĞÎÏ¤ò¹Ô¤¦INET-tcp¥½¥±¥Ã¥È¤Ç¤¹¡£
-# read, write¤ÏRunLoop¤Ë¤è¤Ã¤Æ¼«Æ°Åª¤Ë¹Ô¤ï¤ì¤ëÂ¾¡¢
-# pop_queue¤Î¼Â¹ÔÁ°¤Èflush¤Ë¤è¤Ã¤Æ¤â¼Â¹Ô¤µ¤ì¤Ş¤¹¡£
+# è¡Œå˜ä½ã®å…¥å‡ºåŠ›ã‚’è¡Œã†INET-tcpã‚½ã‚±ãƒƒãƒˆã§ã™ã€‚
+# read, writeã¯RunLoopã«ã‚ˆã£ã¦è‡ªå‹•çš„ã«è¡Œã‚ã‚Œã‚‹ä»–ã€
+# pop_queueã®å®Ÿè¡Œå‰ã¨flushã«ã‚ˆã£ã¦ã‚‚å®Ÿè¡Œã•ã‚Œã¾ã™ã€‚
 
-# new¤Çeol¤ò»ØÄê¤¹¤ë¤³¤È¤Ë¤è¤Ã¤Æ¡¢
-# CRLF,LF,CR,¤Ş¤¿¤ÏNULL¤Ê¤É¡¢¤µ¤Ş¤¶¤Ş¤Ê¹Ô½ªÃ¼Ê¸»ú¤¬»ÈÍÑ¤Ç¤­¤Ş¤¹¡£
-# ¾ÊÎ¬¤·¤¿¾ì¹ç¤ÏCRLF¤ò»ÈÍÑ¤·¤Ş¤¹¡£
-# callback ¤ò»ØÄê¤¹¤ë¤È disconnect »ş¤Ë callback method ¤¬¸Æ¤Ğ¤ì¤Ş¤¹¡£
-# $callback->($genre, $errno), $genre ¤Ï read, write, exception, eof, ¤â¤·¤¯¤Ï
-# undef ¤Ç¡¢ eof ¤ä undef ¤Î»ş¤Ë¤Ï errno ¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+# newã§eolã‚’æŒ‡å®šã™ã‚‹ã“ã¨ã«ã‚ˆã£ã¦ã€
+# CRLF,LF,CR,ã¾ãŸã¯NULLãªã©ã€ã•ã¾ã–ã¾ãªè¡Œçµ‚ç«¯æ–‡å­—ãŒä½¿ç”¨ã§ãã¾ã™ã€‚
+# çœç•¥ã—ãŸå ´åˆã¯CRLFã‚’ä½¿ç”¨ã—ã¾ã™ã€‚
+# callback ã‚’æŒ‡å®šã™ã‚‹ã¨ disconnect æ™‚ã« callback method ãŒå‘¼ã°ã‚Œã¾ã™ã€‚
+# $callback->($genre, $errno), $genre ã¯ read, write, exception, eof, ã‚‚ã—ãã¯
+# undef ã§ã€ eof ã‚„ undef ã®æ™‚ã«ã¯ errno ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 
 sub new {
     my ($class, $eol, $callback) = @_;
@@ -52,11 +52,11 @@ sub disconnect {
 }
 
 sub connect {
-    # ÀÜÂ³Àè¥Û¥¹¥È¤È¥İ¡¼¥È¤ò»ØÄê¤·¤ÆÀÜÂ³¤ò¹Ô¤Ê¤¦¡£
+    # æ¥ç¶šå…ˆãƒ›ã‚¹ãƒˆã¨ãƒãƒ¼ãƒˆã‚’æŒ‡å®šã—ã¦æ¥ç¶šã‚’è¡Œãªã†ã€‚
     my ($this, $host, $port) = @_;
     return if $this->connected;
 
-    # ¥½¥±¥Ã¥È¤ò³«¤¯¡£³«¤±¤Ê¤«¤Ã¤¿¤éundef¡£
+    # ã‚½ã‚±ãƒƒãƒˆã‚’é–‹ãã€‚é–‹ã‘ãªã‹ã£ãŸã‚‰undefã€‚
     my $sock = new IO::Socket::INET(PeerAddr => $host,
 				    PeerPort => $port,
 				    Proto => 'tcp',
@@ -80,8 +80,8 @@ sub length { shift->write_length; }
 
 sub send_reserve {
     my ($this, $string) = @_;
-    # Ê¸»úÎó¤òÁ÷¤ë¤è¤¦¤ËÍ½Ìó¤¹¤ë¡£¥½¥±¥Ã¥È¤ÎÁ÷¿®¤Î½àÈ÷¤¬À°¤Ã¤Æ¤¤¤Ê¤¯¤Æ¤â¥Ö¥í¥Ã¥¯¤·¤Ê¤¤¡£
-    # CRLF¤Ï¤Ä¤±¤Æ¤Ï¤Ê¤é¤Ê¤¤¡£
+    # æ–‡å­—åˆ—ã‚’é€ã‚‹ã‚ˆã†ã«äºˆç´„ã™ã‚‹ã€‚ã‚½ã‚±ãƒƒãƒˆã®é€ä¿¡ã®æº–å‚™ãŒæ•´ã£ã¦ã„ãªãã¦ã‚‚ãƒ–ãƒ­ãƒƒã‚¯ã—ãªã„ã€‚
+    # CRLFã¯ã¤ã‘ã¦ã¯ãªã‚‰ãªã„ã€‚
 
     if ($this->sock) {
 	$this->append_line($string);

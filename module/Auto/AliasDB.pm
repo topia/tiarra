@@ -2,9 +2,9 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# �����ꥢ���ե�������ɤ߹��ߤ�������#(name|nick)�Ȥ��ä�ʸ������ִ���Ԥʤ����饹��
-# Tiarra�⥸�塼��ǤϤʤ���
-# ���Υ��饹�϶��̤Υ��󥹥��󥹤��Ĥ������ġ�
+# エイリアスファイルの読み込みと生成、#(name|nick)といった文字列の置換を行なうクラス。
+# Tiarraモジュールではない。
+# このクラスは共通のインスタンスを一つだけ持つ。
 # -----------------------------------------------------------------------------
 package Auto::AliasDB;
 use strict;
@@ -29,14 +29,14 @@ Tiarra::Utils->define_proxy('database', 1,
 				qw(add_value_with del_value_with));
 
 sub setfile {
-    # ���饹�ؿ���
+    # クラス関数。
     my ($fpath,$charset) = @_;
     # re-initialize
     __PACKAGE__->_shared_init($fpath,$charset);
 }
 
 sub _new {
-    # fpath���ά���뤫����ʸ�������ꤹ��ȡ�����AliasDB������ޤ���
+    # fpathを省略するか空の文字列を指定すると、空のAliasDBが作られます。
     my ($class,$fpath,$charset) = @_;
     my $obj = {
 	database => Tools::GroupDB->new($fpath, 'user', $charset || undef, 0),
@@ -47,9 +47,9 @@ sub _new {
 }
 
 sub find_alias_prefix {
-    # userinfo��nick!user@host�η�����
-    # ���դ���ʤ����undef���֤���
-    # flag���դ��Ƥ�find_alias���ȡ�
+    # userinfoはnick!user@hostの形式。
+    # 見付からなければundefを返す。
+    # flagに付いてはfind_alias参照。
     my ($class_or_this, $userinfo, $flag) = @_;
     my $this = $class_or_this->_this;
 
@@ -160,9 +160,9 @@ sub get_array { shift->get_array(@_) }
 
 # replace support functions
 sub replace {
-    # �����ꥢ���ޥ������ִ���Ԥʤ���%optional���ִ����ɲä��륭�����ͤ��Ȥߤǡ���ά�ġ�
-    # optional���ͤ�SCALAR�Ǥ�ARRAY<SCALAR>�Ǥ��ɤ���
-    # userinfo��nick!user@host�η�����
+    # エイリアスマクロの置換を行なう。%optionalは置換に追加するキーと値の組みで、省略可。
+    # optionalの値はSCALARでもARRAY<SCALAR>でも良い。
+    # userinfoはnick!user@hostの形式。
     my ($class_or_this,$userinfo,$str,%optional) = @_;
     my $this = $class_or_this->_this;
     $this->replace_with_callbacks($userinfo,$str,undef,%optional);
@@ -192,10 +192,10 @@ sub stdreplace_add {
 }
 
 sub replace_with_callbacks {
-    # �����ꥢ���ޥ������ִ���Ԥʤ���%optional���ִ����ɲä��륭�����ͤ��Ȥߤǡ���ά�ġ�
-    # $callbacks��alias/optional���ִ��Ǥ��ʤ��ä��ݤ˸ƤӽФ���륳����Хå��ؿ��Υ�ե���󥹡�
-    # optional���ͤ�SCALAR�Ǥ�ARRAY<SCALAR>�Ǥ��ɤ���
-    # userinfo��nick!user@host�η�����
+    # エイリアスマクロの置換を行なう。%optionalは置換に追加するキーと値の組みで、省略可。
+    # $callbacksはalias/optionalで置換できなかった際に呼び出されるコールバック関数のリファレンス。
+    # optionalの値はSCALARでもARRAY<SCALAR>でも良い。
+    # userinfoはnick!user@hostの形式。
     my ($class_or_this,$userinfo,$str,$callbacks,%optional) = @_;
     my $this = $class_or_this->_this;
     return $this->{database}->replace_with_callbacks($userinfo, $str, $callbacks, %optional);

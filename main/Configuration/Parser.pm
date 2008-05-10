@@ -1,11 +1,11 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# conf¥Õ¥¡¥¤¥ë¤Î¹½Ê¸²òÀÏ¤ò¹Ô¤Ê¤¦¥¯¥é¥¹¡£
-# ¤³¤Î¥¯¥é¥¹¤ÏConfiguration::LexicalAnalyzer¤òÍÑ¤¤¤Æ»ú¶ç²òÀÏ¤ò¹Ô¤Ê¤¤¤Ş¤¹¡£
+# confãƒ•ã‚¡ã‚¤ãƒ«ã®æ§‹æ–‡è§£æã‚’è¡Œãªã†ã‚¯ãƒ©ã‚¹ã€‚
+# ã“ã®ã‚¯ãƒ©ã‚¹ã¯Configuration::LexicalAnalyzerã‚’ç”¨ã„ã¦å­—å¥è§£æã‚’è¡Œãªã„ã¾ã™ã€‚
 #
-# ¤³¤Î¥¯¥é¥¹¤ÏÊ¸»ú¥³¡¼¥É¤òÁ´¤¯ÊÑ´¹¤»¤º¤Ë·ë²Ì¤òÊÖ¤·¤Ş¤¹¡£
-# ¤Ş¤¿¡¢¥Ö¥í¥Ã¥¯Ì¾¤Ë¤Ä¤¤¤Æ¤Ï´°Á´¤ËÌµÆÜÃå¤Ç¤¹¡£
+# ã“ã®ã‚¯ãƒ©ã‚¹ã¯æ–‡å­—ã‚³ãƒ¼ãƒ‰ã‚’å…¨ãå¤‰æ›ã›ãšã«çµæœã‚’è¿”ã—ã¾ã™ã€‚
+# ã¾ãŸã€ãƒ–ãƒ­ãƒƒã‚¯åã«ã¤ã„ã¦ã¯å®Œå…¨ã«ç„¡é “ç€ã§ã™ã€‚
 # -----------------------------------------------------------------------------
 package Configuration::Parser;
 use strict;
@@ -15,12 +15,12 @@ use Configuration::LexicalAnalyzer;
 use Configuration::Block;
 
 sub new {
-    # $body: ²òÀÏ¤¹¤ëÆâÍÆ
+    # $body: è§£æã™ã‚‹å†…å®¹
     my ($class,$body) = @_;
     my $this = {
 	lex => Configuration::LexicalAnalyzer->new($body),
 
-	parsed => [], # Configuration::Block (¸½¤ì¤¿½çÈÖ¤ËÊÂ¤Ö¡£)
+	parsed => [], # Configuration::Block (ç¾ã‚ŒãŸé †ç•ªã«ä¸¦ã¶ã€‚)
     };
     bless $this,$class;
 
@@ -63,7 +63,7 @@ sub _parse_block {
 
     ($token,$type) = $this->{lex}->next($context);
     if (!defined $token) {
-	return undef; # ¤â¤¦¥Ö¥í¥Ã¥¯¤¬Ìµ¤¤¡£
+	return undef; # ã‚‚ã†ãƒ–ãƒ­ãƒƒã‚¯ãŒç„¡ã„ã€‚
     }
     elsif ($type ne 'label') {
 	die "Semantics error: label of block is needed here.\n$token\n";
@@ -103,18 +103,18 @@ sub _parse_blockcontent {
 	    $block->add($1,$2);
 	}
 	elsif ($type eq 'label') {
-	    # ÆÉ¤ß²á¤®¤¿¤Î¤ÇÌá¤¹¡£
+	    # èª­ã¿éããŸã®ã§æˆ»ã™ã€‚
 	    $this->{lex}->rollback($token);
 
-	    # ¥Ö¥í¥Ã¥¯¤ò¥Ñ¡¼¥¹¡£
+	    # ãƒ–ãƒ­ãƒƒã‚¯ã‚’ãƒ‘ãƒ¼ã‚¹ã€‚
 	    my $newblock = $this->_parse_block('block');
 	    $block->set($newblock->block_name,$newblock);
 	}
 	elsif ($type eq 'blockend') {
-	    # ÆÉ¤ß²á¤®¤¿¤Î¤ÇÌá¤¹¡£
+	    # èª­ã¿éããŸã®ã§æˆ»ã™ã€‚
 	    $this->{lex}->rollback($token);
 
-	    # ¤³¤³¤Ç½ª¤ï¤ê¡£
+	    # ã“ã“ã§çµ‚ã‚ã‚Šã€‚
 	    last;
 	}
 	else {

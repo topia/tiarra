@@ -13,9 +13,9 @@ use Mask;
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
-    # �����ͥ�����μ�֤�ʤ����ᡢ�����ͥ�Υ�����ChannelInfo��remarks����¸���롣
-    # priv�Υ����������Υ��饹���ݻ���
-    $this->{priv_log} = []; # ��Ȥ�ñ�ʤ�ʸ����
+    # チャンネル管理の手間を省くため、チャンネルのログはChannelInfoのremarksに保存する。
+    # privのログだけこのクラスで保持。
+    $this->{priv_log} = []; # 中身は単なる文字列
     $this->{logger} =
 	Log::Logger->new(
 	    sub {
@@ -26,9 +26,9 @@ sub new {
     $this->{hook} = IrcIO::Client::Hook->new(
 	sub {
 	    my ($hook, $client, $ch_name, $network, $ch) = @_;
-	    # no-recent-logs ���ץ���󤬻��ꤵ��Ƥ���в��⤷�ʤ�
+	    # no-recent-logs オプションが指定されていれば何もしない
 	    return if defined $client->option('no-recent-logs');
-	    # �����Ϥ��뤫��
+	    # ログはあるか？
 	    my $vec = $ch->remarks('recent-log');
 	    if (defined $vec) {
 		foreach my $elem (@$vec) {
@@ -50,7 +50,7 @@ sub destruct {
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
-    # Log::Recent/command�˥ޥå����뤫��
+    # Log::Recent/commandにマッチするか？
     if (Mask::match(lc($this->config->command) || '*', lc($msg->command))) {
 	$this->{logger}->log($msg,$sender);
     }
@@ -59,22 +59,22 @@ sub message_arrived {
 
 sub client_attached {
     my ($this,$client) = @_;
-    # no-recent-logs ���ץ���󤬻��ꤵ��Ƥ���в��⤷�ʤ�
+    # no-recent-logs オプションが指定されていれば何もしない
     return if defined $client->option('no-recent-logs');
-    # �ޤ���priv
+    # まずはpriv
     my $local_nick = RunLoop->shared->current_nick;
     foreach my $elem (@{$this->{priv_log}}) {
 	$client->send_message(
 	    $this->construct_irc_message(
 		Prefix => RunLoop->shared_loop->sysmsg_prefix(qw(priv log)),
 		Command => 'NOTICE',
-		Params => [$local_nick,$elem->[1]])); # $elem->[0]�Ͼ��'priv'
+		Params => [$local_nick,$elem->[1]])); # $elem->[0]は常に'priv'
     }
 
-    # ���˳ƥ����ͥ�
+    # 次に各チャンネル
 #    foreach my $network (values %{RunLoop->shared->networks}) {
 #	foreach my $ch (values %{$network->channels}) {
-#	    # �����Ϥ��뤫��
+#	    # ログはあるか？
 #	    my $vec = $ch->remarks('recent-log');
 #	    if (defined $vec) {
 #		my $ch_name;
@@ -148,11 +148,11 @@ sub log {
     my ($this,$ch_full,$log_line) = @_;
     my $vec = do {
 	if ($ch_full eq 'priv') {
-	    # priv�ϼ�ʬ����¸
+	    # privは自分で保存
 	    $this->{priv_log};
 	}
 	else {
-	    # priv�Ǥʤ����ChannelInfo��'recent-log'�Ȥ�����¸��
+	    # privでなければChannelInfoに'recent-log'として保存。
 	    my ($ch_short,$network_name) = Multicast::detach($ch_full);
 	    my $network = RunLoop->shared->network($network_name);
 	    if (!defined $network) {
@@ -176,11 +176,11 @@ sub log {
 	$this->config->header || '%H:%M'
     );
     
-    # �������ɲ�
-    # ���Ǥ�[�����ͥ�̾,������]
+    # ログに追加
+    # 要素は[チャンネル名,ログ行]
     push @$vec,[$ch_full,"$header $log_line"];
 
-    # ��줿ʬ��ä�
+    # 溢れた分を消す
     if (@$vec > $this->config->line) {
 	splice @$vec,0,(@$vec - $this->config->line);
     }
@@ -189,21 +189,21 @@ sub log {
 1;
 
 =pod
-info: ���饤����Ȥ���³�������ˡ���¸���Ƥ������Ƕ�Υ�å����������롣
+info: クライアントを接続した時に、保存しておいた最近のメッセージを送る。
 default: off
 section: important
 
-# ���饤����ȥ��ץ����� no-recent-logs �����ꤵ��Ƥ�����������ޤ���
+# クライアントオプションの no-recent-logs が指定されていれば送信しません。
 
-# �ƹԤΥإå��Υե����ޥåȡ���ά���줿��'%H:%M'��
+# 各行のヘッダのフォーマット。省略されたら'%H:%M'。
 header: %H:%M:%S
 
-# ����������ͥ���˲��Ԥޤ���¸���뤫����ά���줿��10��
+# ログをチャンネル毎に何行まで保存するか。省略されたら10。
 line: 15
 
-# PRIVMSG��NOTICE��Ͽ����ݤˡ���ʬ��ȯ����¾�ͤ�ȯ���ǥե����ޥåȤ��Ѥ��뤫�ɤ�����1/0���ǥե���Ȥ�1��
+# PRIVMSGとNOTICEを記録する際に、自分の発言と他人の発言でフォーマットを変えるかどうか。1/0。デフォルトで1。
 distinguish-myself: 1
 
-# �ɤΥ�å���������¸���뤫����ά���줿����¸��ǽ�����ƤΥ�å���������¸���롣
+# どのメッセージを保存するか。省略されたら保存可能な全てのメッセージを保存する。
 command: privmsg,notice,topic,join,part,quit,kill
 =cut

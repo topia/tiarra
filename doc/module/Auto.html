@@ -2,16 +2,16 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
+<!-- $Id: contents.html 11357 2008-05-10 14:03:50Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
-    <title>Auto �ط��Υ⥸�塼�� - Tiarra Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Auto 関係のモジュール - Tiarra Documentation</title>
     <link rel="stylesheet" type="text/css" href="../default.css" />
   </head>
   <body>
     <div class="header">
-      <h1>Auto �ط��Υ⥸�塼��</h1>
+      <h1>Auto 関係のモジュール</h1>
     </div>
 
     <hr class="sep" />
@@ -19,21 +19,21 @@
     <div class="pane-main">
       
       <div id="module-Auto::Alias" class="module">
-        <div class="module-header"><h2 title="�桼�������ꥢ������δ�����Ԥʤ��ޤ���">Auto::Alias</h2>
-          <span class="description">�桼�������ꥢ������δ�����Ԥʤ��ޤ���</span></div>
+        <div class="module-header"><h2 title="ユーザエイリアス情報の管理を行ないます。">Auto::Alias</h2>
+          <span class="description">ユーザエイリアス情報の管理を行ないます。</span></div>
         <div class="content">
 	  <p class="comment">
-�����ꥢ���ϴ���Ū��name,user����ĤΥե�����ɤ������äƤ��ꡢ<br />
-���줾��桼����̾���桼�����ޥ�����ɽ���ޤ���<br />
+エイリアスは基本的にname,userの二つのフィールドから成っており、<br />
+それぞれユーザー名、ユーザーマスクを表します。<br />
 </p>
 <p class="comment">
-&nbsp;�����ꥢ������ե�����Υѥ��ȡ����Υ��󥳡��ǥ��󥰡�<br />
-&nbsp;���Υե�����ϼ��Τ褦�ʥե����ޥåȤǤ��롣<br />
-&nbsp;1. ���줾��ιԤϡ�&lt;����&gt;: &lt;��&gt;�פη����Ǥ��롣<br />
-&nbsp;2. ���ιԤǡ��ƥ桼��������ڤ롣<br />
-&nbsp;3. &lt;��&gt;�ϥ���ޤǶ��ڤ���ʣ�����ͤȤ���롣<br />
+&nbsp;エイリアス定義ファイルのパスと、そのエンコーディング。<br />
+&nbsp;このファイルは次のようなフォーマットである。<br />
+&nbsp;1. それぞれの行は「&lt;キー&gt;: &lt;値&gt;」の形式である。<br />
+&nbsp;2. 空の行で、各ユーザーを区切る。<br />
+&nbsp;3. &lt;値&gt;はカンマで区切られて複数の値とされる。<br />
 <br />
-&nbsp;�����ꥢ������ե��������:<br />
+&nbsp;エイリアス定義ファイルの例:<br />
 <br />
 &nbsp;name: sample<br />
 &nbsp;user: *!*sample@*.sample.net<br />
@@ -45,36 +45,36 @@
 <div class="element"><span class="key">alias</span>:<span class="value">alias.txt</span></div>
 <div class="element"><span class="key">alias-encoding</span>:<span class="value">euc</span></div>
 <p class="comment">
-����ȯ���򤷤��ͤΥ����ꥢ������Ͽ����Ƥ���С������priv�����롣<br />
+この発言をした人のエイリアスが登録されていれば、それをprivで送る。<br />
 </p>
-<div class="element"><span class="key">confirm</span>:<span class="value">�����ꥢ����ǧ</span></div>
+<div class="element"><span class="key">confirm</span>:<span class="value">エイリアス確認</span></div>
 <p class="comment">
-��&lt;add�ǻ��ꤷ���������&gt; user *!*user@*.user.net�פΤ褦�ˤ��ƾ�����ɲá�<br />
-ȯ���򤷤��ͤΥ����ꥢ����̤��Ͽ���ä����ϡ�user�Τ߼����դ��ƿ����ɲäȤ��롣<br />
+「&lt;addで指定したキーワード&gt; user *!*user@*.user.net」のようにして情報を追加。<br />
+発言をした人のエイリアスが未登録だった場合は、userのみ受け付けて新規追加とする。<br />
 </p>
-<div class="element"><span class="key">add</span>:<span class="value">�����ꥢ���ɲ�</span></div>
+<div class="element"><span class="key">add</span>:<span class="value">エイリアス追加</span></div>
 <p class="comment">
-��&lt;remove�ǻ��ꤷ���������&gt; name �桼�����פΤ褦�ˤ��ƾ��������<br />
-user�����ƺ�����줿�����ꥢ����¾�ξ���(name��)��ޤ�ƾ��Ǥ��롣<br />
+「&lt;removeで指定したキーワード&gt; name ユーザー」のようにして情報を削除。<br />
+userを全て削除されたエイリアスは他の情報(name等)も含めて消滅する。<br />
 </p>
-<div class="element"><span class="key">remove</span>:<span class="value">�����ꥢ�����</span></div>
+<div class="element"><span class="key">remove</span>:<span class="value">エイリアス削除</span></div>
 <p class="comment">
-��å��������ɲä��줿�Ȥ���ȿ������ꤷ�ޤ���<br />
-������ʥ�å�������ȯ������ݤΥե����ޥåȤ���ꤷ�ޤ���<br />
-�����ꥢ���ִ���ͭ���Ǥ���#(nick.now)��#(channel)��<br />
-���줾������nick�������ͥ�̾���ִ�����ޤ���<br />
-#(key)��#(value)�ϡ��ɲä��줿�������ͤ��ִ�����ޤ���<br />
+メッセージが追加されたときの反応を指定します。<br />
+ランダムなメッセージを発言する際のフォーマットを指定します。<br />
+エイリアス置換が有効です。#(nick.now)、#(channel)は<br />
+それぞれ相手のnick、チャンネル名に置換されます。<br />
+#(key)、#(value)は、追加されたキーと値に置換されます。<br />
 </p>
-<div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): �����ꥢ�� #(key) �� #(value) ���ɲä��ޤ�����</span></div>
-<div class="element"><span class="key">add-failed-format</span>:<span class="value">#(name|nick.now): �����ꥢ�� #(key) ���ɲä˼��Ԥ��ޤ�����</span></div>
+<div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): エイリアス #(key) に #(value) を追加しました。</span></div>
+<div class="element"><span class="key">add-failed-format</span>:<span class="value">#(name|nick.now): エイリアス #(key) の追加に失敗しました。</span></div>
 <p class="comment">
-��å�������������줿�Ȥ���ȿ������ꤷ�ޤ���<br />
-added-format�ǻ���Ǥ����Τ�Ʊ���Ǥ���<br />
+メッセージが削除されたときの反応を指定します。<br />
+added-formatで指定できるものと同じです。<br />
 </p>
-<div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): �����ꥢ�� #(key) ���� #(value) �������ޤ�����</span></div>
-<div class="element"><span class="key">remove-failed-format</span>:<span class="value">#(name|nick.now): �����ꥢ�� #(key) ����κ���˼��Ԥ��ޤ�����</span></div>
+<div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): エイリアス #(key) から #(value) を削除しました。</span></div>
+<div class="element"><span class="key">remove-failed-format</span>:<span class="value">#(name|nick.now): エイリアス #(key) からの削除に失敗しました。</span></div>
 <p class="comment">
-�����ꥢ�����ɲä�����������Ƥ���͡���ά���줿���ϡ�*!*@*�פȸ�������롣<br />
+エイリアスの追加や削除が許されている人。省略された場合は「*!*@*」と見做される。<br />
 </p>
 <div class="element"><span class="key">modifier</span>:<span class="value">*!*@*</span></div>
 
@@ -86,43 +86,43 @@ added-format�ǻ���Ǥ����Τ�Ʊ���Ǥ���<br />
       
       
       <div id="module-Auto::Answer" class="module">
-        <div class="module-header"><h2 title="�����ȯ����ȿ�������б�����ȯ���򤹤롣">Auto::Answer</h2>
-          <span class="description">�����ȯ����ȿ�������б�����ȯ���򤹤롣</span></div>
+        <div class="module-header"><h2 title="特定の発言に反応して対応する発言をする。">Auto::Answer</h2>
+          <span class="description">特定の発言に反応して対応する発言をする。</span></div>
         <div class="content">
 	  <p class="comment">
-Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���<br />
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 </p>
 <p class="comment">
-&nbsp;ȿ������ȯ���ȡ�������Ф����ֻ���������ޤ���<br />
-&nbsp;�����ꥢ���ִ���ͭ���Ǥ���#(nick.now)��$(channel)�Ϥ��줾��<br />
-&nbsp;���θ��ߤ�nick�ȥ����ͥ�̾���ִ�����ޤ���<br />
+&nbsp;反応する発言と、それに対する返事を定義します。<br />
+&nbsp;エイリアス置換が有効です。#(nick.now)と$(channel)はそれぞれ<br />
+&nbsp;相手の現在のnickとチャンネル名に置換されます。<br />
 <br />
-&nbsp;���ޥ��: reply<br />
-&nbsp;��: &lt;ȿ������ȯ���Υޥ���&gt; &lt;������Ф����ֻ�&gt;<br />
-&nbsp;��:<br />
+&nbsp;コマンド: reply<br />
+&nbsp;書式: &lt;反応する発言のマスク&gt; &lt;それに対する返事&gt;<br />
+&nbsp;例:<br />
 </p>
-<div class="element"><span class="key">reply</span>:<span class="value">����ˤ���* ����ˤ��ϡ�#(name|nick.now)����</span></div>
+<div class="element"><span class="key">reply</span>:<span class="value">こんにちは* こんにちは、#(name|nick.now)さん。</span></div>
 <p class="comment">
-&nbsp;������Ǥ�ï�����֤���ˤ��ϡפǻϤޤ�ȯ���򤹤�ȡ�<br />
-&nbsp;ȯ�������ͤΥ����ꥢ���򻲾Ȥ��ơ֤���ˤ��ϡ��������󡣡פΤ褦��ȯ�����ޤ���<br />
+&nbsp;この例では誰かが「こんにちは」で始まる発言をすると、<br />
+&nbsp;発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。<br />
 <br />
-&nbsp;���ޥ��: channel-reply<br />
-&nbsp;��: &lt;ȿ����������ͥ�Υޥ���&gt; &lt;ȿ������ȯ���Υޥ���&gt; &lt;������Ф����ֻ�&gt;<br />
-&nbsp;��:<br />
+&nbsp;コマンド: channel-reply<br />
+&nbsp;書式: &lt;反応するチャンネルのマスク&gt; &lt;反応する発言のマスク&gt; &lt;それに対する返事&gt;<br />
+&nbsp;例:<br />
 </p>
-<div class="element"><span class="key">channel-reply</span>:<span class="value">#��������@ircnet ����ˤ���* ����ˤ��ϡ�#(name|nick.now)����</span></div>
+<div class="element"><span class="key">channel-reply</span>:<span class="value">#あいさつ@ircnet こんにちは* こんにちは、#(name|nick.now)さん。</span></div>
 <p class="comment">
-&nbsp;������Ǥ�#��������@ircnet��ï�����֤���ˤ��ϡפǻϤޤ�ȯ���򤹤�ȡ�<br />
-&nbsp;ȯ�������ͤΥ����ꥢ���򻲾Ȥ��ơ֤���ˤ��ϡ��������󡣡פΤ褦��ȯ�����ޤ���<br />
+&nbsp;この例では#あいさつ@ircnetで誰かが「こんにちは」で始まる発言をすると、<br />
+&nbsp;発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。<br />
 <br />
-&nbsp;���ޥ��: answer-to-myself<br />
-&nbsp;��: &lt;������&gt;<br />
-&nbsp;��:<br />
+&nbsp;コマンド: answer-to-myself<br />
+&nbsp;書式: &lt;真偽値&gt;<br />
+&nbsp;例:<br />
 </p>
 <div class="element"><span class="key">answer-to-myself</span>:<span class="value">on</span></div>
 <p class="comment">
-��ʬ��ȯ���ˤ�ȿ������褦�ˤʤ�ޤ���<br />
-�ǥե���Ȥ� off �Ǥ���<br />
+自分の発言にも反応するようになります。<br />
+デフォルトは off です。<br />
 </p>
 
         </div>
@@ -133,78 +133,78 @@ Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���<br />
       
       
       <div id="module-Auto::Calc" class="module">
-        <div class="module-header"><h2 title="Perl�μ���׻�������⥸�塼�롣">Auto::Calc</h2>
-          <span class="description">Perl�μ���׻�������⥸�塼�롣</span></div>
+        <div class="module-header"><h2 title="Perlの式を計算させるモジュール。">Auto::Calc</h2>
+          <span class="description">Perlの式を計算させるモジュール。</span></div>
         <div class="content">
 	  <p class="comment">
-ȿ������ȯ������ꤷ�ޤ���<br />
+反応する発言を指定します。<br />
 </p>
-<div class="element"><span class="key">request</span>:<span class="value">�׻�</span></div>
+<div class="element"><span class="key">request</span>:<span class="value">計算</span></div>
 <p class="comment">
-���Ѥ���Ĥ����&amp;�����ͥ�Υޥ�����<br />
-���Tiarra�⡼�ɻ��� [default: �ʤ�]<br />
+使用を許可する人&amp;チャンネルのマスク。<br />
+例はTiarraモード時。 [default: なし]<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* +*!*@*</span></div>
 <p class="comment">
 [plum-mode] mask: +*!*@*<br />
 </p>
 <p class="comment">
-��̤�̤������ä��Ȥ����֤���������ʸ���󡣾�ά������ undef ��<br />
+結果が未定義だったときに置き換えられる文字列。省略されると undef 。<br />
 </p>
-<div class="element"><span class="key">undef</span>:<span class="value">(̤���)</span></div>
+<div class="element"><span class="key">undef</span>:<span class="value">(未定義)</span></div>
 <p class="comment">
-����˷׻��Ǥ����Ȥ��Υե����ޥå�<br />
-method: �׻���, result: ���, error: ���顼, signal: �����ʥ�<br />
+正常に計算できたときのフォーマット<br />
+method: 計算式, result: 結果, error: エラー, signal: シグナル<br />
 </p>
 <div class="element"><span class="key">reply-format</span>:<span class="value">#(method): #(result)</span></div>
 <p class="comment">
-���顼���������Ȥ��Υե����ޥå�<br />
-method: �׻���, result: ���, error: ���顼, signal: �����ʥ�<br />
+エラーが起きたときのフォーマット<br />
+method: 計算式, result: 結果, error: エラー, signal: シグナル<br />
 </p>
-<div class="element"><span class="key">error-format</span>:<span class="value">#(method): ���顼�Ǥ���(#(error))</span></div>
+<div class="element"><span class="key">error-format</span>:<span class="value">#(method): エラーです。(#(error))</span></div>
 <p class="comment">
-�����ʥ뤬ȯ�������Ȥ��Υե����ޥå�<br />
+シグナルが発生したときのフォーマット<br />
 </p>
-<div class="element"><span class="key">signal-format</span>:<span class="value">#(method): �����ʥ�Ǥ���(#(signal))</span></div>
+<div class="element"><span class="key">signal-format</span>:<span class="value">#(method): シグナルです。(#(signal))</span></div>
 <p class="comment">
-signal-$SIGNALNAME-format ������<br />
-$SIGNALNAME �ˤϸ��� alarm/sigfpe ������ޤ���<br />
-�������ʤ���� signal-format �˥ե�����Хå����ޤ���<br />
+signal-$SIGNALNAME-format 形式。<br />
+$SIGNALNAME には現状 alarm/sigfpe があります。<br />
+該当がなければ signal-format にフォールバックします。<br />
 </p>
 <p class="comment">
-�����Ĥ������󤲤ޤ���<br />
+いくつかの例を挙げます。<br />
 </p>
-<div class="element"><span class="key">signal-alarm-format</span>:<span class="value">#(method): �����ڤ�Ǥ���</span></div>
-<div class="element"><span class="key">signal-sigfpe-format</span>:<span class="value">#(method): ��ư�������׻��㳰�Ǥ���</span></div>
+<div class="element"><span class="key">signal-alarm-format</span>:<span class="value">#(method): 時間切れです。</span></div>
+<div class="element"><span class="key">signal-sigfpe-format</span>:<span class="value">#(method): 浮動小数点計算例外です。</span></div>
 <p class="comment">
-�����ॢ���Ȥ����ÿ�����ꤷ�ޤ��� alarm ���Ϥ���ޤ���<br />
-�Ƶ���ߤ��Τ˻Ȥ��ޤ������ɤ������꡼�����Ƥ�������ʷ�ϵ��Ǥ���<br />
+タイムアウトする秒数を指定します。 alarm に渡されます。<br />
+再帰を止めるのに使えますが、どうもメモリリークしていそうな雰囲気です。<br />
 </p>
 <div class="element"><span class="key">timeout</span>:<span class="value">1</span></div>
 <p class="comment">
-���֥롼�����������Ĥ��뤫�ɤ�������ꤹ�롣<br />
-�Ƶ��������ǽ�ʤΤǡ����Ĥ�����Ϥ��Υ⥸�塼�����Ѥ�<br />
-Tiarra ��ư�������Ȥ򤪴��ᤷ�ޤ���<br />
+サブルーチン定義を許可するかどうかを指定する。<br />
+再帰定義が可能なので、許可する場合はこのモジュール専用の<br />
+Tiarra を動かすことをお勧めします。<br />
 </p>
 <div class="element"><span class="key">permit-sub</span>:<span class="value">0</span></div>
 <p class="comment">
-���������ȯ������ꤷ�ޤ���<br />
-���Υ⥸�塼��Ǥϸ����ѿ���ؿ�����ʤɤ�Ԥ��ޤ���<br />
-���Υ��ޥ�ɤ�ȯ�Ԥ����Ȥ����򥯥ꥢ���ޤ���<br />
+初期化する発言を指定します。<br />
+このモジュールでは現状変数や関数定義などを行えます。<br />
+このコマンドが発行されるとそれらをクリアします。<br />
 </p>
-<div class="element"><span class="key">init</span>:<span class="value">�׻������</span></div>
+<div class="element"><span class="key">init</span>:<span class="value">計算初期化</span></div>
 <p class="comment">
-���������Ĥ����&amp;�����ͥ�Υޥ�����<br />
-���Tiarra�⡼�ɻ��� [default: �ʤ�]<br />
+初期化を許可する人&amp;チャンネルのマスク。<br />
+例はTiarraモード時。 [default: なし]<br />
 </p>
 <div class="element"><span class="key">init-mask</span>:<span class="value">* +*!*@*</span></div>
 <p class="comment">
 [plum-mode] mask: +*!*@*<br />
 </p>
 <p class="comment">
-�ƽ���������Ȥ���ȯ������ꤷ�ޤ���<br />
+再初期化したときの発言を指定します。<br />
 </p>
-<div class="element"><span class="key">init-format</span>:<span class="value">��������ޤ�����</span></div>
+<div class="element"><span class="key">init-format</span>:<span class="value">初期化しました。</span></div>
 
         </div>
       </div>
@@ -214,18 +214,18 @@ Tiarra ��ư�������Ȥ򤪴��ᤷ�ޤ���<br />
       
       
       <div id="module-Auto::ChannelWithoutOper" class="module">
-        <div class="module-header"><h2 title="�����ͥ륪�ڥ졼�����¤��ʤ��ʤäƤ��ޤä��Ȥ���ȯ�����롣">Auto::ChannelWithoutOper</h2>
-          <span class="description">�����ͥ륪�ڥ졼�����¤��ʤ��ʤäƤ��ޤä��Ȥ���ȯ�����롣</span></div>
+        <div class="module-header"><h2 title="チャンネルオペレータ権限がなくなってしまったときに発言する。">Auto::ChannelWithoutOper</h2>
+          <span class="description">チャンネルオペレータ権限がなくなってしまったときに発言する。</span></div>
         <div class="content">
 	  <p class="comment">
-+�ǻϤޤ�ʤ�����Υ����ͥ�ǡ�+a�⡼�ɤǤ�+r�⡼�ɤǤ�ʤ��Τ�<br />
-ï������ͥ륪�ڥ졼�����¤���äƤ��ʤ����֤ˤʤäƤ������<br />
-������ï����JOIN�����٤�����Υ�å�������ȯ������⥸�塼��Ǥ���<br />
++で始まらない特定のチャンネルで、+aモードでも+rモードでもないのに<br />
+誰もチャンネルオペレータ権限を持っていない状態になっている時、<br />
+そこに誰かがJOINする度に特定のメッセージを発言するモジュールです。<br />
 </p>
 <p class="comment">
-��: &lt;�����ͥ�̾&gt; &lt;��å�����&gt;<br />
+書式: &lt;チャンネル名&gt; &lt;メッセージ&gt;<br />
 </p>
-<div class="element"><span class="key">channel</span>:<span class="value">#IRC���ü�@ircnet �ʤ�Ⱦü����ޤ�����</span></div>
+<div class="element"><span class="key">channel</span>:<span class="value">#IRC談話室@ircnet なると消失しました。</span></div>
 
         </div>
       </div>
@@ -235,23 +235,23 @@ Tiarra ��ư�������Ȥ򤪴��ᤷ�ޤ���<br />
       
       
       <div id="module-Auto::FetchTitle" class="module">
-        <div class="module-header"><h2 title="ȯ���˴ޤޤ��URL���饿���ȥ�����.">Auto::FetchTitle</h2>
-          <span class="description">ȯ���˴ޤޤ��URL���饿���ȥ�����.</span></div>
+        <div class="module-header"><h2 title="発言に含まれるURLからタイトルを取得.">Auto::FetchTitle</h2>
+          <span class="description">発言に含まれるURLからタイトルを取得.</span></div>
         <div class="content">
 	  <p class="comment">
-�ꥯ�����ȥ����ॢ���ȤޤǤλ���(��).<br />
+リクエストタイムアウトまでの時間(秒).<br />
 </p>
 <div class="element"><span class="key">timeout</span>:<span class="value">3</span></div>
 <p class="comment">
-&nbsp;ͭ���ˤ�������ͥ�ȥ��ץ�����URL������.<br />
-&nbsp;��: mask: &lt;channel&gt; [&lt;&amp;conf&gt;...] &lt;url&gt;<br />
+&nbsp;有効にするチャンネルとオプションとURLの設定.<br />
+&nbsp;書式: mask: &lt;channel&gt; [&lt;&amp;conf&gt;...] &lt;url&gt;<br />
 <br />
 &nbsp;mask: #test@ircnet &amp;test http://*<br />
 &nbsp;mask: * http://*<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* http://*</span></div>
 <p class="comment">
-&nbsp;&amp;test �����ꤹ��� conf-test �֥��å�����Ȥ��Ȥ���.<br />
+&nbsp;&amp;test と設定すると conf-test ブロックの中身が使われる.<br />
 conf-test {<br />
 &nbsp;&nbsp;auth-test1 {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;url:  http://example.com/*<br />
@@ -267,22 +267,22 @@ conf-test {<br />
 }<br />
 </p>
 <p class="comment">
-���ֻ����������ˤĤ������.<br />
+お返事の前や後ろにつける字句.<br />
 </p>
 <div class="element"><span class="key">reply-prefix</span>:<span class="value">"(FetchTitle) "</span></div>
 <div class="element"><span class="key">reply-suffix</span>:<span class="value">" [AR]"</span></div>
 <p class="comment">
-&nbsp;�ǥХå��ե饰.<br />
+&nbsp;デバッグフラグ.<br />
 debug: 0<br />
 debug-mask: #debug-chan your_nick!~you@example.com<br />
 debug-dumpfile: fetchtitle.log<br />
 </p>
 <p class="comment">
 NOTE:<br />
-&nbsp;���Ѥ���ˤ�coderepos����<br />
+&nbsp;利用するにはcodereposから<br />
 &nbsp;module/Tools/HTTPClient.pm     rev.8220<br />
 &nbsp;main/Tiarra/Socket/Buffered.pm rev.8219<br />
-&nbsp;�ʹߤ�ɬ�פǤ�.<br />
+&nbsp;以降が必要です.<br />
 </p>
 
         </div>
@@ -293,43 +293,43 @@ NOTE:<br />
       
       
       <div id="module-Auto::Im" class="module">
-        <div class="module-header"><h2 title="̾�����ƤФ��ȡ�����ȯ����im.kayac.com����������">Auto::Im</h2>
-          <span class="description">̾�����ƤФ��ȡ�����ȯ����im.kayac.com����������</span></div>
+        <div class="module-header"><h2 title="名前が呼ばれると、その発言をim.kayac.comに送信する">Auto::Im</h2>
+          <span class="description">名前が呼ばれると、その発言をim.kayac.comに送信する</span></div>
         <div class="content">
 	  <p class="comment">
-ȿ������ͤΥޥ�������ꤷ�ޤ���<br />
-��ά�����������ȿ�����ޤ���<br />
+反応する人のマスクを指定します。<br />
+省略すると全員に反応します。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
-ȿ�����륭����ɤ�����ɽ���ǻ��ꤷ�ޤ���<br />
-ʣ�����ꤷ��������ʣ���Ի��ꤷ�Ƥ���������<br />
+反応するキーワードを正規表現で指定します。<br />
+複数指定したい時は複数行指定してください。<br />
 </p>
 <div class="element"><span class="key">regex-keyword</span>:<span class="value">(?i:fugahoge)</span></div>
 <p class="comment">
-ȿ�����륭����ɤ���ꤷ�ޤ���<br />
-ʣ�����ꤷ��������,(�����)�Ƕ��ڤ뤫��ʣ���Ի��ꤷ�Ƥ���������<br />
+反応するキーワードを指定します。<br />
+複数指定したい時は,(コンマ)で区切るか、複数行指定してください。<br />
 </p>
 <div class="element"><span class="key">keyword</span>:<span class="value">hoge</span></div>
 <p class="comment">
-im.kayac.com �������å������Υե����ޥåȤ���ꤷ�ޤ���<br />
-�ǥե������: [tiarra][#(channel):#(nick.now)] #(text)<br />
+im.kayac.com に送るメッセージのフォーマットを指定します。<br />
+デフォルト値: [tiarra][#(channel):#(nick.now)] #(text)<br />
 </p>
 <div class="element"><span class="key">format</span>:<span class="value">[tiarra][#(channel):#(nick.now)] #(text)</span></div>
 <p class="comment">
-im.kayac.com����Ͽ�����桼��̾�����Ϥ��ޤ���<br />
-im.kayac.com�ˤĤ��Ƥ� http://im.kayac.com/#docs �򻲹ͤˤ��Ƥ���������<br />
+im.kayac.comで登録したユーザ名を入力します。<br />
+im.kayac.comについては http://im.kayac.com/#docs を参考にしてください。<br />
 </p>
 <div class="element"><span class="key">user</span>:<span class="value">username</span></div>
 <p class="comment">
-im.kayac.com����̩��ǧ�ڤ����򤷤��������ꤷ�Ƥ���������<br />
-��ά�����ǧ�ڤʤ��ˤʤ�ޤ���<br />
+im.kayac.comで秘密鍵認証を選択した場合は設定してください。<br />
+省略すると認証なしになります。<br />
 </p>
 <div class="element"><span class="key">secret</span>:<span class="value">some secret</span></div>
 <p class="comment">
-im.kayac.com�ǥѥ����ǧ�ڤ����򤷤��������ꤷ�Ƥ���������<br />
-��ά�����ǧ�ڤʤ��ˤʤ�ޤ���<br />
-secret ��ξ�����ꤷ������ secret ��ͥ�褵��Ƥ��ޤ���<br />
+im.kayac.comでパスワード認証を選択した場合は設定してください。<br />
+省略すると認証なしになります。<br />
+secret と両方指定した場合は secret が優先されています。<br />
 </p>
 <div class="element"><span class="key">password</span>:<span class="value">some password</span></div>
 
@@ -341,19 +341,19 @@ secret ��ξ�����ꤷ������ secret ��ͥ�褵��Ƥ��ޤ���<br />
       
       
       <div id="module-Auto::Joined" class="module">
-        <div class="module-header"><h2 title="����Υ����ͥ��ï����JOIN�����٤�����Υ�å�������ȯ�����롣">Auto::Joined</h2>
-          <span class="description">����Υ����ͥ��ï����JOIN�����٤�����Υ�å�������ȯ�����롣</span></div>
+        <div class="module-header"><h2 title="特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。">Auto::Joined</h2>
+          <span class="description">特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。</span></div>
         <div class="content">
 	  <p class="comment">
-Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���<br />
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 </p>
 <p class="comment">
-&nbsp;ȯ����Ԥʤ������ͥ�ȡ��������Ƥ�������ޤ���<br />
-&nbsp;#(nick.now)��$(channel)�ϡ����줾�����θ��ߤ�nick�ȥ����ͥ�̾���ִ�����ޤ���<br />
+&nbsp;発言を行なうチャンネルと、その内容を定義します。<br />
+&nbsp;#(nick.now)と$(channel)は、それぞれ相手の現在のnickとチャンネル名に置換されます。<br />
 <br />
-&nbsp;��: &lt;�����ͥ�̾&gt; &lt;ȯ������&gt;<br />
+&nbsp;書式: &lt;チャンネル名&gt; &lt;発言内容&gt;<br />
 </p>
-<div class="element"><span class="key">channel</span>:<span class="value">#�����ͥ�@ircnet   ��#�����ͤ�פ˰�ž���ޤ�����</span></div>
+<div class="element"><span class="key">channel</span>:<span class="value">#チャンネル@ircnet   「#ちゃんねる」に移転しました。</span></div>
 
         </div>
       </div>
@@ -363,142 +363,142 @@ Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���<br />
       
       
       <div id="module-Auto::MesMail" class="module">
-        <div class="module-header"><h2 title="������᡼��Ȥ����������롣">Auto::MesMail</h2>
-          <span class="description">������᡼��Ȥ����������롣</span></div>
+        <div class="module-header"><h2 title="伝言をメールとして送信する。">Auto::MesMail</h2>
+          <span class="description">伝言をメールとして送信する。</span></div>
         <div class="content">
 	  <p class="comment">
-�᡼�륢�ɥ쥹�ϥ����ꥢ���� mail �򻲾Ȥ��ޤ���<br />
+メールアドレスはエイリアスの mail を参照します。<br />
 </p>
 <p class="comment">
-From���ɥ쥹��[default: OS�Υ桼��̾]<br />
+Fromアドレス。[default: OSのユーザ名]<br />
 </p>
 <div class="element"><span class="key">from</span>:<span class="value">example1@example.jp</span></div>
 <p class="comment">
-�����ѤΥ������ [default: mesmail_send]<br />
+送信用のキーワード [default: mesmail_send]<br />
 </p>
-<div class="element"><span class="key">send</span>:<span class="value">®ã����</span></div>
+<div class="element"><span class="key">send</span>:<span class="value">速達伝言</span></div>
 <p class="comment">
-���Ѥ���Ĥ����&amp;�����ͥ�Υޥ�����<br />
-���Tiarra�⡼�ɻ��� [default: �ʤ�]<br />
+使用を許可する人&amp;チャンネルのマスク。<br />
+例はTiarraモード時。 [default: なし]<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* +*!*@*</span></div>
 <p class="comment">
 [plum-mode] mask: +*!*@*<br />
 </p>
 <p class="comment">
-mask�ǵ��ݤ��줿�Ȥ��Υ�å����� [default: �ʤ�]<br />
+maskで拒否されたときのメッセージ [default: なし]<br />
 </p>
-<div class="element"><span class="key">deny</span>:<span class="value">�����������ʤ���</span></div>
+<div class="element"><span class="key">deny</span>:<span class="value">伝言したくない。</span></div>
 <p class="comment">
-���٤�����밸����� [default: ̵����]<br />
+一度に送れる宛先の量 [default: 無制限]<br />
 </p>
 <div class="element"><span class="key">max-send-address</span>:<span class="value">5</span></div>
 <p class="comment">
-�����õ�������ꥢ������ȥ� [default: �ʤ�]<br />
+宛先を探すエイリアスエントリ [default: なし]<br />
 </p>
 <div class="element"><span class="key">alias-key</span>:<span class="value">name</span></div>
 <div class="element"><span class="key">alias-key</span>:<span class="value">nick</span></div>
 <p class="comment">
-����οͤ�Ƚ�̽���ʤ��ä��Ȥ��Υ�å����� [default: �ʤ�]<br />
+宛先の人を判別出来なかったときのメッセージ [default: なし]<br />
 </p>
-<div class="element"><span class="key">unknown</span>:<span class="value">#(who)����ȸ����Τ�ï�Ǥ���?</span></div>
+<div class="element"><span class="key">unknown</span>:<span class="value">#(who)さんと言うのは誰ですか?</span></div>
 <p class="comment">
-�᡼������շ���<br />
+メールの日付形式<br />
 </p>
 <div class="element"><span class="key">date</span>:<span class="value">%H:%M:%S</span></div>
 <p class="comment">
-�����ꥢ���ϸ��դ��ä�����ɥ᡼�륢�ɥ쥹����Ͽ����Ƥ��ʤ��ä��Ȥ��Υ�å������� [default: �ʤ�]<br />
+エイリアスは見付かったけれどメールアドレスが登録されていなかったときのメッセージ。 [default: なし]<br />
 </p>
-<div class="element"><span class="key">none-address</span>:<span class="value">#(who)����ϥ��ɥ쥹����Ͽ���Ƥ��ޤ���</span></div>
+<div class="element"><span class="key">none-address</span>:<span class="value">#(who)さんはアドレスを登録していません。</span></div>
 <p class="comment">
-SMTP�Υۥ��� [default: localhost]<br />
+SMTPのホスト [default: localhost]<br />
 </p>
 <div class="element"><span class="key">smtphost</span>:<span class="value">localhost</span></div>
 <p class="comment">
-SMTP�Υݡ��� [default: smtp(25)]<br />
+SMTPのポート [default: smtp(25)]<br />
 </p>
 <div class="element"><span class="key">smtpport</span>:<span class="value">25</span></div>
 <p class="comment">
-SMTP�Ǽ��ۥ��Ȥ�FQDN [default: localhost]<br />
+SMTPで自ホストのFQDN [default: localhost]<br />
 </p>
 <div class="element"><span class="key">smtpfqdn</span>:<span class="value">localhost</span></div>
 <p class="comment">
-SMTP�Υ桼�������ꤵ���� SMTP Auth ��Ԥ� [default: �ʤ�]<br />
+SMTPのユーザ。指定されれば SMTP Auth を行う [default: なし]<br />
 </p>
 <div class="element"><span class="key">smtpuser</span>:<span class="value">example1</span></div>
 <p class="comment">
-SMTP�Υѥ���� [default: ���ѥ����(&#39;&#39;)]<br />
+SMTPのパスワード [default: 空パスワード(&#39;&#39;)]<br />
 </p>
 <div class="element"><span class="key">smtppass</span>:<span class="value">test-password</span></div>
 <p class="comment">
-��������᡼��δ����̾(�����ꥢ�������Բ�) [default: Message from IRC]<br />
+送信するメールの既定件名(エイリアス使用不可) [default: Message from IRC]<br />
 </p>
 <div class="element"><span class="key">subject</span>:<span class="value">Message from IRC</span></div>
 <p class="comment">
-��������᡼�����ʸ [default: #(date) &lt;&lt; #(from.name|from.nick|from.nick.now) &gt;&gt; #(message)]<br />
+送信するメールの本文 [default: #(date) &lt;&lt; #(from.name|from.nick|from.nick.now) &gt;&gt; #(message)]<br />
 </p>
-<div class="element"><span class="key">format</span>:<span class="value">#(date)��#(from.name|from.nick|from.nick.now)���󤫤�#(message)�Ȥ��������Ǥ���</span></div>
+<div class="element"><span class="key">format</span>:<span class="value">#(date)に#(from.name|from.nick|from.nick.now)さんから#(message)という伝言です。</span></div>
 <p class="comment">
-���������Ȥ��Υ�å������� [default: �ʤ�]<br />
+送信したときのメッセージ。 [default: なし]<br />
 </p>
-<div class="element"><span class="key">accept</span>:<span class="value">#(who)�����#(message)���������Ƥ����ޤ�����</span></div>
+<div class="element"><span class="key">accept</span>:<span class="value">#(who)さんに#(message)と伝言しておきました。</span></div>
 <p class="comment">
----- POP before SMTP �λ��� ----<br />
-POP before SMTP��Ȥ��� [default: no]<br />
+---- POP before SMTP の指定 ----<br />
+POP before SMTPを使う。 [default: no]<br />
 </p>
 <div class="element"><span class="key">use-pop3</span>:<span class="value">yes</span></div>
 <p class="comment">
-POP before SMTP�Υ����ॢ���Ȼ���(ʬ)��ʬ����ʤ����ϻ��ꤷ�ʤ����ɤ��� [default: 0]<br />
+POP before SMTPのタイムアウト時間(分)。分からない場合は指定しなくて良い。 [default: 0]<br />
 </p>
 <div class="element"><span class="key">pop3-expire</span>:<span class="value">4</span></div>
 <p class="comment">
-POP�Υۥ��ȡ� [default: localhost]<br />
+POPのホスト。 [default: localhost]<br />
 </p>
 <div class="element"><span class="key">pop3host</span>:<span class="value">localhost</span></div>
 <p class="comment">
-POP�Υݡ��ȡ� [default: pop(110)]<br />
+POPのポート。 [default: pop(110)]<br />
 </p>
 <div class="element"><span class="key">pop3port</span>:<span class="value">110</span></div>
 <p class="comment">
-POP�Υ桼�� [default: OS�Υ桼��̾]<br />
+POPのユーザ [default: OSのユーザ名]<br />
 </p>
 <div class="element"><span class="key">pop3user</span>:<span class="value">example1</span></div>
 <p class="comment">
-POP�Υѥ���� [default: ���ѥ����(&#39;&#39;)]<br />
+POPのパスワード [default: 空パスワード(&#39;&#39;)]<br />
 </p>
 <div class="element"><span class="key">pop3pass</span>:<span class="value">test-password</span></div>
 <p class="comment">
----- ���顼��å����������� ----<br />
+---- エラーメッセージの設定 ----<br />
 </p>
 <p class="comment">
-���̥��顼��<br />
-error-[state] �ȸ��������Ǿܺ٥��顼��å����������Ǥ��롣<br />
-[state]�ϡ�<br />
-&nbsp;&nbsp;&nbsp;* mailfrom(�᡼��������Ԥ���ꤷ�褦�Ȥ��ƥ��顼)<br />
-&nbsp;&nbsp;&nbsp;* rcptto(�᡼������������ꤷ�褦�Ȥ��ƥ��顼)<br />
-&nbsp;&nbsp;&nbsp;* norcptto(�᡼��������褬����̵���ʤä�)<br />
-&nbsp;&nbsp;&nbsp;* data(�᡼�����Ȥ��������褦�Ȥ��ƥ��顼)<br />
-&nbsp;&nbsp;&nbsp;* finish(�᡼�����Ȥ����������饨�顼)<br />
-�����롣�ä��ߤ����ʤ����error-[state]�ϻ��ꤷ�ʤ��Ƥ⹽��ʤ���<br />
-��å�������Ф������ʤ��ʤ���Ȥ�̵������ȥ����ꤹ����ɤ���<br />
-error-[state]�����ꤵ��Ƥʤ���������� error ��Ȥ��� [default: ̤���]<br />
+一般エラー。<br />
+error-[state] と言う形式で詳細エラーメッセージを指定できる。<br />
+[state]は、<br />
+&nbsp;&nbsp;&nbsp;* mailfrom(メールの送信者を指定しようとしてエラー)<br />
+&nbsp;&nbsp;&nbsp;* rcptto(メールの送信先を指定しようとしてエラー)<br />
+&nbsp;&nbsp;&nbsp;* norcptto(メールの送信先が全部無くなった)<br />
+&nbsp;&nbsp;&nbsp;* data(メールの中身を送信しようとしてエラー)<br />
+&nbsp;&nbsp;&nbsp;* finish(メールの中身を送信したらエラー)<br />
+がある。特に欲しくなければerror-[state]は指定しなくても構わない。<br />
+メッセージを出したくないなら中身の無いエントリを指定すれば良い。<br />
+error-[state]が指定されてない場合は代わりに error を使う。 [default: 未定義]<br />
 </p>
 <div class="element"><span class="key">error-rcptto</span>:<span class="value"></span></div>
-<div class="element"><span class="key">error-norcptto</span>:<span class="value">#(who)����ˤ�����ޤ���Ǥ����������Ǥ���᡼�륢�ɥ쥹������ޤ���</span></div>
-<div class="element"><span class="key">error-data</span>:<span class="value">�᡼�뤬�����Ǥ��ޤ���DATA���ޥ�ɤ˼��Ԥ��ޤ�����#(line;�����б���:%s|;)</span></div>
-<div class="element"><span class="key">error</span>:<span class="value">�᡼���������顼�Ǥ���#(line;�����б���:%s|;)#(state; on %s|;)</span></div>
+<div class="element"><span class="key">error-norcptto</span>:<span class="value">#(who)さんには送れませんでした。送信できるメールアドレスがありません。</span></div>
+<div class="element"><span class="key">error-data</span>:<span class="value">メールが送信できません。DATAコマンドに失敗しました。#(line;サーバ応答:%s|;)</span></div>
+<div class="element"><span class="key">error</span>:<span class="value">メール送信エラーです。#(line;サーバ応答:%s|;)#(state; on %s|;)</span></div>
 <p class="comment">
-��̿Ū�ʥ��顼���᡼��˸��̤ʥ��顼�ǤϤʤ��Τ�������(��prefix)���1��å����������롣<br />
+致命的なエラー。メールに個別なエラーではないので送信者(のprefix)毎に1メッセージ送られる。<br />
 fatalerror-[state]<br />
 [state]:<br />
-&nbsp;&nbsp;&nbsp;* first(��³���顼)<br />
-&nbsp;&nbsp;&nbsp;* helo(SMTP���å����򳫻Ͻ���ʤ�)<br />
-�����롣�ä��ߤ����ʤ����fatalerror-[state]�ϻ��ꤷ�ʤ��Ƥ⹽��ʤ���<br />
-��å�������Ф������ʤ��ʤ���Ȥ�̵������ȥ����ꤹ����ɤ���<br />
-fatalerror-[state]�����ꤵ��Ƥʤ���������� fatalerror ��Ȥ��� [default: ̤���]<br />
+&nbsp;&nbsp;&nbsp;* first(接続エラー)<br />
+&nbsp;&nbsp;&nbsp;* helo(SMTPセッションを開始出来ない)<br />
+がある。特に欲しくなければfatalerror-[state]は指定しなくても構わない。<br />
+メッセージを出したくないなら中身の無いエントリを指定すれば良い。<br />
+fatalerror-[state]が指定されてない場合は代わりに fatalerror を使う。 [default: 未定義]<br />
 </p>
-<div class="element"><span class="key">fatalerror-first</span>:<span class="value">SMTP�����Ф���³�Ǥ��ޤ���</span></div>
-<div class="element"><span class="key">fatalerror</span>:<span class="value">SMTP���å�������̿Ū�ʥ��顼������ޤ�����#(line; �����б���:%s|;)#(state; on %s|;)</span></div>
+<div class="element"><span class="key">fatalerror-first</span>:<span class="value">SMTPサーバに接続できません。</span></div>
+<div class="element"><span class="key">fatalerror</span>:<span class="value">SMTPセッションで致命的なエラーがありました。#(line; サーバ応答:%s|;)#(state; on %s|;)</span></div>
 
         </div>
       </div>
@@ -508,73 +508,73 @@ fatalerror-[state]�����ꤵ��Ƥʤ���������� fatalerror ��Ȥ��� [default: �
       
       
       <div id="module-Auto::Oper" class="module">
-        <div class="module-header"><h2 title="�����ʸ�����ȯ�������ͤ�+o���롣">Auto::Oper</h2>
-          <span class="description">�����ʸ�����ȯ�������ͤ�+o���롣</span></div>
+        <div class="module-header"><h2 title="特定の文字列を発言した人を+oする。">Auto::Oper</h2>
+          <span class="description">特定の文字列を発言した人を+oする。</span></div>
         <div class="content">
 	  <p class="comment">
-Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���<br />
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 </p>
 <p class="comment">
-+o���׵᤹��ʸ����(�ޥ���)����ꤷ�ޤ���<br />
++oを要求する文字列(マスク)を指定します。<br />
 </p>
-<div class="element"><span class="key">request</span>:<span class="value">�ʤ�ȴ�ۤ�</span></div>
+<div class="element"><span class="key">request</span>:<span class="value">なると寄越せ</span></div>
 <p class="comment">
-�����ͥ륪�ڥ졼�����¤��׵ᤷ���ͤ��׵ᤵ�줿�����ͥ뤬<br />
-�����ǻ��ꤷ���ޥ����˰��פ��ʤ��ä�����<br />
-deny�ǻ��ꤷ��ʸ�����ȯ������+o����ޤ���<br />
-��ά���줿����ï�ˤ�+o���ޤ���<br />
-�񼰤ϡ֥����ͥ� ȯ���ԡפǤ���<br />
-�ޥå��󥰤Υ��르�ꥺ��ϼ����̤�Ǥ���<br />
-1. �����ͥ�̾�˥ޥå�����mask��������ƽ����<br />
-2. ���ޤä������ȯ���ԥޥ�����������줿��˥���ޤǷ�礹��<br />
-3. ���Τ褦�ˤ����������줿�ޥ�����ȯ���ԤΥޥå��󥰤�Ԥʤ�����̤�+o��ǽ���Ȥ��롣<br />
-��1:<br />
+チャンネルオペレータ権限を要求した人と要求されたチャンネルが<br />
+ここで指定したマスクに一致しなかった場合は<br />
+denyで指定した文字列を発言し、+oをやめます。<br />
+省略された場合は誰にも+oしません。<br />
+書式は「チャンネル 発言者」です。<br />
+マッチングのアルゴリズムは次の通りです。<br />
+1. チャンネル名にマッチするmask定義を全て集める<br />
+2. 集まった定義の発言者マスクを、定義された順にカンマで結合する<br />
+3. そのようにして生成されたマスクで発言者のマッチングを行ない、結果を+o可能性とする。<br />
+例1:<br />
 mask: *@2ch* *!*@*<br />
 mask: #*@ircnet* *!*@*.hoge.jp<br />
-������Ǥϥͥåȥ�� 2ch �����ƤΥ����ͥ��ï�ˤǤ� +o ����<br />
-�ͥåȥ�� ircnet �� # �ǻϤޤ����ƤΥ����ͥ�ǥۥ���̾ *.hoge.jp �οͤ�+o���ޤ���<br />
-#*@ircnet���ȡ�#hoge@ircnet:*.jp�פʤɤ˥ޥå����ʤ��ʤ�ޤ���<br />
-��2:<br />
+この例ではネットワーク 2ch の全てのチャンネルで誰にでも +o し、<br />
+ネットワーク ircnet の # で始まる全てのチャンネルでホスト名 *.hoge.jp の人に+oします。<br />
+#*@ircnetだと「#hoge@ircnet:*.jp」などにマッチしなくなります。<br />
+例2:<br />
 mask: #hoge@ircnet -*!*@*,+*!*@*.hoge.jp<br />
 mask: *            +*!*@*<br />
-����Ū�����ƤΥ����ͥ��ï�ˤǤ� +o ���뤬���㳰Ū��#hoge@ircnet�Ǥ�<br />
-�ۥ���̾ *.hoge.jp �οͤˤ��� +o ���ʤ���<br />
-���ν����岼�դˤ���ȡ����ƤΥ����ͥ�����Ƥοͤ� +o ������ˤʤ�ޤ���<br />
-���Τʤ�ǽ��* +*!*@*�����Ƥοͤ˥ޥå����뤫��Ǥ���<br />
+基本的に全てのチャンネルで誰にでも +o するが、例外的に#hoge@ircnetでは<br />
+ホスト名 *.hoge.jp の人にしか +o しない。<br />
+この順序を上下逆にすると、全てのチャンネルで全ての人を +o する事になります。<br />
+何故なら最初の* +*!*@*が全ての人にマッチするからです。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
-+o���׵ᤷ���ͤ�ºݤ�+o������������ǻ��ꤷ��ȯ���򤷤Ƥ���+o���ޤ���<br />
-#(name|nick)�Τ褦�ʥ����ꥢ���ִ���Ԥ��ޤ���<br />
-�����ꥢ���ʳ��Ǥ⡢#(nick.now)������nick�ˡ�#(channel)��<br />
-���Υ����ͥ�̾�ˤ��줾���ִ����ޤ���<br />
++oを要求した人を実際に+oする時、ここで指定した発言をしてから+oします。<br />
+#(name|nick)のようなエイリアス置換を行います。<br />
+エイリアス以外でも、#(nick.now)を相手のnickに、#(channel)を<br />
+そのチャンネル名にそれぞれ置換します。<br />
 </p>
-<div class="element"><span class="key">message</span>:<span class="value">λ��</span></div>
+<div class="element"><span class="key">message</span>:<span class="value">了解</span></div>
 <p class="comment">
-+o���׵ᤵ�줿��+o���٤����ǤϤʤ��ä�����ȯ����<br />
-��ά���줿�鲿������ޤ���<br />
++oを要求されたが+oすべき相手ではなかった場合の発言。<br />
+省略されたら何も喋りません。<br />
 </p>
-<div class="element"><span class="key">deny</span>:<span class="value">�Ǥ��</span></div>
+<div class="element"><span class="key">deny</span>:<span class="value">断わる</span></div>
 <p class="comment">
-+o���׵ᤵ�줿�����ϴ��˥����ͥ륪�ڥ졼�����¤���äƤ�������ȯ����<br />
-��ά���줿��deny�����ꤵ�줿��Τ�Ȥ��ޤ���<br />
++oを要求されたが相手は既にチャンネルオペレータ権限を持っていた場合の発言。<br />
+省略されたらdenyに設定されたものを使います。<br />
 </p>
-<div class="element"><span class="key">oper</span>:<span class="value">����@����äƤ���</span></div>
+<div class="element"><span class="key">oper</span>:<span class="value">既に@を持っている</span></div>
 <p class="comment">
-+o���׵ᤵ�줿����ʬ�ϥ����ͥ륪�ڥ졼�����¤���äƤ��ʤ��ä�����ȯ����<br />
-��ά���줿��deny�����ꤵ�줿��Τ�Ȥ��ޤ���<br />
++oを要求されたが自分はチャンネルオペレータ権限を持っていなかった場合の発言。<br />
+省略されたらdenyに設定されたものを使います。<br />
 </p>
-<div class="element"><span class="key">not-oper</span>:<span class="value">@��̵��</span></div>
+<div class="element"><span class="key">not-oper</span>:<span class="value">@が無い</span></div>
 <p class="comment">
-�����ͥ���Ф��ƤǤʤ���ʬ���Ф���+o���׵��Ԥʤä�����ȯ����<br />
-��ά���줿��deny�����ꤵ�줿��Τ�Ȥ��ޤ���<br />
+チャンネルに対してでなく自分に対して+oの要求を行なった場合の発言。<br />
+省略されたらdenyに設定されたものを使います。<br />
 </p>
-<div class="element"><span class="key">private</span>:<span class="value">�����ͥ���׵᤻��</span></div>
+<div class="element"><span class="key">private</span>:<span class="value">チャンネルで要求せよ</span></div>
 <p class="comment">
-�����ͥ�γ�����+o���׵ᤵ�줿����ȯ����+n�����ͥ�Ǥϵ�����ޤ���<br />
-��ά���줿��deny�����ꤵ�줿��Τ�Ȥ��ޤ���<br />
+チャンネルの外から+oを要求された場合の発言。+nチャンネルでは起こりません。<br />
+省略されたらdenyに設定されたものを使います。<br />
 </p>
-<div class="element"><span class="key">out</span>:<span class="value">�����ͥ�����äƤ��ʤ�</span></div>
+<div class="element"><span class="key">out</span>:<span class="value">チャンネルに入っていない</span></div>
 
         </div>
       </div>
@@ -584,78 +584,78 @@ mask: *            +*!*@*<br />
       
       
       <div id="module-Auto::Random" class="module">
-        <div class="module-header"><h2 title="�����ȯ����ȿ�����ƥ������ȯ���򤷤ޤ���">Auto::Random</h2>
-          <span class="description">�����ȯ����ȿ�����ƥ������ȯ���򤷤ޤ���</span></div>
+        <div class="module-header"><h2 title="特定の発言に反応してランダムな発言をします。">Auto::Random</h2>
+          <span class="description">特定の発言に反応してランダムな発言をします。</span></div>
         <div class="content">
 	  <p class="comment">
-Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���<br />
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 </p>
 <p class="comment">
-���Ѥ���֥��å��������<br />
+使用するブロックの定義。<br />
 </p>
 <div class="element"><span class="key">blocks</span>:<span class="value">wimikuji</span></div>
 <div class="block element"><span class="block key">wimikuji</span>
 <div class="block content">
 <p class="comment">
-�������ȯ�������å������ν񤫤줿�ե�����ȡ�����ʸ�������ɤ���ꤷ�ޤ���<br />
-�ե��������Ǥϰ�Ԥ˰�ĤΥ�å�������񤤤Ʋ�������<br />
+ランダムに発言するメッセージの書かれたファイルと、その文字コードを指定します。<br />
+ファイルの中では一行に一つのメッセージを書いて下さい。<br />
 </p>
 <div class="element"><span class="key">file</span>:<span class="value">random.txt</span></div>
 <div class="element"><span class="key">file-encoding</span>:<span class="value">euc</span></div>
 <p class="comment">
-ȿ������ȯ����ɽ���ޥ�������ꤷ�ޤ���<br />
+反応する発言を表すマスクを指定します。<br />
 </p>
-<div class="element"><span class="key">request</span>:<span class="value">��ߤ���</span></div>
+<div class="element"><span class="key">request</span>:<span class="value">ゐみくじ</span></div>
 <p class="comment">
-��å���������Ͽ�����������륭����ɤ���ꤷ�ޤ���<br />
+メッセージの登録数を返答するキーワードを指定します。<br />
 </p>
-<div class="element"><span class="key">count-query</span>:<span class="value">��ߤ�����Ͽ��</span></div>
+<div class="element"><span class="key">count-query</span>:<span class="value">ゐみくじ登録数</span></div>
 <p class="comment">
-��å���������Ͽ������������Ȥ���ȿ������ꤷ�ޤ���<br />
-format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(count)����Ͽ���ˤʤ�ޤ���<br />
+メッセージの登録数を返答するときの反応を指定します。<br />
+formatで指定できるものと同じです。#(count)は登録数になります。<br />
 </p>
-<div class="element"><span class="key">count-format</span>:<span class="value">��ߤ�����#(count)����Ͽ����Ƥ��ޤ���</span></div>
+<div class="element"><span class="key">count-format</span>:<span class="value">ゐみくじは#(count)件登録されています。</span></div>
 <p class="comment">
-������ʥ�å�������ȯ������ݤΥե����ޥåȤ���ꤷ�ޤ���<br />
-�����ꥢ���ִ���ͭ���Ǥ���#(message)��#(nick.now)��#(channel)��<br />
-���줾���å��������ơ�����nick�������ͥ�̾���ִ�����ޤ���<br />
-������Ͽ����Ƥ��ʤ��Ȥ��Τ���ˡ�#(message|;̵��Ͽ)�Τ褦�˻��ꤹ����ɤ��Ǥ��礦��<br />
+ランダムなメッセージを発言する際のフォーマットを指定します。<br />
+エイリアス置換が有効です。#(message)、#(nick.now)、#(channel)は<br />
+それぞれメッセージ内容、相手のnick、チャンネル名に置換されます。<br />
+何も登録されていないときのために、#(message|;無登録)のように指定すると良いでしょう。<br />
 </p>
-<div class="element"><span class="key">format</span>:<span class="value">#(name|nick.now)�α�̿��#(message)</span></div>
+<div class="element"><span class="key">format</span>:<span class="value">#(name|nick.now)の運命は#(message)</span></div>
 <p class="comment">
-ȿ������ͤΥޥ�����<br />
+反応する人のマスク。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
 plum: mask: *!*@*<br />
 </p>
 <p class="comment">
-��å��������ɲä��줿�Ȥ���ȿ������ꤷ�ޤ���<br />
-format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(message)���ɲä��줿��å������ˤʤ�ޤ���<br />
+メッセージが追加されたときの反応を指定します。<br />
+formatで指定できるものと同じです。#(message)は追加されたメッセージになります。<br />
 </p>
-<div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): ��ߤ��� #(message) ���ɲä��ޤ�����</span></div>
+<div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): ゐみくじ #(message) を追加しました。</span></div>
 <p class="comment">
-��å�������������줿�Ȥ���ȿ������ꤷ�ޤ���<br />
-format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(message)�Ϻ�����줿��å������ˤʤ�ޤ���<br />
+メッセージが削除されたときの反応を指定します。<br />
+formatで指定できるものと同じです。#(message)は削除されたメッセージになります。<br />
 </p>
-<div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): ��ߤ��� #(message) �������ޤ�����</span></div>
+<div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): ゐみくじ #(message) を削除しました。</span></div>
 <p class="comment">
-ȯ����ȿ�������Ψ����ꤷ�ޤ���ɴʬΨ�Ǥ�����ά���줿����100�ȸ�������ޤ���<br />
+発言に反応する確率を指定します。百分率です。省略された場合は100と見做されます。<br />
 </p>
 <div class="element"><span class="key">rate</span>:<span class="value">100</span></div>
 <p class="comment">
-��å��������ɲä��륭����ɤ���ꤷ�ޤ���<br />
-�����ǻ��ꤷ��������ɤ�ȯ������ȡ���������å��������ɲä��ޤ���<br />
-�ºݤ��ɲ���ˡ�ϡ�&lt;add�ǻ��ꤷ���������&gt; &lt;�ɲä����å�����&gt;�פǤ���<br />
+メッセージを追加するキーワードを指定します。<br />
+ここで指定したキーワードを発言すると、新しいメッセージを追加します。<br />
+実際の追加方法は「&lt;addで指定したキーワード&gt; &lt;追加するメッセージ&gt;」です。<br />
 </p>
-<div class="element"><span class="key">add</span>:<span class="value">��ߤ����ɲ�</span></div>
+<div class="element"><span class="key">add</span>:<span class="value">ゐみくじ追加</span></div>
 <p class="comment">
-��å������������륭����ɤ���ꤷ�ޤ���<br />
-�ºݤκ����ˡ�ϡ�&lt;remove�ǻ��ꤷ���������&gt; &lt;������륭�����&gt;�פǤ���<br />
+メッセージを削除するキーワードを指定します。<br />
+実際の削除方法は「&lt;removeで指定したキーワード&gt; &lt;削除するキーワード&gt;」です。<br />
 </p>
-<div class="element"><span class="key">remove</span>:<span class="value">��ߤ������</span></div>
+<div class="element"><span class="key">remove</span>:<span class="value">ゐみくじ削除</span></div>
 <p class="comment">
-add��remove����Ĥ���͡���ά���줿����ï���ѹ��Ǥ��ޤ���<br />
+addとremoveを許可する人。省略された場合は誰も変更できません。<br />
 </p>
 <div class="element"><span class="key">modifier</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
@@ -671,86 +671,86 @@ plum: modifier: *!*@*<br />
       
       
       <div id="module-Auto::Reply" class="module">
-        <div class="module-header"><h2 title="�����ȯ����ȿ������ȯ���򤷤ޤ���">Auto::Reply</h2>
-          <span class="description">�����ȯ����ȿ������ȯ���򤷤ޤ���</span></div>
+        <div class="module-header"><h2 title="特定の発言に反応して発言をします。">Auto::Reply</h2>
+          <span class="description">特定の発言に反応して発言をします。</span></div>
         <div class="content">
 	  <p class="comment">
-Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���<br />
+Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。<br />
 </p>
 <p class="comment">
-���Ѥ���֥��å��������<br />
+使用するブロックの定義。<br />
 </p>
 <div class="element"><span class="key">blocks</span>:<span class="value">std</span></div>
 <div class="block element"><span class="block key">std</span>
 <div class="block content">
 <p class="comment">
-�ǡ����ե������ʸ�������ɤ���ꤷ�ޤ���<br />
-�ե��������Ǥϰ�Ԥ˰�Ĥ�&quot;ȿ��:��å�����&quot;��񤤤Ʋ�������<br />
+データファイルと文字コードを指定します。<br />
+ファイルの中では一行に一つの&quot;反応:メッセージ&quot;を書いて下さい。<br />
 </p>
 <div class="element"><span class="key">file</span>:<span class="value">reply.txt</span></div>
 <div class="element"><span class="key">file-encoding</span>:<span class="value">euc</span></div>
 <p class="comment">
-ȿ�������å���Ԥ�������ɤ���ꤷ�ޤ���<br />
-�ºݤλ�����ˡ�ϡ���&lt;request�ǻ��ꤷ���������&gt; &lt;�����å�������ȯ��&gt;�פǤ���<br />
+反応チェックを行うキーワードを指定します。<br />
+実際の指定方法は、「&lt;requestで指定したキーワード&gt; &lt;チェックしたい発言&gt;」です。<br />
 </p>
-<div class="element"><span class="key">request</span>:<span class="value">ȿ�������å�</span></div>
+<div class="element"><span class="key">request</span>:<span class="value">反応チェック</span></div>
 <p class="comment">
-request ��ȿ������Ȥ��Υե����ޥåȤ���ꤷ�ޤ���<br />
-#(key) ��������ɡ� #(message) ��ȯ�����ִ�����ޤ���<br />
+request に反応するときのフォーマットを指定します。<br />
+#(key) がキーワード、 #(message) が発言に置換されます。<br />
 </p>
-<div class="element"><span class="key">reply-format</span>:<span class="value">��#(key)�פȤ���ȯ���ˡ�#(message)�פ�ȿ�����ޤ���</span></div>
+<div class="element"><span class="key">reply-format</span>:<span class="value">「#(key)」という発言に「#(message)」と反応します。</span></div>
 <p class="comment">
-request ��ȿ���������Ŀ�����ꤷ�ޤ���<br />
-���ޤ��礭���ͤ���ꤹ��ȡ������å�����ǽ�ˤʤä��ꡢ������ή��Ƽ���ʤΤ����դ��Ƥ���������<br />
+request に反応する最大個数を指定します。<br />
+あまり大きな値を指定すると、アタックが可能になったり、ログが流れて邪魔なので注意してください。<br />
 </p>
 <div class="element"><span class="key">max-reply</span>:<span class="value">5</span></div>
 <p class="comment">
-��å���������Ͽ�����������륭����ɤ���ꤷ�ޤ���<br />
+メッセージの登録数を返答するキーワードを指定します。<br />
 </p>
-<div class="element"><span class="key">count-query</span>:<span class="value">ȿ����Ͽ��</span></div>
+<div class="element"><span class="key">count-query</span>:<span class="value">反応登録数</span></div>
 <p class="comment">
-��å���������Ͽ������������Ȥ���ȿ������ꤷ�ޤ���<br />
-format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(count)����Ͽ���ˤʤ�ޤ���<br />
+メッセージの登録数を返答するときの反応を指定します。<br />
+formatで指定できるものと同じです。#(count)は登録数になります。<br />
 </p>
-<div class="element"><span class="key">count-format</span>:<span class="value">ȿ����#(count)����Ͽ����Ƥ��ޤ���</span></div>
+<div class="element"><span class="key">count-format</span>:<span class="value">反応は#(count)件登録されています。</span></div>
 <p class="comment">
-ȿ������ͤΥޥ�����<br />
+反応する人のマスク。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
 plum: mask: *!*@*<br />
 </p>
 <p class="comment">
-ȿ�����ɲä��줿�Ȥ���ȿ������ꤷ�ޤ���<br />
-format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(message)���ɲä��줿��å������ˤʤ�ޤ���<br />
+反応が追加されたときの反応を指定します。<br />
+formatで指定できるものと同じです。#(message)は追加されたメッセージになります。<br />
 </p>
-<div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): #(key) ���Ф���ȿ�� #(message) ���ɲä��ޤ�����</span></div>
+<div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): #(key) に対する反応 #(message) を追加しました。</span></div>
 <p class="comment">
-��å�������������줿�Ȥ���ȿ������ꤷ�ޤ���<br />
-format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(message)�Ϻ�����줿��å������ˤʤ�ޤ���<br />
+メッセージが削除されたときの反応を指定します。<br />
+formatで指定できるものと同じです。#(message)は削除されたメッセージになります。<br />
 </p>
-<div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): #(key) #(message;���Ф���ȿ�� %s|;) �� #(count) �������ޤ�����</span></div>
+<div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): #(key) #(message;に対する反応 %s|;) を #(count) 件削除しました。</span></div>
 <p class="comment">
-ȯ����ȿ�������Ψ����ꤷ�ޤ���ɴʬΨ�Ǥ�����ά���줿����100�ȸ�������ޤ���<br />
+発言に反応する確率を指定します。百分率です。省略された場合は100と見做されます。<br />
 </p>
 <div class="element"><span class="key">rate</span>:<span class="value">100</span></div>
 <p class="comment">
-��å��������ɲä��륭����ɤ���ꤷ�ޤ���<br />
-�����ǻ��ꤷ��������ɤ�ȯ������ȡ���������å��������ɲä��ޤ���<br />
-�ºݤ��ɲ���ˡ�ϡ�&lt;add�ǻ��ꤷ���������&gt; &lt;�ɲä����å�����&gt;�פǤ���<br />
+メッセージを追加するキーワードを指定します。<br />
+ここで指定したキーワードを発言すると、新しいメッセージを追加します。<br />
+実際の追加方法は「&lt;addで指定したキーワード&gt; &lt;追加するメッセージ&gt;」です。<br />
 </p>
-<div class="element"><span class="key">add</span>:<span class="value">ȿ���ɲ�</span></div>
+<div class="element"><span class="key">add</span>:<span class="value">反応追加</span></div>
 <p class="comment">
-��å������������륭����ɤ���ꤷ�ޤ���<br />
-�ºݤκ����ˡ�ϡ�&lt;remove�ǻ��ꤷ���������&gt; &lt;������륭�����&gt;�פǤ���<br />
+メッセージを削除するキーワードを指定します。<br />
+実際の削除方法は「&lt;removeで指定したキーワード&gt; &lt;削除するキーワード&gt;」です。<br />
 </p>
-<div class="element"><span class="key">remove</span>:<span class="value">ȿ�����</span></div>
+<div class="element"><span class="key">remove</span>:<span class="value">反応削除</span></div>
 <p class="comment">
-add��remove����Ĥ���͡���ά���줿���ϡ�* *!*@*�פȸ������ޤ���<br />
+addとremoveを許可する人。省略された場合は「* *!*@*」と見做します。<br />
 </p>
 <div class="element"><span class="key">modifier</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
-����ɽ����ĥ����Ĥ��뤫����ά���줿���϶ػߤ��ޤ���<br />
+正規表現拡張を許可するか。省略された場合は禁止します。<br />
 </p>
 <div class="element"><span class="key">use-re</span>:<span class="value">1</span></div>
 </div></div>
@@ -763,38 +763,38 @@ add��remove����Ĥ���͡���ά���줿���ϡ�* *!*@*�פȸ������ޤ���<br />
       
       
       <div id="module-Auto::Response" class="module">
-        <div class="module-header"><h2 title="�ǡ����ե�����λ���ˤ������ä�ȿ�����롣">Auto::Response</h2>
-          <span class="description">�ǡ����ե�����λ���ˤ������ä�ȿ�����롣</span></div>
+        <div class="module-header"><h2 title="データファイルの指定にしたがって反応する。">Auto::Response</h2>
+          <span class="description">データファイルの指定にしたがって反応する。</span></div>
         <div class="content">
 	  <p class="comment">
-���̤�ȿ���ǡ������������Τ˸����Ƥ��ޤ���<br />
+大量の反応データを定義するのに向いています。<br />
 </p>
 <p class="comment">
-�ǡ����ե�����Υե����ޥå�<br />
-| pattern: re:^(����(��)?����)<br />
+データファイルのフォーマット<br />
+| pattern: re:^(こん(に)?ちは)<br />
 | rate: 90<br />
 | mask: * *!*@*<br />
 | #plum: mask: *!*@*<br />
-| response: ����ˤ��ϡ�<br />
-| response: ����ä��㤤�ޤ���<br />
+| response: こんにちは。<br />
+| response: いらっしゃいませ。<br />
 |<br />
-| pattern: ���䤹��<br />
+| pattern: おやすみ<br />
 | rate: 20<br />
-| response: ���䤹�ߤʤ�����<br />
-pattern�ϰ�Ԥ����񤱤ޤ���(��ȴ��<br />
-mask��rate���ά�Ǥ��ޤ�����ά��������mask��������rate��100�Ȥʤ�ޤ���<br />
-response��ʣ���񤤤Ƥ����Х���������򤵤�ޤ���<br />
+| response: おやすみなさい。<br />
+patternは一行しか書けません。(手抜き<br />
+maskもrateも省略できます。省略した場合はmaskは全員、rateは100となります。<br />
+responseは複数書いておけばランダムに選択されます。<br />
 </p>
 <p class="comment">
-�ǡ����ե�����<br />
+データファイル<br />
 </p>
 <div class="element"><span class="key">file</span>:<span class="value">response.txt</span></div>
 <p class="comment">
-ʸ��������<br />
+文字コード<br />
 </p>
 <div class="element"><span class="key">charset</span>:<span class="value">euc</span></div>
 <p class="comment">
-���Ѥ���Ĥ����&amp;�����ͥ�Υޥ�����<br />
+使用を許可する人&amp;チャンネルのマスク。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
@@ -811,31 +811,31 @@ plum: mask: +*!*@*<br />
     <div class="pane-sidebar">
       <ul class="menu">
         
-        <li><a href="#module-Auto::Alias" title="�桼�������ꥢ������δ�����Ԥʤ��ޤ���">Auto::Alias</a></li>
+        <li><a href="#module-Auto::Alias" title="ユーザエイリアス情報の管理を行ないます。">Auto::Alias</a></li>
         
-        <li><a href="#module-Auto::Answer" title="�����ȯ����ȿ�������б�����ȯ���򤹤롣">Auto::Answer</a></li>
+        <li><a href="#module-Auto::Answer" title="特定の発言に反応して対応する発言をする。">Auto::Answer</a></li>
         
-        <li><a href="#module-Auto::Calc" title="Perl�μ���׻�������⥸�塼�롣">Auto::Calc</a></li>
+        <li><a href="#module-Auto::Calc" title="Perlの式を計算させるモジュール。">Auto::Calc</a></li>
         
-        <li><a href="#module-Auto::ChannelWithoutOper" title="�����ͥ륪�ڥ졼�����¤��ʤ��ʤäƤ��ޤä��Ȥ���ȯ�����롣">Auto::ChannelWithoutOper</a></li>
+        <li><a href="#module-Auto::ChannelWithoutOper" title="チャンネルオペレータ権限がなくなってしまったときに発言する。">Auto::ChannelWithoutOper</a></li>
         
-        <li><a href="#module-Auto::FetchTitle" title="ȯ���˴ޤޤ��URL���饿���ȥ�����.">Auto::FetchTitle</a></li>
+        <li><a href="#module-Auto::FetchTitle" title="発言に含まれるURLからタイトルを取得.">Auto::FetchTitle</a></li>
         
-        <li><a href="#module-Auto::Im" title="̾�����ƤФ��ȡ�����ȯ����im.kayac.com����������">Auto::Im</a></li>
+        <li><a href="#module-Auto::Im" title="名前が呼ばれると、その発言をim.kayac.comに送信する">Auto::Im</a></li>
         
-        <li><a href="#module-Auto::Joined" title="����Υ����ͥ��ï����JOIN�����٤�����Υ�å�������ȯ�����롣">Auto::Joined</a></li>
+        <li><a href="#module-Auto::Joined" title="特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。">Auto::Joined</a></li>
         
-        <li><a href="#module-Auto::MesMail" title="������᡼��Ȥ����������롣">Auto::MesMail</a></li>
+        <li><a href="#module-Auto::MesMail" title="伝言をメールとして送信する。">Auto::MesMail</a></li>
         
-        <li><a href="#module-Auto::Oper" title="�����ʸ�����ȯ�������ͤ�+o���롣">Auto::Oper</a></li>
+        <li><a href="#module-Auto::Oper" title="特定の文字列を発言した人を+oする。">Auto::Oper</a></li>
         
-        <li><a href="#module-Auto::Random" title="�����ȯ����ȿ�����ƥ������ȯ���򤷤ޤ���">Auto::Random</a></li>
+        <li><a href="#module-Auto::Random" title="特定の発言に反応してランダムな発言をします。">Auto::Random</a></li>
         
-        <li><a href="#module-Auto::Reply" title="�����ȯ����ȿ������ȯ���򤷤ޤ���">Auto::Reply</a></li>
+        <li><a href="#module-Auto::Reply" title="特定の発言に反応して発言をします。">Auto::Reply</a></li>
         
-        <li><a href="#module-Auto::Response" title="�ǡ����ե�����λ���ˤ������ä�ȿ�����롣">Auto::Response</a></li>
+        <li><a href="#module-Auto::Response" title="データファイルの指定にしたがって反応する。">Auto::Response</a></li>
         
-        <li><a href="../module-toc.html">�⥸�塼����������</a></li>
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
       </ul>
     </div>
   </body>

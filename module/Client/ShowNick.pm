@@ -18,8 +18,8 @@ sub message_io_hook {
 	    if ($msg->param(0) eq $local_nick) {
 		my $prefix = RunLoop->shared_loop->sysmsg_prefix(qw(priv system));
 		map {
-		    # ¥í¡¼¥«¥ënick¤È¥°¥í¡¼¥Ð¥ënick¤¬¿©¤¤°ã¤Ã¤Æ¤¤¤¿¤é¤½¤Î»Ý¤òÅÁ¤¨¤ë¡£
-		    # ÀÜÂ³¤·¤Æ¤¤¤ë¥Í¥Ã¥È¥ï¡¼¥¯Ì¾¤òÁ´ÉôÉ½¼¨¤¹¤ë
+		    # ãƒ­ãƒ¼ã‚«ãƒ«nickã¨ã‚°ãƒ­ãƒ¼ãƒãƒ«nickãŒé£Ÿã„é•ã£ã¦ã„ãŸã‚‰ãã®æ—¨ã‚’ä¼ãˆã‚‹ã€‚
+		    # æŽ¥ç¶šã—ã¦ã„ã‚‹ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯åã‚’å…¨éƒ¨è¡¨ç¤ºã™ã‚‹
 		    my $network_name = $_->network_name;
 		    my $global_nick = $_->current_nick;
 		    if ($global_nick ne $local_nick) {
@@ -48,8 +48,8 @@ sub client_attached {
     if (RunLoop->shared_loop->multi_server_mode_p) {
 	my $current_nick = RunLoop->shared_loop->current_nick;
 	map {
-	    # ¥í¡¼¥«¥ënick¤È¥°¥í¡¼¥Ð¥ënick¤¬Æ±¤¸¥Í¥Ã¥È¥ï¡¼¥¯¤Ë¤Ä¤¤¤Æ¤½¤Î»Ý¤òÅÁ¤¨¤ë¡£
-	    # (ÀÜÂ³¤·¤Æ¤¤¤ë¥Á¥ã¥ó¥Í¥ë¤òÉ½¼¨¤¹¤ë¡¢ÄøÅÙ¤ÎÍÑÅÓ)
+	    # ãƒ­ãƒ¼ã‚«ãƒ«nickã¨ã‚°ãƒ­ãƒ¼ãƒãƒ«nickãŒåŒã˜ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã«ã¤ã„ã¦ãã®æ—¨ã‚’ä¼ãˆã‚‹ã€‚
+	    # (æŽ¥ç¶šã—ã¦ã„ã‚‹ãƒãƒ£ãƒ³ãƒãƒ«ã‚’è¡¨ç¤ºã™ã‚‹ã€ç¨‹åº¦ã®ç”¨é€”)
 	    my $network_name = $_->network_name;
 	    my $global_nick = $_->current_nick;
 	    if ($global_nick eq $current_nick) {

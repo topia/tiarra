@@ -100,7 +100,7 @@ sub cond_yesno {
     return $default unless defined $value;
     return 0 if $value =~ /[fn]/i; # false/no
     return 1 if $value =~ /[ty]/i; # true/yes
-    return 1 if $value; # ¿ôÃÍÈ½Äê
+    return 1 if $value; # æ•°å€¤åˆ¤å®š
     return 0;
 }
 

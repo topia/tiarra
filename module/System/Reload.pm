@@ -37,9 +37,9 @@ sub message_arrived {
     my ($this,$msg,$sender) = @_;
     my $do_reload = 0;
 
-    # ���饤����Ȥ�ȯ������
+    # クライアントの発言か？
     if ($sender->isa('IrcIO::Client')) {
-	# ���ޥ��̾�ϰ��פ��Ƥ뤫��
+	# コマンド名は一致してるか？
 	if (Mask::match_deep([$this->config->broadcast_command('all')],
 			     $msg->command)) {
 	    RunLoop->shared_loop->broadcast_to_servers($msg->clone);
@@ -50,7 +50,7 @@ sub message_arrived {
 	}
     }
     if ($do_reload) {
-	# ɬ�פʤ������ɤ�¹ԡ�
+	# 必要ならリロードを実行。
 	ReloadTrigger->_install_reload_timer;
 	return undef;
     }
@@ -59,20 +59,20 @@ sub message_arrived {
 
 1;
 =pod
-info: conf�ե������⥸�塼��ι����������ɤ��륳�ޥ�ɤ��ɲä��롣
+info: confファイルやモジュールの更新をリロードするコマンドを追加する。
 default: on
 
-# ������ɤ�¹Ԥ��륳�ޥ��̾����ά�����ȥ��ޥ�ɤ��ɲä��ޤ���
-# �㤨��"load"�����ꤹ��ȡ�"/load"��ȯ�����褦�Ȥ������˥�����ɤ�¹Ԥ��ޤ���
-# ���λ����ޥ�ɤ�Tiarra�������٤��Τǡ�IRC�ץ��ȥ�����������줿
-# ���ޥ��̾�����ꤹ�٤��ǤϤ���ޤ���
+# リロードを実行するコマンド名。省略されるとコマンドを追加しません。
+# 例えば"load"を設定すると、"/load"と発言しようとした時にリロードを実行します。
+# この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された
+# コマンド名を設定すべきではありません。
 command: load
 
-# command ��Ʊ���Ǥ����������Фˤ�֥����ɥ��㥹�Ȥ��ޤ���
+# command と同じですが、サーバにもブロードキャストします。
 -broadcast-command: load-all
 
-# conf�ե�����������ɤ����Ȥ������Τ��ޤ���
-# �⥸�塼������꤬�ѹ�����Ƥ������ϡ������Ǥ�����ˤ�����餺��
-# �⥸�塼�뤴�Ȥ�ɽ������ޤ���1�ޤ��Ͼ�ά���줿�������Τ��ޤ���
+# confファイルをリロードしたときに通知します。
+# モジュールの設定が変更されていた場合は、ここでの設定にかかわらず、
+# モジュールごとに表示されます。1または省略された場合は通知します。
 conf-reloaded-notify: 1
 =cut

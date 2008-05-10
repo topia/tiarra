@@ -12,11 +12,11 @@ sub message_arrived {
 
     if ($sender->isa('IrcIO::Server') &&
 	($msg->command eq 'PRIVMSG' || $msg->command eq 'NOTICE')) {
-	# �ޥå�����ѥ������õ��
+	# マッチするパターンを探す
 	foreach ($this->config->pattern('all')) {
 	    my ($user,$replace) = m/^(.+?)\s+(.+)$/;
 	    if (Mask::match($user,$msg->prefix)) {
-		# ���פ�����
+		# 一致した。
 		$replace =~ s/#\(message\)/$msg->param(1)/eg;
 		$msg->param(1,$replace);
 		last;
@@ -30,11 +30,11 @@ sub message_arrived {
 1;
 
 =pod
-info: ���ꤵ�줿��ʪ�����PRIVMSG��NOTICE��񤭴����롣
+info: 指定された人物からのPRIVMSGやNOTICEを書き換える。
 default: off
 
-# ��ʪ�Υޥ����ȡ��ִ��ѥ�����������
-# �ִ��ѥ��������#(message)�ϡ�ȯ�����Ƥ��ִ�����ޤ���
-# ��ʪ��ʣ���Υޥ����˰��פ�����ϡ��ǽ�˰��פ�����Τ��Ȥ��ޤ���
+# 人物のマスクと、置換パターンを定義。
+# 置換パターン中の#(message)は、発言内容に置換されます。
+# 人物が複数のマスクに一致する場合は、最初に一致したものが使われます。
 pattern: *!*@* #(message)
 =cut

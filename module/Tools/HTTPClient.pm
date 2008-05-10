@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# HTTP/1.1���б���
+# HTTP/1.1非対応。
 # -----------------------------------------------------------------------------
 package Tools::HTTPClient;
 use strict;
@@ -18,8 +18,8 @@ use Module::Use qw(Tools::HTTPParser);
 
 our $HAS_IPV6 = Tiarra::OptionalModules->ipv6;
 
-# ������HTTP::Request��HTTP::Response��Ȥ���������
-# HTTP::Request ����ξ�������Τ��б���
+# 本当はHTTP::RequestとHTTP::Responseを使いたいが…
+# HTTP::Request からの情報取得のみ対応。
 
 our $DEBUG = 0;
 
@@ -39,7 +39,7 @@ sub new {
 	$args{Url}     = $req->uri->as_string;
 	$args{Content} = $req->content;
 	$args{Header}  = {};
-	# NON-CANONICALIZED FIELD NAMES ��ʣ���ԡ�ʣ���ͤ��󥵥ݡ��ȡ�
+	# NON-CANONICALIZED FIELD NAMES と複数行・複数値は非サポート。
 	$req->headers->scan(sub{ $args{Header}->{$_[0]} = $_[1]; });
     }
     if (!$args{Method}) {
@@ -51,9 +51,9 @@ sub new {
 
     $this->{method} = $args{Method}; # GET | POST
     $this->{url} = $args{Url};
-    $this->{content} = $args{Content}; # undef��
-    $this->{header} = $args{Header} || {}; # {key => value} undef��
-    $this->{timeout} = $args{Timeout}; # undef��
+    $this->{content} = $args{Content}; # undef可
+    $this->{header} = $args{Header} || {}; # {key => value} undef可
+    $this->{timeout} = $args{Timeout}; # undef可
     $this->{debug}   = $args{Debug};
 
     $this->{host} = undef;
@@ -69,7 +69,7 @@ sub new {
     $this->{shutdown_wr_after_writing} = undef;
     $this->{stopped} = undef;
 
-    $this->{expire_time} = undef; # �����ॢ���Ȼ���
+    $this->{expire_time} = undef; # タイムアウト時刻
 
     $this->{parser} = Tools::HTTPParser->new( response => 1 );
 
@@ -92,8 +92,8 @@ sub DESTROY
 # $obj->start(%opts).
 #
 sub start {
-    # $callback: ���å����λ��˸ƤФ��ؿ�����ά�Բġ�
-    # ���δؿ��ˤϼ��Τ褦�ʥϥå��夬�Ϥ���롣
+    # $callback: セッション終了後に呼ばれる関数。省略不可。
+    # この関数には次のようなハッシュが渡される。
     # {
     #     Protocol => 'HTTP/1.0',
     #     Code     => 200,
@@ -103,7 +103,7 @@ sub start {
     #     },
     #     Content => 'foobar',
     # }
-    # ���顼��ȯ���������ϥ��顼��å�����(ʸ����)���Ϥ���롣
+    # エラーが発生した場合はエラーメッセージ(文字列)が渡される。
     my ($this, $callback) = @_;
     my %opts;
     if( @_>=3 )
@@ -123,7 +123,7 @@ sub start {
 
     local($DEBUG) = $DEBUG || $this->{debug};
 
-    # URL��ʬ�򤷡��ۥ���̾�ȥѥ������롣
+    # URLを分解し、ホスト名とパスを得る。
     my ($host, $path);
     $this->{url} =~ s/#.+//;
     if ($this->{url} =~ m|^http(s?)://(.+)$|) {
@@ -143,19 +143,19 @@ sub start {
 	croak "Unsupported scheme: $this->{url}";
     }
 
-    # �إå���Host���ޤޤ�Ƥ��ʤ�����ɲá�
+    # ヘッダにHostが含まれていなければ追加。
     if (!$this->{header}{Host}) {
 	$this->{header}{Host} = $host;
     }
 
-    #google����ط��Ǥ��ޤ���ư���ʤ���
+    #googleさん関係でいまいち動かない？
     #if (!$this->{header}{Connection}) {
-    #  # HTTP/1.1 ���� Keep-Alive ���ǥե���Ȥ�����,
-    #  # �ҤȤޤ����ˤ��ʤ���.
+    #  # HTTP/1.1 だと Keep-Alive がデフォルトだけど,
+    #  # ひとまず気にしない….
     #  $this->{header}{Connection} = 'close';
     #}
 
-    # �ۥ���̾�˥ݡ��Ȥ��ޤޤ�Ƥ�����ʬ��
+    # ホスト名にポートが含まれていたら分解。
     my $port = $this->{with_ssl} ? 443 : 80;
     if ($host =~ s/:(\d+)$//) {
 	$port = $1;
@@ -165,7 +165,7 @@ sub start {
     $this->{port} = $port;
     $this->{path} = $path;
 
-    # Content-Length ���äƤ���������å�.
+    # Content-Length をもっていたらチェック.
     if( my $clen = $this->{header}{'Content-Length'} )
     {
       if( !defined($this->{content}) )
@@ -181,7 +181,7 @@ sub start {
       }
     }
 
-    # ɬ�פʤ饿���ॢ�����ѤΥ����ޡ��򥤥󥹥ȡ���
+    # 必要ならタイムアウト用のタイマーをインストール
     if ($this->{timeout}) {
         $this->{expire_time} = time + $this->{timeout};
         $this->{timeout_timer} = Timer->new(
@@ -298,7 +298,7 @@ sub _resolved
 
     if( $this->{progress_callback} )
     {
-      # ��Ÿ�����ä��Τǥ�����Хå�.
+      # 進展があったのでコールバック.
       $this->{progress_callback}->($this->{parser}->object);
       if( $this->{stopped} )
       {
@@ -306,7 +306,7 @@ sub _resolved
       }
     }
 
-    # ��³
+    # 接続
     if( $this->{with_ssl} )
     {
       $this->{socket} = Tools::HTTPClient::SSL->new()->connect($addr, $port);
@@ -315,19 +315,19 @@ sub _resolved
       $this->{socket} = LinedINETSocket->new()->connect($addr, $port);
     }
     if (!defined $this->{socket}) {
-	# ��³�Բ�ǽ
+	# 接続不可能
 	$this->_end("Failure on connection: $this->{host}:$port ($addr)");
 	return;
     }
     if (!defined $this->{socket}->sock) {
-	# ��³�Բ�ǽ
+	# 接続不可能
 	$this->_end("Failure on connection (*): $this->{host}:$port ($addr)");
 	return;
     }
 
-    # �ꥯ�����Ȥ�ȯ�Ԥ����եå��򤫤��ƽ�λ��
-    # ��ñ�̽����Ϥ��ʤ��Τ�,
-    # eol ���������� '' ��, �������ϥ�����ǤĤ֤�������.
+    # リクエストを発行し、フックをかけて終了。
+    # 行単位処理はしないので,
+    # eol を送信時は '' で, 受信時はランダムでつぶして送信.
     my $req = {
       Type     => 'request',
       Method   => $this->{method},
@@ -342,7 +342,7 @@ sub _resolved
     #$DEBUG and print "<<sendbuf>>\n".$this->{socket}->sendbuf."<</sendbuf>>\n";;
     $this->{socket}->eol( pack("C*", map{rand(256)}1..32) );
 
-    #google����ط��Ǥ��ޤ���ư���ʤ���
+    #googleさん関係でいまいち動かない？
     #$this->{shutdown_wr_after_writing} = !$this->{header}{Connection} || $this->{header}{Connection} =~ /close/i || $this->{header}{Connection} !~ /Keep-Alive/i;
     #if( $this->{host} =~ /google|gmail/ )
     #{
@@ -379,7 +379,7 @@ sub _main
   my $progress = '';
   while( defined(my $line = $this->{socket}->pop_queue) )
   {
-    # �����������ʤ��Ȼפ�����ɱ������ޥå������Ȥ�.
+    # そうそうこないと思うけれど運悪くマッチしたとき.
     $progress .= $line . $this->{socket}->eol;
     $DEBUG and $this->_runloop->notify_msg(__PACKAGE__."#_main, matches with ".unpack("H*",$this->{socket}->eol));
   }
@@ -391,19 +391,19 @@ sub _main
     my $status = eval { $this->{parser}->add($progress); };
     if( $@ )
     {
-      # �ץ��ȥ��륨�顼.
+      # プロトコルエラー.
       $this->_end($@);
       return;
     }
     if( $status == 0 )
     {
-      # ���ｪλ.
+      # 正常終了.
       $this->_end();
       return;
     }
     if( $this->{progress_callback} )
     {
-      # ��Ÿ�����ä��Τǥ�����Хå�.
+      # 進展があったのでコールバック.
       $this->{progress_callback}->($this->{parser}->object);
       if( $this->{stopped} )
       {
@@ -413,7 +413,7 @@ sub _main
     }
   }
 
-  # ���Ǥ���Ƥ����顢�����ǽ���ꡣ
+  # 切断されていたら、ここで終わり。
   if( $this->{socket} && !$this->{socket}->connected )
   {
     $DEBUG and print "<< (disconnected)\n";
@@ -437,7 +437,7 @@ sub _main
     return;
   }
 
-  # �����ॢ����Ƚ��
+  # タイムアウト判定
   if( $this->{expire_time} and time >= $this->{expire_time} )
   {
     $this->_end("timeout");
@@ -534,9 +534,9 @@ Tools::HTTPClient - HTTP Client
 
 HTTP Client for tiarra.
 
-�֥��å����ʤ��褦�˽�������侩�ʤΤ�,
-�֥��å����ʤ��褦��Ĵ������Ƥ��� HTTP 
-���饤����ȥ⥸�塼��.
+ブロックしないように処理は非推奨なので,
+ブロックしないように調整されている HTTP 
+クライアントモジュール.
 
 =head1 METHODS
 
@@ -547,14 +547,14 @@ HTTP Client for tiarra.
    Method => 'GET',
  );
 
-���󥹥��󥹤�����.
-C<Url> �ڤ� C<Method> ������ɬ��.
+インスタンスの生成.
+C<Url> 及び C<Method> 引数は必須.
 
-����¾�ξ�ά��ǽ�ʰ����Ȥ���,
-C<Content> (POST����),
+その他の省略可能な引数として,
+C<Content> (POST内容),
 C<Header>  (HASH-ref),
-C<Timeout> (��ñ��)
-�����Ѳ�ǽ.
+C<Timeout> (秒単位)
+が利用可能.
 
 =head2 start
 
@@ -564,12 +564,12 @@ C<Timeout> (��ñ��)
  $opts{Callback}         = \&callback;
  $opts{ProgressCallback} = \&progress_callback;
 
-C<\&callback> �Ͻ�����λ���˸ƤФ��ؿ�.
-C<\&progress_callback> �Ͻ����ο�Ľ�����ä��Ȥ��˸ƤФ��ؿ�.
+C<\&callback> は処理完了時に呼ばれる関数.
+C<\&progress_callback> は処理の進捗があったときに呼ばれる関数.
 
-C<\&callback> ��, HTTP������˴�λ�����HASH-ref��,
-�����ॢ���Ȥ䥨�顼���ˤϥ��顼���Ƥ�ޤ��ʸ�����
-�����Ȥ��ƸƤӽФ����.
+C<\&callback> は, HTTPが正常に完了すればHASH-refを,
+タイムアウトやエラー時にはエラー内容を含んだ文字列を
+引数として呼び出される.
 
   sub my_callback {
     my $response = shift;
@@ -586,15 +586,15 @@ C<\&callback> ��, HTTP������˴�λ�����HASH-ref��,
     my $content     = $response->{Content};
   }
 
-C<\&progress_callback> ��Ʊ��, 
-������������ϥ��顼�����ˤϸƤФ�ʤ�.
+C<\&progress_callback> も同様, 
+ただしこちらはエラーの報告には呼ばれない.
 
 =head2 stop
 
  $http->stop();
 
-�ꥯ�����Ȥν�λ.
-���ΤȤ��� L</start> �ǻ��ꤷ�� C<\&callback> ����Ф�ʤ��Τ�����.
+リクエストの終了.
+このときは L</start> で指定した C<\&callback> がよばれないので注意.
 
 =head1 AUTHOR
 

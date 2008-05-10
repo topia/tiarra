@@ -9,79 +9,79 @@ use UNIVERSAL;
 use Tiarra::Encoding;
 use Tiarra::DefineEnumMixin qw(BLOCK_NAME TABLE);
 use Tiarra::Utils;
-# ÃÍ¤ò¼èÆÀ¤¹¤ë¤Ë¤Ïget¥á¥½¥Ã¥É¤òÍÑ¤¤¤ëÂ¾¡¢¥¨¥ó¥È¥êÌ¾¤ò¤½¤Î¤Ş¤Ş¥á¥½¥Ã¥É¤È¤·¤Æ¸Æ¤Ö»ö¤â½ĞÍè¤Ş¤¹¡£
+# å€¤ã‚’å–å¾—ã™ã‚‹ã«ã¯getãƒ¡ã‚½ãƒƒãƒ‰ã‚’ç”¨ã„ã‚‹ä»–ã€ã‚¨ãƒ³ãƒˆãƒªåã‚’ãã®ã¾ã¾ãƒ¡ã‚½ãƒƒãƒ‰ã¨ã—ã¦å‘¼ã¶äº‹ã‚‚å‡ºæ¥ã¾ã™ã€‚
 #
 # $block->hoge;
-# ¤³¤ì¤Ç¥Ñ¥é¥á¡¼¥¿hoge¤ÎÃÍ¤òÊÖ¤¹¡£hoge¤¬Ì¤ÄêµÁ¤Ê¤éundefÃÍ¤òÊÖ¤¹¡£
-# hoge¤ÎÃÍ¤¬°ì¤Ä¤À¤±¤À¤Ã¤¿¤é¤½¤ì¤òÊÖ¤¹¤¬¡¢Ê£¿ô¤ÎÃÍ¤¬Â¸ºß¤·¤¿¤é¤½¤ÎÀèÆ¬¤ÎÃÍ¤À¤±¤òÊÖ¤¹¡£
-# ÃÍ¤â¥Ö¥í¥Ã¥¯¤À¤Ã¤¿¤é¡¢¤½¤Î¥Ö¥í¥Ã¥¯¤òÊÖ¤¹¡£
+# ã“ã‚Œã§ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿hogeã®å€¤ã‚’è¿”ã™ã€‚hogeãŒæœªå®šç¾©ãªã‚‰undefå€¤ã‚’è¿”ã™ã€‚
+# hogeã®å€¤ãŒä¸€ã¤ã ã‘ã ã£ãŸã‚‰ãã‚Œã‚’è¿”ã™ãŒã€è¤‡æ•°ã®å€¤ãŒå­˜åœ¨ã—ãŸã‚‰ãã®å…ˆé ­ã®å€¤ã ã‘ã‚’è¿”ã™ã€‚
+# å€¤ã‚‚ãƒ–ãƒ­ãƒƒã‚¯ã ã£ãŸã‚‰ã€ãã®ãƒ–ãƒ­ãƒƒã‚¯ã‚’è¿”ã™ã€‚
 #
 # $block->hoge('all');
-# ¥Ñ¥é¥á¡¼¥¿hoge¤ÎÁ´¤Æ¤ÎÃÍ¤òÇÛÎó¤ÇÊÖ¤¹¡£hoge¤¬Ì¤ÄêµÁ¤Ê¤é¶õ¤ÎÇÛÎó¤òÊÖ¤¹¡£
-# ÃÍ¤¬°ì¤Ä¤·¤«Ìµ¤±¤ì¤ĞÃÍ¤¬°ì¤Ä¤ÎÇÛÎó¤òÊÖ¤¹¡£
+# ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿hogeã®å…¨ã¦ã®å€¤ã‚’é…åˆ—ã§è¿”ã™ã€‚hogeãŒæœªå®šç¾©ãªã‚‰ç©ºã®é…åˆ—ã‚’è¿”ã™ã€‚
+# å€¤ãŒä¸€ã¤ã—ã‹ç„¡ã‘ã‚Œã°å€¤ãŒä¸€ã¤ã®é…åˆ—ã‚’è¿”ã™ã€‚
 #
 # $block->foo_bar;
 # $block->foo_bar('all');
-# ¥Ñ¥é¥á¡¼¥¿"foo-bar"¤ÎÃÍ¤òÊÖ¤¹¡£"foo_bar"¤Ç¤Ï¤Ê¤¤¡ª
+# ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿"foo-bar"ã®å€¤ã‚’è¿”ã™ã€‚"foo_bar"ã§ã¯ãªã„ï¼
 #
 # $block->foo('random');
-# ¥Ñ¥é¥á¡¼¥¿foo¤ËÊ£¿ô¤ÎÄêµÁ¤¬¤¢¤ì¤Ğ¡¢¤½¤Î¤¦¤Á¤Î°ì¤Ä¤ò¥é¥ó¥À¥à¤ËÊÖ¤¹¡£
-# °ì¤Ä¤âÌµ¤±¤ì¤Ğundef¤òÊÖ¤¹¡£
+# ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿fooã«è¤‡æ•°ã®å®šç¾©ãŒã‚ã‚Œã°ã€ãã®ã†ã¡ã®ä¸€ã¤ã‚’ãƒ©ãƒ³ãƒ€ãƒ ã«è¿”ã™ã€‚
+# ä¸€ã¤ã‚‚ç„¡ã‘ã‚Œã°undefã‚’è¿”ã™ã€‚
 #
 # $block->foo_bar('block');
 # $block->get('foo-bar', 'block');
-# ¥Ñ¥é¥á¡¼¥¿"foo-bar"¤ÎÃÍ¤¬Ì¤ÄêµÁ¤Ç¤¢¤ë¾ì¹ç¡¢undefÃÍ¤ÎÂå¤ï¤ê¤Ë
-# ¶õ¤ÎConfiguration::Block¤òÊÖ¤¹¡£
-# ÄêµÁ¤µ¤ì¤Æ¤¤¤ë¾ì¹ç¡¢¤½¤ÎÃÍ¤¬¥Ö¥í¥Ã¥¯¤Ç¤¢¤ì¤Ğ¤½¤ì¤òÊÖ¤¹¤¬¡¢
-# ¤½¤¦¤Ç¤Ê¤±¤ì¤Ğ "foo-bar: ¤½¤ÎÃÍ" ¤ÎÍ×ÁÇ¤ò»ı¤Ã¤¿¥Ö¥í¥Ã¥¯¤òÀ¸À®¤·¡¢¤½¤ì¤òÊÖ¤¹¡£
+# ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿"foo-bar"ã®å€¤ãŒæœªå®šç¾©ã§ã‚ã‚‹å ´åˆã€undefå€¤ã®ä»£ã‚ã‚Šã«
+# ç©ºã®Configuration::Blockã‚’è¿”ã™ã€‚
+# å®šç¾©ã•ã‚Œã¦ã„ã‚‹å ´åˆã€ãã®å€¤ãŒãƒ–ãƒ­ãƒƒã‚¯ã§ã‚ã‚Œã°ãã‚Œã‚’è¿”ã™ãŒã€
+# ãã†ã§ãªã‘ã‚Œã° "foo-bar: ãã®å€¤" ã®è¦ç´ ã‚’æŒã£ãŸãƒ–ãƒ­ãƒƒã‚¯ã‚’ç”Ÿæˆã—ã€ãã‚Œã‚’è¿”ã™ã€‚
 #
 # $block->get('foo_bar');
 # $block->get('foo_bar','all');
-# ¥Ñ¥é¥á¡¼¥¿"foo_bar"¤ÎÃÍ¤òÊÖ¤¹¡£
+# ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿"foo_bar"ã®å€¤ã‚’è¿”ã™ã€‚
 #
-# °Ê¾å¤Î»ö¤«¤é¡¢Configuration::Block¤Ïnew,block_name,table,set,get,
-# reinterpret-encoding,AUTOLOAD¤È¤¤¤Ã¤¿Â°À­¤Ïget()¤Ç¤·¤«ÆÉ¤á¤Ê¤¤¡£
-# ¤Ş¤¿¡¢Â°À­Ì¾¤Ë¥¢¥ó¥À¡¼¥¹¥³¥¢¤ò»ı¤ÄÂ°À­¤âget()¤Ç¤·¤«ÆÉ¤á¤Ê¤¤¡£
+# ä»¥ä¸Šã®äº‹ã‹ã‚‰ã€Configuration::Blockã¯new,block_name,table,set,get,
+# reinterpret-encoding,AUTOLOADã¨ã„ã£ãŸå±æ€§ã¯get()ã§ã—ã‹èª­ã‚ãªã„ã€‚
+# ã¾ãŸã€å±æ€§åã«ã‚¢ãƒ³ãƒ€ãƒ¼ã‚¹ã‚³ã‚¢ã‚’æŒã¤å±æ€§ã‚‚get()ã§ã—ã‹èª­ã‚ãªã„ã€‚
 
 sub new {
     my ($class,$block_name) = @_;
     my $obj = bless [] => $class;
     $obj->[BLOCK_NAME] = $block_name;
-    $obj->[TABLE]      = {}; # ¥é¥Ù¥ë -> ÃÍ(ÇÛÎó¥ê¥Õ¥¡¤â¤·¤¯¤Ï¥¹¥«¥é¡¼)
+    $obj->[TABLE]      = {}; # ãƒ©ãƒ™ãƒ« -> å€¤(é…åˆ—ãƒªãƒ•ã‚¡ã‚‚ã—ãã¯ã‚¹ã‚«ãƒ©ãƒ¼)
     $obj;
 }
 
 Tiarra::Utils->define_array_attr_accessor(0, qw(block_name table));
 
 sub equals {
-    # Æó¤Ä¤ÎConfiguration::Block¤¬´°Á´¤ËÅù²Á¤Ê¤é1¤òÊÖ¤¹¡£
+    # äºŒã¤ã®Configuration::BlockãŒå®Œå…¨ã«ç­‰ä¾¡ãªã‚‰1ã‚’è¿”ã™ã€‚
     my ($this,$that) = @_;
-    # ¥Ö¥í¥Ã¥¯Ì¾
+    # ãƒ–ãƒ­ãƒƒã‚¯å
     if ($this->[BLOCK_NAME] ne $that->[BLOCK_NAME]) {
 	return undef;
     }
-    # ¥­¡¼¤Î¿ô
+    # ã‚­ãƒ¼ã®æ•°
     my @this_keys = keys %{$this->[TABLE]};
     my @that_keys = keys %{$that->[TABLE]};
     if (@this_keys != @that_keys) {
 	return undef;
     }
-    # ³ÆÍ×ÁÇ
+    # å„è¦ç´ 
     my $size = @this_keys;
     for (my $i = 0; $i < $size; $i++) {
-	# ¥­¡¼
+	# ã‚­ãƒ¼
 	if ($this_keys[$i] ne $that_keys[$i]) {
 	    return undef;
 	}
-	# ÃÍ¤Î·¿
+	# å€¤ã®å‹
 	my $this_value = $this->[TABLE]->{$this_keys[$i]};
 	my $that_value = $that->[TABLE]->{$that_keys[$i]};
 	if (ref($this_value) ne ref($that_value)) {
 	    return undef;
 	}
-	# ÃÍ
+	# å€¤
 	if (ref($this_value) eq 'ARRAY') {
-	    # ÇÛÎó¤Ê¤Î¤ÇÍ×ÁÇ¿ô¤ÈÁ´Í×ÁÇ¤òÈæ³Ó¡£
+	    # é…åˆ—ãªã®ã§è¦ç´ æ•°ã¨å…¨è¦ç´ ã‚’æ¯”è¼ƒã€‚
 	    if (@$this_value != @$that_value) {
 		return undef;
 	    }
@@ -93,7 +93,7 @@ sub equals {
 	    }
 	}
 	elsif (UNIVERSAL::isa($this_value,'Configuration::Block')) {
-	    # ¥Ö¥í¥Ã¥¯¤Ê¤Î¤ÇºÆµ¢Åª¤ËÈæ³Ó¡£
+	    # ãƒ–ãƒ­ãƒƒã‚¯ãªã®ã§å†å¸°çš„ã«æ¯”è¼ƒã€‚
 	    return $this_value->equals($that_value);
 	}
 	else {
@@ -106,11 +106,11 @@ sub equals {
 }
 
 sub eval_code {
-    # ÅÏ¤µ¤ì¤¿Ê¸»úÎóÃæ¤Î¡¢Á´¤Æ¤Î%CODE{ ... }EDOC%¤òÉ¾²Á¤·¤ÆÊÖ¤¹¡£
+    # æ¸¡ã•ã‚ŒãŸæ–‡å­—åˆ—ä¸­ã®ã€å…¨ã¦ã®%CODE{ ... }EDOC%ã‚’è©•ä¾¡ã—ã¦è¿”ã™ã€‚
     my ($this,$str) = @_;
 
     if (ref($str)) {
-	return $str; # Ê¸»úÎó¤Ç¤Ê¤«¤Ã¤¿¤é¤½¤Î¤Ş¤ŞÊÖ¤¹¡£
+	return $str; # æ–‡å­—åˆ—ã§ãªã‹ã£ãŸã‚‰ãã®ã¾ã¾è¿”ã™ã€‚
     }
 
     my $eval = sub {
@@ -134,7 +134,7 @@ sub get {
     my ($this,$key,$option) = @_;
 
     unless (exists $this->[TABLE]->{$key}) {
-	# ¤½¤Î¤è¤¦¤ÊÃÍ¤ÏÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤¡£
+	# ãã®ã‚ˆã†ãªå€¤ã¯å®šç¾©ã•ã‚Œã¦ã„ãªã„ã€‚
 	if ($option && $option eq 'all') {
 	    return ();
 	}
@@ -151,7 +151,7 @@ sub get {
 	if (ref($value) eq 'ARRAY') {
 	    return map {
 		$this->eval_code($_);
-	    } @{$value}; # ÇÛÎó¥ê¥Õ¥¡¤Ê¤éµÕ»²¾È¤·¤ÆÊÖ¤¹¡£
+	    } @{$value}; # é…åˆ—ãƒªãƒ•ã‚¡ãªã‚‰é€†å‚ç…§ã—ã¦è¿”ã™ã€‚
 	}
 	else {
 	    return $this->eval_code($value);
@@ -159,7 +159,7 @@ sub get {
     }
     elsif ($option && $option eq 'random') {
 	if (ref($value) eq 'ARRAY') {
-	    # ÇÛÎó¥ê¥Õ¥¡¤Ê¤é¥é¥ó¥À¥à¤ËÁª¤ó¤ÇÊÖ¤¹
+	    # é…åˆ—ãƒªãƒ•ã‚¡ãªã‚‰ãƒ©ãƒ³ãƒ€ãƒ ã«é¸ã‚“ã§è¿”ã™
 	    return $this->eval_code(
 		$value->[int(rand(0xffffffff)) % @$value]);
 	}
@@ -179,7 +179,7 @@ sub get {
     }
     else {
 	if (ref($value) eq 'ARRAY') {
-	    return $this->eval_code($value->[0]); # ÇÛÎó¥ê¥Õ¥¡¤Ê¤éÀèÆ¬¤ÎÃÍ¤òÊÖ¤¹¡£
+	    return $this->eval_code($value->[0]); # é…åˆ—ãƒªãƒ•ã‚¡ãªã‚‰å…ˆé ­ã®å€¤ã‚’è¿”ã™ã€‚
 	}
 	else {
 	    return $this->eval_code($value);
@@ -188,35 +188,35 @@ sub get {
 }
 
 sub set {
-    # ¸Å¤¤ÃÍ¤¬¤¢¤ì¤Ğ¾å½ñ¤­¤¹¤ë¡£
+    # å¤ã„å€¤ãŒã‚ã‚Œã°ä¸Šæ›¸ãã™ã‚‹ã€‚
     my ($this,$key,$value) = @_;
     $this->[TABLE]->{$key} = $value;
     $this;
 }
 
 sub add {
-    # ¸Å¤¤ÃÍ¤¬¤¢¤ì¤Ğ¤½¤ì¤ËÄÉ²Ã¤¹¤ë¡£
+    # å¤ã„å€¤ãŒã‚ã‚Œã°ãã‚Œã«è¿½åŠ ã™ã‚‹ã€‚
     my ($this,$key,$value) = @_;
     if (defined $this->[TABLE]->{$key}) {
-	# ÄêµÁºÑ¤ß¡£
+	# å®šç¾©æ¸ˆã¿ã€‚
 	if (ref($this->[TABLE]->{$key}) eq 'ARRAY') {
-	    # ´û¤ËÊ£¿ô¤ÎÃÍ¤ò»ı¤Ã¤Æ¤¤¤ë¤Î¤Ç¤¿¤ÀÄÉ²Ã¤¹¤ë¡£
+	    # æ—¢ã«è¤‡æ•°ã®å€¤ã‚’æŒã£ã¦ã„ã‚‹ã®ã§ãŸã è¿½åŠ ã™ã‚‹ã€‚
 	    push @{$this->[TABLE]->{$key}},$value;
 	}
 	else {
-	    # ÇÛÎó¤ËÊÑ¹¹¤¹¤ë¡£
+	    # é…åˆ—ã«å¤‰æ›´ã™ã‚‹ã€‚
 	    $this->[TABLE]->{$key} = [$this->[TABLE]->{$key},$value];
 	}
     }
     else {
-	# ÄêµÁºÑ¤ß¤Ç¤Ê¤¤¡£
+	# å®šç¾©æ¸ˆã¿ã§ãªã„ã€‚
 	$this->[TABLE]->{$key} = $value;
     }
 }
 
 sub reinterpret_encoding {
-    # ¤³¤Î¥Ö¥í¥Ã¥¯¤ÎÁ´¤Æ¤ÎÍ×ÁÇ¤ò»ØÄê¤µ¤ì¤¿Ê¸»ú¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°¤ÇºÆ²ò¼á¤¹¤ë¡£
-    # ºÆ²ò¼á¸å¤ÏUTF-8¤Ë¤Ê¤ë¡£
+    # ã“ã®ãƒ–ãƒ­ãƒƒã‚¯ã®å…¨ã¦ã®è¦ç´ ã‚’æŒ‡å®šã•ã‚ŒãŸæ–‡å­—ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°ã§å†è§£é‡ˆã™ã‚‹ã€‚
+    # å†è§£é‡ˆå¾Œã¯UTF-8ã«ãªã‚‹ã€‚
     my ($this,$encoding) = @_;
 
     my $unicode = Tiarra::Encoding->new;
@@ -225,14 +225,14 @@ sub reinterpret_encoding {
 	my $newkey = $unicode->set($key,$encoding)->utf8;
 	my $newvalue = do {
 	    if (ref($value) eq 'ARRAY') {
-		# ÇÛÎó¤Ê¤Î¤ÇÃæ¿È¤òÁ´¤Æ¥³¡¼¥ÉÊÑ´¹¡£
+		# é…åˆ—ãªã®ã§ä¸­èº«ã‚’å…¨ã¦ã‚³ãƒ¼ãƒ‰å¤‰æ›ã€‚
 		my @newarray = map {
 		    $unicode->set($_,$encoding)->utf8;
 		} @$value;
 		\@newarray;
 	    }
 	    elsif (UNIVERSAL::isa($value,'Configuration::Block')) {
-		# ¥Ö¥í¥Ã¥¯¤Ê¤Î¤ÇºÆµ¢Åª¤Ë¥³¡¼¥ÉÊÑ´¹¡£
+		# ãƒ–ãƒ­ãƒƒã‚¯ãªã®ã§å†å¸°çš„ã«ã‚³ãƒ¼ãƒ‰å¤‰æ›ã€‚
 		$value->reinterpret_encoding($encoding);
 	    }
 	    else {
@@ -250,7 +250,7 @@ sub AUTOLOAD {
     my ($this,$option) = @_;
     
     if ($AUTOLOAD =~ /::DESTROY$/) {
-	# DESTROY¤ÏÅÁÃ£¤µ¤»¤Ê¤¤¡£
+	# DESTROYã¯ä¼é”ã•ã›ãªã„ã€‚
 	return;
     }
 

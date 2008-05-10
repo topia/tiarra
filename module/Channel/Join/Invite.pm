@@ -45,14 +45,14 @@ sub message_arrived {
 1;
 
 =pod
-info: ���Ԥ��줿�餽�Υ����ͥ�����롣
+info: 招待されたらそのチャンネルに入る。
 default: off
 section: important
 
-# ���Ĥ���桼��/�����ͥ�Υޥ�����
+# 許可するユーザ/チャンネルのマスク。
 mask: * *!*@*
 # plum: *!*@*
 
-# ���Ԥ��줿�����ͥ��ή����å������Υե����ޥåȡ�
--message: ����Ф�����
+# 招待されたチャンネルに流すメッセージのフォーマット。
+-message: こんばんわ〜。
 =cut

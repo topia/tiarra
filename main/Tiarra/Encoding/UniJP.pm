@@ -22,8 +22,8 @@ sub getcode {
     # really unknown encoding.
     return $guess if $guess eq 'unknown';
 
-    # getcode�Ǹ��Ф��줿ʸ�������ɤ�encodings�˻��ꤵ��Ƥ����Τ�����к��ѡ�
-    # ̵�����encodings�ΰ��ֺǽ����Ѥ��롣 (UTF-8��SJIS��ǧ�������ꤹ�뤿�ᡣ)
+    # getcodeで検出された文字コードでencodingsに指定されているものがあれば採用。
+    # 無ければencodingsの一番最初を採用する。 (UTF-8をSJISと認識したりするため。)
     $guess = ((grep {$guess eq $_} @encodings), @encodings)[0];
     $guess;
 }
@@ -59,7 +59,7 @@ sub AUTOLOAD {
     my $this = shift;
 
     if ($AUTOLOAD =~ /::DESTROY$/) {
-	# DESTROY����ã�����ʤ���
+	# DESTROYは伝達させない。
 	return;
     }
 

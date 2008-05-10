@@ -58,11 +58,11 @@ sub message_io_hook {
 
 1;
 =pod
-info: ¥¯¥é¥¤¥¢¥ó¥È¤Ë CTCP Version ¤òÈ¯¹Ô¤·¤Æ¥Ð¡¼¥¸¥ç¥ó¾ðÊó¤òÆÀ¤ë
+info: ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã« CTCP Version ã‚’ç™ºè¡Œã—ã¦ãƒãƒ¼ã‚¸ãƒ§ãƒ³æƒ…å ±ã‚’å¾—ã‚‹
 default: on
 
-# ¥ª¥×¥·¥ç¥ó¤Ï¤¤¤Þ¤Î¤È¤³¤í¤¢¤ê¤Þ¤»¤ó¡£
-# (³«È¯¼Ô¸þ¤±¾ðÊó: ¼èÆÀ¤·¤¿¾ðÊó¤Ï remark ¤Î client-version ¤ËÀßÄê¤µ¤ì¡¢
-#                  Client::Guess ¤«¤é»ÈÍÑ¤µ¤ì¤Þ¤¹¡£)
+# ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã¯ã„ã¾ã®ã¨ã“ã‚ã‚ã‚Šã¾ã›ã‚“ã€‚
+# (é–‹ç™ºè€…å‘ã‘æƒ…å ±: å–å¾—ã—ãŸæƒ…å ±ã¯ remark ã® client-version ã«è¨­å®šã•ã‚Œã€
+#                  Client::Guess ã‹ã‚‰ä½¿ç”¨ã•ã‚Œã¾ã™ã€‚)
 
 =cut

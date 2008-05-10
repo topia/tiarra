@@ -1,30 +1,30 @@
 -*- text -*-
 $Id: AUTHORS,v 1.1 2004/02/14 08:44:24 admin Exp $
-�ץ������: Tiarra
-���ꥸ�ʥ볫ȯ��: phonohawk <phonohawk@ps.sakura.ne.jp>
+プログラム: Tiarra
+オリジナル開発者: phonohawk <phonohawk@ps.sakura.ne.jp>
 
-Authors (�ɾ�ά)
+Authors (敬称略)
 ===============
 
 * tiarra, main/*
 
-phonohawk: �߷�, �ؤɤΥ��饹�μ���
-Topia: ���Ĥ��Υ��饹���߷פȼ���, ¿���β��ɤȥХ�����
+phonohawk: 設計, 殆どのクラスの実装
+Topia: 幾つかのクラスの設計と実装, 多数の改良とバグ修正
 
-* module/����Auto��Ϣ
+* module/下、Auto関連
 
-Topia: �ۤ�����
-phonohawk: (����С������Τ�)�߷פȼ���
+Topia: ほぼ全て
+phonohawk: (初期バージョンのみ)設計と実装
 
-* module/����Auto�ʳ�
+* module/下、Auto以外
 
-phonohawk: �ۤ�����
-Topia: ���Ĥ��Υ��饹���߷פȼ���, ¿���β��ɤȥХ�����
+phonohawk: ほぼ全て
+Topia: 幾つかのクラスの設計と実装, 多数の改良とバグ修正
 
 * module/System/SendMessage.pm
 
-Yoichi Imai: ����߷פȼ�����
-Topia: ����
+Yoichi Imai: 初期設計と実装。
+Topia: 改良
 
 * bundle/IO/Socket/INET6.pm
 
@@ -36,19 +36,19 @@ phonohawk
 
 * tiarra-conf.l
 
-Noboruhi: tiarra-conf.el����ΰܿ�
+Noboruhi: tiarra-conf.elからの移植
 
 * doc/*, doc-src/*
 
-phonohawk: �ۤ�����
-other: �⥸�塼�뤫�� ./makedoc �ˤ�꼫ư������
+phonohawk: ほぼ全て
+other: モジュールから ./makedoc により自動生成。
 
-* ���������֤κ���������
+* アーカイブの作成と配布
 
-Topia (2004ǯ10���)
+Topia (2004年10月現在)
 
-* bundle/ �˥Х�ɥ뤵��Ƥ��볰���⥸�塼��
- (IO/Socket/INET6.pm �Ͻ����ޤ���)
+* bundle/ にバンドルされている外部モジュール
+ (IO/Socket/INET6.pm は除きます。)
 
 Unicode::Japanese(PurePerl):
   Copyright 2001-2004
@@ -56,8 +56,8 @@ Unicode::Japanese(PurePerl):
   All right reserved.
 
 ===============
-����¾��¿�����������Х�������ɰ�����ĺ����Tiarra�ϲ�������Ƥ���ޤ���
-���ξ��ڤ�ƴ��դΰդ򿽤��夲�ޤ���
+その他、多数の方々よりバグ報告や改良案等を頂き、Tiarraは改善されております。
+この場を借りて感謝の意を申し上げます。
 
 - phonohawk -                     http://ccm.sherry.jp/
 OpenPGP public key: 1024D/1A86EF72

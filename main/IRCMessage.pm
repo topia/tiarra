@@ -1,35 +1,35 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# IRCMessage¤ÏIRC¤Î¥á¥Ã¥»¡¼¥¸¤òÉ½¤ï¤¹¥¯¥é¥¹¤Ç¤¹¡£¼ÂºÝ¤Î¥á¥Ã¥»¡¼¥¸¤ÏUTF-8¤ÇÊÝ»ý¤·¤Þ¤¹¡£
-# À¸¤Î¥á¥Ã¥»¡¼¥¸¤Î¥Ñ¡¼¥¹¡¢¥·¥ê¥¢¥é¥¤¥º¡¢¤½¤·¤Æ¥á¥Ã¥»¡¼¥¸¤ÎÀ¸À®¤ò¥µ¥Ý¡¼¥È¤·¤Þ¤¹¡£
-# ¥Ñ¡¼¥¹¤È¥·¥ê¥¢¥é¥¤¥º¤Ë¤ÏÊ¸»ú¥³¡¼¥É¤ò»ØÄê¤·¤Æ²¼¤µ¤¤¡£¥³¡¼¥É¤òÊÑ´¹¤·¤Þ¤¹¡£
-# Line¤ÈEncoding°Ê³°¤Î¼êÃÊ¤Ç¥¤¥ó¥¹¥¿¥ó¥¹¤òÀ¸À®¤¹¤ëºÝ¤Ï¡¢
-# ¥Ñ¥é¥á¡¼¥¿¤È¤·¤ÆUTF-8¤ÎÃÍ¤òÅÏ¤·¤Æ²¼¤µ¤¤¡£
-# ¥¤¥ó¥¿¡¼¥Õ¥§¡¼¥¹¤ÏÆ±°ì¤Ç¤¹¡£
+# IRCMessageã¯IRCã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¡¨ã‚ã™ã‚¯ãƒ©ã‚¹ã§ã™ã€‚å®Ÿéš›ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã¯UTF-8ã§ä¿æŒã—ã¾ã™ã€‚
+# ç”Ÿã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®ãƒ‘ãƒ¼ã‚¹ã€ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚ºã€ãã—ã¦ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®ç”Ÿæˆã‚’ã‚µãƒãƒ¼ãƒˆã—ã¾ã™ã€‚
+# ãƒ‘ãƒ¼ã‚¹ã¨ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚ºã«ã¯æ–‡å­—ã‚³ãƒ¼ãƒ‰ã‚’æŒ‡å®šã—ã¦ä¸‹ã•ã„ã€‚ã‚³ãƒ¼ãƒ‰ã‚’å¤‰æ›ã—ã¾ã™ã€‚
+# Lineã¨Encodingä»¥å¤–ã®æ‰‹æ®µã§ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆã™ã‚‹éš›ã¯ã€
+# ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã¨ã—ã¦UTF-8ã®å€¤ã‚’æ¸¡ã—ã¦ä¸‹ã•ã„ã€‚
+# ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹ã¯åŒä¸€ã§ã™ã€‚
 # -----------------------------------------------------------------------------
-# À¸À®ÊýË¡°ìÍ÷
+# ç”Ÿæˆæ–¹æ³•ä¸€è¦§
 #
 # $msg = new IRCMessage(Line => ':foo!~foo@hogehoge.net PRIVMSG #hoge :hoge',
 #                       Encoding => 'jis');
-# print $msg->command; # 'PRIVMSG'¤òÉ½¼¨
+# print $msg->command; # 'PRIVMSG'ã‚’è¡¨ç¤º
 #
-# $msg = new IRCMessage(Server => 'irc.hogehoge.net', # Server¤ÏPrefix¤Ç¤âÎÉ¤¤¡£
+# $msg = new IRCMessage(Server => 'irc.hogehoge.net', # Serverã¯Prefixã§ã‚‚è‰¯ã„ã€‚
 #                       Command => '366',
 #                       Params => ['hoge','#hoge','End of /NAMES list.']);
-# print $msg->serialize('jis'); # ":irc.hogehoge.net 366 hoge #hoge :End of /NAMES list."¤òÉ½¼¨
+# print $msg->serialize('jis'); # ":irc.hogehoge.net 366 hoge #hoge :End of /NAMES list."ã‚’è¡¨ç¤º
 #
 # $msg = new IRCMessage(Nick => 'foo',
 #                       User => '~bar',
-#                       Host => 'hogehoge.net', # °Ê¾å£³¤Ä¤Î¥Ñ¥é¥á¡¼¥¿¤ÎÂå¤ï¤ê¤ËPrefix => 'foo!~bar@hogehoge.net'¤Ç¤âÎÉ¤¤¡£
+#                       Host => 'hogehoge.net', # ä»¥ä¸Šï¼“ã¤ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®ä»£ã‚ã‚Šã«Prefix => 'foo!~bar@hogehoge.net'ã§ã‚‚è‰¯ã„ã€‚
 #                       Command => 'NICK',
-#                       Params => 'huga', # Params¤ÏÍ×ÁÇ¤¬°ì¤Ä¤À¤±¤Ê¤é¥¹¥«¥é¡¼ÃÍ¤Ç¤âÎÉ¤¤¡£(¤³¤Î»þ¡¢Params¤Ç¤Ê¤¯Param¤Ç¤âÎÉ¤¤¡£)
-#                       Remarks => {'saitama' => 'SAITAMA'}, # È÷¹ÍÍó¡£¥·¥ê¥¢¥é¥¤¥º¤Ë¤Ï±Æ¶Á¤·¤Ê¤¤¡£
-# print $msg->serialize('jis'); # ":foo!~bar@hogehoge.net NICK :huga"¤òÉ½¼¨
+#                       Params => 'huga', # Paramsã¯è¦ç´ ãŒä¸€ã¤ã ã‘ãªã‚‰ã‚¹ã‚«ãƒ©ãƒ¼å€¤ã§ã‚‚è‰¯ã„ã€‚(ã“ã®æ™‚ã€Paramsã§ãªãParamã§ã‚‚è‰¯ã„ã€‚)
+#                       Remarks => {'saitama' => 'SAITAMA'}, # å‚™è€ƒæ¬„ã€‚ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚ºã«ã¯å½±éŸ¿ã—ãªã„ã€‚
+# print $msg->serialize('jis'); # ":foo!~bar@hogehoge.net NICK :huga"ã‚’è¡¨ç¤º
 #
 # $msg = new IRCMessage(Command => 'NOTICE',
 #                       Params => ['foo','hugahuga']);
-# print $msg->serialize('jis'); # "NOTICE foo :hugahuga"¤òÉ½¼¨
+# print $msg->serialize('jis'); # "NOTICE foo :hugahuga"ã‚’è¡¨ç¤º
 #
 package IRCMessage;
 use base qw(Tiarra::IRC::Message);

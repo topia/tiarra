@@ -13,7 +13,7 @@ sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
     $this->{queue} = {}; # network name => [[channel(short),nick], ...]
-    $this->{timer} = undef; # queue�����Ǥʤ�������ɬ�פˤʤ�Timer
+    $this->{timer} = undef; # queueが空でない時だけ必要になるTimer
     $this;
 }
 
@@ -26,13 +26,13 @@ sub destruct {
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
-    # ��˿ʤि��ξ��:
-    # 1. �����С�����Υ�å������Ǥ���
-    # 2. ���ޥ�ɤ�JOIN�Ǥ���
-    # 3. ��ʬ��JOIN�ǤϤʤ�
-    # 4. @�դ���JOIN�ǤϤʤ�
-    # 5. ���Υ����ͥ�Ǽ�ʬ��@����äƤ���
-    # 6. ����mask�˰��פ���
+    # 先に進むための条件:
+    # 1. サーバーからのメッセージである
+    # 2. コマンドはJOINである
+    # 3. 自分のJOINではない
+    # 4. @付きのJOINではない
+    # 5. そのチャンネルで自分は@を持っている
+    # 6. 相手はmaskに一致する
     if ($sender->isa('IrcIO::Server') &&
 	$msg->command eq 'JOIN' &&
 	defined $msg->nick &&
@@ -44,8 +44,8 @@ sub message_arrived {
 	    my $myself = $ch->names($sender->current_nick);
 	    if (defined $myself && $myself->has_o && (!defined $mode || $mode !~ /o/)) {
 		if (Mask::match_deep_chan([$this->config->mask('all')],$msg->prefix,$ch_full)) {
-		    # wait�ǻ��ꤵ�줿�ÿ��ηв��ˡ����塼������롣
-		    # Ʊ���˥��塼�ò������ޡ���������롣
+		    # waitで指定された秒数の経過後に、キューに入れる。
+		    # 同時にキュー消化タイマーを準備する。
 		    $this->push_to_queue($sender,$ch_short,$msg->nick);
 		}
 	    }
@@ -63,7 +63,7 @@ sub push_to_queue {
     Timer->new(
 	After => $wait,
 	Code => sub {
-	    # �оݤοͤ�����+o����Ƥ�������ߡ�
+	    # 対象の人が既に+oされていたら中止。
 	    my $ch = $server->channel($ch_short);
 	    return if !defined $ch;
 	    my $target = $ch->names($nick);
@@ -81,17 +81,17 @@ sub push_to_queue {
 
 sub prepare_timer {
     my ($this) = @_;
-    # ���塼�ò������ޡ���¸�ߤ��ʤ���к��
+    # キュー消化タイマーが存在しなければ作る
     if (!defined $this->{timer}) {
 	$this->{timer} = Timer->new(
-	    Interval => 0, # �������ǽ��trigger���ѹ����롣
+	    Interval => 0, # 勿論、最初のtriggerで変更する。
 	    Repeat => 1,
 	    Code => sub {
 		my ($timer) = @_;
 		$timer->interval(1);
 
-		# �����3�Ĥ��ľò����롣
-		# �����ͥ���˺��磳�Ĥ���Ż��롣
+		# 鯖毎に3つずつ消化する。
+		# チャンネル毎に最大３つずつ纏める。
 		foreach my $network_name (keys %{$this->{queue}}) {
 		    my $queue = $this->{queue}->{$network_name};
 		    my $server = $this->_runloop->network($network_name);
@@ -112,11 +112,11 @@ sub prepare_timer {
 					   '+'.('o' x @$nicks),
 					   @$nicks]));
 		    }
-		    # ���塼�����ˤʤä��饭�����Ⱦä���
+		    # キューが空になったらキーごと消す。
 		    delete $this->{queue}->{$network_name} unless @$queue;
 		}
 
-		# ���ƤΥ��塼�����ˤʤä��齪λ��
+		# 全てのキューが空になったら終了。
 		if (!%{$this->{queue}}) {
 		    $timer->uninstall;
 		    $this->{timer} = undef;
@@ -128,18 +128,18 @@ sub prepare_timer {
 1;
 
 =pod
-info: ����Υ����ͥ������οʹ֤�join�������ˡ���ʬ�������ͥ륪�ڥ졼�����¤���äƤ����+o���롣
+info: 特定のチャンネルに特定の人間がjoinした時に、自分がチャンネルオペレータ権限を持っていれば+oする。
 default: off
 section: important
 
-# split����������ʤɤ�+o�оݤοͤ����٤����̤����ä���Ƥ�+o�Ͼ������ļ¹Ԥ��ޤ���
-# Excess Flood�ˤϤʤ�ʤ�Ȧ�Ǥ������ܳ�Ū���ɱ�BOT�˻Ȥ�������ʪ�ǤϤ���ޤ���
+# splitからの復帰などで+o対象の人が一度に大量に入って来ても+oは少しずつ実行します。
+# Excess Floodにはならない筈ですが、本格的な防衛BOTに使える程の物ではありません。
 
-# �оݤοʹ֤�join���Ƥ���ºݤ�+o����ޤǲ����ԤĤ���
-# ��ά���줿���Ԥ��ޤ���
-# 5-10 �Τ褦�˻��ꤵ���ȡ������ͤ���ǥ�������Ԥ��ޤ���
+# 対象の人間がjoinしてから実際に+oするまで何秒待つか。
+# 省略されたら待ちません。
+# 5-10 のように指定されると、その値の中でランダムに待ちます。
 wait: 2-5
 
-# �����ͥ�ȿʹ֤Υޥ����������Auto::Oper��Ʊ�͡�
+# チャンネルと人間のマスクを定義。Auto::Operと同様。
 -mask: * example!~example@*.example.ne.jp
 =cut

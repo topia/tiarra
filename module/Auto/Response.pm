@@ -26,9 +26,9 @@ sub message_arrived {
   my ($this,$msg,$sender) = @_;
   my @result = ($msg);
 
-  # ¥µ¡¼¥Ğ¡¼¤«¤é¤Î¥á¥Ã¥»¡¼¥¸¤«¡©
+  # ã‚µãƒ¼ãƒãƒ¼ã‹ã‚‰ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‹ï¼Ÿ
   if ($sender->isa('IrcIO::Server')) {
-    # PRIVMSG¤«¡©
+    # PRIVMSGã‹ï¼Ÿ
     if ($msg->command eq 'PRIVMSG') {
       my @matches = $this->{database}->find_groups_with_primary($msg->param(1));
       if (@matches) {
@@ -38,12 +38,12 @@ sub message_arrived {
 	  = Auto::Utils::generate_reply_closures($msg, $sender, \@result, undef, $callbacks);
 
 	if (Mask::match_deep_chan([$this->config->mask('all')],$msg->prefix, $get_full_ch_name->())) {
-	  # °ìÃ×¤·¤Æ¤¤¤¿¡£
+	  # ä¸€è‡´ã—ã¦ã„ãŸã€‚
 	  foreach my $match (@matches) {
-	    # mask¤¬°ìÃ×¤·¤Ê¤±¤ì¤Ğ¼Â¹Ô¤·¤Ê¤¤¡£Èô¤Ğ¤¹¡£
+	    # maskãŒä¸€è‡´ã—ãªã‘ã‚Œã°å®Ÿè¡Œã—ãªã„ã€‚é£›ã°ã™ã€‚
 	    my $mask = Tools::GroupDB::get_array($match, 'mask');
 	    next if ($mask && !Mask::match_deep_chan($mask, $msg->prefix, $get_full_ch_name->()));
-	    # rate°Ê²¼¤Ê¤é¤Ğ¼Â¹Ô¤·¤Ê¤¤¡£Èô¤Ğ¤¹¡£
+	    # rateä»¥ä¸‹ãªã‚‰ã°å®Ÿè¡Œã—ãªã„ã€‚é£›ã°ã™ã€‚
 	    my $rate = Tools::GroupDB::get_value($match, 'rate');
 	    next unless !defined($rate) || (int(rand(100)) < $rate);
 	    $reply_anywhere->(Tools::GroupDB::get_value_random($match, 'response'));
@@ -59,33 +59,33 @@ sub message_arrived {
 1;
 
 =pod
-info: ¥Ç¡¼¥¿¥Õ¥¡¥¤¥ë¤Î»ØÄê¤Ë¤·¤¿¤¬¤Ã¤ÆÈ¿±ş¤¹¤ë¡£
+info: ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ã®æŒ‡å®šã«ã—ãŸãŒã£ã¦åå¿œã™ã‚‹ã€‚
 default: off
 
-# ÂçÎÌ¤ÎÈ¿±ş¥Ç¡¼¥¿¤òÄêµÁ¤¹¤ë¤Î¤Ë¸ş¤¤¤Æ¤¤¤Ş¤¹¡£
+# å¤§é‡ã®åå¿œãƒ‡ãƒ¼ã‚¿ã‚’å®šç¾©ã™ã‚‹ã®ã«å‘ã„ã¦ã„ã¾ã™ã€‚
 
-# ¥Ç¡¼¥¿¥Õ¥¡¥¤¥ë¤Î¥Õ¥©¡¼¥Ş¥Ã¥È
-# | pattern: re:^(¤³¤ó(¤Ë)?¤Á¤Ï)
+# ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ
+# | pattern: re:^(ã“ã‚“(ã«)?ã¡ã¯)
 # | rate: 90
 # | mask: * *!*@*
 # | #plum: mask: *!*@*
-# | response: ¤³¤ó¤Ë¤Á¤Ï¡£
-# | response: ¤¤¤é¤Ã¤·¤ã¤¤¤Ş¤»¡£
+# | response: ã“ã‚“ã«ã¡ã¯ã€‚
+# | response: ã„ã‚‰ã£ã—ã‚ƒã„ã¾ã›ã€‚
 # |
-# | pattern: ¤ª¤ä¤¹¤ß
+# | pattern: ãŠã‚„ã™ã¿
 # | rate: 20
-# | response: ¤ª¤ä¤¹¤ß¤Ê¤µ¤¤¡£
-# pattern¤Ï°ì¹Ô¤·¤«½ñ¤±¤Ş¤»¤ó¡£(¼êÈ´¤­
-# mask¤ârate¤â¾ÊÎ¬¤Ç¤­¤Ş¤¹¡£¾ÊÎ¬¤·¤¿¾ì¹ç¤Ïmask¤ÏÁ´°÷¡¢rate¤Ï100¤È¤Ê¤ê¤Ş¤¹¡£
-# response¤ÏÊ£¿ô½ñ¤¤¤Æ¤ª¤±¤Ğ¥é¥ó¥À¥à¤ËÁªÂò¤µ¤ì¤Ş¤¹¡£
+# | response: ãŠã‚„ã™ã¿ãªã•ã„ã€‚
+# patternã¯ä¸€è¡Œã—ã‹æ›¸ã‘ã¾ã›ã‚“ã€‚(æ‰‹æŠœã
+# maskã‚‚rateã‚‚çœç•¥ã§ãã¾ã™ã€‚çœç•¥ã—ãŸå ´åˆã¯maskã¯å…¨å“¡ã€rateã¯100ã¨ãªã‚Šã¾ã™ã€‚
+# responseã¯è¤‡æ•°æ›¸ã„ã¦ãŠã‘ã°ãƒ©ãƒ³ãƒ€ãƒ ã«é¸æŠã•ã‚Œã¾ã™ã€‚
 
-# ¥Ç¡¼¥¿¥Õ¥¡¥¤¥ë
+# ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«
 file: response.txt
 
-# Ê¸»ú¥³¡¼¥É
+# æ–‡å­—ã‚³ãƒ¼ãƒ‰
 charset: euc
 
-# »ÈÍÑ¤òµö²Ä¤¹¤ë¿Í&¥Á¥ã¥ó¥Í¥ë¤Î¥Ş¥¹¥¯¡£
+# ä½¿ç”¨ã‚’è¨±å¯ã™ã‚‹äºº&ãƒãƒ£ãƒ³ãƒãƒ«ã®ãƒã‚¹ã‚¯ã€‚
 mask: * *!*@*
 # plum: mask: +*!*@*
 =cut

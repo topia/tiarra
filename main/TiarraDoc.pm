@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------
 # $Id$
 # ------------------------------------------------------------------------
-# tiarra-doc¤Î¥Ñ¡¼¥µ¤È¥È¥é¥ó¥¹¥ì¡¼¥¿·²¡£
+# tiarra-docã®ãƒ‘ãƒ¼ã‚µã¨ãƒˆãƒ©ãƒ³ã‚¹ãƒ¬ãƒ¼ã‚¿ç¾¤ã€‚
 # ------------------------------------------------------------------------
 use strict;
 use warnings;
@@ -16,15 +16,15 @@ sub new {
     my $this = {
 	fpath => $fpath,
 
-	docs => undef, # {¥Ñ¥Ã¥±¡¼¥¸Ì¾ => DocPod}
+	docs => undef, # {ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸å => DocPod}
     };
     bless $this,$class;
 }
 
 sub makeconf {
-    # conf¤Î¥Ö¥í¥Ã¥¯¤òÀ¸À®¤¹¤ë¡£
-    # Ìá¤êÃÍ: ([¥Ö¥í¥Ã¥¯Ì¾,info,¥Ö¥í¥Ã¥¯(Ê¸»úÎó)],...)
-    # ¥¹¥«¥é¡¼¥³¥ó¥Æ¥¯¥¹¥È¤Ç¸Æ¤Ö¤Ècroak¡£
+    # confã®ãƒ–ãƒ­ãƒƒã‚¯ã‚’ç”Ÿæˆã™ã‚‹ã€‚
+    # æˆ»ã‚Šå€¤: ([ãƒ–ãƒ­ãƒƒã‚¯å,info,ãƒ–ãƒ­ãƒƒã‚¯(æ–‡å­—åˆ—)],...)
+    # ã‚¹ã‚«ãƒ©ãƒ¼ã‚³ãƒ³ãƒ†ã‚¯ã‚¹ãƒˆã§å‘¼ã¶ã¨croakã€‚
     croak "You can't call DocParser->makeconf directly.";
 }
 
@@ -33,8 +33,8 @@ sub makehtml {
 }
 
 sub getdoc {
-    # ¥Ñ¥Ã¥±¡¼¥¸Ì¾¤ò¾ÊÎ¬¤¹¤ë¤È¡¢Í×ÁÇ¤¬°ì¤Ä¤Ç¤¢¤ì¤Ğ¤½¤ì¤òÊÖ¤·¡¢
-    # Ê£¿ô¤¢¤ì¤Ğcroak¤¹¤ë¡£°ì¤Ä¤âÌµ¤±¤ì¤Ğundef¤òÊÖ¤¹¡£
+    # ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸åã‚’çœç•¥ã™ã‚‹ã¨ã€è¦ç´ ãŒä¸€ã¤ã§ã‚ã‚Œã°ãã‚Œã‚’è¿”ã—ã€
+    # è¤‡æ•°ã‚ã‚Œã°croakã™ã‚‹ã€‚ä¸€ã¤ã‚‚ç„¡ã‘ã‚Œã°undefã‚’è¿”ã™ã€‚
     my ($this,$pkg_name) = @_;
 
     if (!defined $this->{docs}) {
@@ -60,10 +60,10 @@ sub getdoc {
 }
 
 sub _parse_docpod {
-    # tiarra¥É¥­¥å¥á¥ó¥È·Á¼°¤Îpod¤òÃµ¤·¤Æ¥Ø¥Ã¥À¤ò¥Ñ¡¼¥¹¤·¤ÆÊÖ¤¹¡£
-    # Æ±°ì¥Ñ¥Ã¥±¡¼¥¸¤Ë¥É¥­¥å¥á¥ó¥È¤¬Æó¤Ä°Ê¾å¤¢¤Ã¤¿¤édie¡£
-    # ¥¹¥«¥é¡¼¥³¥ó¥Æ¥¯¥¹¥È¤Ç¸Æ¤Ğ¤ì¤¿¤écroak¡£
-    # Ìá¤êÃÍ¤Î·Á¼°: (DocPod,DocPod,...)
+    # tiarraãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆå½¢å¼ã®podã‚’æ¢ã—ã¦ãƒ˜ãƒƒãƒ€ã‚’ãƒ‘ãƒ¼ã‚¹ã—ã¦è¿”ã™ã€‚
+    # åŒä¸€ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã«ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆãŒäºŒã¤ä»¥ä¸Šã‚ã£ãŸã‚‰dieã€‚
+    # ã‚¹ã‚«ãƒ©ãƒ¼ã‚³ãƒ³ãƒ†ã‚¯ã‚¹ãƒˆã§å‘¼ã°ã‚ŒãŸã‚‰croakã€‚
+    # æˆ»ã‚Šå€¤ã®å½¢å¼: (DocPod,DocPod,...)
     croak "Don't call DocParser->_parse_docpod in scalar context." if !wantarray;
     my $this = shift;
     my @pods = $this->_parse_pod;
@@ -72,7 +72,7 @@ sub _parse_docpod {
     my @result;
     my $new_doc = sub {
 	my ($pkg_name,$header,$remaining) = @_;
-	# ´û¤Ë¤³¤Î¥Ñ¥Ã¥±¡¼¥¸¤Î¥É¥­¥å¥á¥ó¥È¤¬ÍÑ°Õ¤µ¤ì¤Æ¤¤¤Ê¤¤¤«¡©
+	# æ—¢ã«ã“ã®ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã®ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆãŒç”¨æ„ã•ã‚Œã¦ã„ãªã„ã‹ï¼Ÿ
 	foreach (@result) {
 	    if ($_->pkg_name eq $pkg_name) {
 		die "$pkg_name has multiple documents.\n";
@@ -87,10 +87,10 @@ sub _parse_docpod {
     foreach my $pod (@pods) {
 	my @lines = split /\x0a/,$pod->[1];
 	if (@lines == 0) {
-	    next; # ¤³¤ì¤Ï¥É¥­¥å¥á¥ó¥È¤Ç¤Ê¤¤¡£
+	    next; # ã“ã‚Œã¯ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆã§ãªã„ã€‚
 	}
 	elsif ($lines[0] =~ m/$header_re/) {
-	    # ¥Ø¥Ã¥À¤Î½ª¤ï¤ê¤Ş¤Ç¤ò¥Ñ¡¼¥¹¤¹¤ë¡£
+	    # ãƒ˜ãƒƒãƒ€ã®çµ‚ã‚ã‚Šã¾ã§ã‚’ãƒ‘ãƒ¼ã‚¹ã™ã‚‹ã€‚
 	    my $header = {};
 	    my $remaining_start = @lines;
 	    foreach (my $i = 0; $i < @lines; $i++) {
@@ -98,29 +98,29 @@ sub _parse_docpod {
 		    $header->{$1} = $2;
 		}
 		else {
-		    # ¤³¤³¤Ç¥Ø¥Ã¥À½ª¤ï¤ê¡£
+		    # ã“ã“ã§ãƒ˜ãƒƒãƒ€çµ‚ã‚ã‚Šã€‚
 		    $remaining_start = $i;
 		    last;
 		}
 	    }
 
-	    # Á´¤Æ¤Î¹Ô¤Ë¤Ä¤¤¤Æ¡¢ÀèÆ¬¤ÈËöÈø¤Î¶õÇò¤ò¾Ãµî¤¹¤ë¡£
+	    # å…¨ã¦ã®è¡Œã«ã¤ã„ã¦ã€å…ˆé ­ã¨æœ«å°¾ã®ç©ºç™½ã‚’æ¶ˆå»ã™ã‚‹ã€‚
 	    (my $remaining = join "\n",map {
 		s/^\s*|\s*$//g;
 		$_;
 	    } @lines[$remaining_start .. (@lines-1)]) =~ s/^\s*|\s*$//g;
 	    $new_doc->($pod->[0],$header,$remaining);
 	}
-	# ¥Ø¥Ã¥À¤¬¤Ê¤±¤ì¤Ğ tiarra-doc ¤¸¤ã¤Ê¤¤¤È¤ß¤Ê¤·¤Æskip.
+	# ãƒ˜ãƒƒãƒ€ãŒãªã‘ã‚Œã° tiarra-doc ã˜ã‚ƒãªã„ã¨ã¿ãªã—ã¦skip.
     }
 
     @result;
 }
 
 sub _parse_pod {
-    # =pod¤È=cut¤Ë°Ï¤Ş¤ì¤¿ÈÏ°Ï¤òÊÖ¤¹¡£
-    # Ìá¤êÃÍ: ([¥Ñ¥Ã¥±¡¼¥¸Ì¾,podÈÏ°Ï],[¥Ñ¥Ã¥±¡¼¥¸Ì¾,podÈÏ°Ï],...)
-    # ¥¹¥«¥é¡¼¥³¥ó¥Æ¥¯¥¹¥È¤Ç¸Æ¤Ğ¤ì¤¿¤écroak¡£
+    # =podã¨=cutã«å›²ã¾ã‚ŒãŸç¯„å›²ã‚’è¿”ã™ã€‚
+    # æˆ»ã‚Šå€¤: ([ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸å,podç¯„å›²],[ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸å,podç¯„å›²],...)
+    # ã‚¹ã‚«ãƒ©ãƒ¼ã‚³ãƒ³ãƒ†ã‚¯ã‚¹ãƒˆã§å‘¼ã°ã‚ŒãŸã‚‰croakã€‚
     croak "Don't call DocParser->_parse_pod in scalar context." if !wantarray;
     my $this = shift;
     my @lines = split /\x0d?\x0a/,$this->_get_content;
@@ -129,7 +129,7 @@ sub _parse_pod {
     my $search_start_pos = 0;
     my $pkg_name;
     while (1) {
-	# =pod¤òÃµ¤¹
+	# =podã‚’æ¢ã™
 	my $found_type;
 	my $found_pod_line;
 	for (my $i = $search_start_pos; $i < @lines; $i++) {
@@ -142,7 +142,7 @@ sub _parse_pod {
 		$found_type     = '=begin';
 		while( $i+1 <= $#lines && $lines[$i+1] =~ /^\s*$/ )
 		{
-		  # Â³¤¯¶õÇò¹Ô¤Ï¼è¤ê½ü¤¤¤Æ¤ª¤¯.
+		  # ç¶šãç©ºç™½è¡Œã¯å–ã‚Šé™¤ã„ã¦ãŠã.
 		  $i += 1;
 		}
 		$found_pod_line = $i;
@@ -160,7 +160,7 @@ sub _parse_pod {
 
 	if( !$found_type )
 	{
-	    # Ìµ¤¤¡£¤³¤³¤Ç½ª¤ï¤ê¡£
+	    # ç„¡ã„ã€‚ã“ã“ã§çµ‚ã‚ã‚Šã€‚
 	    last;
 	}
 
@@ -168,7 +168,7 @@ sub _parse_pod {
 	my $terminate_type;
 	if( $found_type eq '=for' )
 	{
-	    # ¼¡¤Î¶õ¹Ô(¼ã¤·¤¯¤Ï¥³¥Ş¥ó¥É¹Ô¡©)¤Ş¤Ç.
+	    # æ¬¡ã®ç©ºè¡Œ(è‹¥ã—ãã¯ã‚³ãƒãƒ³ãƒ‰è¡Œï¼Ÿ)ã¾ã§.
 	    $terminate_type = 'blank line';
 	    for (my $i = $found_pod_line+1; $i < @lines; $i++) {
 		if ($lines[$i] =~ m/^(?:\s*|=)$/) {
@@ -179,7 +179,7 @@ sub _parse_pod {
 	}
 	if( $found_type eq '=begin' )
 	{
-	    # ¼¡¤Î=end¤Ş¤Ç.
+	    # æ¬¡ã®=endã¾ã§.
 	    $terminate_type = '=end';
 	    for (my $i = $found_pod_line+1; $i < @lines; $i++) {
 		if ($lines[$i] =~ m/^=end\s+tiarra-doc(?:\s|$)/) {
@@ -190,7 +190,7 @@ sub _parse_pod {
 	}
 	if( $found_type eq '=pod' )
 	{
-	    # =cut¤Ş¤Ç.
+	    # =cutã¾ã§.
 	    $terminate_type = '=cut';
 	    for (my $i = $found_pod_line+1; $i < @lines; $i++) {
 		if ($lines[$i] =~ m/^\s*=cut\s*$/) {
@@ -201,10 +201,10 @@ sub _parse_pod {
 	}
 	if( !$found_cut_line )
 	{
-	    # ½ªÃ¼¤¬Ìµ¤¤¡£¥¨¥é¡¼¡£
+	    # çµ‚ç«¯ãŒç„¡ã„ã€‚ã‚¨ãƒ©ãƒ¼ã€‚
 	    die "$this->{fpath} has unbalanced $found_type and $terminate_type\n";
 	}
-	# ¤¢¤Ã¤¿¡£¤³¤³¤Ş¤Ç¤òÀÚ¤ê½Ğ¤·¡£
+	# ã‚ã£ãŸã€‚ã“ã“ã¾ã§ã‚’åˆ‡ã‚Šå‡ºã—ã€‚
 	push @result,[
 	    $pkg_name,
 	    join("\n",@lines[$found_pod_line+1 .. $found_cut_line-1])
@@ -216,7 +216,7 @@ sub _parse_pod {
 }
 
 sub _get_content {
-    # ¥Õ¥¡¥¤¥ë¤ÎÃæ¿È¤òutf8¤ÇÊÖ¤¹¡£
+    # ãƒ•ã‚¡ã‚¤ãƒ«ã®ä¸­èº«ã‚’utf8ã§è¿”ã™ã€‚
     my $this = shift;
 
     my $fh = IO::File->new($this->{fpath},'r');
@@ -236,16 +236,16 @@ sub _get_content {
 }
 
 sub _getcode {
-    # Ê¸»ú¥³¡¼¥É¤òÈ½ÊÌ¤¹¤ë¡£
+    # æ–‡å­—ã‚³ãƒ¼ãƒ‰ã‚’åˆ¤åˆ¥ã™ã‚‹ã€‚
     my ($this,$content) = @_;
     my $unijp = Tiarra::Encoding->new;
 
     if ((my $code = $unijp->getcode($content)) ne 'unknown') {
-	# È½ÊÌ¤Ç¤­¤¿¤é¡¢¤³¤ì¤òÊÖ¤¹¡£
+	# åˆ¤åˆ¥ã§ããŸã‚‰ã€ã“ã‚Œã‚’è¿”ã™ã€‚
 	$code;
     }
     else {
-	# ¤½¤ì¤¾¤ì¤Î¹Ô¤Ë¤Ä¤¤¤Ægetcode¤ò¼Â¹Ô¤·¡¢Â¿¿ô·è¤ò¼è¤ë¡£
+	# ãã‚Œãã‚Œã®è¡Œã«ã¤ã„ã¦getcodeã‚’å®Ÿè¡Œã—ã€å¤šæ•°æ±ºã‚’å–ã‚‹ã€‚
 	my $total_for_each = {};
 	foreach (split /[\r\n]/,$content) {
 	    if ((my $c = $unijp->getcode($_)) ne 'unknown') {
@@ -261,17 +261,17 @@ sub _getcode {
 	    [$_, $total_for_each->{$_}];
 	} keys %$total_for_each;
 	if (@rank == 0) {
-	    # Á´Éôunknown¤À¤Ã¤¿!
-	    # »ÅÊıÌµ¤¤¤Î¤Çunknown¤òÊÖ¤¹¡£
+	    # å…¨éƒ¨unknownã ã£ãŸ!
+	    # ä»•æ–¹ç„¡ã„ã®ã§unknownã‚’è¿”ã™ã€‚
 	    'unknown';
 	}
 	elsif (@rank == 1) {
-	    # ¸õÊä¤¬°ì¤Ä¤À¤±¡£¤³¤ì¤òÊÖ¤¹¡£
+	    # å€™è£œãŒä¸€ã¤ã ã‘ã€‚ã“ã‚Œã‚’è¿”ã™ã€‚
 	    $rank[0];
 	}
 	else {
-	    # ¸õÊä¤Î¥È¥Ã¥×¤¬ascii¤À¤Ã¤¿¤é¡¢ÆóÈÖÌÜ¤Î¤â¤Î¤òÊÖ¤¹¡£
-	    # ¤½¤¦¤Ç¤Ê¤±¤ì¤Ğ¥È¥Ã¥×¤òÊÖ¤¹¡£
+	    # å€™è£œã®ãƒˆãƒƒãƒ—ãŒasciiã ã£ãŸã‚‰ã€äºŒç•ªç›®ã®ã‚‚ã®ã‚’è¿”ã™ã€‚
+	    # ãã†ã§ãªã‘ã‚Œã°ãƒˆãƒƒãƒ—ã‚’è¿”ã™ã€‚
 	    if ($rank[0] eq 'ascii') {
 		$rank[1];
 	    }
@@ -311,8 +311,8 @@ sub _makeconf {
     my ($this,$pod,$indent_level) = @_;
     my $result = '';
 
-    # default¥Ø¥Ã¥À¤Ë±ş¤¸¤Æ+¤«-¤«¤òÀßÄê¤¹¤ë¡£
-    # Ã¢¤·no-switch¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Æ¿¿¤Ç¤¢¤ì¤Ğ¡¢¤½¤ì¤ò¤·¤Ê¤¤¡£
+    # defaultãƒ˜ãƒƒãƒ€ã«å¿œã˜ã¦+ã‹-ã‹ã‚’è¨­å®šã™ã‚‹ã€‚
+    # ä½†ã—no-switchãŒå®šç¾©ã•ã‚Œã¦ã„ã¦çœŸã§ã‚ã‚Œã°ã€ãã‚Œã‚’ã—ãªã„ã€‚
     if ($pod->header->{'no-switch'}) {
 	$result .= $pod->pkg_name." {\n";
     }
@@ -333,8 +333,8 @@ sub _makeconf {
 	$result .= ' '.$pod->pkg_name." {\n";
     }
 
-    # info¥Ø¥Ã¥À¤ÎÆâÍÆ¤ò½ĞÎÏ¡£Ìµ¤±¤ì¤Ğ¥¨¥é¡¼¡£
-    # ¤¿¤À¤·info-is-omitted¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Æ¿¿¤Ç¤¢¤ì¤Ğ½ĞÎÏ¤·¤Ê¤¤¡£
+    # infoãƒ˜ãƒƒãƒ€ã®å†…å®¹ã‚’å‡ºåŠ›ã€‚ç„¡ã‘ã‚Œã°ã‚¨ãƒ©ãƒ¼ã€‚
+    # ãŸã ã—info-is-omittedãŒå®šç¾©ã•ã‚Œã¦ã„ã¦çœŸã§ã‚ã‚Œã°å‡ºåŠ›ã—ãªã„ã€‚
     my $indent = ' ' x $indent_level;
     my $block_indent = '';
     my $info = $pod->header->{info};
@@ -347,11 +347,11 @@ sub _makeconf {
 	die "It doesn't have `info' header.\n";
     }
 
-    # ¥ë¡¼¥ë:
-    # '#'¤Ç»Ï¤Ş¤ë¹Ô¤Ï¤½¤Î¤Ş¤Ş½ĞÎÏ¡£
-    # ¶õ¹Ô¤â¤½¤Î¤Ş¤Ş½ĞÎÏ¡£
-    # key:value·Á¼°¤Ë¤Ê¤Ã¤Æ¤¤¤ëÉôÊ¬¤â¤½¤Î¤Ş¤Ş½ĞÎÏ¤¹¤ë¤¬¡¢
-    # ¤½¤Îkey¤ÎÆ¬¤Ë'-'¤¬ÉÕ¤¤¤Æ¤¤¤¿¤é¡¢¤½¤ì¤ò¥³¥á¥ó¥È¥¢¥¦¥È¡£
+    # ãƒ«ãƒ¼ãƒ«:
+    # '#'ã§å§‹ã¾ã‚‹è¡Œã¯ãã®ã¾ã¾å‡ºåŠ›ã€‚
+    # ç©ºè¡Œã‚‚ãã®ã¾ã¾å‡ºåŠ›ã€‚
+    # key:valueå½¢å¼ã«ãªã£ã¦ã„ã‚‹éƒ¨åˆ†ã‚‚ãã®ã¾ã¾å‡ºåŠ›ã™ã‚‹ãŒã€
+    # ãã®keyã®é ­ã«'-'ãŒä»˜ã„ã¦ã„ãŸã‚‰ã€ãã‚Œã‚’ã‚³ãƒ¡ãƒ³ãƒˆã‚¢ã‚¦ãƒˆã€‚
     my @lines = split /\n/,$pod->content;
     for (my $i = 0; $i < @lines; $i++) {
 	my $line = $lines[$i];
@@ -359,7 +359,7 @@ sub _makeconf {
 	my $error = sub {
 	    my $errstr = shift;
 
-	    # Á°¸å5¹Ô¤È¶¦¤Ë¥¨¥é¡¼¹Ô¤ò¼¨¤¹¡£
+	    # å‰å¾Œ5è¡Œã¨å…±ã«ã‚¨ãƒ©ãƒ¼è¡Œã‚’ç¤ºã™ã€‚
 	    my $region_lines = 5;
 	    my $begin = $i - $region_lines;
 	    if ($begin < 0) {

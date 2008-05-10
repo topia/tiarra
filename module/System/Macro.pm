@@ -10,7 +10,7 @@ use Multicast;
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
-    $this->{macros} = $this->hash; # ¥³¥Ş¥ó¥É => ARRAY<Æ°ºî(Tiarra::IRC::Message)>
+    $this->{macros} = $this->hash; # ã‚³ãƒãƒ³ãƒ‰ => ARRAY<å‹•ä½œ(Tiarra::IRC::Message)>
     $this;
 }
 
@@ -44,7 +44,7 @@ sub message_arrived {
 	    foreach (@$actions) {
 		Multicast::from_client_to_server($_, $sender);
 	    }
-	    # ¤³¤Î¥á¥Ã¥»¡¼¥¸¤Ï»ª¤ËÁ÷¤é¤Ê¤¤¡£
+	    # ã“ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã¯é¯–ã«é€ã‚‰ãªã„ã€‚
 	    $msg->remark('do-not-send-to-servers',1);
 	}
     }
@@ -55,13 +55,13 @@ sub message_arrived {
 1;
 
 =pod
-info: ¿·µ¬¤Ë¥³¥Ş¥ó¥É¤òÄÉ²Ã¤·¡¢¤½¤Î¥³¥Ş¥ó¥É¤¬»È¤ï¤ì¤¿»ş¤ËÆÃÄê¤ÎÆ°ºî¤ò¤Ş¤È¤á¤Æ¼Â¹Ô¤·¤Ş¤¹¡£
+info: æ–°è¦ã«ã‚³ãƒãƒ³ãƒ‰ã‚’è¿½åŠ ã—ã€ãã®ã‚³ãƒãƒ³ãƒ‰ãŒä½¿ã‚ã‚ŒãŸæ™‚ã«ç‰¹å®šã®å‹•ä½œã‚’ã¾ã¨ã‚ã¦å®Ÿè¡Œã—ã¾ã™ã€‚
 default: off
 
-# ½ñ¼°: <¥³¥Ş¥ó¥É> <Æ°ºî>
-# ¥³¥Ş¥ó¥É"switch"¤òÄÉ²Ã¤·¤Æ¡¢¤½¤ì¤¬»È¤ï¤ì¤ë¤È
-# #a@ircnet,#b@ircnet,#c@ircnet¤Ëjoin¤·¤Æ¡¢
-# #d@ircnet,#e@ircnet,#f@ircnet¤«¤épart¤¹¤ëÎã¡£
+# æ›¸å¼: <ã‚³ãƒãƒ³ãƒ‰> <å‹•ä½œ>
+# ã‚³ãƒãƒ³ãƒ‰"switch"ã‚’è¿½åŠ ã—ã¦ã€ãã‚ŒãŒä½¿ã‚ã‚Œã‚‹ã¨
+# #a@ircnet,#b@ircnet,#c@ircnetã«joinã—ã¦ã€
+# #d@ircnet,#e@ircnet,#f@ircnetã‹ã‚‰partã™ã‚‹ä¾‹ã€‚
 -macro: switch join #a@ircnet,#b@ircnet,#c@ircnet
 -macro: switch part #d@ircnet,#e@ircnet,#f@ircnet
 =cut

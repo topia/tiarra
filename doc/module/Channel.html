@@ -2,16 +2,16 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
+<!-- $Id: contents.html 11357 2008-05-10 14:03:50Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
-    <title>Channel �ط��Υ⥸�塼�� - Tiarra Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Channel 関係のモジュール - Tiarra Documentation</title>
     <link rel="stylesheet" type="text/css" href="../default.css" />
   </head>
   <body>
     <div class="header">
-      <h1>Channel �ط��Υ⥸�塼��</h1>
+      <h1>Channel 関係のモジュール</h1>
     </div>
 
     <hr class="sep" />
@@ -19,27 +19,27 @@
     <div class="pane-main">
       
       <div id="module-Channel::Freeze" class="module">
-        <div class="module-header"><h2 title="����Υ����ͥ��ȯ���򡢰��Ū�˼�������Τ���롣">Channel::Freeze</h2>
-          <span class="description">����Υ����ͥ��ȯ���򡢰��Ū�˼�������Τ���롣</span></div>
+        <div class="module-header"><h2 title="特定のチャンネルの発言を、一時的に受信するのをやめる。">Channel::Freeze</h2>
+          <span class="description">特定のチャンネルの発言を、一時的に受信するのをやめる。</span></div>
         <div class="content">
 	  <p class="comment">
-�������äƤ���ʤ顢�����ˤϵ�Ͽ����롣<br />
+ログを取っているなら、ログには記録される。<br />
 </p>
 <p class="comment">
-�����ͥ�������Ѥ��륳�ޥ��̾��<br />
-��ά���� freeze �Ǥ��ꡢ/freeze #channel@network �Τ褦�˻Ȥ���<br />
-�����ͥ�̾���ά����ȡ����ߥե꡼������Ƥ�������ͥ�Υꥹ�Ȥ�ɽ�����롣<br />
+チャンネルの凍結に用いるコマンド名。<br />
+省略時は freeze であり、/freeze #channel@network のように使う。<br />
+チャンネル名を省略すると、現在フリーズされているチャンネルのリストを表示する。<br />
 </p>
 <div class="element"><span class="key">freeze-command</span>:<span class="value">freeze</span></div>
 <p class="comment">
-��������Ѥ��륳�ޥ��̾��<br />
-��ά���� defrost �Ǥ��ꡢ/defrost #channel@network �Τ褦�˻Ȥ���<br />
+凍結解除に用いるコマンド名。<br />
+省略時は defrost であり、/defrost #channel@network のように使う。<br />
 </p>
 <div class="element"><span class="key">defrost-command</span>:<span class="value">defrost</span></div>
 <p class="comment">
-��뤷�Ƥ�������ͥ뤬¸�ߤ���������������ˤ��λݤ���𤹤�����ǽ��<br />
-���ε�ǽ����뤷������˺��ʤ��褦�ˤ���٤ˤ��롣<br />
-ñ�̤�ʬ���ǥե���Ȥϥ���(��𤷤ʤ�)��<br />
+凍結しているチャンネルが存在する時、一定時間毎にその旨を報告する事も可能。<br />
+この機能は凍結した事を忘れないようにする為にある。<br />
+単位は分、デフォルトはゼロ(報告しない)。<br />
 </p>
 <div class="element"><span class="key">reminder-interval</span>:<span class="value">30</span></div>
 
@@ -51,22 +51,22 @@
       
       
       <div id="module-Channel::Ignore" class="module">
-        <div class="module-header"><h2 title="���ꤵ�줿�����ͥ��¸�ߤ��͡��ʥ�å���������õ�롣">Channel::Ignore</h2>
-          <span class="description">���ꤵ�줿�����ͥ��¸�ߤ��͡��ʥ�å���������õ�롣</span></div>
+        <div class="module-header"><h2 title="指定されたチャンネルの存在を、様々なメッセージから消去する。">Channel::Ignore</h2>
+          <span class="description">指定されたチャンネルの存在を、様々なメッセージから消去する。</span></div>
         <div class="content">
 	  <p class="comment">
-�оݤȤʤä������ͥ��JOIN��PART��INVITE��QUIT��NICK��NAMES��NJOIN�Ͼõ��롣<br />
+対象となったチャンネルのJOIN、PART、INVITE、QUIT、NICK、NAMES、NJOINは消去される。<br />
 </p>
 <p class="comment">
-������<br />
-- ���ε�ǽ�Ϥޤ���������Ǥ��������������Զ�礬���뤫�⤷��ޤ��󡣤ष�����äȤ���ޤ���<br />
-- �����Ф���Ȥ��̿��˳����ߤޤ��Τǥ����ˤ�Ȥ��ޤ���<br />
-- ���ε�ǽ��ȤäƤ��� tiarra ����ή�� multi-server-mode �� tiarra ���֤��ʤ��Ǥ���������<br />
+注意点<br />
+- この機能はまだ実装途中です。いろいろな不具合があるかもしれません。むしろきっとあります。<br />
+- サーバがわとの通信に割り込みますのでログにもとられません。<br />
+- この機能を使っている tiarra より上流に multi-server-mode な tiarra を置かないでください。<br />
 </p>
 <p class="comment">
-�����ͥ�������<br />
-�ޤ���priv�ξ��ϡ�priv@�ͥåȥ��̾�פȤ���ʸ���������ͥ�̾������Ȥ��ƥޥå��󥰤�Ԥʤ���<br />
-��: mask: &lt;�����ͥ�Υޥ���&gt;<br />
+チャンネルの定義。<br />
+また、privの場合は「priv@ネットワーク名」という文字列をチャンネル名の代わりとしてマッチングを行なう。<br />
+書式: mask: &lt;チャンネルのマスク&gt;<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">#example@example</span></div>
 
@@ -78,20 +78,20 @@
       
       
       <div id="module-Channel::Join::Connect" class="module">
-        <div class="module-header"><h2 title="�����С��˽�����³�����������ꤷ�������ͥ������⥸�塼�롣">Channel::Join::Connect</h2>
-          <span class="description">�����С��˽�����³�����������ꤷ�������ͥ������⥸�塼�롣</span></div>
+        <div class="module-header"><h2 title="サーバーに初めて接続した時、指定したチャンネルに入るモジュール。">Channel::Join::Connect</h2>
+          <span class="description">サーバーに初めて接続した時、指定したチャンネルに入るモジュール。</span></div>
         <div class="content">
 	  <p class="comment">
-&nbsp;��: &lt;�����ͥ�1&gt;[,&lt;�����ͥ�2&gt;,...] [&lt;�����ͥ�1�Υ���&gt;,...]<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;����ޤ�ľ��Υ��ڡ�����̵�뤵��ޤ���<br />
+&nbsp;書式: &lt;チャンネル1&gt;[,&lt;チャンネル2&gt;,...] [&lt;チャンネル1のキー&gt;,...]<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;コンマの直後のスペースは無視されます。<br />
 <br />
-&nbsp;��:<br />
-&nbsp;&nbsp;&nbsp;��#aaaaa@ircnet�פˡ�aaaaa�פȤ������������롣<br />
+&nbsp;例:<br />
+&nbsp;&nbsp;&nbsp;「#aaaaa@ircnet」に「aaaaa」というキーで入る。<br />
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">#aaaaa@ircnet aaaaa</span></div>
 <p class="comment">
 <br />
-&nbsp;&nbsp;&nbsp;��#aaaaa@ircnet�ס���#bbbbb@ircnet:*.jp�ס���#ccccc@ircnet�ס���#ddddd@ircnet�פ�4�ĤΥ����ͥ�����롣<br />
+&nbsp;&nbsp;&nbsp;「#aaaaa@ircnet」、「#bbbbb@ircnet:*.jp」、「#ccccc@ircnet」、「#ddddd@ircnet」の4つのチャンネルに入る。<br />
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">#aaaaa@ircnet,#bbbbb@ircnet:*.jp, #ccccc@ircnet</span></div>
 <div class="element"><span class="key">channel</span>:<span class="value">#ddddd@ircnet</span></div>
@@ -104,20 +104,20 @@
       
       
       <div id="module-Channel::Join::Invite" class="module">
-        <div class="module-header"><h2 title="���Ԥ��줿�餽�Υ����ͥ�����롣">Channel::Join::Invite</h2>
-          <span class="description">���Ԥ��줿�餽�Υ����ͥ�����롣</span></div>
+        <div class="module-header"><h2 title="招待されたらそのチャンネルに入る。">Channel::Join::Invite</h2>
+          <span class="description">招待されたらそのチャンネルに入る。</span></div>
         <div class="content">
 	  <p class="comment">
-���Ĥ���桼��/�����ͥ�Υޥ�����<br />
+許可するユーザ/チャンネルのマスク。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
 plum: *!*@*<br />
 </p>
 <p class="comment">
-���Ԥ��줿�����ͥ��ή����å������Υե����ޥåȡ�<br />
+招待されたチャンネルに流すメッセージのフォーマット。<br />
 </p>
-<div class="element"><span class="key">message</span>:<span class="value">����Ф�����</span></div>
+<div class="element"><span class="key">message</span>:<span class="value">こんばんわ〜。</span></div>
 
         </div>
       </div>
@@ -127,11 +127,11 @@ plum: *!*@*<br />
       
       
       <div id="module-Channel::Join::Kicked" class="module">
-        <div class="module-header"><h2 title="����Υ����ͥ뤫��kick���줿���ˡ���ư������ʤ�����">Channel::Join::Kicked</h2>
-          <span class="description">����Υ����ͥ뤫��kick���줿���ˡ���ư������ʤ�����</span></div>
+        <div class="module-header"><h2 title="特定のチャンネルからkickされた時に、自動で入りなおす。">Channel::Join::Kicked</h2>
+          <span class="description">特定のチャンネルからkickされた時に、自動で入りなおす。</span></div>
         <div class="content">
 	  <p class="comment">
-�оݤȤʤ�����ͥ�̾�Υޥ���<br />
+対象となるチャンネル名のマスク<br />
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">*</span></div>
 
@@ -143,17 +143,17 @@ plum: *!*@*<br />
       
       
       <div id="module-Channel::Mode::Get" class="module">
-        <div class="module-header"><h2 title="�����ͥ��JOIN�����������Υ����ͥ�Υ⡼�ɤ�������ޤ���">Channel::Mode::Get</h2>
-          <span class="description">�����ͥ��JOIN�����������Υ����ͥ�Υ⡼�ɤ�������ޤ���</span></div>
+        <div class="module-header"><h2 title="チャンネルにJOINした時、そのチャンネルのモードを取得します。">Channel::Mode::Get</h2>
+          <span class="description">チャンネルにJOINした時、そのチャンネルのモードを取得します。</span></div>
         <div class="content">
 	  <p class="comment">
-Channel::Mode::Set����������ư������ˤ�<br />
-�����ͥ�Υ⡼�ɤ�Tiarra���İ����Ƥ���ɬ�פ�����ޤ���<br />
-��ưŪ�˥⡼�ɤ�������륯�饤����ȤǤ����ɬ�פ���ޤ��󤬡�<br />
-�����Ǥʤ���Ф��Υ⥸�塼���Ȥ��٤��Ǥ���<br />
+Channel::Mode::Set等が正しく動くためには<br />
+チャンネルのモードをTiarraが把握しておく必要があります。<br />
+自動的にモードを取得するクライアントであれば必要ありませんが、<br />
+そうでなければこのモジュールを使うべきです。<br />
 </p>
 <p class="comment">
-������ܤ�̵����<br />
+設定項目は無し。<br />
 </p>
 
         </div>
@@ -164,21 +164,21 @@ Channel::Mode::Set����������ư������ˤ�<br />
       
       
       <div id="module-Channel::Mode::Oper::Grant" class="module">
-        <div class="module-header"><h2 title="����Υ����ͥ������οʹ֤�join�������ˡ���ʬ�������ͥ륪�ڥ졼�����¤���äƤ����+o���롣">Channel::Mode::Oper::Grant</h2>
-          <span class="description">����Υ����ͥ������οʹ֤�join�������ˡ���ʬ�������ͥ륪�ڥ졼�����¤���äƤ����+o���롣</span></div>
+        <div class="module-header"><h2 title="特定のチャンネルに特定の人間がjoinした時に、自分がチャンネルオペレータ権限を持っていれば+oする。">Channel::Mode::Oper::Grant</h2>
+          <span class="description">特定のチャンネルに特定の人間がjoinした時に、自分がチャンネルオペレータ権限を持っていれば+oする。</span></div>
         <div class="content">
 	  <p class="comment">
-split����������ʤɤ�+o�оݤοͤ����٤����̤����ä���Ƥ�+o�Ͼ������ļ¹Ԥ��ޤ���<br />
-Excess Flood�ˤϤʤ�ʤ�Ȧ�Ǥ������ܳ�Ū���ɱ�BOT�˻Ȥ�������ʪ�ǤϤ���ޤ���<br />
+splitからの復帰などで+o対象の人が一度に大量に入って来ても+oは少しずつ実行します。<br />
+Excess Floodにはならない筈ですが、本格的な防衛BOTに使える程の物ではありません。<br />
 </p>
 <p class="comment">
-�оݤοʹ֤�join���Ƥ���ºݤ�+o����ޤǲ����ԤĤ���<br />
-��ά���줿���Ԥ��ޤ���<br />
-5-10 �Τ褦�˻��ꤵ���ȡ������ͤ���ǥ�������Ԥ��ޤ���<br />
+対象の人間がjoinしてから実際に+oするまで何秒待つか。<br />
+省略されたら待ちません。<br />
+5-10 のように指定されると、その値の中でランダムに待ちます。<br />
 </p>
 <div class="element"><span class="key">wait</span>:<span class="value">2-5</span></div>
 <p class="comment">
-�����ͥ�ȿʹ֤Υޥ����������Auto::Oper��Ʊ�͡�<br />
+チャンネルと人間のマスクを定義。Auto::Operと同様。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* example!~example@*.example.ne.jp</span></div>
 
@@ -190,17 +190,17 @@ Excess Flood�ˤϤʤ�ʤ�Ȧ�Ǥ������ܳ�Ū���ɱ�BOT�˻Ȥ�������ʪ�ǤϤ���ޤ���<
       
       
       <div id="module-Channel::Mode::Set" class="module">
-        <div class="module-header"><h2 title="�����ͥ������������˼�ưŪ�˥⡼�ɤ����ꤹ��⥸�塼�롣">Channel::Mode::Set</h2>
-          <span class="description">�����ͥ������������˼�ưŪ�˥⡼�ɤ����ꤹ��⥸�塼�롣</span></div>
+        <div class="module-header"><h2 title="チャンネルを作成した時に自動的にモードを設定するモジュール。">Channel::Mode::Set</h2>
+          <span class="description">チャンネルを作成した時に自動的にモードを設定するモジュール。</span></div>
         <div class="content">
 	  <p class="comment">
-�񼰤�&lt;�����ͥ�̾�˥ޥå�����ޥ���&gt; &lt;���ꤹ��⡼��&gt;[,&lt;���ꤹ��⡼��&gt;,...]�Ǥ���<br />
-#IRC���ü�@ircnet�ʤ�+t+n�򡢤���ʳ��ʤ�+n�����ꤹ���㡣<br />
+書式は&lt;チャンネル名にマッチするマスク&gt; &lt;設定するモード&gt;[,&lt;設定するモード&gt;,...]です。<br />
+#IRC談話室@ircnetなら+t+nを、それ以外なら+nを設定する例。<br />
 </p>
-<div class="element"><span class="key">channel</span>:<span class="value">#IRC���ü�@ircnet +t</span></div>
+<div class="element"><span class="key">channel</span>:<span class="value">#IRC談話室@ircnet +t</span></div>
 <div class="element"><span class="key">channel</span>:<span class="value">*                +n</span></div>
 <p class="comment">
-LimeChat ɸ����������魯�������㡣<br />
+LimeChat 標準設定を模倣する設定例。<br />
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">* +sn</span></div>
 
@@ -212,17 +212,17 @@ LimeChat ɸ����������魯�������㡣<br />
       
       
       <div id="module-Channel::Rejoin" class="module">
-        <div class="module-header"><h2 title="�����ͥ륪�ڥ졼�����¤�̵�������Ȥ�����ͤʤ�join��ľ����">Channel::Rejoin</h2>
-          <span class="description">�����ͥ륪�ڥ졼�����¤�̵�������Ȥ�����ͤʤ�join��ľ����</span></div>
+        <div class="module-header"><h2 title="チャンネルオペレータ権限を無くしたとき、一人ならjoinし直す。">Channel::Rejoin</h2>
+          <span class="description">チャンネルオペレータ権限を無くしたとき、一人ならjoinし直す。</span></div>
         <div class="content">
 	  <p class="comment">
-+�����ͥ��+a����Ƥ�������ͥ�ʳ��ǥ����ͥ륪�ڥ졼�����¤��������<br />
-��ͤ���ˤʤä��������Υ����ͥ��@�����褵���뤿��˼�ưŪ��join��ľ���⥸�塼�롣<br />
-�ȥԥå����⡼�ɡ�ban�ꥹ�����Τ���������ͥ�°�������¸���ޤ���<br />
++チャンネルや+aされているチャンネル以外でチャンネルオペレータ権限を持たずに<br />
+一人きりになった時、そのチャンネルの@を復活させるために自動的にjoinし直すモジュール。<br />
+トピック、モード、banリスト等のあらゆるチャンネル属性をも保存します。<br />
 </p>
 <p class="comment">
-+b,+I,+e�ꥹ�Ȥ������Ԥʤ����ɤ�����<br />
-���ޤ��Ĺ���ꥹ�Ȥ���������Max Send-Q Exceed����Ȥ���뤫���Τ�ޤ���<br />
++b,+I,+eリストの復旧を行なうかどうか。<br />
+あまりに長いリストを取得するとMax Send-Q Exceedで落とされるかも知れません。<br />
 </p>
 <div class="element"><span class="key">save-lists</span>:<span class="value">1</span></div>
 
@@ -236,25 +236,25 @@ LimeChat ɸ����������魯�������㡣<br />
     <div class="pane-sidebar">
       <ul class="menu">
         
-        <li><a href="#module-Channel::Freeze" title="����Υ����ͥ��ȯ���򡢰��Ū�˼�������Τ���롣">Channel::Freeze</a></li>
+        <li><a href="#module-Channel::Freeze" title="特定のチャンネルの発言を、一時的に受信するのをやめる。">Channel::Freeze</a></li>
         
-        <li><a href="#module-Channel::Ignore" title="���ꤵ�줿�����ͥ��¸�ߤ��͡��ʥ�å���������õ�롣">Channel::Ignore</a></li>
+        <li><a href="#module-Channel::Ignore" title="指定されたチャンネルの存在を、様々なメッセージから消去する。">Channel::Ignore</a></li>
         
-        <li><a href="#module-Channel::Join::Connect" title="�����С��˽�����³�����������ꤷ�������ͥ������⥸�塼�롣">Channel::Join::Connect</a></li>
+        <li><a href="#module-Channel::Join::Connect" title="サーバーに初めて接続した時、指定したチャンネルに入るモジュール。">Channel::Join::Connect</a></li>
         
-        <li><a href="#module-Channel::Join::Invite" title="���Ԥ��줿�餽�Υ����ͥ�����롣">Channel::Join::Invite</a></li>
+        <li><a href="#module-Channel::Join::Invite" title="招待されたらそのチャンネルに入る。">Channel::Join::Invite</a></li>
         
-        <li><a href="#module-Channel::Join::Kicked" title="����Υ����ͥ뤫��kick���줿���ˡ���ư������ʤ�����">Channel::Join::Kicked</a></li>
+        <li><a href="#module-Channel::Join::Kicked" title="特定のチャンネルからkickされた時に、自動で入りなおす。">Channel::Join::Kicked</a></li>
         
-        <li><a href="#module-Channel::Mode::Get" title="�����ͥ��JOIN�����������Υ����ͥ�Υ⡼�ɤ�������ޤ���">Channel::Mode::Get</a></li>
+        <li><a href="#module-Channel::Mode::Get" title="チャンネルにJOINした時、そのチャンネルのモードを取得します。">Channel::Mode::Get</a></li>
         
-        <li><a href="#module-Channel::Mode::Oper::Grant" title="����Υ����ͥ������οʹ֤�join�������ˡ���ʬ�������ͥ륪�ڥ졼�����¤���äƤ����+o���롣">Channel::Mode::Oper::Grant</a></li>
+        <li><a href="#module-Channel::Mode::Oper::Grant" title="特定のチャンネルに特定の人間がjoinした時に、自分がチャンネルオペレータ権限を持っていれば+oする。">Channel::Mode::Oper::Grant</a></li>
         
-        <li><a href="#module-Channel::Mode::Set" title="�����ͥ������������˼�ưŪ�˥⡼�ɤ����ꤹ��⥸�塼�롣">Channel::Mode::Set</a></li>
+        <li><a href="#module-Channel::Mode::Set" title="チャンネルを作成した時に自動的にモードを設定するモジュール。">Channel::Mode::Set</a></li>
         
-        <li><a href="#module-Channel::Rejoin" title="�����ͥ륪�ڥ졼�����¤�̵�������Ȥ�����ͤʤ�join��ľ����">Channel::Rejoin</a></li>
+        <li><a href="#module-Channel::Rejoin" title="チャンネルオペレータ権限を無くしたとき、一人ならjoinし直す。">Channel::Rejoin</a></li>
         
-        <li><a href="../module-toc.html">�⥸�塼����������</a></li>
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
       </ul>
     </div>
   </body>

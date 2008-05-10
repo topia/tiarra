@@ -2,16 +2,16 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
+<!-- $Id: contents.html 11357 2008-05-10 14:03:50Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
-    <title>System �ط��Υ⥸�塼�� - Tiarra Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>System 関係のモジュール - Tiarra Documentation</title>
     <link rel="stylesheet" type="text/css" href="../default.css" />
   </head>
   <body>
     <div class="header">
-      <h1>System �ط��Υ⥸�塼��</h1>
+      <h1>System 関係のモジュール</h1>
     </div>
 
     <hr class="sep" />
@@ -19,18 +19,18 @@
     <div class="pane-main">
       
       <div id="module-System::Error" class="module">
-        <div class="module-header"><h2 title="�����С������ERROR��å�������NOTICE��������">System::Error</h2>
-          <span class="description">�����С������ERROR��å�������NOTICE��������</span></div>
+        <div class="module-header"><h2 title="サーバーからのERRORメッセージをNOTICEに埋め込む">System::Error</h2>
+          <span class="description">サーバーからのERRORメッセージをNOTICEに埋め込む</span></div>
         <div class="content">
 	  <p class="comment">
-�����off�ˤ���ȥ��饤����Ȥ�ERROR��å����������Τޤ������ޤ���<br />
-���饤����ȤȤδ֤Ǥ�ERROR��å������ϼ�����Ƿٹ�˻Ȥ��Ƥ��ꡢ<br />
-���Τޤ�ή���Ƥ��ޤ��ȥ��饤����Ȥ����𤹤��ǽ��������ޤ���<br />
-&nbsp;&nbsp;������ܤϤ���ޤ���<br />
+これをoffにするとクライアントにERRORメッセージがそのまま送られます。<br />
+クライアントとの間ではERRORメッセージは主に切断警告に使われており、<br />
+そのまま流してしまうとクライアントが混乱する可能性があります。<br />
+&nbsp;&nbsp;設定項目はありません。<br />
 </p>
 <p class="comment">
-���Υ⥸�塼�����򤷤�ERROR��å������򥯥饤����Ȥ����ꤿ�����ϡ�<br />
-remark��send-error-as-is-to-client����ꤷ�Ƥ���������<br />
+このモジュールを回避してERRORメッセージをクライアントに送りたい場合は、<br />
+remarkのsend-error-as-is-to-clientを指定してください。<br />
 </p>
 
         </div>
@@ -45,16 +45,16 @@ remark��send-error-as-is-to-client����ꤷ�Ƥ���������<br />
           <span class="description">Live Patch.</span></div>
         <div class="content">
 	  <p class="comment">
-main/* ���Ф���¹Ի��ѥå�<br />
-��ư/�����ɻ��˳�ǧ�ϹԤ��뤬, �ºݤ�Ŭ�Ѥϻؼ�������ޤǹԤ��ʤ�.<br />
+main/* に対する実行時パッチ<br />
+起動/ロード時に確認は行われるが, 実際の適用は指示があるまで行われない.<br />
 </p>
 <p class="comment">
-�б����Ƥ���ս�.<br />
+対応している箇所.<br />
 ModuleManager / reload_modules_if_modified / r3004 =&gt; r8809<br />
 </p>
 <p class="comment">
-/livepatch check �ǳ�ǧ.<br />
-/livepatch apply ��Ŭ��.<br />
+/livepatch check で確認.<br />
+/livepatch apply で適用.<br />
 </p>
 <div class="element"><span class="key">command</span>:<span class="value">livepatch</span></div>
 
@@ -66,14 +66,14 @@ ModuleManager / reload_modules_if_modified / r3004 =&gt; r8809<br />
       
       
       <div id="module-System::Macro" class="module">
-        <div class="module-header"><h2 title="�����˥��ޥ�ɤ��ɲä������Υ��ޥ�ɤ��Ȥ�줿���������ư���ޤȤ�Ƽ¹Ԥ��ޤ���">System::Macro</h2>
-          <span class="description">�����˥��ޥ�ɤ��ɲä������Υ��ޥ�ɤ��Ȥ�줿���������ư���ޤȤ�Ƽ¹Ԥ��ޤ���</span></div>
+        <div class="module-header"><h2 title="新規にコマンドを追加し、そのコマンドが使われた時に特定の動作をまとめて実行します。">System::Macro</h2>
+          <span class="description">新規にコマンドを追加し、そのコマンドが使われた時に特定の動作をまとめて実行します。</span></div>
         <div class="content">
 	  <p class="comment">
-��: &lt;���ޥ��&gt; &lt;ư��&gt;<br />
-���ޥ��&quot;switch&quot;���ɲä��ơ����줬�Ȥ����<br />
-#a@ircnet,#b@ircnet,#c@ircnet��join���ơ�<br />
-#d@ircnet,#e@ircnet,#f@ircnet����part�����㡣<br />
+書式: &lt;コマンド&gt; &lt;動作&gt;<br />
+コマンド&quot;switch&quot;を追加して、それが使われると<br />
+#a@ircnet,#b@ircnet,#c@ircnetにjoinして、<br />
+#d@ircnet,#e@ircnet,#f@ircnetからpartする例。<br />
 </p>
 <div class="element"><span class="key">macro</span>:<span class="value">switch join #a@ircnet,#b@ircnet,#c@ircnet</span></div>
 <div class="element"><span class="key">macro</span>:<span class="value">switch part #d@ircnet,#e@ircnet,#f@ircnet</span></div>
@@ -86,31 +86,31 @@ ModuleManager / reload_modules_if_modified / r3004 =&gt; r8809<br />
       
       
       <div id="module-System::NotifyIcon::Win32" class="module">
-        <div class="module-header"><h2 title="�������ȥ쥤�˥��������ɽ�����롣">System::NotifyIcon::Win32</h2>
-          <span class="description">�������ȥ쥤�˥��������ɽ�����롣</span></div>
+        <div class="module-header"><h2 title="タスクトレイにアイコンを表示する。">System::NotifyIcon::Win32</h2>
+          <span class="description">タスクトレイにアイコンを表示する。</span></div>
         <div class="content">
 	  <p class="comment">
-�������ȥ쥤�˥��������ɽ�����ޤ���<br />
-����å������ɽ����ɽ�����ڤ��ؤ��뤳�Ȥ��Ǥ���������å������<br />
-Reload �� Exit ���Ǥ��륳��ƥ����ȥ�˥塼��ɽ�����ޤ���<br />
-¿��ȿ�����ߤ����⤷��ޤ��󤬤���ä��ԤƤнФƤ���Ȼפ��ޤ���<br />
+タスクトレイにアイコンを表示します。<br />
+クリックすると表示非表示を切り替えることができ、右クリックすると<br />
+Reload と Exit ができるコンテキストメニューを表示します。<br />
+多少反応が鈍いかもしれませんがちょっと待てば出てくると思います。<br />
 </p>
 <p class="comment">
-Win32::GUI ��ɬ�פȤ��ޤ���<br />
-����ƥ����ȥ�˥塼��ɽ�����Ƥ���ֽ�����֥��å����Ƥ��ޤ���<br />
+Win32::GUI を必要とします。<br />
+コンテキストメニューは表示している間処理をブロックしています。<br />
 </p>
 <p class="comment">
-Win32 ���٥�ȥ롼�פ�����������ֳ֤���ꤷ�ޤ���<br />
+Win32 イベントループを処理する最大間隔を指定します。<br />
 </p>
 <div class="element"><span class="key">interval</span>:<span class="value">2</span></div>
 <p class="comment">
-�����ΰ��ɽ�����륢���������ꤷ�ޤ���<br />
-Win32::GUI �����¤Ǥ����Ȥ�����������ե����뤷������Ǥ��ޤ���<br />
+通知領域に表示するアイコンを指定します。<br />
+Win32::GUI の制限でちゃんとしたアイコンファイルしか指定できません。<br />
 </p>
 <div class="element"><span class="key">iconfile</span>:<span class="value">guiperl.ico</span></div>
 <p class="comment">
-�⥸�塼�뤬�ɤ߹��ޤ줿�Ȥ��˥��󥽡��륦����ɥ��򱣤����ɤ�����<br />
-���ꤷ�ޤ���<br />
+モジュールが読み込まれたときにコンソールウィンドウを隠すかどうかを<br />
+指定します。<br />
 </p>
 <div class="element"><span class="key">hide-console-on-load</span>:<span class="value">1</span></div>
 
@@ -122,15 +122,15 @@ Win32::GUI �����¤Ǥ����Ȥ�����������ե����뤷������Ǥ��ޤ���<br />
       
       
       <div id="module-System::Pong" class="module">
-        <div class="module-header"><h2 title="�����С������PING��å��������Ф�����ưŪ��PONG���֤���">System::Pong</h2>
-          <span class="description">�����С������PING��å��������Ф�����ưŪ��PONG���֤���</span></div>
+        <div class="module-header"><h2 title="サーバーからのPINGメッセージに対し、自動的にPONGを返す。">System::Pong</h2>
+          <span class="description">サーバーからのPINGメッセージに対し、自動的にPONGを返す。</span></div>
         <div class="content">
 	  <p class="comment">
-�����off�ˤ���ȥ��饤����Ȥ�����PING�˱�������������ʤ��ʤ�ޤ�����<br />
-���饤����Ȥ����PONG��å������ϥǥե���ȤΥ����С���������Τ�<br />
-�ǥե���Ȱʳ��Υ����С������Ping Timeout����Ȥ����ʤ�<br />
-�����ɤ���������ޤ���<br />
-&nbsp;&nbsp;������ܤϤ���ޤ���<br />
+これをoffにするとクライアントが自らPINGに応答せざるを得なくなりますが、<br />
+クライアントからのPONGメッセージはデフォルトのサーバーへ送られるので<br />
+デフォルト以外のサーバーからはPing Timeoutで落とされるなど<br />
+全く良い事がありません。<br />
+&nbsp;&nbsp;設定項目はありません。<br />
 </p>
 
         </div>
@@ -141,14 +141,14 @@ Win32::GUI �����¤Ǥ����Ȥ�����������ե����뤷������Ǥ��ޤ���<br />
       
       
       <div id="module-System::PrivTranslator" class="module">
-        <div class="module-header"><h2 title="���饤����Ȥ���θĿ�Ū��priv�������Ϥ��ʤ��ʤ븽�ݤ���򤹤롣">System::PrivTranslator</h2>
-          <span class="description">���饤����Ȥ���θĿ�Ū��priv�������Ϥ��ʤ��ʤ븽�ݤ���򤹤롣</span></div>
+        <div class="module-header"><h2 title="クライアントからの個人的なprivが相手に届かなくなる現象を回避する。">System::PrivTranslator</h2>
+          <span class="description">クライアントからの個人的なprivが相手に届かなくなる現象を回避する。</span></div>
         <div class="content">
 	  <p class="comment">
-���Υ⥸�塼��ϸĿͰ��Ƥ�privmsg�������Ԥ�nick�˥ͥåȥ��̾���ղä��ޤ���<br />
-�ޤ����Ǹ�����򤫤����Ƥ���5ʬ����� nick �ѹ��򥯥饤����Ȥ������ޤ���<br />
-������ܤϤ���ޤ��󤬡� networks/channel-network-separator �� ! �� @ �ʳ���<br />
-�ѹ����뤳�Ȥ򤪤����ᤷ�ޤ���<br />
+このモジュールは個人宛てのprivmsgの送信者のnickにネットワーク名を付加します。<br />
+また、最後に声をかけられてから5分以内の nick 変更をクライアントに伝えます。<br />
+設定項目はありませんが、 networks/channel-network-separator を ! や @ 以外に<br />
+変更することをおすすめします。<br />
 </p>
 
         </div>
@@ -159,18 +159,18 @@ Win32::GUI �����¤Ǥ����Ȥ�����������ե����뤷������Ǥ��ޤ���<br />
       
       
       <div id="module-System::Raw" class="module">
-        <div class="module-header"><h2 title="�ޥ����ǻ��ꤷ�������С���IRC��å�������ù�������ľ�����롣">System::Raw</h2>
-          <span class="description">�ޥ����ǻ��ꤷ�������С���IRC��å�������ù�������ľ�����롣</span></div>
+        <div class="module-header"><h2 title="マスクで指定したサーバーにIRCメッセージを加工せずに直接送る。">System::Raw</h2>
+          <span class="description">マスクで指定したサーバーにIRCメッセージを加工せずに直接送る。</span></div>
         <div class="content">
 	  <p class="comment">
-�㤨��QUIT��������ǰ��Ū�����Ǥ���ǽ��<br />
+例えばQUITを送る事で一時的な切断が可能。<br />
 </p>
 <p class="comment">
-���ε�ǽ�����Ѥ��뤿��Υ��ޥ��̾���ǥե���Ȥϡ�raw�ס�<br />
-��/raw ircnet quit�פΤ褦�ˤ��ƻȤ���<br />
-����ܤΥѥ�᡼����������Υͥåȥ��̾���磻��ɥ����ɻ��Ѳ�ǽ��<br />
-CHOCOA �ξ�硢 raw �����饤����ȤǻȤ��Ƥ��ޤ��Τǡ�<br />
-���ޥ��̾���Ѥ��뤫�� /raw raw ircnet quit �Τ褦�ˤ���ɬ�פ����롣<br />
+この機能を利用するためのコマンド名。デフォルトは「raw」。<br />
+「/raw ircnet quit」のようにして使う。<br />
+一つ目のパラメータは送り先のネットワーク名。ワイルドカード使用可能。<br />
+CHOCOA の場合、 raw がクライアントで使われてしまうので、<br />
+コマンド名を変えるか、 /raw raw ircnet quit のようにする必要がある。<br />
 </p>
 <div class="element"><span class="key">command</span>:<span class="value">raw</span></div>
 
@@ -182,24 +182,24 @@ CHOCOA �ξ�硢 raw �����饤����ȤǻȤ��Ƥ��ޤ��Τǡ�<br />
       
       
       <div id="module-System::Reload" class="module">
-        <div class="module-header"><h2 title="conf�ե������⥸�塼��ι����������ɤ��륳�ޥ�ɤ��ɲä��롣">System::Reload</h2>
-          <span class="description">conf�ե������⥸�塼��ι����������ɤ��륳�ޥ�ɤ��ɲä��롣</span></div>
+        <div class="module-header"><h2 title="confファイルやモジュールの更新をリロードするコマンドを追加する。">System::Reload</h2>
+          <span class="description">confファイルやモジュールの更新をリロードするコマンドを追加する。</span></div>
         <div class="content">
 	  <p class="comment">
-������ɤ�¹Ԥ��륳�ޥ��̾����ά�����ȥ��ޥ�ɤ��ɲä��ޤ���<br />
-�㤨��&quot;load&quot;�����ꤹ��ȡ�&quot;/load&quot;��ȯ�����褦�Ȥ������˥�����ɤ�¹Ԥ��ޤ���<br />
-���λ����ޥ�ɤ�Tiarra�������٤��Τǡ�IRC�ץ��ȥ�����������줿<br />
-���ޥ��̾�����ꤹ�٤��ǤϤ���ޤ���<br />
+リロードを実行するコマンド名。省略されるとコマンドを追加しません。<br />
+例えば&quot;load&quot;を設定すると、&quot;/load&quot;と発言しようとした時にリロードを実行します。<br />
+この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された<br />
+コマンド名を設定すべきではありません。<br />
 </p>
 <div class="element"><span class="key">command</span>:<span class="value">load</span></div>
 <p class="comment">
-command ��Ʊ���Ǥ����������Фˤ�֥����ɥ��㥹�Ȥ��ޤ���<br />
+command と同じですが、サーバにもブロードキャストします。<br />
 </p>
 <div class="element"><span class="key">broadcast-command</span>:<span class="value">load-all</span></div>
 <p class="comment">
-conf�ե�����������ɤ����Ȥ������Τ��ޤ���<br />
-�⥸�塼������꤬�ѹ�����Ƥ������ϡ������Ǥ�����ˤ�����餺��<br />
-�⥸�塼�뤴�Ȥ�ɽ������ޤ���1�ޤ��Ͼ�ά���줿�������Τ��ޤ���<br />
+confファイルをリロードしたときに通知します。<br />
+モジュールの設定が変更されていた場合は、ここでの設定にかかわらず、<br />
+モジュールごとに表示されます。1または省略された場合は通知します。<br />
 </p>
 <div class="element"><span class="key">conf-reloaded-notify</span>:<span class="value">1</span></div>
 
@@ -211,21 +211,21 @@ conf�ե�����������ɤ����Ȥ������Τ��ޤ���<br />
       
       
       <div id="module-System::RemoteControl" class="module">
-        <div class="module-header"><h2 title="�����ȯ���������Ƥ����Ȥ��������ȿ������IRC���ޥ�ɤ�¹Ԥ��ޤ���">System::RemoteControl</h2>
-          <span class="description">�����ȯ���������Ƥ����Ȥ��������ȿ������IRC���ޥ�ɤ�¹Ԥ��ޤ���</span></div>
+        <div class="module-header"><h2 title="特定の発言が送られてきたとき、それに反応してIRCコマンドを実行します。">System::RemoteControl</h2>
+          <span class="description">特定の発言が送られてきたとき、それに反応してIRCコマンドを実行します。</span></div>
         <div class="content">
 	  <p class="comment">
-�¹Ԥ���Ĥ���ʹ֤�ɽ���ޥ�����<br />
+実行を許可する人間を表すマスク。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">*!*example@example.net</span></div>
 <p class="comment">
-&nbsp;��ʸ: + &lt;nick&gt; &lt;IRC Message&gt;<br />
-&nbsp;&lt;nick&gt;��ȿ������bot��nick��ɽ���ޥ�����<br />
-&nbsp;&lt;Tiarra::IRC::Message&gt;�ϥ����С��˸�����ȯ�Ԥ���IRC��å�������<br />
+&nbsp;構文: + &lt;nick&gt; &lt;IRC Message&gt;<br />
+&nbsp;&lt;nick&gt;は反応するbotのnickを表すマスク。<br />
+&nbsp;&lt;Tiarra::IRC::Message&gt;はサーバーに向けて発行するIRCメッセージ。<br />
 <br />
-&nbsp;��:<br />
+&nbsp;例:<br />
 &nbsp;+ hoge NICK [hoge]<br />
-&nbsp;hoge�Ȥ���BOT��[hoge]��nick���ѹ����롣<br />
+&nbsp;hogeというBOTが[hoge]にnickを変更する。<br />
 </p>
 
         </div>
@@ -236,28 +236,28 @@ conf�ե�����������ɤ����Ȥ������Τ��ޤ���<br />
       
       
       <div id="module-System::Shutdown" class="module">
-        <div class="module-header"><h2 title="Tiarra��λ�����롣">System::Shutdown</h2>
-          <span class="description">Tiarra��λ�����롣</span></div>
+        <div class="module-header"><h2 title="Tiarraを終了させる。">System::Shutdown</h2>
+          <span class="description">Tiarraを終了させる。</span></div>
         <div class="content">
 	  <p class="comment">
-���饤����Ȥ�������Υ��ޥ�ɤ��¹Ԥ��줿���䡢<br />
-ï������Ŀ�Ū��(priv��)�����ȯ��������줿����<br />
-Tiarra ��λ�����ޤ���<br />
+クライアントから特定のコマンドが実行された時や、<br />
+誰かから個人的に(privで)特定の発言が送られた時に<br />
+Tiarra を終了させます。<br />
 </p>
 <p class="comment">
-�ɲä��륳�ޥ�ɡ���ά���줿���ϥ��ޥ�ɤǤΥ���åȥ������̵���ˤʤ�ޤ���<br />
+追加するコマンド。省略された場合はコマンドでのシャットダウンは無効になります。<br />
 </p>
 <div class="element"><span class="key">command</span>:<span class="value">shutdown</span></div>
 <p class="comment">
-Tiarra�򥷥�åȥ����󤵤���priv��ȯ����<br />
-��ά���줿����priv�ǤΥ���åȥ������̵���ˤʤ�ޤ���<br />
-�ѥ�᡼���Ȥ��� shutdown ��å����������Ǥ��ޤ���<br />
+Tiarraをシャットダウンさせるprivの発言。<br />
+省略された場合はprivでのシャットダウンは無効になります。<br />
+パラメータとして shutdown メッセージを指定できます。<br />
 </p>
 <div class="element"><span class="key">message</span>:<span class="value">shutdown</span></div>
 <p class="comment">
-priv�ǤΥ���åȥ��������Ĥ���͡�<br />
-��ά���줿����priv�ǤΥ���åȥ������̵���ˤʤ�ޤ���<br />
-ʣ���Υޥ�������ꤷ�����ϡ���ĤǤ�ޥå������Τ�����Х���åȥ����󤷤ޤ���<br />
+privでのシャットダウンを許可する人。<br />
+省略された場合はprivでのシャットダウンは無効になります。<br />
+複数のマスクを指定した場合は、一つでもマッチするものがあればシャットダウンします。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">example!example@*.example.jp</span></div>
 
@@ -269,18 +269,18 @@ priv�ǤΥ���åȥ��������Ĥ���͡�<br />
       
       
       <div id="module-System::WebClient" class="module">
-        <div class="module-header"><h2 title="�֥饦����ǥ����򸫤���ȯ��������Ǥ��ޤ�.">System::WebClient</h2>
-          <span class="description">�֥饦����ǥ����򸫤���ȯ��������Ǥ��ޤ�.</span></div>
+        <div class="module-header"><h2 title="ブラウザ上でログを見たり発言したりできます.">System::WebClient</h2>
+          <span class="description">ブラウザ上でログを見たり発言したりできます.</span></div>
         <div class="content">
 	  <p class="comment">
-WebClient ��ư��������λ���.<br />
+WebClient を起動させる場所の指定.<br />
 </p>
 <div class="element"><span class="key">bind-addr</span>:<span class="value">127.0.0.1</span></div>
 <div class="element"><span class="key">bind-port</span>:<span class="value">8668</span></div>
 <div class="element"><span class="key">path</span>:<span class="value">/irc</span></div>
 <div class="element"><span class="key">css</span>:<span class="value">/style/irc-style.css</span></div>
 <p class="comment">
-��������apache��ReverseProxy��������, httpd.conf �ˤϼ��Τ褦������.<br />
+上の設定をapacheでReverseProxyさせる場合, httpd.conf には次のように設定.<br />
 &nbsp;ProxyPass        /irc/ http://localhost:8667/irc/<br />
 &nbsp;ProxyPassReverse /irc/ http://localhost:8667/irc/<br />
 &nbsp;&lt;Location /irc/&gt;<br />
@@ -288,39 +288,39 @@ WebClient ��ư��������λ���.<br />
 &nbsp;&lt;/Location&gt;<br />
 </p>
 <p class="comment">
-ReverseProxy ���ѻ����ɲ�����.<br />
-��³���������ץ����������Фˤʤä��㤦�ΤǤ����б�.<br />
+ReverseProxy 利用時の追加設定.<br />
+接続元が全部プロキシサーバになっちゃうのでその対応.<br />
 </p>
 <div class="element"><span class="key">extract-forwarded-for</span>:<span class="value">127.0.0.1</span></div>
 <p class="comment">
-&nbsp;���Ѥ�����³����ΰ���.<br />
+&nbsp;利用する接続設定の一覧.<br />
 <br />
-&nbsp;������ڤ��ɾ�������˵���.<br />
-&nbsp;�Ȥ��������,<br />
-&nbsp;- ��³�� IP �����פ���ʪ.<br />
-&nbsp;- user/pass�������Ƥ��Ƥ��ʤ�(ǧ����/anonymous):<br />
-&nbsp;&nbsp;&nbsp;- ǧ�����פ����꤬����Ф������������.<br />
-&nbsp;&nbsp;&nbsp;- ǧ�����פ����꤬�ʤ���� 401 Unauthorized.<br />
-&nbsp;- user/pass�������Ƥ��Ƥ���.<br />
-&nbsp;&nbsp;&nbsp;- ���פ������������.<br />
-&nbsp;&nbsp;&nbsp;- ���פ������꤬�ʤ���� 401 Unauthorized.<br />
+&nbsp;空白区切りで評価する順に記述.<br />
+&nbsp;使われる設定は,<br />
+&nbsp;- 接続元 IP が一致する物.<br />
+&nbsp;- user/passが送られてきていない(認証前/anonymous):<br />
+&nbsp;&nbsp;&nbsp;- 認証不要の設定があればその設定を利用.<br />
+&nbsp;&nbsp;&nbsp;- 認証不要の設定がなければ 401 Unauthorized.<br />
+&nbsp;- user/passが送られてきている.<br />
+&nbsp;&nbsp;&nbsp;- 一致する設定を利用.<br />
+&nbsp;&nbsp;&nbsp;- 一致する設定がなければ 401 Unauthorized.<br />
 </p>
 <div class="element"><span class="key">allow</span>:<span class="value">private public</span></div>
 <p class="comment">
-���Ĥ�����³������.<br />
+許可する接続の設定.<br />
 </p>
 <div class="block element"><span class="block key">allow-private</span>
 <div class="block content">
 <p class="comment">
-��³��IP���ɥ쥹������.<br />
+接続元IPアドレスの制限.<br />
 </p>
 <div class="element"><span class="key">host</span>:<span class="value">127.0.0.1</span></div>
 <p class="comment">
-ǧ������.<br />
+認証設定.<br />
 </p>
 <div class="element"><span class="key">auth</span>:<span class="value">user pass</span></div>
 <p class="comment">
-������������ͥ�λ���.<br />
+公開するチャンネルの指定.<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">#*@*</span></div>
 <div class="element"><span class="key">mask</span>:<span class="value">*@*</span></div>
@@ -329,29 +329,29 @@ ReverseProxy ���ѻ����ɲ�����.<br />
 <div class="block content">
 <div class="element"><span class="key">host</span>:<span class="value">*</span></div>
 <div class="element"><span class="key">auth</span>:<span class="value">user2 pass2</span></div>
-<div class="element"><span class="key">mask</span>:<span class="value">#���������ͥ�@ircnet</span></div>
+<div class="element"><span class="key">mask</span>:<span class="value">#公開チャンネル@ircnet</span></div>
 </div></div>
 <p class="comment">
-�ǥХå��ե饰.<br />
+デバッグフラグ.<br />
 </p>
 <div class="element"><span class="key">debug</span>:<span class="value">0</span></div>
 <p class="comment">
-��¸�������Կ�.<br />
+保存する最大行数.<br />
 </p>
 <div class="element"><span class="key">max-lines</span>:<span class="value">100</span></div>
 <p class="comment">
-���饤����ȥ⡼��.<br />
-owner �� shared.<br />
+クライアントモード.<br />
+owner か shared.<br />
 </p>
 <div class="element"><span class="key"> mode</span>:<span class="value">owner</span></div>
 <p class="comment">
-����������.<br />
-asc (��-&gt;��) �� desc (��-&gt;��).<br />
+ログの方向.<br />
+asc (旧-&gt;新) か desc (新-&gt;旧).<br />
 </p>
 <div class="element"><span class="key"> sort-order</span>:<span class="value">asc</span></div>
 <p class="comment">
-ȯ��BOX��̾�����ꤷ�ʤ��ä��Ȥ��Υǥե���Ȥ�̾��.<br />
-mode: shared �λ��˻Ȥ���.<br />
+発言BOXで名前指定しなかったときのデフォルトの名前.<br />
+mode: shared の時に使われる.<br />
 </p>
 <div class="element"><span class="key">name-default</span>:<span class="value">(noname)</span></div>
 
@@ -365,29 +365,29 @@ mode: shared �λ��˻Ȥ���.<br />
     <div class="pane-sidebar">
       <ul class="menu">
         
-        <li><a href="#module-System::Error" title="�����С������ERROR��å�������NOTICE��������">System::Error</a></li>
+        <li><a href="#module-System::Error" title="サーバーからのERRORメッセージをNOTICEに埋め込む">System::Error</a></li>
         
         <li><a href="#module-System::LivePatch" title="Live Patch.">System::LivePatch</a></li>
         
-        <li><a href="#module-System::Macro" title="�����˥��ޥ�ɤ��ɲä������Υ��ޥ�ɤ��Ȥ�줿���������ư���ޤȤ�Ƽ¹Ԥ��ޤ���">System::Macro</a></li>
+        <li><a href="#module-System::Macro" title="新規にコマンドを追加し、そのコマンドが使われた時に特定の動作をまとめて実行します。">System::Macro</a></li>
         
-        <li><a href="#module-System::NotifyIcon::Win32" title="�������ȥ쥤�˥��������ɽ�����롣">System::NotifyIcon::Win32</a></li>
+        <li><a href="#module-System::NotifyIcon::Win32" title="タスクトレイにアイコンを表示する。">System::NotifyIcon::Win32</a></li>
         
-        <li><a href="#module-System::Pong" title="�����С������PING��å��������Ф�����ưŪ��PONG���֤���">System::Pong</a></li>
+        <li><a href="#module-System::Pong" title="サーバーからのPINGメッセージに対し、自動的にPONGを返す。">System::Pong</a></li>
         
-        <li><a href="#module-System::PrivTranslator" title="���饤����Ȥ���θĿ�Ū��priv�������Ϥ��ʤ��ʤ븽�ݤ���򤹤롣">System::PrivTranslator</a></li>
+        <li><a href="#module-System::PrivTranslator" title="クライアントからの個人的なprivが相手に届かなくなる現象を回避する。">System::PrivTranslator</a></li>
         
-        <li><a href="#module-System::Raw" title="�ޥ����ǻ��ꤷ�������С���IRC��å�������ù�������ľ�����롣">System::Raw</a></li>
+        <li><a href="#module-System::Raw" title="マスクで指定したサーバーにIRCメッセージを加工せずに直接送る。">System::Raw</a></li>
         
-        <li><a href="#module-System::Reload" title="conf�ե������⥸�塼��ι����������ɤ��륳�ޥ�ɤ��ɲä��롣">System::Reload</a></li>
+        <li><a href="#module-System::Reload" title="confファイルやモジュールの更新をリロードするコマンドを追加する。">System::Reload</a></li>
         
-        <li><a href="#module-System::RemoteControl" title="�����ȯ���������Ƥ����Ȥ��������ȿ������IRC���ޥ�ɤ�¹Ԥ��ޤ���">System::RemoteControl</a></li>
+        <li><a href="#module-System::RemoteControl" title="特定の発言が送られてきたとき、それに反応してIRCコマンドを実行します。">System::RemoteControl</a></li>
         
-        <li><a href="#module-System::Shutdown" title="Tiarra��λ�����롣">System::Shutdown</a></li>
+        <li><a href="#module-System::Shutdown" title="Tiarraを終了させる。">System::Shutdown</a></li>
         
-        <li><a href="#module-System::WebClient" title="�֥饦����ǥ����򸫤���ȯ��������Ǥ��ޤ�.">System::WebClient</a></li>
+        <li><a href="#module-System::WebClient" title="ブラウザ上でログを見たり発言したりできます.">System::WebClient</a></li>
         
-        <li><a href="../module-toc.html">�⥸�塼����������</a></li>
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
       </ul>
     </div>
   </body>

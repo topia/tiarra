@@ -26,7 +26,7 @@ sub message_arrived {
 	    }
 	};
 	if ($message->n_params < 1) {
-	    # ���������Ĥ��Ƥ��������С�/���饤����Ȥ˥��顼���֤���
+	    # これを送りつけてきたサーバー/クライアントにエラーを返す。
 	    $sender->send_message(
 		$this->construct_irc_message(
 		    Prefix => $prefix,
@@ -43,7 +43,7 @@ sub message_arrived {
 	    } else {
 		$target = RunLoop->shared_loop->sysmsg_prefix(qw(system));
 	    }
-	    # ���������Ĥ��Ƥ��������С�/���饤����Ȥ�PONG�������֤���
+	    # これを送りつけてきたサーバー/クライアントにPONGを送り返す。
 	    $sender->send_message(
 		$this->construct_irc_message(
 		    Prefix => $prefix,
@@ -55,11 +55,11 @@ sub message_arrived {
 	}
 	# print "System::Pong ponged to ".$message->params->[0].".\n";
 
-	# PING��å������Ϥ���ʾ���ã�������������Ǿä��Ƥ��ޤ���
+	# PINGメッセージはこれ以上伝達させず、ここで消してしまう。
 	return undef;
     }
     elsif ($message->command eq 'PONG') {
-	# PONG��å������Ϥ���ʾ���ã�������������Ǿä��Ƥ��ޤ���
+	# PONGメッセージはこれ以上伝達させず、ここで消してしまう。
 	return undef;
     }
     else {
@@ -70,12 +70,12 @@ sub message_arrived {
 1;
 
 =pod
-info: �����С������PING��å��������Ф�����ưŪ��PONG���֤���
+info: サーバーからのPINGメッセージに対し、自動的にPONGを返す。
 default: on
 
-# �����off�ˤ���ȥ��饤����Ȥ�����PING�˱�������������ʤ��ʤ�ޤ�����
-# ���饤����Ȥ����PONG��å������ϥǥե���ȤΥ����С���������Τ�
-# �ǥե���Ȱʳ��Υ����С������Ping Timeout����Ȥ����ʤ�
-# �����ɤ���������ޤ���
-#   ������ܤϤ���ޤ���
+# これをoffにするとクライアントが自らPINGに応答せざるを得なくなりますが、
+# クライアントからのPONGメッセージはデフォルトのサーバーへ送られるので
+# デフォルト以外のサーバーからはPing Timeoutで落とされるなど
+# 全く良い事がありません。
+#   設定項目はありません。
 =cut

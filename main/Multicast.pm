@@ -1,11 +1,11 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# �����С����饯�饤����Ȥ˥�å�������ή���Ȥ������Υ��饹�ϥե��륿�Ȥ���
-# �ͥåȥ��̾���ղä��ޤ���
-# ���饤����Ȥ��饵���С���ή���Ȥ������Υ��饹�ϥͥåȥ��̾��ѡ�������
-# ����٤��ƥ����С�������ޤ���
-# �������뢫���������Х�nick���Ѵ��⤳���ǹԤ��ޤ���
+# サーバーからクライアントにメッセージが流れるとき、このクラスはフィルタとして
+# ネットワーク名を付加します。
+# クライアントからサーバーに流れるとき、このクラスはネットワーク名をパースして
+# 送るべき各サーバーに送ります。
+# ローカル←→グローバルnickの変換もここで行います。
 # -----------------------------------------------------------------------------
 package Multicast;
 use strict;
@@ -14,11 +14,11 @@ use Configuration;
 use Carp;
 use NumericReply;
 use base qw(Tiarra::IRC::NewMessageMixin);
-my $runloop = undef; # �ǥե���Ȥ�RunLoop�Υ���å��塣
-my $separator = ''; # ���ѥ졼������Υ���å��塣������cast_message���ƤФ���٤˹�������롣
+my $runloop = undef; # デフォルトのRunLoopのキャッシュ。
+my $separator = ''; # セパレータ記号のキャッシュ。これらはcast_messageが呼ばれる度に更新される。
 
 sub _ISON_from_client {
-    # nick��ͥåȥ�����ʬ�ह�롣
+    # nickをネットワーク毎に分類する。
     my ($message, $sender) = @_;
     my $networks = classify($message->params);
 
@@ -33,7 +33,7 @@ sub _ISON_from_client {
 
 sub _INVITE_from_server {
     my ($message,$sender) = @_;
-    # nick�Ϥ��Τޤޡ������ͥ�ˤϥͥåȥ��̾���դ��롣
+    # nickはそのまま。チャンネルにはネットワーク名を付ける。
     $message->nick(global_to_local($message->nick,$sender));
     $message->params->[0] = global_to_local($message->params->[0],$sender);
     $message->params->[1] = attach($message->params->[1],$sender->network_name);
@@ -41,18 +41,18 @@ sub _INVITE_from_server {
 }
 sub _INVITE_from_client {
     my ($message,$sender) = @_;
-    # nick�ϥѡ�����������ǼΤƤ롣�����ͥ�Υѡ�����̤򸫤롣
+    # nickはパースするだけで捨てる。チャンネルのパース結果を見る。
     my $to = '';
     ($message->params->[0]) = detach($message->params->[0]);
     ($message->params->[1],$to) = detach($message->params->[1]);
-    $message->params->[0] = local_to_global($message->params->[0],$to); # ��ʬ��INVITE������ʤ�̵���Τ�ɬ�פ�̵������
+    $message->params->[0] = local_to_global($message->params->[0],$to); # 自分をINVITEする事など無いので必要は無いが…
     forward_to_server($message,$to);
 }
 
 sub _JOIN_from_server {
     my ($message,$sender) = @_;
-    # ����ޤǶ��ڤ��ʣ���Υ����ͥ뤬���ꤵ��Ƥ����Ȥ��Ƥ�
-    # ���������Ƥ˥ͥåȥ��̾���ղä��롣(�ޤ���̵������������)
+    # カンマで区切られ複数のチャンネルが指定されていたとしても
+    # それらの全てにネットワーク名を付加する。(まさか無いだろうが。)
     $message->nick(global_to_local($message->nick,$sender));
 
     my @channels = split(/,/,$message->params->[0]);
@@ -65,11 +65,11 @@ sub _JOIN_from_server {
 }
 sub _JOIN_from_client {
     my ($message,$sender) = @_;
-    # �ѥ���ɤ���ʬ��Ϯ�餺���ͥåȥ��̾��ѡ������Ƽ�������
-    # �ƥ����ͥ��ͥåȥ�����ʬ�ह�롣
+    # パスワードの部分は弄らず、ネットワーク名をパースして取り除く。
+    # 各チャンネルをネットワーク毎に分類する。
     if ($message->params->[0] eq '0') {
-	# 0���ü졣
-	# ���ƤΥ����С���JOIN 0�����롣
+	# 0は特殊。
+	# 全てのサーバーにJOIN 0を送る。
 	distribute_to_servers($message->clone);
     }
     else {
@@ -84,7 +84,7 @@ sub _JOIN_from_client {
 
 sub _KICK_from_server {
     my ($message,$sender) = @_;
-    # �����ͥ�̾�ˤ������ͥåȥ��̾���ղä��롣
+    # チャンネル名にだけ、ネットワーク名を付加する。
     $message->nick(global_to_local($message->nick,$sender));
     $message->params->[0] = attach($message->params->[0],$sender->network_name);
     $message->params->[1] = global_to_local($message->params->[1],$sender);
@@ -95,8 +95,8 @@ sub _KICK_from_client {
     my @channels = split(/,/,$message->params->[0]);
     my @nicks = split(/,/,$message->params->[1]);
     if (scalar(@channels) == scalar(@nicks)) {
-	# �����ͥ��nick�����а���б����롣
-	# �����ͥ�Υͥåȥ��̾����Ѥ���nick�Υͥåȥ��̾�ϼΤƤ롣
+	# チャンネルとnickが一対一で対応する。
+	# チャンネルのネットワーク名を使用し、nickのネットワーク名は捨てる。
 	for (my $i = 0; $i < @channels; $i++) {
 	    my ($raw_channel,$to) = detach($channels[$i]);
 	    my ($raw_nick) = detach($nicks[$i]);
@@ -107,8 +107,8 @@ sub _KICK_from_client {
 	}
     }
     elsif (@channels == 1) {
-	# ��ĤΥ����ͥ뤫��ʣ����nick�򽳤�Ф���
-	# �����ͥ�Υͥåȥ��̾����Ѥ���nick�Υͥåȥ��̾�ϼΤƤ롣
+	# 一つのチャンネルから複数のnickを蹴り出す。
+	# チャンネルのネットワーク名を使用し、nickのネットワーク名は捨てる。
 	my ($raw_channel,$to) = detach($channels[0]);
 	my $network = $runloop->networks->{$to};
 	$message->params->[0] = $raw_channel;
@@ -124,7 +124,7 @@ sub _KICK_from_client {
 
 sub _LIST_from_client {
     my ($message,$sender) = @_;
-    # �����ͥ�Υͥåȥ��̾��ʬ�ࡣ
+    # チャンネルのネットワーク名で分類。
     if (defined $message->params->[0]) {
 	my @targets = split(/,/,$message->params->[0]);
 	my $networks = classify(\@targets);
@@ -146,8 +146,8 @@ sub _MODE_from_server {
 
     my $target = $message->params->[0];
     if (channel_p($target)) {
-	# nick(�Ĥޤ꼫ʬ)�ξ��Ϥ��Τޤޥ��饤����Ȥ����ۡ�
-	# ���ξ��ϥ����ͥ�ʤΤǡ��ͥåȥ��̾���ղá�
+	# nick(つまり自分)の場合はそのままクライアントに配布。
+	# この場合はチャンネルなので、ネットワーク名を付加。
 	$message->params->[0] = attach($target,$sender->network_name);
     }
     return $message;
@@ -170,8 +170,8 @@ sub _TOPIC_from_server {
 
     my $target = $message->params->[0];
     if (channel_p($target)) {
-	# nick(�Ĥޤ꼫ʬ)�ξ��Ϥ��Τޤޥ��饤����Ȥ����ۡ�
-	# ���ξ��ϥ����ͥ�ʤΤǡ��ͥåȥ��̾���ղá�
+	# nick(つまり自分)の場合はそのままクライアントに配布。
+	# この場合はチャンネルなので、ネットワーク名を付加。
 	$message->params->[0] = attach($target,$sender->network_name);
     }
     return $message;
@@ -186,8 +186,8 @@ sub _TOPIC_from_client {
 }
 
 sub _NICK_from_client {
-    # �ͥåȥ��̾�����ꤵ��Ƥ����顢���λ��ˤΤ�NICK��������
-    # �����Ǥʤ�������Ƥλ������롣
+    # ネットワーク名が指定されていたら、その鯖にのみNICKを送信。
+    # そうでなければ全ての鯖に送る。
     my ($message,$sender) = @_;
     my $to;
     my $specified;
@@ -216,10 +216,10 @@ sub _NOTICE_from_server {
 
     my $target = $message->params->[0];
     if (channel_p($target)) {
-	# ���ξ��ϥ����ͥ�ʤΤǡ��ͥåȥ��̾���ղá�
+	# この場合はチャンネルなので、ネットワーク名を付加。
 	$message->params->[0] = attach($target,$sender->network_name);
     } else {
-	# nick(�Ĥޤ꼫ʬ)�ξ��� global_to_local ��Ԥ���
+	# nick(つまり自分)の場合は global_to_local を行う。
 	$message->param(0, global_to_local($message->param(0),$sender));
     }
     return $message;
@@ -233,8 +233,8 @@ sub _WHOIS_from_client {
     my $network = $runloop->networks->{$to};
     $message->params->[0] = local_to_global($message->params->[0],$runloop->networks->{$to});
 
-    # ��������nick��������Υ������Х�nick���ۤʤäƤ����顢���λݤ򥯥饤����Ȥ���𤹤롣
-    # ������WHOIS���оݤ���ʬ���ä����Τߡ�
+    # ローカルnickと送信先のグローバルnickが異なっていたら、その旨をクライアントに報告する。
+    # ただしWHOISの対象が自分だった場合のみ。
     my $local_nick = $runloop->current_nick;
     my $global_nick = $network->current_nick;
     if (($message->command eq 'WHOIS' || $message->command eq 'WHO') &&
@@ -362,17 +362,17 @@ my $server_sent = {
     'JOIN' => \&_JOIN_from_server,
     'KICK' => \&_KICK_from_server,
     'MODE' => \&_MODE_from_server,
-    'NICK' => undef, # ���Τϻ������NICK��Ϯ��ʤ�������򸫤ƾ���򹹿�����Τ�IrcIO::Server�Ǥ��롣
-    'NOTICE' => \&_NOTICE_from_server, # Prefix��Ϯ��Ȥ���С�����ϥ⥸�塼������ܡ�
-    'PART' => \&_JOIN_from_server, # JOIN��Ʊ���������ɤ���
+    'NICK' => undef, # 本体は鯖からのNICKを弄らない。これを見て情報を更新するのはIrcIO::Serverである。
+    'NOTICE' => \&_NOTICE_from_server, # Prefixを弄るとすれば、それはモジュールの役目。
+    'PART' => \&_JOIN_from_server, # JOINと同じ処理で良い。
     'PING' => undef,
-    'PRIVMSG' => \&_NOTICE_from_server, # NOTICE��Ʊ���������ɤ���
-    'QUIT' => undef, # QUIT�����Τ���ʬ���ä���ΤƤ롢�Ȥ��ä�������IrcIO::Server���Ԥʤ���
-    'SQUERY' => \&_MODE_from_server, # ¿ʬ����ϻ�������������������ɤ�ʬ����ʤ���
+    'PRIVMSG' => \&_NOTICE_from_server, # NOTICEと同じ処理で良い。
+    'QUIT' => undef, # QUITしたのが自分だったら捨てる、といった処理はIrcIO::Serverが行なう。
+    'SQUERY' => \&_MODE_from_server, # 多分これは鯖からも来るだろうが、良く分からない。
     'TOPIC' => \&_TOPIC_from_server,
     'NJOIN' => \&_NJOIN_from_server,
-    (RPL_UNIQOPIS) => \&_RPL_INVITING, # UNIQOPIS (INVITING��Ʊ������)
-    # TRACE�ϤΥ�ץ饤��Tiarra�ϴ��Τ��ʤ������ʤ��Ȥ⺣�ΤȤ����ϡ�
+    (RPL_UNIQOPIS) => \&_RPL_INVITING, # UNIQOPIS (INVITINGと同じ処理)
+    # TRACE系のリプライはTiarraは関知しない。少なくとも今のところは。
     do {
 	my $sub = _gen_g2l_translator(1);
 	map {
@@ -416,21 +416,21 @@ my $client_sent = {
     'KICK' => \&_KICK_from_client,
     'LIST' => \&_LIST_from_client,
     'MODE' => \&_MODE_from_client,
-    'NAMES' => \&_LIST_from_client, # LIST��Ʊ���������ɤ���
+    'NAMES' => \&_LIST_from_client, # LISTと同じ処理で良い。
     'NICK' => \&_NICK_from_client,
-    'NOTICE' => \&_LIST_from_client, # LIST��Ʊ���������ɤ���
-    #'MODE' => \&_MODE_from_client, # MODE��Ʊ���������ɤ���
-    #���տ�������
-    'PART' => \&_LIST_from_client, # LIST��Ʊ���������ɤ���
-    'PASS' => \&_MODE_from_client, # ��������ܤ˽������ʤ���SERVICE����ʤ���MODE��Ʊ�����ɤ���
+    'NOTICE' => \&_LIST_from_client, # LISTと同じ処理で良い。
+    #'MODE' => \&_MODE_from_client, # MODEと同じ処理で良い。
+    #↑意図不明。
+    'PART' => \&_LIST_from_client, # LISTと同じ処理で良い。
+    'PASS' => \&_MODE_from_client, # これを真面目に処理しないとSERVICE出来ない。MODEと同じで良い。
     'PONG' => undef,
-    'PRIVMSG' => \&_LIST_from_client, # NOTICE��Ʊ���������ɤ���
-    'QUIT' => undef, # QUIT��ȥ�åפ���Τ�IrcIO::Client���Ĥޤꤳ���ˤϷ褷��QUIT��ή�����ʤ���
-    'SERVICE' => \&_MODE_from_client, # �ɤ�ʬ����ʤ������Ȥꤢ����MODE��Ʊ���ˤ��롣
-    'SERVLIST' => \&_MODE_from_client, # ������ɤ�ʬ����ʤ���MODE��Ʊ���ˡ�
-    'SERVSET' => \&_MODE_from_client, # ����⡣
-    'SQUERY' => \&_MODE_from_client, # �����
-    'STATS' => \&_MODE_from_client, # ������̾�Ϥ������ˤĤ��ΤǤ���Ϥ褯�ʤ�����
+    'PRIVMSG' => \&_LIST_from_client, # NOTICEと同じ処理で良い。
+    'QUIT' => undef, # QUITをトラップするのはIrcIO::Client。つまりここには決してQUITは流れて来ない。
+    'SERVICE' => \&_MODE_from_client, # 良く分からないが、とりあえずMODEと同じにする。
+    'SERVLIST' => \&_MODE_from_client, # これも良く分からない。MODEと同じに。
+    'SERVSET' => \&_MODE_from_client, # これも。
+    'SQUERY' => \&_MODE_from_client, # これも
+    'STATS' => \&_MODE_from_client, # サーバ名はうしろにつくのでこれはよくないかも
     'SUMMON' => \&_MODE_from_client,
     'TIME' => \&_MODE_from_client,
     'TOPIC' => \&_TOPIC_from_client,
@@ -445,18 +445,18 @@ my $client_sent = {
     'WHOIS' => \&_WHOIS_from_client,
     'WHOWAS' => \&_WHOIS_from_client,
     'CLOSE' => \&_MODE_from_client,
-    'CONNECT' => \&_MODE_from_client, # ̵�������뤬��
+    'CONNECT' => \&_MODE_from_client, # 無理があるが…
     'DIE' => \&_MODE_from_client,
     'KILL' => \&_MODE_from_client,
     'REHASH' => \&_MODE_from_client,
     'RESTART' => \&_MODE_from_client,
     'SQUIT' => \&_MODE_from_client,
     'ERROR' => undef,
-    'NJOIN' => undef, # ���饤����Ȥ���NJOIN��ȯ�Ԥ���Τ�����̵��̣��
+    'NJOIN' => undef, # クライアントからNJOINを発行するのは勿論無意味。
     'RECONNECT' => undef,
     'SERVER' => undef,
-    'WALLOPS' => \&_MODE_from_client, # ���饤����Ȥ���WALLOPS��ȯ�Խ����Τ��ɤ������Τ�ʤ�����
-    # �ʲ���ץ饤�������detach_network_name�ΰ٤����ˤ��롣
+    'WALLOPS' => \&_MODE_from_client, # クライアントからWALLOPSを発行出来るのかどうかは知らないが…
+    # 以下リプライ。これはdetach_network_nameの為だけにある。
     (RPL_NAMREPLY) => _gen_detach_translator(2),
     do {
 	my $sub = _gen_detach_translator(1);
@@ -489,16 +489,16 @@ sub from_server_to_client {
     no warnings;
     my ($message, $sender) = @_;
     &_update_cache;
-    # server -> client��ή��Ǥϡ���ĤΥ�å�������ʣ����ʬ�䤵������̵����
-    # ���δؿ��ϰ�Ĥ�Tiarra::IRC::Message���֤���
+    # server -> clientの流れでは、一つのメッセージが複数に分割される事は無い。
+    # この関数は一つのTiarra::IRC::Messageを返す。
 
     if ($message->command =~ /^\d+$/) {
-	# �˥塼���å���ץ饤��0���ܤΥѥ�᥿������nick��
+	# ニューメリックリプライの0番目のパラメタは全てnick。
 	$message->params->[0] = global_to_local($message->params->[0],$sender);
     }
 
     eval {
-	# �ե��륿��̵���ä��ꡢ�ե��륿�μ¹�����㳰�������ä��ꤷ�����Ϥ��Τޤ��֤���
+	# フィルタが無かったり、フィルタの実行中に例外が起こったりした場合はそのまま返す。
 	$message = $server_sent->{$message->command}->($message, $sender);
     }; if ($@) {
 	$message->nick(global_to_local($message->nick,$sender));
@@ -510,8 +510,8 @@ sub from_client_to_server {
     no warnings;
     my ($message, $sender) = @_;
     &_update_cache;
-    # client -> server��ή��Ǥϡ���ĤΥ�å�������ʣ����ʬ�䤵���������롣
-    # ���δؿ��ϥ�å������򻪤�ľ�����ꡢ����ͤ��֤��ʤ���
+    # client -> serverの流れでは、一つのメッセージが複数に分割される事がある。
+    # この関数はメッセージを鯖に直接送り、戻り値は返さない。
     eval {
 	$client_sent->{$message->command}->($message, $sender);
     }; if ($@) {
@@ -538,10 +538,10 @@ sub detach_network_name {
     $result;
 }
 
-*detatch = \&detach; # ���㤤���Ƥ�����detach����������
+*detatch = \&detach; # 勘違いしていた。detachが正しい。
 sub detach {
-    # �����: (���ѥ졼������ʸ����,�ͥåȥ��̾,�ͥåȥ��̾���������줿���ɤ���)
-    # �����������顼����ƥ����ȤǤϥ��ѥ졼������ʸ����Τߤ��֤���
+    # 戻り値: (セパレータ前の文字列,ネットワーク名,ネットワーク名が明示されたかどうか)
+    # ただしスカラーコンテクストではセパレータ前の文字列のみを返す。
     my $str = shift;
 
     if (!defined $str) {
@@ -559,13 +559,13 @@ sub detach {
 	my $before_sep = substr($str,0,$sep_index);
 	my $after_sep = substr($str,$sep_index+length($separator));
 	if ((my $colon_pos = index($after_sep,':')) != -1) {
-	    # #��������@taiyou:*.jp  ��  #��������:*.jp + taiyou
+	    # #さいたま@taiyou:*.jp  →  #さいたま:*.jp + taiyou
 	    @result = ($before_sep.substr($after_sep,$colon_pos),
 		       substr($after_sep,0,$colon_pos),
 		       1);
 	}
 	else {
-	    # #��������@taiyou  ��  #�������� + taiyou
+	    # #さいたま@taiyou  →  #さいたま + taiyou
 	    @result = ($before_sep,$after_sep,1);
 	}
     }
@@ -586,8 +586,8 @@ sub detach_for_client {
 }
 
 sub attach {
-    # $str��ChannelInfo�Υ��֥������ȤǤ��ɤ���
-    # $network_name�Ͼ�ά��ǽ��IrcIO::Server�Υ��֥������ȤǤ��ɤ���
+    # $strはChannelInfoのオブジェクトでも良い。
+    # $network_nameは省略可能。IrcIO::Serverのオブジェクトでも良い。
     my ($str,$network_name) = @_;
     if (ref($str) eq 'ChannelInfo') {
 	$str = $str->name;
@@ -608,11 +608,11 @@ sub attach {
 
     $network_name = $runloop->default_network if $network_name eq '';
     if ((my $pos_colon = index($str,':')) != -1) {
-	# #��������:*.jp  ��  #��������@taiyou:*.jp
+	# #さいたま:*.jp  →  #さいたま@taiyou:*.jp
 	$str =~ s/:/$separator.$network_name.':'/e;
     }
     else {
-	# #��������  ��  #��������@taiyou
+	# #さいたま  →  #さいたま@taiyou
 	$str .= $separator.$network_name;
     }
     $str;
@@ -629,8 +629,8 @@ sub attach_for_client {
 }
 
 sub classify {
-    # array: ����ؤλ���
-    # �����: �ͥåȥ��̾���ѡ������ʸ������¤٤�����ؤλ���
+    # array: 配列への参照
+    # 戻り値: ネットワーク名→パース後の文字列を並べた配列への参照
     my $array = shift;
     my $networks = {};
     foreach my $target (@$array) {
@@ -639,7 +639,7 @@ sub classify {
 	    push @{$networks->{$network_name}},$str;
 	}
 	else {
-	    # ���Ƹ���줿�ͥåȥ���Ǥ��롣
+	    # 初めて現われたネットワークである。
 	    $networks->{$network_name} = [$str];
 	}
     }
@@ -647,9 +647,9 @@ sub classify {
 }
 
 sub forward_to_server {
-    # ���δؿ��ϡ�ưŪ�������פ��֤��줿�ѿ�
-    # $hijack_forward_to_server���������Ƥ����顢
-    # �����ؿ���ե��ȸ������ƥ����С�����������˸Ƥ֡�
+    # この関数は、動的スコープに置かれた変数
+    # $hijack_forward_to_serverが定義されていたら、
+    # それを関数リファと見做してサーバーに送る代わりに呼ぶ。
     no strict;
     my ($msg, $network_name) = @_;
 
@@ -680,9 +680,9 @@ sub distribute_to_servers {
 }
 
 sub nick_p {
-    # ʸ����nick�Ȥ��Ƶ����������Ǥ��뤫�ɤ����򿿵��ͤ��֤���
-    # ����ϥ��饤����Ȥ�����Τ������Ƥ��뤫�֤������Ǥ��äơ�
-    # �����Ф��������Ƥ��� nick ��Ƚ��˻ȤäƤϤ����ʤ���
+    # 文字列がnickとして許される形式であるかどうかを真偽値で返す。
+    # これはクライアントで送るのを許されているか返すだけであって、
+    # サーバから送られてくる nick の判定に使ってはいけない。
     my $str = detach(shift);
     my $nicklen = shift;
     return undef unless length($str) &&
@@ -695,7 +695,7 @@ sub nick_p {
 }
 
 sub channel_p {
-    # ʸ����channel�Ȥ��Ƶ����������Ǥ��뤫�ɤ����򿿵��ͤ��֤���
+    # 文字列がchannelとして許される形式であるかどうかを真偽値で返す。
     my $str = detach(shift);
     return undef unless length($str);
     my $chantypes = shift || '#&+!';
@@ -706,9 +706,9 @@ sub channel_p {
 }
 
 sub local_to_global {
-    # ���δؿ��ϡ�ưŪ�������פ��֤��줿�ѿ�
-    # $hijack_local_to_global���������Ƥ����顢
-    # �����ѹ��������֤���
+    # この関数は、動的スコープに置かれた変数
+    # $hijack_local_to_globalが定義されていたら、
+    # 何も変更せずに返す。
     no strict;
     my ($str, $server) = @_;
     if (defined $hijack_local_to_global) {
@@ -735,15 +735,15 @@ sub global_to_local {
 }
 
 sub lc {
-    # IRC�����ǡ���ʸ����ʸ�����Ѵ����롣
+    # IRC方式で、大文字を小文字に変換する。
     my $str = shift;
-    # {}|��[]\�ξ�ʸ���Ǥ��롣���㤤���ߤƤ���!
+    # {}|は[]\の小文字である。気違いじみている!
     $str =~ tr/A-Z[]\\/a-z{}|/;
     $str;
 }
 
 sub uc {
-    # IRC�����ǡ���ʸ������ʸ�����Ѵ����롣
+    # IRC方式で、小文字を大文字に変換する。
     my $str = shift;
     $str =~ tr/a-z{}|/A-Z[]\\/;
     $str;

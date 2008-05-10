@@ -3,389 +3,389 @@
 	* HACKING:
 	  - ModuleManager/*_blacklist, Multicast/attach_for_client,
 	    remark/IRCMessage/always-use-colon-on-last-param,
-	    Hook �λȤ������ɲá�
+	    Hook の使い方を追加。
 
 	* tiarra:
 	(shutdown):
-	  - runloop->terminate ��Ȥä� shutdown ��Ԥ��褦�ˤ�����
-	  - runloop->terminate �����Ԥ������Τ���ˡ�2�ٰʾ� shutdown ��
-	    �ƤФ��ж�����λ���롣
+	  - runloop->terminate を使った shutdown を行うようにした。
+	  - runloop->terminate が失敗した時のために、2度以上 shutdown が
+	    呼ばれれば強制終了する。
 
 	* doc-src/conf-main.tdoc, main/Configuration.pm:
-	  - general/messages/quit/netconf-changed-{re,dis}connect ���ɲá�
+	  - general/messages/quit/netconf-changed-{re,dis}connect を追加。
 
 	* main/IrcIO.pm:
 	(disconnect):
-	  - runloop->unregister_receive_socket ��Ƥ֡�
+	  - runloop->unregister_receive_socket を呼ぶ。
 
 	* main/IRCMessage.pm:
 	(serialize):
-	  - remark/always-use-colon-on-last-param �ɲá��Ǹ�Υѥ�᡼����
-	    ���ꥢ�饤������ɬ���������Ȥ��褦�ˤ��롣
-	    ��˥��饤������к��ѡ�
+	  - remark/always-use-colon-on-last-param 追加。最後のパラメータの
+	    シリアライズ時に必ずコロンを使うようにする。
+	    主にクライアント対策用。
 
 	* main/ModuleManager.pm:
 	(add_to_blacklist, remove_from_blacklist, check_blacklist, _set_blacklist):
-	  - blacklist �μ�����
+	  - blacklist の実装。
 	(_clear_module_cache, get_modules):
-	  - blacklist ������������Ѳ�ǽ�⥸�塼��Υ���å�����롣
+	  - blacklist を除いた、使用可能モジュールのキャッシュを作る。
 	(terminate):
-	  - mod_timestamp �ˤ���⥸�塼��� destruct/_unload ���롣
+	  - mod_timestamp にあるモジュールも destruct/_unload する。
 	(check_timestamp_update):
-	  - ���̥롼����Ȥ��ƥ᥽�åɤˤ�����
+	  - 共通ルーチンとしてメソッドにした。
 	(update_modules):
-	  - blacklist ��Ϣ�����ȡ�������ѹ�����Ƥ��ʤ������åץǡ���
-	    ����Ƥ��ơ���������ɼ��Ԥ��Ƥ���⥸�塼��κƻ�Ԥ��ɲä�����
+	  - blacklist 関連処理と、設定は変更されていないがアップデート
+	    されていて、前回ロード失敗しているモジュールの再試行を追加した。
 	(reload_modules_if_modified, _unload):
-	  - blacklist ��Ϣ�������ɲá�
+	  - blacklist 関連処理の追加。
 
 	* main/Multicast.pm:
 	(_NOTICE_from_server):
-	  - �ɲá� MODE �����Ѥ��Ƥ���ȡ���å������Ȥ��� global nick
-	    �Τߤ������Ƥ����Ȥ��ˡ����Ѥ��Ƥ��ޤ���
+	  - 追加。 MODE で代用していると、メッセージとして global nick
+	    のみが送られてきたときに、改変してしまう。
 	($server_sent):
-	  - NOTICE �� PRIVMSG �� _NOTICE_from_server ���ѹ���
+	  - NOTICE と PRIVMSG を _NOTICE_from_server へ変更。
 	(attach_for_client):
-	  - �ɲá�multi-server-mode �ΤȤ��Τ� attach ���롣
+	  - 追加。multi-server-mode のときのみ attach する。
 
 	* main/RunLoop.pm:
-	  - set-current-nick �եå����ɲä�����
+	  - set-current-nick フックを追加した。
 	(_new):
-	  - ����ѿ��Ȥ��� $conf ���ɲä��Ƹ��䤹�����롣
-	  - terminated_networks, terminating ���ɲá�
+	  - 一時変数として $conf を追加して見やすくする。
+	  - terminated_networks, terminating を追加。
 	(network):
-	  - networks, disconnected_networks, terminated_networks �γ�
-	    ��������˸������ơ��ǽ�˸��Ĥ��ä���Τȥ�����̾���֤���
+	  - networks, disconnected_networks, terminated_networks の各
+	    ジャンルを順に検索して、最初に見つかったものとジャンル名を返す。
 	(set_current_nick):
-	  - set-current-nick �եå���Ƥ֤褦�ˤ�����
+	  - set-current-nick フックを呼ぶようにした。
 	(_conf, _conf_{general,networks,messages}):
-	  - Configuration::shared_conf->... ��û�̷��Ȥ����ɲá�
+	  - Configuration::shared_conf->... の短縮形として追加。
 	(_cleanup_closed_link):
-	  - unregister_receive_socket ��Ȥ��褦�ˤ�����
-	  - state �Ȥ��� reconnecting/terminating/finalizing ���������롣
+	  - unregister_receive_socket を使うようにした。
+	  - state として reconnecting/terminating/finalizing を受け入れる。
 	(_action_{part_and_join,message_for_each}):
-	  - Multicast::attach_for_client ��Ȥ��褦�ˤ�����
+	  - Multicast::attach_for_client を使うようにした。
 	(update_networks):
-	  - ->_conf* ��Ȥ��褦�ˤ�����
-	  - state �Ȥ��� reconnecting/finalizing ��Ȥ���
+	  - ->_conf* を使うようにした。
+	  - state として reconnecting/finalizing を使う。
 	(terminate_server):
-	  - �ɲá� quit ���� conf �ѹ����ʤ��¤꼫ư����³���ʤ���
-	  - state �Ȥ��� terminating ��Ȥ���
+	  - 追加。 quit し、 conf 変更がない限り自動再接続しない。
+	  - state として terminating を使う。
 	(reconnect_server):
-	  - ���餫�Υ�����ˤ���ͥåȥ�������³���롣
+	  - 何らかのジャンルにあるネットワークを再接続する。
 	(disconnect_server):
-	  - ���쥯������κ���� IO->disconnect ��Ǥ���롣
+	  - セレクタからの削除は IO->disconnect に任せる。
 	(close_client):
-	  - ERROR ���������ƥ��饤����Ȥ����Ǥ��롣
+	  - ERROR を送信してクライアントを切断する。
 	({,un}install_socket):
-	  - ->{,un}register_receive_socket ��Ȥ��褦�ˤ�����
+	  - ->{,un}register_receive_socket を使うようにした。
 	({,un}register_receive_socket):
-	  - �ɲá� ->{receive_selector}->{add,remove} ��Ƥ֤�����
+	  - 追加。 ->{receive_selector}->{add,remove} を呼ぶだけ。
 	(run):
-	  - ->_conf* ��Ȥ��褦�ˤ�����
-	  - ->{,un}register_receive_socket ��Ȥ��褦�ˤ�����
-	  - ��λ������ϥ��饤����Ȥ������³������Ƥ�¨���Ǥ��롣
-	  - ��λ�������ɲá��ޤ��� 400 ��ʾ�롼�פ��ä��鶯����λ���롣
+	  - ->_conf* を使うようにした。
+	  - ->{,un}register_receive_socket を使うようにした。
+	  - 終了処理中はクライアントからの接続を受けても即切断する。
+	  - 終了処理を追加。また、 400 回以上ループを回ったら強制終了する。
 	(terminate):
-	  - ���ƤΥ����С����饤����Ȥ����Ǥ��롣
-	  - ��λ�����ե饰��Ω�Ƥ롣
+	  - 全てのサーバ・クライアントを切断する。
+	  - 終了処理フラグを立てる。
 	(apply_filters):
-	  - ���顼��å�������ɽ������Ȥ��ˡ��Ƶ����ɤ�����˰��Ū��
-	    �֥�å��ꥹ�Ȥ�����롣
-	  - �������ޤ�äƤ��Ƥ���Ȥ������Ȥϥ֥�å��ꥹ�Ȥˤʤ��Ȥ���
-	    ���ȤʤΤǡ����Τޤ޲�����Ƥ�����פʤϤ���
+	  - エラーメッセージを表示するときに、再帰を防ぐために一時的に
+	    ブラックリストに入れる。
+	  - 処理がまわってきているということはブラックリストにないという
+	    ことなので、そのまま解除しても大丈夫なはず。
 	(_apply_filters):
-	  - �С����������⤷�Ƥ��뤷������ʤ������Ȥ������롣
+	  - バージョン管理もしているし、いらないコメントを削除する。
 	(notify_msg):
-	  - ->_conf* ��Ȥ��褦�ˤ�����
+	  - ->_conf* を使うようにした。
 
 	* main/TiarraDoc.pm:
 	(_makeconf):
-	  - ���ԤΤȤ��ϥ���ǥ�Ȥ��ʤ��褦�ˤ�����
+	  - 空行のときはインデントしないようにした。
 
 	* main/Configuration/Preprocessor.pm:
-	  - ���⥳���Ȥ��ְ�äƤ���Τ�������
+	  - 解説コメントが間違っているので訂正。
 
 	* main/IrcIO/Client.pm:
 	(new):
-	  - runloop->register_receive_socket ��Ƥ֤褦�ˤ�����
+	  - runloop->register_receive_socket を呼ぶようにした。
 	(username, client_host):
-	  - �ɲá��ץ��ѥƥ��������ѡ�
+	  - 追加。プロパティ取得専用。
 	(do_namreply):
-	  - ->inform_joinning_channels ����� names ��Ϣ��������ʬ������
+	  - ->inform_joinning_channels の中の names 関連処理だけ分けた。
 	(inform_joinning_channels):
-	  - ->do_namreply ��Ȥ��褦�ˤ�����
+	  - ->do_namreply を使うようにした。
 
 	* main/IrcIO/Server.pm:
-	  - RunLoop �Ѥ� ->state ���ɲá�
+	  - RunLoop 用の ->state を追加。
 	(connect):
-	  - runloop->register_receive_socket ��Ƥ֤褦�ˤ�����
+	  - runloop->register_receive_socket を呼ぶようにした。
 	(quit):
-	  - quit ��å��������������롣
+	  - quit メッセージを送信する。
 
 	* module/Skelton.pm:
 	(message_io_hook):
-	  - ���鸽�߿ʹԤؽ�����
+	  - 過去から現在進行へ修正。
 
 	* module/Auto/Utils.pm:
 	(sendto_channel_closure):
-	  - Multicast::attach_for_client ��Ȥ��褦�ˤ�����
+	  - Multicast::attach_for_client を使うようにした。
 
 	* module/Client/Cache.pm:
-	  - network ��¸�ߤ��ʤ��ΤϤ��ޤ����̤ʻ��֤ǤϤʤ��ʤä��Τǡ�
-	    debug ���Ǥ�����ɽ�����ʤ��褦�ˤ�����
+	  - network が存在しないのはあまり特別な事態ではなくなったので、
+	    debug 時でさえも表示しないようにした。
 
 	* module/Client/Eval.pm:
-	  - ̵��̣�ʥꥹ����������ơ�����򤽤Τޤ޻Ȥ��褦�ˤ�����
+	  - 無意味なリスト生成をやめて、配列をそのまま使うようにした。
 
 	* module/Client/Rehash.pm:
-	  - �ɲá� nick �� names �ˤ�� rehash ��Ԥ���
+	  - 追加。 nick と names による rehash を行う。
 
 	* module/Log/Channel.pm:
-	  - Log::Writer �ե졼������Ȥ��褦�ˤ�����
-	  - always-flush ������ɲá�
-	  - ���ߡ� dir ���Թ�ˤ��ץ��ȥ���򺮤��뤳�ȤϤǤ��ޤ���
+	  - Log::Writer フレームワークを使うようにした。
+	  - always-flush 設定を追加。
+	  - 現在、 dir の都合によりプロトコルを混ぜることはできません。
 
 	* module/Log/Writer.pm:
-	  - �ɲá�������Ͽ��ɬ�פʥ᥽�å�(reserve, flush)�˸¤ä�
-	    �ޥ���ץ��ȥ����б���ǽ�ʥե졼������
+	  - 追加。ログ記録に必要なメソッド(reserve, flush)に限った
+	    マルチプロトコル対応可能なフレームワーク。
 
 	* module/Log/Writer/Base.pm:
-	  - Log::Writer �Υץ��ȥ���ץ饰����Υ١������饹��
+	  - Log::Writer のプロトコルプラグインのベースクラス。
 
 	* module/Log/Writer/File.pm:
-	  - Log::Writer �� File �ץ��ȥ���ץ饰����
-	  - fallback �Ȥ���ư��뤿�ᡢ�ץ��ȥ�����ά�����Ȥ���
-	    (������¾�� fallback �ˤ�äƥϥ�ɥ뤵��ʤ��ä��Ȥ���)
-	    ���Υץ��ȥ���ǽ������롣
-	  - �ʤ��ǥ��쥯�ȥ�Ͼ���˺��Τ����ա�
+	  - Log::Writer の File プロトコルプラグイン。
+	  - fallback として動作するため、プロトコルを省略したときも
+	    (そして他の fallback によってハンドルされなかったときも)
+	    このプロトコルで処理する。
+	  - ないディレクトリは勝手に作るので注意。
 
 	* module/System/Error.pm:
-	  - �ɲá� ERROR ��å������򥯥饤����Ȥ��������� NOTICE �������ࡣ
-	  - �ǥե���ȥ���Ǥ�������Ū�˰�������� conf �ϵߺѤǤ��ޤ���(^^;;
+	  - 追加。 ERROR メッセージをクライアントに送る前に NOTICE に埋め込む。
+	  - デフォルトオンです。機構的に以前からの conf は救済できません(^^;;
 
 	* module/System/Shutdown.pm:
-	  - ����åȥ������å���������������褦�ˤ�����
+	  - シャットダウンメッセージを受け入れるようにした。
 
 	* module/System/NotifyIcon/Win32.pm:
-	  - iconfile �� hide-console-on-load ������ɲá�
-	  - ¾�λ�¿�ʵ�ǽ�� 128 ʸ���б�������ư���Ƥ���ʤ���ˡ�
-	    �������Τ������ʤ�Ǥ��ʤ��ΤǸ�����Ǥ���
+	  - iconfile と hide-console-on-load 設定を追加。
+	  - 他の雑多な機能は 128 文字対応が全然動いてくれない上に、
+	    実装自体も全然進んでいないので見送りです。
 
 	* module/Tools/FileCache.pm:
-	  - use Carp ���ɲá�
-	  - shared �� __PACKAGE__ ��Ȥ��褦�ˤ�����
+	  - use Carp を追加。
+	  - shared で __PACKAGE__ を使うようにした。
 
 	* module/Tools/FileCache/EachFile.pm:
-	  - ->{add,del}_refcount �� ->{add_ref,release} ���ѹ���
-	    ���� API ������ƶ��Ϥʤ��Ϥ���
+	  - ->{add,del}_refcount を ->{add_ref,release} に変更。
+	    内部 API だから影響はないはず。
 
 2004-07-29  Topia  <topia@clovery.jp>
 
 	* main/ModuleManager.pm:
-	  - ->notify_error(...) �� ->notify_error->(...) �ȴְ㤨�Ƥ���
-	    �Τǽ�����
+	  - ->notify_error(...) を ->notify_error->(...) と間違えていた
+	    ので修正。
 	(reload_modules_if_modified):
-	  - USED ���Ф��ƥ�å������ϽФ��Ƥ�ºݤˤϥ�����ɤ���
-	    ���ʤ��ä��Τǽ�����
+	  - USED に対してメッセージは出しても実際にはリロードして
+	    いなかったので修正。
 	(_unload):
-	  - ��ʬ�ǥ���ܥ�ơ��֥�򥯥ꥢ��������ˡ� Symbol::delete_package ��
-	    �Ȥ��褦�ˤ��������������֥ѥå����������򤷤Ƥ��롣
+	  - 自分でシンボルテーブルをクリアする代わりに、 Symbol::delete_package を
+	    使うようにした。ただしサブパッケージは退避している。
 
 	* main/Timer.pm:
 	(reset):
-	  - �ɲá����ߤλ���򸵤� fire_time �����ꤷ�ʤ�����
+	  - 追加。現在の時刻を元に fire_time を設定しなおす。
 
 	* main/Module/Use.pm:
 	(import):
-	  - @USE �ˤ��Τޤ����ꤹ������� push �򤹤�褦�ˤ�����
+	  - @USE にそのまま設定する代わりに push をするようにした。
 
 	* module/Client/Eval.pm:
-	  - �����Ĥ��ؿ����ɲá�
+	  - いくつか関数を追加。
 	    (conf, module_manager, module, shutdown, reload)
 
 	* module/System/NotifyIcon/Win32.pm:
-	  - �ɲá��������С��������ΰ�˥��������ɽ���������󥽡����
-	    ɽ������ɽ���� conf ������ɡ���λ�ʤɤ��Ǥ��롣
+	  - 追加。タスクバーの通知領域にアイコンを表示し、コンソールの
+	    表示・非表示、 conf リロード、終了などができる。
 
 2004-07-24  Topia  <topia@clovery.jp>
 
 	* HACKING:
-	  - Auto::Utils::sendto_channel_closure ���������ɲá�
-	  - remark �������򤤤��Ĥ��ɲá�
-	  - Emacs �Ǽ�ưŪ�� text-mode �ˤʤ�褦�ˤ�����
+	  - Auto::Utils::sendto_channel_closure の説明を追加。
+	  - remark の説明をいくつか追加。
+	  - Emacs で自動的に text-mode になるようにした。
 	    (Local variables)
 
 	* Makefile:
-	  - �ְ�äƤ��륳���Ȥ�������(etags/update �⤹�뤷)��
-	  - �������å�̾�� clean ���Ѥ�����
-	  - clean �ΰ���ܤ����Ǥ� sh ���̤�褦�ˤ�����
+	  - 間違っているコメントを削除した(etags/update もするし)。
+	  - ターゲット名を clean に変えた。
+	  - clean の一行目だけでも sh で通るようにした。
 
 	* main/ControlPort.pm:
-	  - SelfLoader ��ư��ʤ���ΰ�Ĥ��ä���������졣
-	    �����ȥ����Ȥ����н褷����
+	  - SelfLoader が動作しない例の一つだった。修正もれ。
+	    コメントアウトして対処した。
 
 	* module/Auto/Utils.pm:
-	  - �����Ĥ����������Ȥ�����
+	  - いくつか説明コメントを修正。
 	(sendto_channel_closure):
-	  - $sender ����ά�����м�ʬ��Ĵ�������������롣
-	    ($sendto, $command) �����ǸƤ٤�褦�ˤʤä���
-	  - ���󥰥륵���Х⡼�ɻ��ν����򤷤Ƥ��ʤ��ä��Τǽ�����
+	  - $sender が省略されれば自分で調査して送信する。
+	    ($sendto, $command) だけで呼べるようになった。
+	  - シングルサーバモード時の処理をしていなかったので修正。
 
 2004-07-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Auto/Reply.pm,
 	  module/User/ServerOper.pm,
 	  module/User/Vanish.pm:
-	typo��������ư����ѹ���̵����
+	typoの訂正。動作に変更は無い。
 
 2004-07-08  Topia  <topia@clovery.jp>
 
 	* main/Configuration.pm:
-	  - include ���줿�ե�����ι����ⴶ�Τ���褦�ˤ�����
+	  - include されたファイルの更新も感知するようにした。
 
 	* main/Mask.pm:
 	(_split):
-	  - $mask ��̤����λ��� warning ���Ǥ�Τ��ɻߤ�����
+	  - $mask が未定義の時に warning がでるのを防止した。
 
 	* main/ModuleManager.pm:
 	(reload_modules_if_modified):
-	  - ���顼���Τ� notify_error ��Ȥ��褦�ˤ�����
+	  - エラー通知に notify_error を使うようにした。
 
 	* main/ReloadTrigger.pm:
-	  - Configuration::Hook/reloaded �ˤĤ����ɵ���
+	  - Configuration::Hook/reloaded について追記。
 
 	* main/Timer.pm:
-	  - notify_error ��ȯ���оݤˤ��Ƥ���ѥå������δְ㤤������
+	  - notify_error の発行対象にしているパッケージの間違いを修正。
 
 	* main/Configuration/Preprocessor.pm:
-	  - ->included_files ���ɲá�
+	  - ->included_files を追加。
 
 	* main/IrcIO/Client.pm:
 	(_receive_while_logging_in):
-	  - $network ��̤���(̤��³)�λ��˥��顼���ǤƤ����Τǽ�����
+	  - $network が未定義(未接続)の時にエラーがでていたので修正。
 	(inform_joinning_channels):
-	  - ��������ͥ�� mask �ϰ��פ���ʬ���������߹���褦���ѹ���
-	    #*@ircnet,#*@ircnet:* �Τ褦�ʤ��Ȥ������褦�ˤʤ�Ϥ���
+	  - 固定チャンネルの mask は一致した分を全部飲み込むように変更。
+	    #*@ircnet,#*@ircnet:* のようなことが出来るようになるはず。
 
 	* module/System/Reload.pm:
-	  - conf-reloaded-notify ���ɲá�
+	  - conf-reloaded-notify を追加。
 
 2004-06-19  Topia  <topia@clovery.jp>
 
 	* doc-src/conf-main.tdoc:
-	  - ./tiarra --make-password �Τ��Ȥ�񤭲ä�����
+	  - ./tiarra --make-password のことを書き加えた。
 
 	* main/Timer.pm:
-	  - code ��� die �������äƤ� abort ���ʤ��褦�ˤ�����
+	  - code 中で die が起こっても abort しないようにした。
 
 	* module/Channel/Mode/Oper/Grant.pm:
-	  - $myself �� undef �Ǥʤ��������å�����褦�ˤ�����
+	  - $myself が undef でないかチェックするようにした。
 
 	* module/Client/Cotton.pm:
-	  - �ɲá������Ĥ��� Cotton ���Զ�����򤹤�(ͽ��)��
-	  - ���� network rejoin ���μ�ư part ��̵�뤹�롣
+	  - 追加。いくつかの Cotton の不具合を回避する(予定)。
+	  - 今は network rejoin 時の自動 part を無視する。
 
 	* module/Client/Eval.pm:
-	  - runloop �˳�̤��դ�(�ƴؿ�������ǧ������)��Τ�
-	    ˺��Ƥ����Τǽ�����
+	  - runloop に括弧を付け(て関数形式に認識させ)るのを
+	    忘れていたので修正。
 
 	* module/Client/GetVersion.pm:
-	  - �ɲá����饤����Ȥ���³���� CTCP Version ��ȯ�Ԥ���
-	    ���饤����ȤΥС�������������롣
+	  - 追加。クライアントの接続時に CTCP Version を発行して
+	    クライアントのバージョンを取得する。
 
 2004-06-09  Topia  <topia@clovery.jp>
 
 	* main/IrcIO/Server.pm:
 	(_receive_while_logging_in):
-	  - PING ���б�������
-	  - RPL_WELCOME / NOTICE / PRIVMSG �ʳ���̵�뤹�뤳�Ȥˤʤä���硢
-	    �ٹ��Ф���
+	  - PING に対応した。
+	  - RPL_WELCOME / NOTICE / PRIVMSG 以外で無視することになった場合、
+	    警告を出す。
 
 2004-06-04  Topia  <topia@clovery.jp>
 
 	* main/IRCMessage.pm:
-	  - MAX_PARAMS(= 14) ������ɲä�����
+	  - MAX_PARAMS(= 14) 定数を追加した。
 	(params):
-	  - �ƤӽФ�����̤����ʤ鶯��Ū�˽��������褦�ˤ�����
+	  - 呼び出し時に未定義なら強制的に初期化するようにした。
 	(n_params):
-	  - params ����Ѥ���褦�ˤ�����
+	  - params を使用するようにした。
 	(_parse):
-	  - $this->push ����Ѥ���褦�ˤ�����
+	  - $this->push を使用するようにした。
 	(length, push, pop):
-	  - �ɲä�����
+	  - 追加した。
 
 	* main/IrcIO/Client.pm:
 	(_receive_while_logging_in):
-	  - ���󥰥륵���Х⡼�ɻ��˥����Ф��� RPL_ISUPPORT ���󶡤���Ƥ���С�
-	    �������������褦�ˤ�����
+	  - シングルサーバモード時にサーバから RPL_ISUPPORT が提供されていれば、
+	    それを送信するようにした。
 
 	* module/Client/Cache.pm:
-	  - MODE ����å��塢 WHO ����å���Ȥ�ˡ�������ե饰��ͭ�����¤�
-	    �Ĥ���褦�ˤ������ǥե���Ȥ� 5 ʬ�� conf �Ǥϻ���Ǥ��ʤ���
-	  - ǰ�Τ��� RPL_ENDOFWHO ��ϥ�ɥ�󥰡�
+	  - MODE キャッシュ、 WHO キャッシュともに、取得中フラグに有効期限を
+	    つけるようにした。デフォルトで 5 分、 conf では指定できない。
+	  - 念のため RPL_ENDOFWHO もハンドリング。
 
 	* module/Client/Eval.pm:
-	  - ��å�������ƹ��ۤ��ơ� : ��Ĥ��ʤ��Ƥ��ɤ��褦�ˤ�����
-	    ������� ::shutdown ��¹Ԥ���ˤ� /eval :::shutdown ��
-	    ���ʤ���Фʤ�ʤ�(��)��
-	  - $err ���������� warning ���Фʤ��褦�ˤ�����
+	  - メッセージを再構築して、 : をつけなくても良いようにした。
+	    もちろん ::shutdown を実行するには /eval :::shutdown と
+	    しなければならない(笑)。
+	  - $err を初期化して warning が出ないようにした。
 	(network, runloop):
-	  - eval ��������褯�Ȥ������ʤ�Τ� function ��������
+	  - eval 内部からよく使いそうなものを function 化した。
 
 	* module/System/Raw.pm:
-	  - ����κǸ�����Ǥ� (n_params - 1) �ʤΤǽ������� warning ��
-	    �Ǥʤ��褦�ˤ�����
+	  - 配列の最後の要素は (n_params - 1) なので修正して warning が
+	    でないようにした。
 
 2004-06-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Unicode/Japanese.pm:
-	Unicode::Japanese 0.22�˹�����
+	Unicode::Japanese 0.22に更新。
 
 2004-05-26  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Unicode/Japanese.pm:
-	Unicode::Japanese 0.21�˹�����
+	Unicode::Japanese 0.21に更新。
 
 2004-05-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO.pm (receive):
-	�����С��䥯�饤����Ȥ�����Ԥ�����줿���ˡ����顼���Ф����������
+	サーバーやクライアントから空行を送られた場合に、エラーが出る問題を修正。
 
 2004-05-09  Topia  <topia@clovery.jp>
 
 	* main/Multicast.pm:
 	(nick_p):
-	  - ��ά��ǽ�� nicklen ��������ɲä�����
+	  - 省略可能な nicklen を引数に追加した。
 	(channel_p):
-	  - ��ά��ǽ�� chantypes ��������ɲä�����
+	  - 省略可能な chantypes を引数に追加した。
 
 	* main/IrcIO/Server.pm:
-	  - isupport �� remark ���饤�󥹥����ѿ����ѹ�������
+	  - isupport を remark からインスタンス変数に変更した。
 	(nick_p, channel_p):
-	  - �ɲä����� ISUPPORT �Ȥ��� NICKLEN, CHANTYPES �����ꤵ��Ƥ���
-	    ���ˤ����ȤäƸ������롣
+	  - 追加した。 ISUPPORT として NICKLEN, CHANTYPES が指定されていた
+	    場合にそれを使って検査する。
 	(_set_to_next_nick):
-	  - ��ά��������
+	  - 簡略化した。
 
 2004-05-08  Topia  <topia@clovery.jp>
 
 	* HACKING:
-	  - typo ����������
-	  - IrcIO::Server->remark �� isupport �� uid ���ɲä�����
-	  - ChannelInfo->remark �� creation-time ���ɲä�����
+	  - typo を修正した。
+	  - IrcIO::Server->remark に isupport と uid を追加した。
+	  - ChannelInfo->remark に creation-time を追加した。
 
 	* main/Multicast.pm:
-	  - $server_sent, $client_sent: RPL_CREATIONTIME ���б�������
-	  - $client_sent: admin ���ޥ�ɤ��ɲä�����
+	  - $server_sent, $client_sent: RPL_CREATIONTIME へ対応した。
+	  - $client_sent: admin コマンドを追加した。
 
 	* main/NumericReply.pm:
-	  - RPL_BOUNCE �� RPL_REDIR ���ѹ��� RPL_BOUNCE �ϥ����ꥢ���Ȥ���
-	    ���Τޤ޻Ĥ��褦�ˤ�����
-	  - RPL_CREATIONTIME ���ɲä�����
-	  - RPL_TOPICWHOTIME �� RPL_TOPIC_WHO_TIME ���ѹ�������
-	    RPL_TOPICWHOTIME �ϥ����ꥢ���Ȥ��Ƥ��Τޤ޻Ĥ��褦�ˤ�����
-	  - irc2.11 �ʤ�Τ򤤤��Ĥ��ɲä�����
+	  - RPL_BOUNCE を RPL_REDIR に変更。 RPL_BOUNCE はエイリアスとして
+	    そのまま残すようにした。
+	  - RPL_CREATIONTIME を追加した。
+	  - RPL_TOPICWHOTIME を RPL_TOPIC_WHO_TIME に変更した。
+	    RPL_TOPICWHOTIME はエイリアスとしてそのまま残すようにした。
+	  - irc2.11 なものをいくつか追加した。
 	    + RPL_HELLO(020)
 	    + RPL_YOURID(042)
 	    + RPL_SAVENICK(043)
@@ -393,332 +393,332 @@
 	    + RPL_ENDOFREOPLIST(345)
 
 	* main/IrcIO/Server.pm:
-	  - RPL_{CREATIONTIME,ISUPPORT,YOURID} ���б�������
+	  - RPL_{CREATIONTIME,ISUPPORT,YOURID} に対応した。
 	(_receive_while_logging_in):
-	  - RPL_HELLO �к����ɲä�����
+	  - RPL_HELLO 対策を追加した。
 	(modify_nick):
-	  - ��������� nicklen �����Ǥ���褦�ˤ�����
+	  - 第二引数で nicklen を指定できるようにした。
 	(_set_to_next_nick):
-	  - ISUPPORT �� NICKLEN ���ޤޤ�Ƥ���С������Ȥ��褦�ˤ�����
+	  - ISUPPORT に NICKLEN が含まれていれば、それを使うようにした。
 
 	* module/Client/Cache.pm:
 	(_send_mode_cache):
-	  - creation-time ��¸�ߤ���С�������֤��褦�ˤ�����
+	  - creation-time が存在すれば、それも返すようにした。
 
 2004-04-18  Topia  <topia@clovery.jp>
 
 	* HACKING:
-	  - BulletinBoard �� remark �ˤĤ��Ƥ��ɵ���
-	  - ���ޤ���������
+	  - BulletinBoard と remark についてを追記。
+	  - こまかい修正。
 
 	* main/IrcIO/Client.pm, module/Client/Cache.pm:
-	  - __PACKAGE__ �����֥륯�����Ȥ���Ǥ�Ÿ������ʤ����Ȥ�
-	    ˺��Ƥ����Τǽ�����
+	  - __PACKAGE__ がダブルクォートの中では展開されないことを
+	    忘れていたので修正。
 
 	* module/Channel/Rejoin.pm:
-	  - ��ʬ���Ȥ����ʤ������ͥ�(���⤽��դĤ��Ϥ���ʤ��Ȥˤ�
-	    �ʤ�ʤ��Τ���)�� rejoin Ƚ����� error ��������Τ�����
+	  - 自分自身がいないチャンネル(そもそもふつうはこんなことには
+	    ならないのだが)の rejoin 判定時に error が起きるのを修正。
 
 2004-04-18  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/ControlPort.pm (ControlPort::Session::main):
-	���������� NOTIFT => NOTIFY
+	誤字修正。 NOTIFT => NOTIFY
 
 2004-04-07  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO/Server.pm (new):
-	$this->{channels}�Υ����򡢾�ʸ�����Ѵ����Ƥ�����
+	$this->{channels}のキーを、小文字に変換しておく。
 	
-	��ʸ����ʸ���˰������̵�������ͥ�̾�򥯥饤����Ȥ����롢
-	EFnet��Freenet(IRC)�Τ褦��ircd����³���Ƥ���ȡ����Ф���
-	Tiarra�Ϻ��𤹤롣�����������򤹤뤿�ᡢ�����ͥ�̾Ʊ�Τ�
-	��Ӥϰ�ö��ʸ�����Ѵ�������ǹԤ��褦�ˤ��롣
+	大文字小文字に一貫性の無いチャンネル名をクライアントに送る、
+	EFnetやFreenet(IRC)のようなircdに接続していると、しばしば
+	Tiarraは混乱する。この問題を回避するため、チャンネル名同士の
+	比較は一旦小文字に変換した上で行うようにする。
 
 	(channel):
-	��ʸ����ʸ����̵�뤷�ƥ����ͥ��õ������褦���ѹ���
-	$server->channel($name)�Τ褦�ˤ���ChannelInfo�����Ƥ���
-	���ˤϡ������ѹ���ɬ��̵����
+	大文字小文字を無視してチャンネルを探索するように変更。
+	$server->channel($name)のようにしてChannelInfoを得ている
+	場合には、何ら変更は必要無い。
 	
-	�����ͥ�̾ => ChannelInfo�Υϥå�����֤���$server->channels
-	��ȤäƤ�����ϡ����Υ�������ʸ�����Ѵ�����Ƥ���������դ��ʤ����
-	�ʤ�ʤ���
+	チャンネル名 => ChannelInfoのハッシュを返す、$server->channels
+	を使っている場合は、そのキーが小文字に変換されている事に注意しなければ
+	ならない。
 
-	* main/Multicast.pm (lc, uc): �ɲ�
-	IRC��������ʸ���Ⱦ�ʸ�����Ѵ���Ԥ���IRC�����Ȥϡ�[]\�����줾��{}|��
-	��ʸ���Ǥ�����������Ƥ��������Ǥ��롣
+	* main/Multicast.pm (lc, uc): 追加
+	IRC方式で大文字と小文字の変換を行う。IRC方式とは、[]\がそれぞれ{}|の
+	大文字であると定義されている方式である。
 	
-	* main/Mask.pm (compile): �ɲ�
-	�ޥ������饳��ѥ���Ѥ�����ɽ��������������ʬ����Ω�����ؿ��ˤ�����
-	���̤Υޥå��󥰤��®�˹Ԥ����ϡ�Mask::�δؿ����٤�Ƥ������
-	�ޥ�������٤�������ѥ��뤹�����ͤ��������ɤ���
-	Mask.pm��ǥ���ѥ���Ѥߥޥ����ϥ���å��夷�Ƥ��뤬������Ǥ�®�٤ϰ㤦��
+	* main/Mask.pm (compile): 追加
+	マスクからコンパイル済み正規表現を生成する部分を、独立した関数にした。
+	大量のマッチングを高速に行う場合は、Mask::の関数を何度も呼ぶ代わりに
+	マスクを一度だけコンパイルする事を考えた方が良い。
+	Mask.pm内でコンパイル済みマスクはキャッシュしているが、それでも速度は違う。
 
 
 2004-04-01  Topia  <topia@clovery.jp>
 
 	* module/Client/Cache.pm:
-	  - single-server-mode �����Զ��򤤤�����������
-	  - mode/who �˶��̤ʰ����Υ����ɤ�ؿ���ե���󥹤η��ǤޤȤ᤿��
+	  - single-server-mode 時の不具合をいろいろ修正。
+	  - mode/who に共通な一部のコードを関数リファレンスの形でまとめた。
 
 2004-04-01  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra:
-	conf�ե����뤬�ɤ߹��ޤ������::printmsg��¹Ԥ����die������������
-	���Τ褦�ʾ��ˤϡ�ʸ���������Ѵ���Ԥ�ʤ���
+	confファイルが読み込まれる前に::printmsgを実行するとdieする問題を回避。
+	そのような場合には、文字コード変換を行わない。
 
 2004-03-27  Topia  <topia@clovery.jp>
 
 	* tiarra:
-	  - quiet �⡼�ɻ��� STDIN ���Ĥ��ʤ��Ȱ���äѤʤ��ˤʤä�
-	    (sshd ������ʤ��ʤɤ�)�Զ�礬ȯ������褦�ʤΤ��Ĥ��롣
-	  - STDERR �򲿤��˥�����쥯�Ȥ���Τϡ��Ȥꤢ��������α��
+	  - quiet モード時に STDIN を閉じないと握りっぱなしになって
+	    (sshd が落ちないなどの)不具合が発生するようなので閉じる。
+	  - STDERR を何かにリダイレクトするのは、とりあえずは保留。
 
 2004-03-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/LinedINETSocket.pm (recvbuf):
-	�ɲá��̿���λ��˲��Ԥ��դ��ʤ��ä��Ԥ����Ƥ���Ф�����˻Ȥ���
+	追加。通信終了後に改行が付かなかった行の内容を取り出すために使う。
 
 	* main/RunLoop.pm (run):
-	select���եå��ϡ������ޡ��μ���ȯư�����׻��������˸Ƥ֡�
-	�եå���ǥ����ޡ��ξ��֤��ѹ����Ƥ�����򵯤����ʤ����ᡣ
+	select前フックは、タイマーの次回発動時刻を計算する前に呼ぶ。
+	フック内でタイマーの状態を変更しても問題を起こさないため。
 
 	* main/Timer.pm (time_to_fire):
-	��������ꤷ����硢�����ޡ���ȯư������ѹ��Ǥ���褦�ˡ�
+	引数を指定した場合、タイマーの発動時刻を変更できるように。
 
 	* module/Tools/HTTPClient.pm:
-	�ɲá�
-	HTTP/1.0���Ѥ�http���饤����ȡ���ȴ����
+	追加。
+	HTTP/1.0専用のhttpクライアント。手抜き。
 
 2004-03-19  Topia  <topia@clovery.jp>
 
 	* main/IrcIO.pm, main/LinedINETSocket.pm:
-	  - IO::Handle 1.21 �ˤ����ơ� LEN ��¸�ߤ��ʤ��� croak ���Ǥ� bug
-	    �β���
+	  - IO::Handle 1.21 において、 LEN が存在しないと croak がでる bug
+	    の回避。
 
 	* main/ModuleManager.pm:
-	  - �⥸�塼��� destruct ��Ƥֺݤˡ� $show_msg �Ǥʤ�
-	    RunLoop->shared_loop->notify_error ��Ȥ��褦�ˡ�
+	  - モジュールの destruct を呼ぶ際に、 $show_msg でなく
+	    RunLoop->shared_loop->notify_error を使うように。
 
 	* main/IrcIO/Client.pm:
 	(inform_joinning_channels):
-	  - �եå��ΰ������ѹ���
-	  - �եå���������˥��顼��ȯ�����Ƥ�
-	    ����¤��٤ƤΥ����ͥ�����������������褦�ˡ�
+	  - フックの引数を変更。
+	  - フックコール中にエラーが発生しても
+	    最低限すべてのチャンネル情報だけは送信するように。
 
 	* module/Client/Cache.pm:
-	  - IrcIO::Client::Hook/channel-info ����Ѥ��ơ�
-	    �ΤäƤ�������ͥ�⡼�ɤ���Ū����Ԥ�������褦�ˤ�����
+	  - IrcIO::Client::Hook/channel-info を使用して、
+	    知っているチャンネルモードを強制的に先行して送るようにした。
 
 	* module/Log/Recent.pm:
 	(IrcIO::Client::Hook/channel-info):
-	  - �����ѹ���Ʊ����
-	  - ���饤����ȥ��ץ���� no-recent-logs ��ߤ�褦�ˤ�����
+	  - 引数変更に同期。
+	  - クライアントオプション no-recent-logs をみるようにした。
 
 2004-03-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Hook.pm (Hook::call, HookTarget::call_hooks):
-	�եå��ؿ��˰������Ϥ���褦���ѹ���
+	フック関数に引数を渡せるように変更。
 
 	* main/RunLoop.pm:
-	Hook.pm�ǰ��̲���������˥����ȥ����Ȥ��Ƥ��ä��եå���Ϣ�Υ����ɤ�����
+	Hook.pmで一般化したためにコメントアウトしてあったフック関連のコードを削除。
 
 	* main/IrcIO/Client.pm (inform_joinning_channels):
-	�����ͥ������ž��������٤˸ƤФ��եå� channel-info �������
-	���Υեå��ˤϰ����Ȥ���IrcIO::Client���Ȥȥ����ͥ�̾���Ϥ���롣
-	�եå����饹��Ʊ�ե��������������IrcIO::Client::Hook��
+	チャンネル情報一つ転送される度に呼ばれるフック channel-info を定義。
+	このフックには引数としてIrcIO::Client自身とチャンネル名が渡される。
+	フッククラスは同ファイルで定義されるIrcIO::Client::Hook。
 
 	* module/Log/Recent/pm:
-	���饤����Ȥ�����������ͥ��Ʊ�����֤ǥ���������褦���ѹ���
-	����ư���IrcIO::Client�Υեå������Ѥ��Ƥ��롣
+	クライアントに送られるチャンネルと同じ順番でログも送るように変更。
+	この動作はIrcIO::Clientのフックを利用している。
 
 	* main/RunLoop.pm (run):
-	Tiarra˽�����ФΥ����ɤ˥Х������ä��Τǽ�����
-	0��select��2�ðʾ�δֳ֤����������ˤϥ����󥿤�ꥻ�åȤ���տޤ����ä��Ȼפ���
-	2��*�ʲ�*�δֳ֤ǥꥻ�åȤ��Ƥ�����
-	�Ĥ��ǤʤΤǷٹ�����ͤ�300�ޤǰ����夲��
+	Tiarra暴走検出のコードにバグがあったので修正。
+	0秒selectに2秒以上の間隔が開いた場合にはカウンタをリセットする意図があったと思うが
+	2秒*以下*の間隔でリセットしていた。
+	ついでなので警告の閾値も300まで引き上げ。
 
 2004-03-09  Topia  <topia@clovery.jp>
 
 	* module/Client/Cache.pm:
-	  - destruct �ˤ����ơ��Ƥ֥᥽�åɤ򴪰㤤���Ƥ����Τ�����
+	  - destruct において、呼ぶメソッドを勘違いしていたのを修正。
 
 2004-03-08  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Unicode/Japanese.pm:
-	UniJP 0.20���ִ�����
+	UniJP 0.20に置換え。
 
 2004-03-07  Topia  <topia@clovery.jp>
 
 	* tiarra:
-	  - untaint ��Ԥ��褦�ˤ�����
+	  - untaint を行うようにした。
 
 	* main/Configuration.pm:
-	  - �ƤӽФ��ؿ�̾��ְ㤨�Ƥ��� bug ������
+	  - 呼び出す関数名を間違えていた bug を修正。
 
 	* main/Mask.pm:
-	  - untaint ��Ԥ��褦�ˤ�����
+	  - untaint を行うようにした。
 
 	* main/Multicast.pm:
-	  - ERR_NOTONCHANNEL, ERR_NOSUCHCHANNEL �� *_sent ���ɲá�
+	  - ERR_NOTONCHANNEL, ERR_NOSUCHCHANNEL を *_sent に追加。
 
 	* main/IrcIO/Server.pm:
-	  - nick �ѹ��� prefix category �� nick::system �ˤ�����
-	  - _START_WHOIS_REPLY ��Ƥ֤Ȥ��� defined check �򤷤Ƥʤ� bug
-	    ������
+	  - nick 変更の prefix category を nick::system にした。
+	  - _START_WHOIS_REPLY を呼ぶときに defined check をしてない bug
+	    を修正。
 
 	* module/Client/Cache.pm:
-	  - destruct ���ɲá�
-	  - ChannelInfo �ˤĤ��� remark �˥ѥå�����̾��Ĥ��ơ�
-	    ¾�Υ⥸�塼��Ȥ��֤�ʤ��褦�ˤ�����
+	  - destruct を追加。
+	  - ChannelInfo につける remark にパッケージ名をつけて、
+	    他のモジュールとかぶらないようにした。
 
 	* module/Client/Eval.pm:
-	  - untaint ��Ԥ��褦�ˤ�����
-	  - ʣ���Ԥν��Ϥ�����Ƚ�������褦�ˤ�����
+	  - untaint を行うようにした。
+	  - 複数行の出力をちゃんと処理するようにした。
 
 2004-02-23  Topia  <topia@clovery.jp>
 
 	* module/Debug/RawLog.pm:
-	  - �ɲá����� IRC ��å�����(�Τ褦�ʤ��?)�� ::printmsg ��Ȥä�
-	    ɽ�����롣
+	  - 追加。生の IRC メッセージ(のようなもの?)を ::printmsg を使って
+	    表示する。
 
 	* main/IrcIO/Client.pm:
-	  - RunLoop �� Runloop �� typo ���Ƥ����Τ�����
+	  - RunLoop を Runloop と typo していたのを修正。
 
 	* main/IrcIO/Server.pm:
 	(_received_after_logged_in, _set_to_next_nick):
-	  - sysmsg_prefix ��Ȥ��褦�ˤ�����
+	  - sysmsg_prefix を使うようにした。
 	(_RPL_CHANNELMODEIS):
-	  - ¸�ߤ��ʤ������ͥ뤬�оݤ��ä��Ȥ��˥��顼���Ǥ�Ȥ���
-	    �ɤ����褦��ʤ��ߥ�������
+	  - 存在しないチャンネルが対象だったときにエラーがでるという
+	    どうしようもないミスを修正。
 
 	* main/RunLoop.pm:
 	(_multi_server_mode_changed):
-	  - sysmsg_prefix ��Ȥ��褦�ˤ�����
+	  - sysmsg_prefix を使うようにした。
 
 	* makedoc:
-	  - sample.conf ����Ϥ���褦�ˤ�����
-	  - ���Τˤ錄�äƥ⥸�塼��̾�Υ����Ȥ�Ԥ��褦�ˤ�����
-	  - block ��ʸ�ؤλ����б���
-	  - #key:value �Ȥ��� *������* �򤭤����ǧ�����Ƥ��ʤ��ä��Τ� fix
-	  - ���롼��̾���������������Ƥ��ʤ��ä��Ȥ��˷ٹ��Ф��褦�ˤ�����
+	  - sample.conf を出力するようにした。
+	  - 全体にわたってモジュール名のソートを行うようにした。
+	  - block 構文への暫定対応。
+	  - #key:value という *コメント* をきちんと認識していなかったのを fix
+	  - グループ名に説明が定義されていなかったときに警告を出すようにした。
 
 	* tiarra:
-	  - --enable-debug ���ˤ⡢ couldn't connect ��Ϣ�Υ�å������ʤ�
-	    �����å��ȥ졼�����ά����褦�ˤ�����
+	  - --enable-debug 時にも、 couldn't connect 関連のメッセージなら
+	    スタックトレースを省略するようにした。
 
 	* sample.conf:
-	  - TiarraDoc ����Ѥ���褦�ˤʤä���
+	  - TiarraDoc を使用するようになった。
 
 	* doc/module-toc.html, doc/module/*.html:
 	  - regen.
 
 	* doc-src/conf-main.tdoc:
-	  - general/omit-sysmsg-prefix-when-possible �����
-	  - general/sysmsg-prefix-use-masks �֥��å��ɲá�
-	  - �񤫤�Ƥ��ʤ��ä� networks/multi-server-mode �β����
-	    sample.conf ������äƤ����ɲá�
-	  - typo �����ޤޤ��ä� networks/channel-network-separator ��
-	    �����Ȥ� sample.conf �˽��äƽ�����
-	  - ircnet/host �� irc.nara.wide.ad.jp ���ѹ���
-	    ���ޤ���ߤ��Ƥ���Τ����������ꤦ�Ȥ������Ȥǡ�
+	  - general/omit-sysmsg-prefix-when-possible 削除。
+	  - general/sysmsg-prefix-use-masks ブロック追加。
+	  - 書かれていなかった networks/multi-server-mode の解説を
+	    sample.conf から持ってきて追加。
+	  - typo したままだった networks/channel-network-separator の
+	    コメントを sample.conf に従って修正。
+	  - ircnet/host を irc.nara.wide.ad.jp に変更。
+	    いまは停止しているのだが、復活を願うということで。
 
 	* doc-src/module-group.tdoc:
-	  - Channel �κǸ夬 typo ���Ƥ����Τ�����
-	  - Client, CTCP, Debug ���ɲá�
-	    �ȤϤ��� Debug �Ϥޤ� cvs repo. �ˤ�¸�ߤ��Ƥ��ʤ����ġ�
+	  - Channel の最後が typo していたのを修正。
+	  - Client, CTCP, Debug を追加。
+	    とはいえ Debug はまだ cvs repo. には存在していないが…。
 
 	* doc-src/sample.conf.in:
-	  - RCS Tag 'Id' ���ɲá�
+	  - RCS Tag 'Id' を追加。
 
 	* main/Configuration.pm:
-	  - general/omit-sysmsg-prefix-when-possible �Υǥե�����ͤ�ä��ơ�
-	    general/sysmsg-prefix-use-masks �Υǥե���ȥ֥��å����ɲá�
+	  - general/omit-sysmsg-prefix-when-possible のデフォルト値を消して、
+	    general/sysmsg-prefix-use-masks のデフォルトブロックを追加。
 	(_complete_table_with_defaults):
-	  - _complete_{table,block}_with_defaults ��ʬ�䡣
+	  - _complete_{table,block}_with_defaults に分割。
 	(_complete_table_with_defaults):
-	  - Block ��Ȥä��������ѹ���
-	  - Configuration::Block->table ���ɲä�ɬ�ܡ�
+	  - Block を使った実装に変更。
+	  - Configuration::Block->table の追加が必須。
 	(_complete_block_with_defaults):
-	  - block(hash_ref) �� array_ref �Υǥե�����ͤ��б���
+	  - block(hash_ref) と array_ref のデフォルト値に対応。
 
 	* main/ModuleManager.pm:
 	(update_modules):
-	  - %loaded_mods �˸Ť��⥸�塼�뤬̵���ä�����̵�뤹��褦�ˤ�����
+	  - %loaded_mods に古いモジュールが無かった場合は無視するようにした。
 	(_unload):
-	  - �ǥХå��⡼�ɻ��Ǥ⡢Ʊ���⥸�塼�뤫��� 11 �ʾ�� export ��ɽ�����ʤ���
+	  - デバッグモード時でも、同じモジュールからの 11 以上の export は表示しない。
 
 	* main/Multicast.pm:
-	  - $server_sent, $client_sent: NumericReply ����
-	    ERR_TOOMANYCHANNELS �� RPL_WHOISCHANNELS ���ɲá�
+	  - $server_sent, $client_sent: NumericReply 化。
+	    ERR_TOOMANYCHANNELS と RPL_WHOISCHANNELS を追加。
 	(_NJOIN_from_server, _RPL_NAMREPLY):
-	  - /[@+]/ ���ѿ�Ÿ������Ƥ���褦�ʤΤ� /[\@+]/ ���ѹ���
+	  - /[@+]/ が変数展開されているようなので /[\@+]/ に変更。
 	(_WHOIS_from_client):
-	  - RunLoop->shared_loop->sysmsg_prefix ����Ѥ���褦�ˤ�����
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
 	(_{attach,detach}_RPL_WHOISCHANNELS):
-	  - �ɲá� WHOIS ��ɽ�����������ͥ�̾�� network ��Ĥ��롣
+	  - 追加。 WHOIS で表示されるチャンネル名に network をつける。
 
 	* main/RunLoop.pm:
-	  - sysmsg_prefix ���ɲá�
+	  - sysmsg_prefix を追加。
 	(_action_one_message, _action_message_for_each, notify_msg):
-	  - RunLoop->shared_loop->sysmsg_prefix ����Ѥ���褦�ˤ�����
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
 
 	* main/TiarraDoc.pm:
 	(_makeconf):
-	  - block �ؤλ����б���
+	  - block への暫定対応。
 
 	* main/Configuration/Block.pm:
-	  - ->table ���ɲá�
+	  - ->table を追加。
 	(eval_code):
-	  - original �� typo ������
+	  - original の typo を修正。
 
 	* main/IrcIO/Client.pm:
-	  - RunLoop->shared_loop->sysmsg_prefix ����Ѥ���褦�ˤ�����
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
 	(inform_joinning_channels):
-	  - ����Ū�� networks/fixed-channels �֥��å��� channel �� mask ��
-	    �񤯤��Ȥǡ�����������Ǥ���褦�ˤ������� conf ����ȥ�̾��
-	    ��������ʤ����ᡢ̾������ޤ�ޤǤ� sample.conf ��
-	    �񤫤ʤ����Ȥˤ��롣
+	  - 暫定的に networks/fixed-channels ブロックに channel の mask を
+	    書くことで、送信順を指定できるようにしたが、 conf エントリ名が
+	    気に入らないため、名前が決まるまでは sample.conf に
+	    書かないことにする。
 
 	* main/IrcIO/Server.pm:
-	  - ->server_hostname ���ɲá� RPL_WELCOME(001) �������Ƥ���
-	    ������̾���ݻ����롣
-	  - �����Ф� nick �ѹ��������ä��Ȥ��ˡ������� nick ��ɽ������褦�ˤ�����
+	  - ->server_hostname を追加。 RPL_WELCOME(001) で送られてきた
+	    サーバ名を保持する。
+	  - サーバで nick 変更が起こったときに、以前の nick も表示するようにした。
 
 	* module/Auto/Reply.pm:
-	  - �������� mask ������å�����褦�ˤ�����
+	  - 返答時に mask をチェックするようにした。
 
 	* module/Channel/Freeze.pm:
-	  - RunLoop->shared_loop->sysmsg_prefix ����Ѥ���褦�ˤ�����
-	  - ���פˤʤä� use Configuration; ������
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - 不要になった use Configuration; を削除。
 
 	* module/Client/Cache.pm:
-	  - RunLoop->shared_loop->sysmsg_prefix ����Ѥ���褦�ˤ�����
-	  - WHO ����å����������ˤ����ơ� Multicast::global_to_local ��
-	    �Ȥä� nick ���Ѵ����Ƥ��ʤ��ä� bug ������
-	  - ���פˤʤä� use Configuration; ������
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - WHO キャッシュ送信時において、 Multicast::global_to_local を
+	    使って nick を変換していなかった bug を修正。
+	  - 不要になった use Configuration; を削除。
 
 	* module/Client/Eval.pm:
-	  - RunLoop->shared_loop->sysmsg_prefix ����Ѥ���褦�ˤ�����
-	  - ̵�Ѥ� remark('fill-prefix-when-sending-to-client') ��ʤ�������
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - 無用な remark('fill-prefix-when-sending-to-client') をなくした。
 
 	* module/Log/Recent.pm:
-	  - no-recent-logs ���饤����ȥ��ץ������ɲá�
-	  - RunLoop->shared_loop->sysmsg_prefix ����Ѥ���褦�ˤ�����
-	  - ���פˤʤä� use Configuration; ������
+	  - no-recent-logs クライアントオプションを追加。
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - 不要になった use Configuration; を削除。
 
 	* module/System/Pong.pm:
-	  - NumericReply ���� ERR_NOORIGIN ���֤���褦�ˤ�����
-	  - PING �⤳�����˴�����褦�ˤ�����
+	  - NumericReply 化。 ERR_NOORIGIN を返せるようにした。
+	  - PING もここで破棄するようにした。
 	(message_arrived):
-	  - $sender->server_hostname ����Ѥ������Τʥۥ���̾���֤���
+	  - $sender->server_hostname を使用して正確なホスト名に返す。
 
 	* module/System/Raw.pm:
-	  - RunLoop->shared_loop->sysmsg_prefix ����Ѥ���褦�ˤ�����
-	  - NumericReply ���� NOTICE ������� ERR_NEEDMOREPARAMS ���֤���
-	  - ���פˤʤä� use Configuration; ������
+	  - RunLoop->shared_loop->sysmsg_prefix を使用するようにした。
+	  - NumericReply 化。 NOTICE の代わりに ERR_NEEDMOREPARAMS を返す。
+	  - 不要になった use Configuration; を削除。
 
 	* module/User/Ignore.pm:
-	  - sample conf �� mask ���㼨�ѥɥᥤ�����Ѥ���褦�ˤ�����
+	  - sample conf の mask に例示用ドメインを使用するようにした。
 
 	* module/Auto/Alias.pm, module/Auto/Answer.pm,
 	module/Auto/ChannelWithoutOper.pm, module/Auto/Joined.pm,
@@ -734,521 +734,521 @@
 	module/User/ServerOper.pm, module/User/Vanish.pm,
 	module/User/Away/Client.pm, module/User/Away/Nick.pm,
 	module/User/Nick/Detached.pm:
-	  - TiarraDoc ���� sample.conf �����äƤ��ư����ޤ����Ȥ�����
-	    �ѹ����Ƥ��롣
+	  - TiarraDoc 化。 sample.conf から取ってきて一部まずいところは
+	    変更している。
 
 2004-02-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Channel/Freeze.pm:
-	freeze���ޥ�ɤΰ����ϡ�����ޤǤϴ����ʥ����ͥ�̾�Ǥ��ä�����
-	����ϥޥ������ѹ������λ���JOIN���Ƥ������ƤΥ����ͥ���椫��
-	�ޥ����˰��פ������ƤΥ����ͥ����뤹�롣
+	freezeコマンドの引数は、これまでは完全なチャンネル名であったが、
+	これはマスクに変更。その時にJOINしている全てのチャンネルの中から
+	マスクに一致した全てのチャンネルを凍結する。
 
 	* sample.conf, doc-src/conf-main.tdoc:
-	���� general/omit-sysmsg-prefix-when-possible �ɲá�
-	���줬1�Ǥ������sysmsg-prefix�ϥ����ͥ���Ф��ƤΥ�å�����
-	�Ǥʤ���о�ά���롣�ǥե���Ȥ�1��
+	設定 general/omit-sysmsg-prefix-when-possible 追加。
+	これが1である時、sysmsg-prefixはチャンネルに対してのメッセージ
+	でなければ省略する。デフォルトは1。
 
 	* main/Configuration.pm:
-	general/omit-sysmsg-prefix-when-possible �Υǥե�����ͤ��ɲá�
+	general/omit-sysmsg-prefix-when-possible のデフォルト値を追加。
 
 	* main/Multicast.pm, main/RunLoop.pm,
 	  main/IrcIO/Client.pm, module/Channel/Freeze.pm,
 	  main/Log/Recent.pm, module/System/Raw.pm:
-	omit-sysmsg-prefix-when-possible��ȿ�ǡ�
+	omit-sysmsg-prefix-when-possibleを反映。
 
 2004-02-15  Topia  <topia@clovery.jp>
 
 	* module/Client/Cache.pm:
-	  - message_io_hook ���ɲá������ФȤ��̿���ƻ뤷�ơ�
-	    MODE �� WHO ��ȯ��(������������äƤ���)���椫�ɤ�����
-	    �������Ƥ����褦�ˡ�
-	  - message_io_hook �ǵ������������Ȥäơ�
-	    (�ۤ��Υ��饤����Ȥʤɤˤ�ä�)�����Ф˾�����䤤��碌�Ƥ���
-	    ����λ��⡢��å��������˴�����褦�ˤ�����
-	    2�İʾ�Υ��饤����Ȥ�Ʊ���ˤĤʤ��ä��Ȥ��˸��̤��Ф�Ϥ���
-	    �ƥ��Ȥˤ� LimeChat �� 3 ��Ʊ������³����������
-	    �����Фؤ��䤤��碌�ϳƥ����ͥ�ˤĤ�1��ޤǤ��ޤ����Ƥ�����
-	  - ���饤����Ȥ���ã�����ɬ�פΤ����å������ǤϤʤ��Τǡ�
-	    RunLoop->shared_loop->notify_warn() if ::debug_mode; ����
-	    ::debug_printmsg(); ���ѹ���
-	  - WHO ����å���ˤ����ơ�
-	    �ǡ�����­�Ǥ�����᤿�Ȥ��Υ�å�����ɽ�����᤿��
+	  - message_io_hook を追加。サーバとの通信を監視して、
+	    MODE や WHO を発行(して返答をもらっている)途中かどうかを
+	    記憶しておくように。
+	  - message_io_hook で記憶した情報を使って、
+	    (ほかのクライアントなどによって)サーバに情報を問い合わせている
+	    途中の時も、メッセージを破棄するようにした。
+	    2つ以上のクライアントが同時につながったときに効果が出るはず。
+	    テストには LimeChat を 3 つ同時に接続させたが、
+	    サーバへの問い合わせは各チャンネルにつき1回までに抑えられていた。
+	  - クライアントに伝達される必要のあるメッセージではないので、
+	    RunLoop->shared_loop->notify_warn() if ::debug_mode; から
+	    ::debug_printmsg(); に変更。
+	  - WHO キャッシュにおいて、
+	    データ不足であきらめたときのメッセージ表示をやめた。
 
 2004-02-14  Topia  <topia@clovery.jp>
 
-	* ����:
-	  (a) NumericReply ��Ȥ��褦�ˤ�����
-	  (b) general/sysmsg-prefix ��Ȥ��褦�ˤ�����
+	* 全般:
+	  (a) NumericReply を使うようにした。
+	  (b) general/sysmsg-prefix を使うようにした。
 
 	* doc-src/conf-main.tdoc, sample.conf:
-	  - sysmsg-prefix ���ɲá�
+	  - sysmsg-prefix を追加。
 
 	* sample.conf:
-	  - Client::Eval �� Client::Cache ���ɲá�
+	  - Client::Eval と Client::Cache を追加。
 
 	* main/ChannelInfo.pm:
-	  - mode_string method ���ɲá�
+	  - mode_string method を追加。
 
 	* main/Configuration.pm:
-	  - general/sysmsg-prefix �Υǥե�����ͤ��ɲá�
+	  - general/sysmsg-prefix のデフォルト値を追加。
 
 	* main/IRCMessage.pm:
-	  - clone(deep => 1) ���ɲá�
+	  - clone(deep => 1) を追加。
 	  - s/unvalid/invalid/; fix typo.
-	  - $this->[PARAMS] �����⤽��̤����ʤȤ��ϡ�
-	    n_params ����Ȥʤ������Ĺ��(=0)���֤��褦�ˤ�����
+	  - $this->[PARAMS] がそもそも未定義なときは、
+	    n_params は中身なし配列の長さ(=0)を返すようにした。
 
 	* main/ModuleManager.pm:
-	  - module �� reload �λ��ˡ����Ū�� $this->{modules} ��
-	    �����ս�� undef ������Ƽ¹Ԥ���ʤ��褦�ˤ�����
-	    (main/RunLoop.pm ���ѹ��ȥ��åȤǤ���)
+	  - module の reload の時に、一時的に $this->{modules} の
+	    該当箇所に undef を入れて実行されないようにした。
+	    (main/RunLoop.pm の変更とセットです。)
 
 	* main/Multicast.pm: (b)
-	  - ���󥰥륵���Х⡼�ɤǡ��ɤ��Υͥåȥ���ˤ�
-	    �Ҥ��äƤ��ʤ��Ȥ��ϡ��ǥե���ȥͥåȥ����
-	    $networks->default ��Ȥ��褦�ˤ�����
+	  - シングルサーバモードで、どこのネットワークにも
+	    繋がっていないときは、デフォルトネットワークに
+	    $networks->default を使うようにした。
 
 	* main/NumericReply.pm:
-	  - irc2.10.3p5+hemp2 �˹�碌����
-	    ISUPPORT �ϻ��Ѥ������ꡣ
-	  - fetch_number(̾�������ֹ�), fetch_name(�ֹ椫��̾��)
-	    �Τ��줾�������ؿ����ɲä�����
+	  - irc2.10.3p5+hemp2 に合わせた。
+	    ISUPPORT は使用する設定。
+	  - fetch_number(名前から番号), fetch_name(番号から名前)
+	    のそれぞれを得る関数を追加した。
 
 	* main/PersonInChannel.pm:
-	  - priv_symbol method (privilege symbol) ���ɲá�
-	    has_[ov] �ξ��֤ˤ�äơ� @, +, ��ʸ����Τɤ줫���֤���
+	  - priv_symbol method (privilege symbol) を追加。
+	    has_[ov] の状態によって、 @, +, 空文字列のどれかを返す。
 
 	* main/PersonalInfo.pm:
-	  - AWAY ���ɲá��Ǥ�������������ޤ�����
-	    �������������Τ����ݾڤǤ��ޤ���
+	  - AWAY を追加。できるだけ更新しますが、
+	    性質上情報の正確さは保証できません。
 
 	* main/RunLoop.pm: (b)
-	  - single-server-mode ���ˡ����ǡ���³�Υ��ʥ��󥹤�
-	    ����������ͥ�̾����ͥåȥ��̾��Ϥ����褦�ˤ�����
-	  - �����Фؤ���³�������ˡ� couldn't connect to �ʳ���
-	    ���顼��å�����ɽ���ˤ� notify_error ��Ȥ��褦�ˤ�����
-	  - ���饤����Ȥ������³�������ϡ����顼��å�����ɽ����
-	    notify_msg ��Ȥ��褦�ˤ�����
-	  - apply_filters �ǡ� modules_list ����� undef ���ФƤ����顢
-	    �����̵�뤹��褦�ˤ�����
-	    (main/ModuleManager.pm ���ѹ��⻲�ȡ�)
+	  - single-server-mode 時に、切断・接続のアナウンスの
+	    送信先チャンネル名からネットワーク名をはずすようにした。
+	  - サーバへの接続処理時に、 couldn't connect to 以外の
+	    エラーメッセージ表示には notify_error を使うようにした。
+	  - クライアントからの接続処理時は、エラーメッセージ表示に
+	    notify_msg を使うようにした。
+	  - apply_filters で、 modules_list の中に undef が出てきたら、
+	    それを無視するようにした。
+	    (main/ModuleManager.pm の変更も参照。)
 
 	* main/IrcIO/Client.pm: (a)(b)
-	  - credit �� RPL_YOURHOST �Ǥʤ� MOTD �Ȥ���ɽ������褦�ˤ�����
-	  - RPL_YOURHOST �Ǥϡ� Tiarra �ΥС�������ɽ�����롣
+	  - credit を RPL_YOURHOST でなく MOTD として表示するようにした。
+	  - RPL_YOURHOST では、 Tiarra のバージョンを表示する。
 
 	* main/IrcIO/Server.pm: (a)
-	  - _RPL_* �ν����� NumericReply::fetch_name ��ȤäƤޤȤ᤿��
-	  - _START_WHOIS_REPLY, _RPL_ENDOFWHOIS, _RPL_AWAY ���ɲá�
+	  - _RPL_* の処理を NumericReply::fetch_name を使ってまとめた。
+	  - _START_WHOIS_REPLY, _RPL_ENDOFWHOIS, _RPL_AWAY を追加。
 	  - _RPL_WHOREPLY
-	    + �����ޤ� realname �˴ؤ���Х�������
-	    + away ����򵭲�����褦�ˤ�����
-	    + server hop ����� network �� 'server-hops' remark ����¸��
-	  - _RPL_CHANNELMODEIS �ǡ� switches �� parameters �ξ����
-	    ���� reply ��������ȷ��Ĥ��ơ����ꥢ������Ԥ���
+	    + 空白を含む realname に関するバグを修正。
+	    + away 情報を記憶するようにした。
+	    + server hop 情報を network の 'server-hops' remark に保存。
+	  - _RPL_CHANNELMODEIS で、 switches と parameters の情報は
+	    この reply で得られると決めつけて、クリア処理を行う。
 
 	* module/Channel/Freeze.pm: (b)
 
 	* module/Channel/Rejoin.pm: (a)
-	  - ChannelInfo->mode_string ����Ѥ���褦�ˤ�����
+	  - ChannelInfo->mode_string を使用するようにした。
 
 	* module/Channel/Join/Connect.pm:
-	  - ����ޤ�ľ��˥��ڡ��������ä���硢��������������
-	    �ǽ�ΰ�Ĥ��Ф��Ƥ����¹Ԥ���Ƥ��ʤ��ä��Τ�����(^^;;;
+	  - コンマの直後にスペースがあった場合、削除する処理が、
+	    最初の一つに対してしか実行されていなかったのを修正…(^^;;;
 
 	* module/Client/Cache.pm:
-	  - �ɲá����ޤΤȤ��� MODE ����å���ȡ� WHO ����å���������
+	  - 追加。いまのところ MODE キャッシュと、 WHO キャッシュを実装。
 
 	* module/Client/Eval.pm:
-	  - �ɲá����饤����Ȥ���Υ��ޥ�ɤ��������դ��ʤ�����
-	    �������ꤹ�٤ƤΥ��ޥ�ɤ�¹ԤǤ��롣
-	    ���¾� IRC �ѥ���ɤ��狼��� Tiarra ��ư���Ƥ���ۥ��Ⱦ��
-	    ư��Ƥ��륢������Ȥθ��¤ǲ��Ǥ�Ǥ��롢
-	    �Ȥ������Ȥ����դ��뤳�ȡ�
+	  - 追加。クライアントからのコマンドしか受け付けないが、
+	    その代わりすべてのコマンドを実行できる。
+	    事実上 IRC パスワードがわかれば Tiarra が動いているホスト上で
+	    動作しているアカウントの権限で何でもできる、
+	    ということに注意すること。
 
 	* module/Log/Recent.pm: (b)
-	  - network name �������ʾ��ϡ� notify_warn �Ƿٹ𤷤ơ�
-	    ���顼�ʤ���ȴ����褦�ˤ�����
+	  - network name が不正な場合は、 notify_warn で警告して、
+	    エラーなしに抜けるようにした。
 
 	* module/System/Pong.pm:
-	  - prefix ���Ĥ��Ƥ���Τ��Լ������ä��Τǡ���ä���
+	  - prefix がついているのは不自然だったので、削った。
 
 	* module/System/Raw.pm: (b)
 
 	* module/Tools/LinedDB.pm:
-	  - �ե����뤬¸�ߤ��ʤ����ˡ�
-	    ���������å���ʬ�ǥ��顼��ȯ�����Ƥ����Τ�����
+	  - ファイルが存在しない場合に、
+	    更新チェック部分でエラーが発生していたのを修正。
 
 2004-02-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO.pm, main/IrcIO/*.pm, main/Module.pm:
-	notification_of_message_io������
+	notification_of_message_ioを削除。
 
 	* main/Module.pm (message_io_hook):
-	�ɲá������notification_of_message_io������˸ƤФ�롣
-	���Υ᥽�åɤϥ�å���������Ѥ����������롣�ܤ����ϥ����Ȥˡ�
+	追加。これはnotification_of_message_ioの代わりに呼ばれる。
+	このメソッドはメッセージを改変する事が出来る。詳しくはコメントに。
 
 	* main/IrcIO.pm (send_message, receive):
-	�ƥ⥸�塼���message_io_hook��Ƥ֡�
+	各モジュールのmessage_io_hookを呼ぶ。
 
 	* main/RunLoop.pm (apply_filters):
-	�ɲá��⥸�塼��ˤ���å������ե��륿��󥰤ΰ��̷���
+	追加。モジュールによるメッセージフィルタリングの一般形。
 
 2004-01-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* main/NumericReply.pm: �ɲ�
-	�˥塼���å���ץ饤�򥷥�ܥ�Ȥ���������륯�饹��
-	use��������ܥ�򥨥����ݡ��ȡ�
+	* main/NumericReply.pm: 追加
+	ニューメリックリプライをシンボルとして定義するクラス。
+	useで全シンボルをエクスポート。
 
 	* main/IrcIO.pm: 
-	CR��̵����LF�����ǽ���äƤ����å��������������롣
+	CRが無く、LFだけで終わっているメッセージも受け入れる。
 	
 2004-01-23  Topia  <topia@clovery.jp>
 
-	* tiarra: $0 ���Τ� symlink ���ä��Ȥ��ˡ�@INC �� symlink ���
-	main/module ��ޤ��褦�ˤ�����
-	�����ȥǥ��쥯�ȥꡦ$0 �Υǥ��쥯�ȥ�Ͼ�˴ޤ�褦�ˤ�����
-	(make_password): --make-password=password ���ǽ�ˤ�����
+	* tiarra: $0 自体が symlink だったときに、@INC に symlink 先の
+	main/module を含めるようにした。
+	カレントディレクトリ・$0 のディレクトリは常に含むようにした。
+	(make_password): --make-password=password を可能にした。
 
 2004-01-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* tiarra: ��ư�����ץ���� --make-password �ɲá�
-	make-password�ε�ǽ��tiarra���Τ˰ܤ�����
+	* tiarra: 起動時オプション --make-password 追加。
+	make-passwordの機能をtiarra本体に移した。
 	
-	* make-password: ���
+	* make-password: 削除
 
 2004-01-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Unicode/Japanese.pm:
-	Ʊ����UniJP��0.18����0.19�ˡ�JIS������ϲ�衣
+	同梱のUniJPを0.18から0.19に。JISの問題は解決。
 
 2004-01-14  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Mask.pm:
-	�ޥ��������ä�����ɽ����qr�ǥ���ѥ��뤹��ݡ�
-	i�ե饰���դ�˺�����ʸ����ʸ���ζ��̤�*����Ƥ���*�Τǽ�����
+	マスクから作った正規表現をqrでコンパイルする際、
+	iフラグを付け忘れて大文字小文字の区別が*されていた*ので修正。
 
 	* main/IRCMessage.pm (_parse):
-	��ʸ����ˤĤ��Ƥ�ʸ���������Ѵ�����������Ū�˾�ά���롣
-	Unicode::Japanese�ˤ�ISO-2022-JP��UTF-8�Ѵ��ˤ����ƶ�ʸ�����"\x00"�ˤ��Ƥ��ޤ����ꤢ�ꡣ
+	空文字列については文字コード変換処理を明示的に省略する。
+	Unicode::JapaneseにはISO-2022-JP→UTF-8変換において空文字列を"\x00"にしてしまう問題あり。
 
 2003-11-17  Topia  <topia@clovery.jp>
 
 	* tiarra: enhancement.
-	�ѥå������Ѥˤ����Ĥ��ΥС�������ѿ����ɲä�����
+	パッケージ用にいくつかのバージョン変数を追加した。
 
 	* module/Log/Channel.pm: enhancement/need reload.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F23%2F%2Fpatch-1>
-	�ǥե���ȤΥ����ե�����ѡ��ߥå����� 644 ���� 600 �ˤ�����
-	�ǥ��쥯�ȥ�������Υѡ��ߥå��������Ǥ���褦�ˤ�����(dir-mode)
-	�ǥե���Ȥ� 700 ��
+	デフォルトのログファイルパーミッションを 644 から 600 にした。
+	ディレクトリ作成時のパーミッションを指定できるようにした。(dir-mode)
+	デフォルトは 700 。
 
 	* tiarra: enhancement.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F24%2F%2Fpatch-1>
-	--dumpversion ���ɲä�����
-	�ѥå������������˥С�������������뤿�����˻Ȥ�ͽ�ꡣ
+	--dumpversion を追加した。
+	パッケージ作成時にバージョン情報を得るため等に使う予定。
 
 2003-11-09  Topia  <topia@clovery.jp>
 
 	* module/System/Reload.pm (message_arrived): bugfix/need reload.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F22%2F%2Fpatch-1>
-	Timer ��Ȥä��ٱ�������뤳�Ȥˤ�äơ�reload command �Ǥ�
-	��ʬ���ȤΥ�����ɤ��ǽ�ˤ�����
+	Timer を使って遅延処理することによって、reload command での
+	自分自身のリロードを可能にした。
 
 	* main/RunLoop.pm (run): bugfix(single-server-mode)/need reboot.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F21%2F%2Fpatch-1>
-	single-server-mode ���Ρ����饤����Ȥ����������褿
-	PRIVMSG/NOTICE �Υ֥����ɥ��㥹�Ȥǡ� network-suffix �դ���
-	�����ͥ���������Ƥ��ޤäƤ�����
+	single-server-mode 時の、クライアントから送られて来た
+	PRIVMSG/NOTICE のブロードキャストで、 network-suffix 付きの
+	チャンネルに送信してしまっていた。
 
 2003-11-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra (help):
-	��å��������stdin��stderr�δְ㤤������
+	メッセージ中のstdinとstderrの間違いを修正。
 
 2003-11-08  Topia  <topia@clovery.jp>
 
 	* make-password: enhancement.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F20%2F%2Fpatch-1>
-	�ѥ���ɤ����Ϥˡ� Term::ReadLine ����Ѥ���褦�ˤ�����
+	パスワードの入力に、 Term::ReadLine を使用するようにした。
 
 	* module/Log/Recent.pm (client_attached): bugfix(single-server-mode)/need reload.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F18%2F%2Fpatch-2>
-	single-server-mode ���ˡ����������ͥ�̾���� network-suffix
-	��Ϥ�����
+	single-server-mode 時に、送信チャンネル名から network-suffix
+	をはずす。
 
 	* main/RunLoop.pm (run): bugfix(single-server-mode)/need reboot.
 	<http://www.clovery.jp/wiki/wiki?BugTrack%2F%2FTiarra%2F%2F1%2F%2F18%2F%2Fpatch-1>
-	single-server-mode ���ˡ����饤����Ȥ�������������å�������
-	network-suffix ���դ���褦�ˤ�����
+	single-server-mode 時に、クライアントから送られて来るメッセージに
+	network-suffix を付けるようにした。
 
 2003-10-25  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IRCMessage.pm (serialize):
-	�Ǹ�Υѥ�᡼������ʸ������ä���硢�������Ĥ��ʤ��٤�
-	���ꥢ�饤����Υѥ�᥿�����äƤ��ޤ�������衣
+	最後のパラメータが空文字列だった場合、コロンを残さない為に
+	シリアライズ後のパラメタが減ってしまう問題を解決。
 
 	* main/IrcIO/Server.pm (_receive_while_logging_in):
-	�����С���ERROR���֤��������������Ƥ�die����褦�ˡ�
+	サーバーがERRORを返した時、その内容でdieするように。
 
 2003-10-24  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Configuration/Block.pm:
-	$block->foo_bar('block') �Ȥ�����������ͤ���˥֥��å��Ȥʤ롣
-	̤����Ǥ���ж��Υ֥��å��򡢴���������ͤ��֥��å��Ǥ����
-	���Υ֥��å��򡢴���������ͤ��֥��å��Ǥʤ���Х������ͤΥڥ���
-	��Ĥ����ޤ�֥��å������������֤���
+	$block->foo_bar('block') とした時、戻り値が常にブロックとなる。
+	未定義であれば空のブロックを、既定義かつ値がブロックであれば
+	そのブロックを、既定義かつ値がブロックでなければキーと値のペアを
+	一つだけ含むブロックを生成して返す。
 
 2003-10-19  Topia  <topia@clovery.jp>
 
 	* HACKING:
-	�⥸�塼������Ը����Υɥ�����Ȥ�񤤤���
-	�ޤ���Timer / Hook / Socket I/O ��Ϣ�ε��Ҥ��ʤ���
+	モジュール作成者向けのドキュメントを書いた。
+	まだ、Timer / Hook / Socket I/O 関連の記述がない。
 
 	* module/Skelton.pm:
-	�����⥸�塼��Υ�����ȥ���ȤΤۤȤ�ɤ� main/Module.pm ��Ʊ�졣
+	新規モジュールのスケルトン。中身のほとんどは main/Module.pm と同一。
 
 	* module/Auto/Alias.pm (message_arrived):
-	�֤��ͤ����������ä��Τ�����
+	返り値がおかしかったのを修正。
 
 2003-10-19  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO/Server.pm
 	(person_if_exists):
-	�ɲá����ꤵ�줿nick����Ŀ�ʪ�����С�����PersonalInfo���֤���
+	追加。指定されたnickを持つ人物が居れば、そのPersonalInfoを返す。
 	(_RPL_WHOREPLY):
-	�����С�̾��nick�ΰ��֤�ְ㤨�Ƥ����Τǽ�����
+	サーバー名とnickの位置を間違えていたので修正。
 
 2003-10-16  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/System/Raw.pm:
-	�ɲá�Tiarra�˲��Ѥ���ʤ����Υ�å������򥵡��С������뤿��Υ⥸�塼�롣
+	追加。Tiarraに改変されない生のメッセージをサーバーに送るためのモジュール。
 
 	* main/RunLoop.pm (update_networks):
-	conf���饵���С�̾����������ǥ����С��������Ǥ������ˡ�
-	���Υ����С������äƤ������ƤΥ����ͥ���Ф���PART�������饤����Ȥ����롣
+	confからサーバー名を削除する事でサーバーから切断した時に、
+	そのサーバーで入っていた全てのチャンネルに対するPARTを全クライアントへ送る。
 
 2003-10-14  Topia  <topia@clovery.jp>
 
 	* main/Multicast.pm (distribute_to_servers):
-	hijack_forward_to_server ��Ŭ��(nick�ǻȤ�)
+	hijack_forward_to_server を適用(nickで使う)
 
 	* main/RunLoop.pm (_multi_server_mode_changed):
-	nick �ѹ����ɲá�
+	nick 変更を追加。
 
 	* main/IrcIO/Server.pm (_receive_while_logging_in):
-	single-server-mode ���� NICK �������ɲá�
+	single-server-mode 時の NICK 処理を追加。
 
 	* main/IrcIO/Server.pm (_receive_after_logged_in):
-	single-server-mode ���� NICK ������ RunLoop/set_current_nick ���ɲá�
-	437 �Ǥ� if ���Ǥ��ۤʥߥ��򤷤Ƥ����Τǽ�����
+	single-server-mode 時の NICK 処理に RunLoop/set_current_nick を追加。
+	437 での if 条件であほなミスをしていたので修正。
 
 2003-10-12  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IRCMessage.pm (serialize):
-	�Ǹ�Υѥ�᡼�����������ޤ�Ǥ�����ˡ��ְ�ä�ʸ���󲽤򤹤�������衣
+	最後のパラメータがコロンを含んでいる時に、間違った文字列化をする問題を解決。
 
 2003-09-28  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.el:
-	mmm-mode�����󥹥ȡ��뤵��Ƥ��ơ�(require 'mmm-mode)�ޤ���
-	(require 'mmm-auto)����Ƥ�����ˡ�tiarra-conf�Ѥ������
-	�Ԥä��塢�����ͭ���ˤ��롣
+	mmm-modeがインストールされていて、(require 'mmm-mode)または
+	(require 'mmm-auto)されている場合に、tiarra-conf用の設定を
+	行った後、それを有効にする。
 
-	mmm-mode�Υ����Ȥϼ���URL�ˡ�
+	mmm-modeのサイトは次のURLに。
 	http://mmm-mode.sourceforge.net/
 
 	* main/PersonalInfo.pm (remark):
-	�ɲá�
-	�������¸���뤿���hash�ϡ�ɬ�פˤʤä����ޤǺ���ʤ���
+	追加。
+	これを保存するためのhashは、必要になった時まで作られない。
 
 2003-09-26  Topia  <topia@clovery.jp>
 
 	* tiarra:
-	--debug ���� warn �� die ��Ĺ�������å��ȥ졼����ɽ�����롣
+	--debug 時に warn と die に長いスタックトレースを表示する。
 
 	* main/ChannelInfo.pm:
-	topic_who �� topic_time ���ɲá�
-	���顼��å������Υߥ�������
+	topic_who と topic_time を追加。
+	エラーメッセージのミスを修正。
 
 	* main/Multicast.pm:
-	RPL_TOPICWHOTIME ���ɲá�
-	hijack_local_to_global ���Υե�����Хå�����������
+	RPL_TOPICWHOTIME の追加。
+	hijack_local_to_global 時のフォールバック条件を訂正。
 
 	* main/IrcIO/Client.pm:
-	431 No nickname given �μ�����
-	multi-server-mode �Ǥʤ��Ȥ��ˤ� nick ��Ϣ���ü�����򤷤ʤ��褦�ˡ�
-	RPL_TOPICWHOTIME �μ�����
+	431 No nickname given の実装。
+	multi-server-mode でないときには nick 関連の特殊処理をしないように。
+	RPL_TOPICWHOTIME の実装。
 
 	* main/IrcIO/Server.pm:
-	437 nick/channel is temporarily unavailable ���б���
-	multi-server-mode �Ǥʤ��Ȥ��ˤ� nick ��Ϣ���ü�����򤷤ʤ��褦�ˡ�
-	RPL_TOPICWHOTIME �μ�����
-	9ʸ���ʾ��nick���褿�Ȥ��ˡ���ǽ�ʸ¤�ɬ�װʾ�û�����ʤ��褦�ˡ�
+	437 nick/channel is temporarily unavailable に対応。
+	multi-server-mode でないときには nick 関連の特殊処理をしないように。
+	RPL_TOPICWHOTIME の実装。
+	9文字以上のnickが来たときに、可能な限り必要以上短くしないように。
 
 2003-09-25  Topia  <topia@clovery.jp>
 
 	* tiarra:
-	--version �� --debug �μ�����
-	::debug_printmsg(...), ::debug_mode ����ѤǤ��ޤ���
-	::printmsg �ؤ� autoflash ������ɲá�
+	--version と --debug の実装。
+	::debug_printmsg(...), ::debug_mode を使用できます。
+	::printmsg への autoflash 指定を追加。
 
 	* main/ModuleManager.pm:
-	(update_modules): $this->{modules} �κƹ����򡢥�����������˰�ư��
-	notification_of_message_io �θƤӽФ��ǥ��顼��ȯ������Τ����
-	(_load): �ǥХå��⡼�ɻ��� UNIVERSAL::isa �������դ�����硢
-	ɸ����Ϥ˽��Ϥ��롣
+	(update_modules): $this->{modules} の再構成を、アンロード前に移動。
+	notification_of_message_io の呼び出しでエラーが発生するのを回避。
+	(_load): デバッグモード時に UNIVERSAL::isa が嘘を付いた場合、
+	標準出力に出力する。
 	(_unload):
-	no strict �ξ����ѹ���
-	����ܥ�ơ��֥����¸�ߤ���ؿ��Τ�����
-	��ʬ���Ȥ�����������ǤϤʤ��ؿ��� undef ���ʤ��褦�ˤ�����
-	�ǥХå��⡼�ɤʤ顢 undef ���������顦���󡦥���ܥ�ơ��֥롦�ؿ���
-	undef ���ʤ��ä��ؿ������դ��Ƥ��줾��ɸ����Ϥ˽��Ϥ��롣
+	no strict の場所を変更。
+	シンボルテーブル内に存在する関数のうち、
+	自分自身が定義した訳ではない関数は undef しないようにした。
+	デバッグモードなら、 undef したスカラ・配列・シンボルテーブル・関数、
+	undef しなかった関数、に付いてそれぞれ標準出力に出力する。
 
 	* module/Channel/Join/Connect.pm:
-	����ޤ�ľ��ˤ��륹�ڡ����Ϻ������褦�ˤ�����
-	TiarraDoc ���ɲá�
+	コンマの直後にあるスペースは削除するようにした。
+	TiarraDoc を追加。
 
 	* module/Tools/FileCache.pm:
-	destruct �᥽�åɤ������
-	RCS������ɸ��Τ�Τˤ�����
+	destruct メソッドを実装。
+	RCSタグを標準のものにした。
 
 	* module/Tools/GroupDB.pm:
-	Module::Use ��ȴ���Ƥ����Τ��ɲá�
-	RCS������ɸ��Τ�Τˤ�����
+	Module::Use が抜けていたので追加。
+	RCSタグを標準のものにした。
 
 	* sample.conf:
-	Channel::Join::Connect �� �֥��å��� TiarraDoc �����������
-	������ܤ��Ѳ��Ϥ���ޤ���
+	Channel::Join::Connect の ブロックを TiarraDoc から再生成。
+	指定項目の変化はありません。
 
 2003-09-24  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Multicast.pm (nick_p):
-	��|�פ�ޤ�nick��nick��ǧ�����Ƥ��ʤ��ä��Τǽ�����
+	「|」を含むnickをnickと認識していなかったので修正。
 
 	* module/Log/Recent.pm:
-	config��command��ʸ���ǽ񤯤ȥ���������ʤ�������衣
+	configのcommandを小文字で書くとログが取られない問題を解決。
 
 2003-09-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/ModuleManager.pm:
-	use Module::Use���줿���֥⥸�塼�뤬�˴��������ˡ�
-	���Υѥå������� destruct �᥽�åɤ����̵���ǸƤ֡�
+	use Module::Useされたサブモジュールが破棄される時に、
+	そのパッケージの destruct メソッドを引数無しで呼ぶ。
 
 	* main/Mask.pm:
-	����򿩤��᤮��Τǡ�����ѥ���Ѥ�����ɽ����
-	����å�����¸����150�Ĥ˸�����
+	メモリを食い過ぎるので、コンパイル済み正規表現の
+	キャッシュ保存数を150個に減少。
 
 	* main/PersonalInfo.pm:
-	�᥽�å�info�˰����Ȥ��ƿ����ͤ��Ϥ�������
-	���줬���Ǥ����nick��name��host��������֤���
-	wantarray�ˤ���ȸߴ����������뤿�ᡣ
+	メソッドinfoに引数として真偽値を渡した時、
+	それが真であればnickとnameとhostの配列を返す。
+	wantarrayにすると互換性が失われるため。
 
 	* main/PersonalInfo.pm:
-	ư��®�ٸ���Τ��ᡢAUTOLOAD���ѻߡ�
+	動作速度向上のため、AUTOLOADを廃止。
 
 	* module/Log/Channel.pm:
-	config��command��ʸ���ǽ񤯤ȥ���������ʤ�������衣
+	configのcommandを小文字で書くとログが取られない問題を解決。
 
 2003-09-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/ChannelInfo.pm, main/IRCMessage.pm,
 	main/PersonInChannel.pm, main/PersonalInfo.pm,
 	main/Configuration/Block.pm:
-	�����Υ��饹�ϥ��֥������Ȥ����̤˺����Τǡ�
-	���������Τ���˥��󥹥��󥹷���������ѹ���
+	これらのクラスはオブジェクトが大量に作られるので、
+	メモリの節約のためにインスタンス型を配列に変更。
 
 	* main/IrcIO.pm:
-	�᥽�å� remarks �� remark �Υ����ꥢ���ˡ�
-	$io->remark(foo => undef); �Τ褦������Ū��undef�����ꤹ���
-	������������
+	メソッド remarks を remark のエイリアスに。
+	$io->remark(foo => undef); のように明示的にundefを設定すると
+	その註釈を削除。
 
 	* IrcIO/Server.pm:
-	remark��IrcIO.pm�˰�ư�����Τǡ�������Ϻ����
+	remarkをIrcIO.pmに移動したので、こちらは削除。
 
 	* main/L10N.pm:
 	* main/LocalChannelManager.pm:
-	̤�����Ǥ��ꡢ�ޤ��Ȥ��Ƥ⤤�ʤ�����¸�ߤ��ƤⳲ��̵����
-	���줾��¿�����å�������Tiarra���������ͥ�򰷤���
+	未完成であり、まだ使われてもいないが、存在しても害は無い。
+	それぞれ多言語メッセージとTiarra内部チャンネルを扱う。
 
 	* main/Mask.pm:
-	�ޥ���ʸ���󤫤��Ѵ���������ɽ���Υ���ѥ����̤򥭥�å���Ȥ�����¸����褦�ˡ�
-	���̤Υޥ����򰷤���ﲼ��ư����˽Ť��ʤ��������򤹤롣
-	�٥���ޡ����η�̤Ǥϡ�62.5%�Υޥå���®�٤θ��夬����줿��
+	マスク文字列から変換した正規表現のコンパイル結果をキャッシュとして保存するように。
+	大量のマスクを扱う条件下で動作が非常に重くなる問題を回避する。
+	ベンチマークの結果では、62.5%のマッチング速度の向上が見られた。
 
 2003-08-18  Topia  <topia@clovery.jp>
 
 	* main/Multicast.pm:
-	${server,client}_sent �� ENDOFWHO ���ɲá�
-	����� LimeChat �ʤɤΥ��饤����Ȥǡ�
-	���ɥ쥹���ԡ��ʤɤε�ǽ���Ȥ��ʤ��ɾ���̵���ʤä���
-	$client_sent �� numeric reply �˥����Ȥ��䴰��
+	${server,client}_sent に ENDOFWHO を追加。
+	これで LimeChat などのクライアントで、
+	アドレスコピーなどの機能が使えない症状が無くなった。
+	$client_sent の numeric reply にコメントを補完。
 
 2003-08-12  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/FunctionalVariable.pm:
-	�ɲá�Ϳ����줿Ǥ�դΥϥ�ɥ���ѿ���tie���롣
-	�̾��tie�Ȥΰ㤤�ϡ��ϥ�ɥ���ѿ���˴ؿ���ե��ǻ��ꤹ������
+	追加。与えられた任意のハンドラを変数にtieする。
+	通常のtieとの違いは、ハンドラを変数毎に関数リファで指定する点。
 
 	* main/Hook.pm:
-	�եå��ΰ���Ū����������Υե�����ϥ��饹Hook�ȥ��饹HookTarget��������롣
+	フックの一般的な定義。このファイルはクラスHookとクラスHookTargetを定義する。
 
 	* main/Configuration.pm:
-	������ɤ��������եå�`reloaded'��Ƥ֡�
+	リロードした時、フック`reloaded'を呼ぶ。
 
 	* main/Multicast.pm:
-	���󥰥륵���С��⡼���б���
-	forward_to_server��local_to_global��ưŪ�������פΥե饰�Ǿ�ü������
-	���᥹�ѥ��ƥ��ɤ����ǤϤʤ�������󥰥롣
+	シングルサーバーモード対応。
+	forward_to_serverやlocal_to_globalを動的スコープのフラグで乗っ取る等、
+	最早スパゲティどころではない。ジャングル。
 
 	* main/RunLoop.pm:
-	���󥰥륵���С��⡼���б���
-	���Υ⡼�ɤǤϡ�Ʊ������³����륵���С��ο�����Ĥ˸��ꤵ�졢
-	�����ͥ�̾���˥ͥåȥ��̾���ղä���ʤ��ʤ롣
+	シングルサーバーモード対応。
+	このモードでは、同時に接続出来るサーバーの数が一つに限定され、
+	チャンネル名等にネットワーク名が付加されなくなる。
 
 	* main/IrcIO/Client.pm:
-	_inform_joinning_channels��ץ饤�١��ȥ᥽�åɤǤʤ�������
-	�������᥽�å�̾��inform_joinning_channels��
+	_inform_joinning_channelsをプライベートメソッドでなくした。
+	新しいメソッド名はinform_joinning_channels。
 
 2003-08-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* makedoc:
-	�ɲá����Υ�����ץȤ�doc-src���Υե������module���Υ⥸�塼�롢
-	main���Υ⥸�塼����ɤߡ�tdoc�����ǽ񤫤줿�ɥ�����Ȥ�ǧ������
-	sample.conf�����doc����html�ɥ�����Ȥ��������롣
-	tdoc�ˤĤ��Ƥ�doc-src/README�򻲾ȡ�
-	�����ƥ⥸�塼��ؤ�tdoc�ε��Ҥ���λ���Ƥ��ʤ��١�
-	������sample.conf����������ʤ�����λ����ޤǤ�sample.conf�Ǥʤ�
-	sample.conf.tmp�˽񤭽Ф���
+	追加。このスクリプトはdoc-src下のファイルとmodule下のモジュール、
+	main下のモジュールを読み、tdoc形式で書かれたドキュメントを認識し、
+	sample.confおよびdoc下のhtmlドキュメントを生成する。
+	tdocについてはdoc-src/READMEを参照。
+	尚、各モジュールへのtdocの記述が完了していない為、
+	完全なsample.confは生成出来ない。完了するまではsample.confでなく
+	sample.conf.tmpに書き出す。
 
-	* doc-src/README: �ɲá�tdoc�ˤĤ��Ƥ�������
+	* doc-src/README: 追加。tdocについての説明。
 
-	* doc-src/conf-main.tdoc: �ɲá�general��networks�Υɥ�����ȡ�
+	* doc-src/conf-main.tdoc: 追加。generalやnetworksのドキュメント。
 
-	* doc-src/contents.html: �ɲá�html�ɥ�����ȤΥƥ�ץ졼�ȡ�
+	* doc-src/contents.html: 追加。htmlドキュメントのテンプレート。
 
-	* doc-src/module-group.tdoc: �ɲá��⥸�塼���ʬ�����
+	* doc-src/module-group.tdoc: 追加。モジュールの分類情報。
 
-	* doc-src/module-toc.html: �ɲá��⥸�塼����ܼ���html�ƥ�ץ졼�ȡ�
+	* doc-src/module-toc.html: 追加。モジュールの目次のhtmlテンプレート。
 
-	* doc-src/sample.conf.in: �ɲá�sample.conf�Υƥ�ץ졼�ȡ�
+	* doc-src/sample.conf.in: 追加。sample.confのテンプレート。
 
-	* main/Template.pm: �ɲá��ƥ�ץ졼�Ȥ򰷤����饹��
+	* main/Template.pm: 追加。テンプレートを扱うクラス。
 
-	* main/TiarraDoc.pm: �ɲá�tdoc�ѡ�����
+	* main/TiarraDoc.pm: 追加。tdocパーサ。
 
 	* module/System/PrivTranslator.pm
-	* module/User/Ignore.pm: tdoc�ɲá�
+	* module/User/Ignore.pm: tdoc追加。
 
 2003-07-31  Topia  <topia@clovery.jp>
 
-	* ����:
-	������ǥ�Ȥ��ѹ�
-	�������Ȥ�����
-	��mask �ǻȤ������ͥ�̾��ͥåȥ���դ��˽���(a)
-	�����פ� use �Υ��꡼�󥢥å�(b)
-	�����פ��ѿ��Υ��꡼�󥢥å�(c)
+	* 全般:
+	・インデントの変更
+	・コメントの整備
+	・mask で使うチャンネル名をネットワーク付きに修正(a)
+	・不要な use のクリーンアップ(b)
+	・不要な変数のクリーンアップ(c)
 
 	* Auto/Oper.pm:
 	(a)
@@ -1269,353 +1269,353 @@
 	(a)(c)
 
 	* Auto/Utils.pm:
-	get_ch_name -> (get_raw_ch_name): �ͥåȥ��̵̾����(server Ū�� raw ��)�����ͥ�̾ or undef �����롣
-	(get_full_ch_name): �ͥåȥ��̾�դ��Υ����ͥ�̾ or undef �����롣
-	(generate_reply_closures): �֤��ͤ� $get_full_ch_name ���ɲá�
-	��ȤȤ��Ƥϡ�$msg->param(place) �ʾ�ΰ�̣��̵�������ͤλ�����ϰ����ˤ��������ɤ���
+	get_ch_name -> (get_raw_ch_name): ネットワーク名無しの(server 的に raw な)チャンネル名 or undef を得る。
+	(get_full_ch_name): ネットワーク名付きのチャンネル名 or undef を得る。
+	(generate_reply_closures): 返り値に $get_full_ch_name を追加。
+	中身としては、$msg->param(place) 以上の意味は無いが、値の指定場所は一ヶ所にした方が良い。
 
 	* Tools/DateConvert.pm:
-	use_posix �� import/unimport ��ȤäƺƼ���������
+	use_posix を import/unimport を使って再実装した。
 
 	* Tools/FileCache/EachFile.pm:
-	(can_remove): ������
-	(AUTOLOAD): eval ���ƴؿ������뤹��ΤǤϤʤ������ξ�ǥ᥽�åɤ�����������֤褦�ˤ�����
+	(can_remove): 実装。
+	(AUTOLOAD): eval して関数コールするのではなく、その場でメソッドを定義して飛ぶようにした。
 
 	* Tools/FileCache.pm:
-	(main_loop): refcount ��Ȥä������å�������ˡ� can_remove ��Ȥä������å��ˤ�����
+	(main_loop): refcount を使ったチェックの代わりに、 can_remove を使ったチェックにした。
 
 	* Tools/HashDB.pm:
-	Module::Use ���ɲá�
+	Module::Use を追加。
 
 	* Tools/HashTools.pm:
-	(get_array): ���դ���ʤ��ä����� () ���֤��Ƥ������� undef ���֤��٤��ʤΤǽ�����
-	(replace_recursive): ���ä����䴰��������
-	(_format): regexp �ν���( %. -> %(.) )���Х��Ǥ�����
+	(get_array): 見付からなかった場合に () を返していたが、 undef を返すべきなので修正。
+	(replace_recursive): こっかの補完処理を修正
+	(_format): regexp の修正( %. -> %(.) )。バグでした。
 
 	* Tools/MailSend/EachServer.pm
-	::printmsg -> RunLoop->shared->notify_warn ��
-	LinedINETSocket ����������Ȥ��� $E_MAIL_EOL ��ȤäƤ��ʤ��ä���������
-	MessageID �κ������򥳥��ȤȤ��Ƶ��ҡ�
+	::printmsg -> RunLoop->shared->notify_warn 。
+	LinedINETSocket を生成するときに $E_MAIL_EOL を使っていなかった。修正。
+	MessageID の作られ方をコメントとして記述。
 
 	* Tools/MailSend.pm
 	(b)
 
 	* Mask.pm:
-	s/exclude/include/ ��̵��̣�ʻ���黻�Ҥ�ä�����
+	s/exclude/include/ 。無意味な三項演算子を消した。
 
 	* sample.conf:
-	mask ��Ϣ������
+	mask 関連を修正。
 
 2003-07-28  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO/Server.pm (person_list):
-	�ɲá��Ф��Ƥ������Ƥ�PersonalInfo�Υꥹ�Ȥ��֤���
+	追加。覚えている全てのPersonalInfoのリストを返す。
 
 2003-07-26  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra:
-	��ư����`-Dfoo'��`-Dfoo=bar'����ꤹ��ȡ�conf��`@define foo'��
-	`@define foo bar'���񤫤�Ƥ����Τȸ�������
+	起動時に`-Dfoo'や`-Dfoo=bar'を指定すると、confに`@define foo'や
+	`@define foo bar'が書かれているものと見做す。
 
 	* module/Configuration/Preprocessor.pm
 	(initial_define):
-	@define�ν������ΰ٤���Ū�᥽�åɡ�
+	@defineの初期設定の為の静的メソッド。
 
 	(_eval_at):
-	@ifdefʸ��@ifndefʸ�������ǽ�ˡ�
+	@ifdef文、@ifndef文を処理可能に。
 
 2003-07-24  Topia  <topia@clovery.jp>
 
 	* tiarra, make-password:
-	require 5.6.0 �ϸŤ��С��������Ȳ�ᤵ��ʤ��褦�ʤΤ� require 5.006 �ˡ�
-	lib, module �� tiarra ��������Хѥ��ǲ�᤹��褦�ˡ�
+	require 5.6.0 は古いバージョンだと解釈されないようなので require 5.006 に。
+	lib, module を tiarra からの相対パスで解釈するように。
 
 	* main/Multicast.pm:
-	352(WHOREPLY)�Υ����ͥ�̾�˥ͥåȥ��̾�򥢥��å�����褦�ˤ�����
+	352(WHOREPLY)のチャンネル名にネットワーク名をアタッチするようにした。
 
 2003-07-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/InstantCapsule.pm:
-	SelfLoader������ߡ�SelfLoader��DESTROY�����������
-	���ץ������DESTROY���������ʤ��ʤäƤ��ޤ���
+	SelfLoader使用中止。SelfLoaderでDESTROYが定義されると
+	カプセル内にDESTROYを定義出来なくなってしまう。
 
 	* module/User/Vanish.pm:
-	���ޥ�ɡ�/VANISHDEBUG 1�פǥ�å������β��Ѥ�����ͻҤ�������褦�ˡ�
-	���߻ĤäƤ���̯���Զ��θ�������꼡������
+	コマンド「/VANISHDEBUG 1」でメッセージの改変される様子が見えるように。
+	現在残っている妙な不具合の原因が解り次第削除。
 
 2003-07-22  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Channel/Freeze.pm
 	(freeze):
-	����ޤǶ��ڤ�줿ʣ���Υ����ͥ�̾��ǧ����
+	カンマで区切られた複数のチャンネル名を認識。
 	
 	(defrost):
-	��뤷�Ƥ��ʤ������ͥ��defrost����ȥ��顼��������������衣
-	�����ͥ�̾��ޥ����Ȥ��ư����褦���ѹ���
+	凍結していないチャンネルをdefrostするとエラーが起こる問題を解決。
+	チャンネル名をマスクとして扱うように変更。
 
 2003-07-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/IrcIO/Server.pm (_PART):
-	PART�����������äƤ���ɤΥ����ͥ�ˤ���᤽�ο�ʪ��
-	��ʤ��ʤä����ϡ����ο�ʪ�ˤĤ��Ƥ�PersonalInfo�������롣
+	PART受信時、入っているどのチャンネルにも最早その人物が
+	居なくなった場合は、その人物についてのPersonalInfoを削除する。
 
 2003-07-19  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/ChannelInfo.pm (remark):
-	remarks()�Υ����ꥢ���Ȥ���remark()����Ѳ�ǽ�ˡ�
+	remarks()のエイリアスとしてremark()を使用可能に。
 
 	* main/Timer.pm (interval):
-	����Ū��undef���Ϥ����ǡ���ԡ��Ƚ�λ��ǽ�ˡ�
-	uninstall����а��ʤΤ��礷����̣��̵����
+	明示的にundefを渡す事で、リピート終了可能に。
+	uninstallすれば一緒なので大した意味は無い。
 	
 	* main/IrcIO/Server.pm (_TOPIC): 
-	TOPIC��å�������������������Ť��ȥԥå���'old-topic'�Ȥ��������դ��롣
+	TOPICメッセージを受信した時、古いトピックを'old-topic'として註釈を付ける。
 
 2003-07-17  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.el (tiarra-conf-jump-to-block): 
-	�֥��å�̾�����Ϥ������ΰ��֤إ����פ��륳�ޥ�ɡ�
-	�ǥե���ȤǤ� C-c C-. �ڤ� C-c . �˳����Ƥ��Ƥ��롣
+	ブロック名を入力し、その位置へジャンプするコマンド。
+	デフォルトでは C-c C-. 及び C-c . に割当てられている。
 
 2003-07-16  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra-conf.el (tiarra-conf-next-token):
-	�ɲá������ȥХåե��θ��ߤΥ���������֤μ��ˤ���ȡ�������֤���
-	��������Ϥ��Υȡ�����ν����ΰ��֤ذ�ư���롣
+	追加。カレントバッファの現在のカーソル位置の次にあるトークンを返す。
+	カーソルはそのトークンの終わりの位置へ移動する。
 
 	* tiarra-conf.el
 	(tiarra-conf-next-block),
 	(tiarra-conf-prev-block):
-	�ɲá����줾�츽�ߤΥ���������֤μ������ˤ���֥��å��إ�����������Ф���
-	�ץ�ץ����å����᤬������Ѥ�ư��򤹤�Х�ͭ�ꡣ
-	next�� M-n �ˡ�prev�� M-p �˳����Ƥ���
+	追加。それぞれ現在のカーソル位置の次や前にあるブロックへカーソルを飛ばす。
+	プリプロセッサ指令があると変な動作をするバグ有り。
+	nextは M-n に、prevは M-p に割当てた。
 
 2003-07-10  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* module/Channel/Freeze.pm:
-	�ɲá�����Υ����ͥ��NOTICE��PRIVMSG����Ѥ�
-	���Ū�����Ǥ��뤿��Υ⥸�塼�롣
-	ȯ���򸫤����ʤ���PART�Ϥ������ʤ����Ȥ��ä�����ͭ����
+	追加。特定のチャンネルのNOTICEやPRIVMSGの中継を
+	一時的に中断するためのモジュール。
+	発言を見たくないがPARTはしたくない、といった場合に有効。
 
 2003-07-03  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* main/Configuration/Block.pm (get):
-	$config->foo('random')�Τ褦�ʸƽФ����ǽ�ˡ�
-	ʣ�������������Х�����˰��������֤���
+	$config->foo('random')のような呼出しを可能に。
+	複数の定義があればランダムに一つ選んで返す。
 
 	* main/IrcIO/Server.pm (new, reload_config, connect):
-	���Ǥ��줿��˺���³����ȡ�������NICK�����Ѥ����褦�ˡ�
+	切断された後に再接続すると、以前のNICKが引継がれるように。
 
 	* module/Auto/Oper.pm:
-	ʣ���α������������Ƥ���С�������˰�������ȯ�����롣��ά���ǽ��
+	複数の応答が定義されていれば、ランダムに一つ選んで発言する。省略も可能。
 
 	* module/Auto/Utils.pm
 	(sendto_channel_closure, generate_reply_closures):
-	�������줿����������ˡ�ȯ�����ƤȤ���undef���Ϥ�����硢
-	���⤻���˽����򽪤��롣
+	作成されたクロージャに、発言内容としてundefを渡した場合、
+	何もせずに処理を終える。
 
 2003-06-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* tiarra:
-	ActivePerl�ǵ�ư���˽ФƤ����ٹ��Фʤ��褦���ѹ���
-	SIGHUP�Υϥ�ɥ�򥤥󥹥ȡ��뤹��ݤηٹ���ä���
+	ActivePerlで起動時に出ていた警告を出ないように変更。
+	SIGHUPのハンドラをインストールする際の警告だった。
 
 2003-06-19  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Multicast.pm (attach,detach) :
-	�����ͥ�/nick�ȥͥåȥ��̾�ζ��ڤ�ʸ���Ȥ��ơ���ʸ���ʾ��ʸ�������Ѳ�ǽ�ˡ�
-	�Ĥޤꡢ����϶��ڤ�ʸ���Ȥ��ơֶ����ޤޤʤ�1ʸ���ʾ��Ǥ�դ�ʸ����פ�Ȥ���������ޤ���
+	チャンネル/nickとネットワーク名の区切り文字として、二文字以上の文字列も使用可能に。
+	つまり、今後は区切り文字として「空白を含まない1文字以上の任意の文字列」を使う事が出来ます。
 
 2003-06-06  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* PersonInChannel.pm (remark) :
-	����Ū�������ܤΰ�����undef���Ϥ��ȡ�������᤬�������롣
+	明示的に二番目の引数にundefを渡すと、その註釈が削除される。
 
 	* RunLoop.pm (update_networks) :
-	Ʊ��ۥ��Ȥؤ�ʣ������³�ˤϡ����줾����ֺ����ߤ��롣
+	同一ホストへの複数の接続には、それぞれ時間差を設ける。
 
 	* RunLoop.pm (run) :
-	���˻�ư���郎�᤮�Ƥ��륿���ޡ���¸�ߤ���ȡ������ॢ����̵���¤�select��Ԥʤ��Х�������
+	既に始動時刻が過ぎているタイマーが存在すると、タイムアウト無期限のselectを行なうバグを修正。
 
 	* Configuration/Block.pm (eval_code) :
-	%CODE{...}EDOC%�֥��å��򡢥ѥå�����Configuration::Implanted��Ǽ¹Ԥ��롣
+	%CODE{...}EDOC%ブロックを、パッケージConfiguration::Implanted内で実行する。
 
 	* Configuration/Preprocessor.pm (_eval_pre) :
-	%PRE{...}ERP%�֥��å��򡢥ѥå�����Configuration::Implanted��Ǽ¹Ԥ��롣
+	%PRE{...}ERP%ブロックを、パッケージConfiguration::Implanted内で実行する。
 
 	* IrcIO/Server.pm (reload_config) :
-	general/nick�򡢤��줾��Υͥåȥ������֥��å���nick�ǥ����С��饤�ɲ�ǽ�ˡ�
+	general/nickを、それぞれのネットワーク設定ブロックのnickでオーバーライド可能に。
 
 2003-06-04  Topia  <topia@clovery.jp>
 
-	* RunLoop.pm (run) : can_read ����˽������롣�����Ǥ� send �����Ǥ��줿������ʤ������ᡣ
-	��̣������Τ��������������³���̵���Ϥ���
+	* RunLoop.pm (run) : can_read を先に処理する。少しでも send で切断された状況をなくすため。
+	意味があるのかは不明だが、実害は無いはず。
 
-	* IrcIO.pm (send) : ��³�����å����оݤ� $this->{sock}->connected ���ɲá�
-	���줬��³����Ƥʤ����֤ǽ񤭹��⤦�Ȥ���� perl ���Τ����顼������뤳�Ȥ�����餷����
+	* IrcIO.pm (send) : 接続チェックの対象に $this->{sock}->connected も追加。
+	これが接続されてない状態で書き込もうとすると perl 自体がエラー落ちすることがあるらしい。
 
 2003-06-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* tiarra (ipv6_enabled) : IPv6��ͭ�����ɤ����򿿵��ͤ��֤���
+	* tiarra (ipv6_enabled) : IPv6が有効かどうかを真偽値で返す。
 
-	* IrcIO.pm: �Ĥ���줿�����åȤ��Ф��ƽ񤭹��ߤ�Ԥʤ���ǽ���Τ��������(¿ʬ)��衣
+	* IrcIO.pm: 閉じられたソケットに対して書き込みを行なう可能性のある問題を(多分)解決。
 
 	* CTCP.pm, ControlPort.pm, Crypt.pm, ExternalSocket.pm,
-	  InstantCapsule.pm, LinedINETSocket.pm: �����ϰ��٤�Ȥ��ʤ���ǽ�������뤿�ᡢSelfLoader���Ѥ����ٱ�����ɡ�
+	  InstantCapsule.pm, LinedINETSocket.pm: これらは一度も使われない可能性があるため、SelfLoaderを用いて遅延ロード。
 
-	* ChannelInfo.pm, PersonalInfo.pm: DESTROY���˥��顼��������������衣
+	* ChannelInfo.pm, PersonalInfo.pm: DESTROY時にエラーが起こる問題を解決。
 
 2003-05-27  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* RunLoop.pm:
-	(notify_warn): �ɲá������饤����Ȥȥ��󥽡���˷ٹ�ʸ����Ϥ��롣
-	(run): �в���֥����ä�select��Ϣ³��100��ʾ帡�Ф���ȡ�10�ä��Ȥˡ�CPU���֤򿩤��٤��Ƥ����ǽ����ٹ𤹤롣
+	(notify_warn): 追加。全クライアントとコンソールに警告文を出力する。
+	(run): 経過時間ゼロ秒のselectを連続で100回以上検出すると、10秒ごとに、CPU時間を食い潰している可能性を警告する。
 
 	* ControlPort.pm:
-	�����åȤκ����˼��Ԥ������˽Ф����顼��ɽ������ʤ��ä��Τ�����
+	ソケットの作成に失敗した時に出たエラーが表示されなかったのを修正。
 
 	* ExternalSocket.pm:
-	WantToWrite���֤��������ͤˤ�餺����ˡֽ񤭹��ߤ�ɬ�ספȤ��ƽ������Ƥ���������衣
+	WantToWriteが返した真偽値によらず、常に「書き込みが必要」として処理していた問題を解決。
 
 2003-05-26  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Timer.pm (new):
-	At��After(����Interval)����ξ���Ȥ���ꤵ��Ƥ��ʤ����croak���롣
+	AtとAfter(又はInterval)が、両方とも指定されていなければcroakする。
 
 	* Configuration/Preprocessor.pm:
-	elseif��else�β�᤬�������ʤ��ä��Τ�����
-	%PRE��ɾ����̤�undef�ˤʤä����˷ٹ𤬽ФƤ����Τ�����
-	@ifʸ��@elsifʸ��ɾ����̤����顼�ˤʤä��������Υ��顼���Ƥ�ɽ�����Ƥ��ʤ��ä��Τǽ�����
+	elseifやelseの解釈が正しくなかったのを修正。
+	%PREの評価結果がundefになった時に警告が出ていたのを修正。
+	@if文や@elsif文の評価結果がエラーになった時、そのエラー内容を表示していなかったので修正。
 
 2003-05-24  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* IO/Socket/INET6.pm: �ɲá�
-	IO::Socket::INET��IPv6�˰ܿ���Socket6.pm��ɬ�ס�
+	* IO/Socket/INET6.pm: 追加。
+	IO::Socket::INETをIPv6に移植。Socket6.pmが必要。
 	
-	* RunLoop.pm, IrcIO/Server.pm: IPv6�б���
-	general/tiarra-ip-version��'v6'����ꤹ����ǡ�IPv6�ǤΥꥹ�˥󥰤�Ԥʤ���
-	�ޤ��������С��ˤϺǽ��IPv6�Ǥ���³���ߤƤ���IPv4�˥ե�����Хå����롣
-	�ܺ٤�sample.conf�ˡ�
+	* RunLoop.pm, IrcIO/Server.pm: IPv6対応。
+	general/tiarra-ip-versionに'v6'を指定する事で、IPv6でのリスニングを行なう。
+	また、サーバーには最初にIPv6での接続を試みてからIPv4にフォールバックする。
+	詳細はsample.confに。
 
 2003-05-23  Topia  <topia@clovery.jp>
 
-	* sample.conf: Auto::Random ��������� ��Ω �� ��Ψ �˽���������
+	* sample.conf: Auto::Random の説明中の 確立 を 確率 に修正した。
 
-	* Auto/Reply.pm: �ɲá�
+	* Auto/Reply.pm: 追加。
 
-	* Auto/Alias.pm (message_arrived/remove): #(count) ����Ѳ�ǽ�ˤ�����
-	  value ����ά���줿���ϥ������Ⱥ������褦�ˤ�����
+	* Auto/Alias.pm (message_arrived/remove): #(count) を使用可能にした。
+	  value が省略された場合はキーごと削除するようにした。
 
-	* Tools/HashDB.pm: �ɲá�
+	* Tools/HashDB.pm: 追加。
 
-	* Tools/HashTools.pm: Tools/GroupDB.pm, Tools/HashDB.pm �ζ�����ʬ����Ф����⥸�塼�롣
+	* Tools/HashTools.pm: Tools/GroupDB.pm, Tools/HashDB.pm の共通部分を取り出したモジュール。
 
-	* Tools/GroupDB.pm: ����̾�˥��������Ѳ�ǽ�ˤ�����������ǽ��Ⱦ�ѥ��ڡ������褿���ϵ��ݤ��롣
-	  �����Ȥ��������ܺ٤ˤ�����
-	  ̵�뤹��Ԥ���ꤹ�륯�������������˼���褦�ˤʤä�����ά���줿���� # �ǻϤޤ�Ԥ�̵�뤹�롣(����)
-	  del_value �Ϻ�����褿�ͤο����֤��褦�ˤʤä����ޤ��� value ��̤����ʤ饭�����Ⱥ�����롣
+	* Tools/GroupDB.pm: キー名にコロンを使用可能にした。使用不能な半角スペースが来た場合は拒否する。
+	  コメントを修正し、詳細にした。
+	  無視する行を指定するクロージャを引数に取れるようになった。省略された場合は # で始まる行を無視する。(従来)
+	  del_value は削除出来た値の数を返すようになった。また、 value が未指定ならキーごと削除する。
 
 2003-05-21  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* tiarra-conf.l: �ɲá�
-	  Noboruhi����ˤ��xyzzy��tiarra.conf�Խ��⡼�ɡ�
-	  ���󥹥ȡ�����ˡ��tiarra-conf.l��˵��Ҥ���Ƥ��ޤ���
+	* tiarra-conf.l: 追加。
+	  Noboruhiさんによるxyzzy用tiarra.conf編集モード。
+	  インストール方法はtiarra-conf.l内に記述されています。
 
 2003-05-17  Topia  <topia@clovery.jp>
 
-	* Auto/Utils.pm: sendto_channel_closure �ؿ��ɲá�
-	  NOTICE/PRIVMSG �ν��������ݤʤΤǡ������ưŪ�˽������롣
-	  sendto_channel_closure, generate_reply_closures �˻�����ˡ�Υ����Ȥ��ɲá�
+	* Auto/Utils.pm: sendto_channel_closure 関数追加。
+	  NOTICE/PRIVMSG の処理は面倒なので、これを自動的に処理する。
+	  sendto_channel_closure, generate_reply_closures に使用方法のコメントを追加。
 	
 2003-05-15  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* conf:
-	  general/control-socket-name���������ȡ������ץ�����फ��tiarra�򥳥�ȥ����뤹��٤�
-	  UNIX�ɥᥤ�󥽥��åȤ�������롣�ܤ�����sample.conf�ˡ�
+	  general/control-socket-nameを定義すると、外部プログラムからtiarraをコントロールする為の
+	  UNIXドメインソケットを作成する。詳しくはsample.confに。
 
-	* ControlPort.pm: �ɲá���������ȥ������ѡ�
+	* ControlPort.pm: 追加。外部コントロール用。
 
-	* IRCMessage.pm: die��å�������typo������
+	* IRCMessage.pm: dieメッセージのtypoを修正。
 
-	* IrcIO.pm,LinedINETSocket.pm: send�������syswrite��Ȥ���
+	* IrcIO.pm,LinedINETSocket.pm: sendの代わりにsyswriteを使う。
 
-	* Module.pm: �᥽�å�control_requested�ɲ�
+	* Module.pm: メソッドcontrol_requested追加
 
-	* ModuleManager.pm: �᥽�å�get�ɲ�
+	* ModuleManager.pm: メソッドget追加
 
-	* RunLoop.pm: ControlPort��ư����٤Υ����ɤ��ɲá�
+	* RunLoop.pm: ControlPortを起動する為のコードを追加。
 
-	* Log/Channel.pm: "ID: synchronize"�ǳ�������Υ�����Ʊ�����ǽ�ˡ�
+	* Log/Channel.pm: "ID: synchronize"で外部からのログの同期を可能に。
 
 2003-04-29  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* IrcIO/Server.pm: ����������������С����������Ƥ����˥塼���å���ץ饤�ʳ��Υ�å�������̵�뤹�롣
-	  ������������NOTICE������褦�ʥ����С��˷Ҥ����ʤ�������衣
+	* IrcIO/Server.pm: ログイン時、サーバーから送られてきたニューメリックリプライ以外のメッセージを無視する。
+	  ログイン前にNOTICEを送るようなサーバーに繋げられない問題を解決。
 
-	* RunLoop.pm: IrcIO->pop_queue��die�������Υ�å�������ɽ�������˼ΤƤƤ����Τ�����
+	* RunLoop.pm: IrcIO->pop_queueがdieした時のメッセージを表示せずに捨てていたのを修正。
 
-	* Channel/Join/Kicked.pm: �ɲá������ͥ뤫�齳��줿���ˡ���ưJOIN����⥸�塼�롣
+	* Channel/Join/Kicked.pm: 追加。チャンネルから蹴られた時に、自動JOINするモジュール。
 
-	* IrcIO/Server.pm: ��ʬ�������ͥ뤫�齳��줿��硢���Υ����ͥ�����ä�����
-	  ChannelInfo��'kicked-out' => 1�Ȥ���remark���դ��롣
+	* IrcIO/Server.pm: 自分がチャンネルから蹴られた場合、そのチャンネル情報を消さずに
+	  ChannelInfoに'kicked-out' => 1というremarkを付ける。
 
-	* RunLoop.pm: �����С��ؤκ���³����+k���줿�����ͥ�ؤκ�JOIN�˼��Ԥ��Ƥ����Τ�����
+	* RunLoop.pm: サーバーへの再接続時、+kされたチャンネルへの再JOINに失敗していたのを修正。
 
 2003-04-25  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* main/Configuration.pm: general/client-allowed����ά���줿��硢
-	  �ְ�ä��ͤ�ǥե�����ͤȤ������ꤷ�Ƥ����Τǽ�����
+	* main/Configuration.pm: general/client-allowedが省略された場合、
+	  間違った値をデフォルト値として設定していたので修正。
 
-	* main/Configuration.pm: channel-network-separator��̤������ä�����
-	  �������ǥե�����ͤ����ꤷ�ʤ��ߥ������ä��Τǽ�����
+	* main/Configuration.pm: channel-network-separatorが未定義だった場合に
+	  正しくデフォルト値を設定しないミスがあったので修正。
 
-	* Configuration.pm: networks��name����󤵤줿�ͥåȥ��̾���б�����
-	  �֥��å��������̵���ä���硢Ŭ�ڤʥ��顼��å�������Ф����˽�����ߤ�Ƥ����Τǽ�����
+	* Configuration.pm: networksのnameで列挙されたネットワーク名に対応する
+	  ブロックの定義が無かった場合、適切なエラーメッセージを出さずに処理を止めていたので修正。
 
 2003-04-18  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* tiarra: SIGHUP�������������ư����ѹ���
-	  ����ޤǤϥ���åȥ����󤷤Ƥ��������ʸ������������ɤ��롣
+	* tiarra: SIGHUPを受信した時の動作を変更。
+	  これまではシャットダウンしていたが、以後は設定をリロードする。
 	
-	* ChannelInfo.pm (fullname): �ɲ�
+	* ChannelInfo.pm (fullname): 追加
 
-	* RunLoop.pm: �ƥͥåȥ����������ѹ������������ɤ���ȡ�
-	  ���Υͥåȥ���Ȥ���³���ö�ڤäƤ���Ҥ�ľ����
+	* RunLoop.pm: 各ネットワークの設定を変更した後リロードすると、
+	  そのネットワークとの接続を一旦切ってから繋ぎ直す。
 
-	* IrcIO/Server.pm (config): �ɲá�
-	  ���󥹥ȥ饯���ΰ�����ͥåȥ��̾�Τߤ��ѹ���
+	* IrcIO/Server.pm (config): 追加。
+	  コンストラクタの引数をネットワーク名のみに変更。
 
-	* IrcIO.pm (server_p,client_p): �ɲá�
-	  ���줾��IrcIO::Server�Ǥ����1���֤��᥽�åɤ�
-	  IrcIO::Client�Ǥ����1���֤��᥽�åɡ�
+	* IrcIO.pm (server_p,client_p): 追加。
+	  それぞれIrcIO::Serverであれば1を返すメソッドと
+	  IrcIO::Clientであれば1を返すメソッド。
 	
 2003-04-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* User/Vanish.pm: �ɲ�
-	  ����Υ����ͥ�Ǥ�����ο�ʪ��¸�ߤ򥯥饤����Ȥ˱����⥸�塼�롣
-	  JOIN��PART��QUIT����õ�롣
+	* User/Vanish.pm: 追加
+	  特定のチャンネルでの特定の人物の存在をクライアントに隠すモジュール。
+	  JOINやPART、QUIT等を消去する。
 
-	* IrcIO/Server.pm (channels_list): �ɲ�
+	* IrcIO/Server.pm (channels_list): 追加
 
-	* RunLoop.pm (networks_list,channel): �ɲ�
+	* RunLoop.pm (networks_list,channel): 追加
 
-	* ChannelInfo.pm (AUTOLOAD): �ϥå���ޥåפ����ޥ�ɤȤ���'keys'��'values'���ɲá�
+	* ChannelInfo.pm (AUTOLOAD): ハッシュマップの操作コマンドとして'keys'と'values'を追加。
 
 2003-04-10  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* RunLoop.pm: ���Ǥ˵��դ��ʤ���礬����Τǡ�3ʬ��˳ƥ����С���PING��ȯ�Ԥ��롣
-	  PING��ưȯ�Ը�˥����С������褿�ǽ��PONG���˴�����롣
+	* RunLoop.pm: 切断に気付かない場合があるので、3分毎に各サーバーにPINGを発行する。
+	  PING自動発行後にサーバーから来た最初のPONGは破棄される。
 
-	* IrcIO/Server.pm: �᥽�å�remark�ɲá��Ȥ�����¾�Υ��饹��remark��Ʊ����
+	* IrcIO/Server.pm: メソッドremark追加。使い方は他のクラスのremarkと同じ。
 
-	* LinedINETSocket.pm: �᥽�å�connect��ư���connect��attach����Ĥ�ʬ������
-	  ����ˤ��ͽ�ᳫ���줿IO::Socket::INET���Ф���LinedINETSocket�ε�ǽ��Ŭ�Ѳ�ǽ��
+	* LinedINETSocket.pm: メソッドconnectの動作をconnectとattachの二つに分けた。
+	  これにより予め開かれたIO::Socket::INETに対してLinedINETSocketの機能を適用可能。
 	
 2003-04-05  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* Auto/Joined.pm: �ɲá�
-	  ����Υ����ͥ��ï����JOIN�����٤������ȯ����Ԥʤ��⥸�塼�롣
-	  �����ͥ��ž���ΰʳ��˻Ȥ��ΤϤ�᤿�����ɤ���
+	* Auto/Joined.pm: 追加。
+	  特定のチャンネルに誰かがJOINする度に特定の発言を行なうモジュール。
+	  チャンネル移転通知以外に使うのはやめた方が良い。
 
 2003-03-28  Topia  <topia@clovery.jp>
 
@@ -1630,20 +1630,20 @@
 
 2003-03-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* IrcIO/Server.pm: general/bind-addr�ǥ����С��ؤ���³���Υ������륢�ɥ쥹������ǽ�ˡ�
-	  �ޤ����ƥͥåȥ�������bind-addr�ϥ����С��饤�ɤǤ��롣
+	* IrcIO/Server.pm: general/bind-addrでサーバーへの接続時のローカルアドレスを指定可能に。
+	  また、各ネットワーク設定でbind-addrはオーバーライドできる。
 
 2003-03-23  Topia  <topia@clovery.jp>
 
-	* tiarra: ��������Ƚ����ʬ���Τ�Ÿ������Ƥ����ĤΤǽ�����
+	* tiarra: ソースの判別部分自体が展開されていた…ので修正。
 
-	* ChangeLog: Id/Author/Date/Revision��RCS�������������ɲä�����
+	* ChangeLog: Id/Author/Date/RevisionのRCSタグを末尾に追加した。
 
-	* tiarra: ChangeLog����Date��Revision���ɤ�ǥС�����������ղä���褦�ˤ�����
+	* tiarra: ChangeLogからDateとRevisionを読んでバージョン情報に付加するようにした。
 
 2003-03-23  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* User/Filter.pm: �ɲá�����Υ桼������ȯ���˥ե��륿�򤫤���⥸�塼�롣
+	* User/Filter.pm: 追加。特定のユーザーの発言にフィルタをかけるモジュール。
 
 2003-03-23  Topia  <topia@clovery.jp>
 
@@ -1713,285 +1713,285 @@
 2003-03-15  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* BulletinBoard.pm:
-	  ��AUTOLOAD��ͳ���ͤ������ǽ�ˡ�
-	  ���᥽�å�keys()���ɲá�
+	  ・AUTOLOAD経由で値を設定可能に。
+	  ・メソッドkeys()を追加。
 
-	* CTCP.pm: �ɲá�CTCP���󥳡���/�ǥ����ɤ�Ԥʤ��⥸�塼�롣
+	* CTCP.pm: 追加。CTCPエンコード/デコードを行なうモジュール。
 
-	* IrcIO.pm: �᥽�å�remark()�ɲá�
+	* IrcIO.pm: メソッドremark()追加。
 
 	* CTCP/ClientInfo.pm,
 	  CTCP/Ping.pm,
 	  CTCP/Time.pm,
 	  CTCP/UserInfo.pm,
-	  CTCP/Version.pm     : �ɲá�
+	  CTCP/Version.pm     : 追加。
 
 2003-03-10  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* IrcIO/Server.pm: �ͥåȥ����������in-encoding,out-encoding�����������ˤ��
-	  ʸ�����󥳡��ǥ��󥰤�����򥪡��С��饤�ɲ�ǽ�ˡ�
+	* IrcIO/Server.pm: ネットワーク毎の設定でin-encoding,out-encodingを定義する事により
+	  文字エンコーディングの設定をオーバーライド可能に。
 
 2003-03-09  Topia  <topia@clovery.jp>
 
-	* Auto/Response.pm: plum �ǤΥ���̾�� response ���ä��Τ򴪰㤤���� reply �ˤ��Ƥ�����
-	  (����󤵤�Х���ݡ��Ȥ��꤬�Ȥ��������ޤ�)
+	* Auto/Response.pm: plum でのキー名が response だったのを勘違いして reply にしていた。
+	  (りんりんさんバグレポートありがとうございます)
 
 2003-03-09  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* Configuration/Block.pm: %CODE{ }EDOC%�β��ǥ���꡼���򵯤����Զ������
+	* Configuration/Block.pm: %CODE{ }EDOC%の解釈でメモリリークを起こす不具合を回避。
 
 2003-03-09  Topia  <topia@clovery.jp>
 
-	* Auto/AliasDB/CallbackUtils.pm: register_RandomNickConvert�ǥ�å�������IrcIO::Client
-	  ȯ�����ä�������Ͽ���ʤ��褦�ˤ����� (����󤵤�Х���ݡ��Ȥ��꤬�Ȥ��������ޤ�)
+	* Auto/AliasDB/CallbackUtils.pm: register_RandomNickConvertでメッセージがIrcIO::Client
+	  発信だった場合に登録しないようにした。 (りんりんさんバグレポートありがとうございます)
 
 2003-03-08  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* IrcIO/Server.pm: ���ץ����networks/always-notify-new-nick�����ꤵ��Ƥ�����
-	  nick���ѹ������٤ˡ��ѹ����������С��ο������������Х�nick��NOTICE�����Τ��롣
+	* IrcIO/Server.pm: オプションnetworks/always-notify-new-nickが設定されていたら
+	  nickを変更する度に、変更したサーバーの新しいグローバルnickをNOTICEで通知する。
 
-	* IrcIO/Client.pm: �������������̾�Ȥ����Ϥ��줿$key=value;key=value...$�Υ��ץ�����
-	  �ѡ���������ʬ���ľ����$  key =value  ;key  =   value$�Τ褦������Ǥ�
-	  ���Ԥ��줿�̤�˲�᤹�롣
-	  �ޤ����᥽�å�option�ɲá����Τ褦�ˤ����Ϥ��줿���ץ�����������롣
+	* IrcIO/Client.pm: ログイン時に本名として渡された$key=value;key=value...$のオプションを
+	  パースする部分を書き直し。$  key =value  ;key  =   value$のような設定でも
+	  期待された通りに解釈する。
+	  また、メソッドoption追加。このようにして渡されたオプションを取得する。
 
 	* tiarra, Configuration.pm, Configuration/Preprocessor.pm:
-	  ��ư���˥��ץ����--config���ά���줿����ư����ѹ���
-	  �����ߥʥ�夫�鵯ư�������Ͻ���Τ褦�˥ǥե���ȤΥե�����̾�Ǥ���tiarra.conf���ɤब��
-	  ɸ�����Ϥ������ߥʥ����³����Ƥ��ʤ��ä���硢�Ĥޤ�ѥ��׷�ͳ�ǥ�����쥯�Ȥ���Ƥ������
-	  tiarra.conf�Ǥʤ�ɸ�����Ϥ���������ɤࡣ���ξ�������Υ�����ɤ��Բ�ǽ�Ȥʤ롣
-	  ��: cat tiarra.conf | sed -e 's/Tiarra/arraiT/g' | ./tiarra --quiet
+	  起動時にオプション--configを省略された場合の動作を変更。
+	  ターミナル上から起動した場合は従来のようにデフォルトのファイル名であるtiarra.confを読むが、
+	  標準入力がターミナルに接続されていなかった場合、つまりパイプ経由でリダイレクトされている場合は
+	  tiarra.confでなく標準入力から設定を読む。この場合は設定のリロードは不可能となる。
+	  例: cat tiarra.conf | sed -e 's/Tiarra/arraiT/g' | ./tiarra --quiet
 
 	* Configuration/Block.pm:
-	  %CODE{ ... }EDOC%�Ƕ��ޤ줿��ʬ���ͤμ����������ɾ�����롣
+	  %CODE{ ... }EDOC%で挟まれた部分を、値の取得時に毎回評価する。
 
 2003-03-04  Topia  <topia@clovery.jp>
 
-	* Tools/MailSend/EachServer.pm: RunLoop::Hook����Ѥ���褦���ѹ���
-	  �롼�פ�ʤ�٤��󤹤褦���ѹ���flush��close����DATA���˹Ԥ����Ȥˤ�����
-	  �ե����륻���դΰ٤�5sec�ֳ֤�Timer��Ȥ����Ȥˤ��롣
+	* Tools/MailSend/EachServer.pm: RunLoop::Hookを使用するように変更。
+	  ループをなるべく回すように変更。flushはclose時とDATA時に行うことにした。
+	  フェイルセーフの為に5sec間隔のTimerも使うことにする。
 
-	* Tools/GroupDB.pm: fpath�ǻ��ꤵ�줿�ե����뤬¸�ߤ��ʤ��Ȥ��˥��顼�Ȥʤ�Τ�����
+	* Tools/GroupDB.pm: fpathで指定されたファイルが存在しないときにエラーとなるのを修正。
 
-	* Auto/Alias.pm: ����λ��Ȥ��Ϥ��٤��Ȥ�����������Ϥ��Ƥ��ޤäƤ�����������
+	* Auto/Alias.pm: 配列の参照を渡すべきところを配列を渡してしまっていた。修正。
 
-	* LinedINETSocket.pm: ExternalSocket��uninstall����ɬ�פ����Τ�ʤ��Τ�
-	  DESTROY�����褵���롣
+	* LinedINETSocket.pm: ExternalSocketのuninstall等も必要かも知れないので
+	  DESTROYを復活させる。
 
 2003-03-04  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* ExternalSocket.pm: read/write/want_to_write�ǡ�caller������å�������֤��ѹ���
+	* ExternalSocket.pm: read/write/want_to_writeで、callerをチェックする位置を変更。
 
-	* Configuration/Block.pm: ʸ�������ɤκƲ��˼��Ԥ����Զ����衣
+	* Configuration/Block.pm: 文字コードの再解釈に失敗する不具合を解決。
 
-	* RunLoop.pm: ���饹RunLoop::Hook�ɲá�
-	  RunLoop�Υ롼�פ����¹Ԥ�����٤˸ƤФ��եå���
-	  �ƤФ�륿���ߥ󥰤Ȥ��Ƥ�select�¹�ľ���ޤ���ľ�塣�ɤ��餫�������ǽ��
-	  �ܤ�����RunLoop::Hook����Ƭ�Υ����Ȥ򻲾Ȥλ���
+	* RunLoop.pm: クラスRunLoop::Hook追加。
+	  RunLoopのループが一回実行される度に呼ばれるフック。
+	  呼ばれるタイミングとしてはselect実行直前または直後。どちらかを選択可能。
+	  詳しくはRunLoop::Hookの先頭のコメントを参照の事。
 
 2003-03-04  Topia  <topia@clovery.jp>
 
-	* Auto/MesMail.pm: Tools/MailSend.pm��Ȥ��褦�˽�����
+	* Auto/MesMail.pm: Tools/MailSend.pmを使うように修正。
 
-	* Tools/MailSend/EachServer.pm: �����ɲá�SMTP��������˶���Ū�ʥ᡼��������Ԥ���
-	  POP before SMTP�ξ���expire�ޤ��Ԥäơ������Ǥʤ����Ϥ����˥��֥������Ȥ��˴����롣
+	* Tools/MailSend/EachServer.pm: 新規追加。SMTPサーバ毎に具体的なメール送信を行う。
+	  POP before SMTPの場合はexpireまで待って、そうでない場合はすぐにオブジェクトを破棄する。
 
-	* Tools/MailSend.pm: �����ɲá��᡼��������Ԥ���
-	  ʣ���Υ����Ф�Ʊ�����̿����뤿���Tools/MailSend/EachServer.pm��������Ƥ��롣
+	* Tools/MailSend.pm: 新規追加。メール送信を行う。
+	  複数のサーバと同時に通信するためにTools/MailSend/EachServer.pmを管理している。
 
-	* Auto/Response.pm: rate��Ȥ���褦�ˤ�����
+	* Auto/Response.pm: rateを使えるようにした。
 
 2003-03-03  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* Configuration/Block.pm: �֥��å���֥��å��򰷤���褦�ˡ�
+	* Configuration/Block.pm: ブロック内ブロックを扱えるように。
 	
-	* Configuration/LexicalAnalyzer.pm: �����ɲá�conf�λ�����ϴ
+	* Configuration/LexicalAnalyzer.pm: 新規追加。confの字句解析器。
 
-	* Configuration/Parser.pm: �����ɲá�conf�ι�ʸ���ϴ
+	* Configuration/Parser.pm: 新規追加。confの構文解析器。
 
-	* Configuration.pm: �ѡ������ľ�����嵭��ĤΥ��饹���ڤӥץ�ץ����å�����ѡ�
+	* Configuration.pm: パーサを書き直し。上記二つのクラス、及びプリプロセッサを使用。
 
 2003-03-02  Topia  <topia@clovery.jp>
 
-	* Auto/Response.pm: �����ɲá�plum��auto/response.plm��ư��򤹤롣
+	* Auto/Response.pm: 新規追加。plumのauto/response.plmの動作をする。
 
-	* Auto/AliasDB/CallbackUtils.pm: ¸�ߤ��ƤϤ����ʤ�uninstall�����ä��ΤǺ����
+	* Auto/AliasDB/CallbackUtils.pm: 存在してはいけないuninstallがあったので削除。
 
-	* Auto/Utils.pm: ������Хå����ɲäǤ���������ɲá�
+	* Auto/Utils.pm: コールバックを追加できる引数の追加。
 
-	* Tools/GroupDB.pm: regexp�����ѤǤ���褦�ˤ���������ɲá�
-	  find_groups/find_groups_with_primary���ɲá�
+	* Tools/GroupDB.pm: regexpを利用できるようにする引数の追加。
+	  find_groups/find_groups_with_primaryの追加。
 
-	* Channel/Mode/Oper/Grant.pm: Auto/Oper.pm��mask���������줷����
+	* Channel/Mode/Oper/Grant.pm: Auto/Oper.pmとmask処理を統一した。
 
-	* sample.conf: mask���������Ѥ�äƤ��ޤ��Τǽ񤭴�������
+	* sample.conf: maskの説明が変わってしまうので書き換えた。
 
-	* sample.conf: '-*- tiarra-conf -*-' �����ܤ��ɲä�����Auto/MesMail�Υ���ȥ��ɲá�
+	* sample.conf: '-*- tiarra-conf -*-' を一行目に追加した。Auto/MesMailのエントリ追加。
 
-	* Auto/MesMail.pm: �����ɲá�������᡼��Ȥ����������롣�᡼��������ʬ��ʬ������Tools����
-	  �Ԥ���ǽ���⤢�롣
+	* Auto/MesMail.pm: 新規追加。伝言をメールとして送信する。メール送信部分は分けられてTools下に
+	  行く可能性もある。
 
-	* Auto/Utils.pm: AliasDB���ѹ���Ʊ����'(nick|user|host).now'��AliasDB�����˰�ư���Ƥ��롣
+	* Auto/Utils.pm: AliasDBの変更に同期。'(nick|user|host).now'はAliasDB内部に移動している。
 
-	* Auto/Oper.pm: AliasDB���ѹ���Ʊ����Mask::match_deep_chan����Ѥ���褦�ˡ�
+	* Auto/Oper.pm: AliasDBの変更に同期。Mask::match_deep_chanを使用するように。
 
-	* Auto/Alias.pm: AliasDB�ϥ����ȥե�å���ʤΤǥǥ��ȥ饯����ä�����
+	* Auto/Alias.pm: AliasDBはオートフラッシュなのでデストラクタを消した。
 
-	* Auto/AliasDB/CallbackUtils.pm: RandomAliasConvert, JoinedListConvert���ɲá�
-	  MessageReplace��message_replace_last���ɲá�
+	* Auto/AliasDB/CallbackUtils.pm: RandomAliasConvert, JoinedListConvertを追加。
+	  MessageReplaceにmessage_replace_lastを追加。
 
-	* Auto/AliasDB.pm: GroupDB����Ѥ���褦���ѹ����ؿ�̾������ѹ�������
-	  conf��private��readonly�ʥ����λ��꤬����롣readonly�Ϥޤ��б��⥸�塼�뤬¸�ߤ��ʤ���
+	* Auto/AliasDB.pm: GroupDBを使用するように変更。関数名を一部変更した。
+	  confでprivateとreadonlyなキーの指定が出来る。readonlyはまだ対応モジュールが存在しない。
 
-	* Tools/GroupDB.pm: �����ɲá�AliasDB������Ω��������
+	* Tools/GroupDB.pm: 新規追加。AliasDBから独立させた。
 
 2003-03-02  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* Configuration/Preprocessor.pm: �����ɲá�
-	  conf�ե�����Υץ�ץ����å��Ȥ��ƻ��Ѥ��롣
+	* Configuration/Preprocessor.pm: 新規追加。
+	  confファイルのプリプロセッサとして使用する。
 
 2003-03-01  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* ConfigBlock.pm: �����Configuration::Block�˰�ư��
+	* ConfigBlock.pm: 削除。Configuration::Blockに移動。
 
-	* InstantCapsule.pm: �����ɲá�
-	  �ե�����ɤȥ᥽�åɤ���ĥ��֥������Ȥ���Ū���������륯�饹��
-	  ����ץ륳���ɤ�InstantCapsule.pm��ˤ���ޤ���
+	* InstantCapsule.pm: 新規追加。
+	  フィールドとメソッドを持つオブジェクトを一時的に生成するクラス。
+	  サンプルコードはInstantCapsule.pm内にあります。
 
 2003-02-27  Topia  <topia@clovery.jp>
 
-	* Mask.pm: �����ͥ�ȥ桼���Υޥ�����conf�����ؤ���ǽ�ˤ�����
-	  sample.conf�ˤ��������ɲä��Ƥ��롣
+	* Mask.pm: チャンネルとユーザのマスクをconfで切替え可能にした。
+	  sample.confにも説明を追加している。
 
-	* Mask.pm: mask_chan��[+-]����Ѳ�ǽ�ˤ�����+channel��++channel�ޤ���
-	  -+channel��ɽ������ɬ�פ����롣
-	  _split_with_chan��split������_split�˰���������
+	* Mask.pm: mask_chanで[+-]を使用可能にした。+channelは++channelまたは
+	  -+channelと表記する必要がある。
+	  _split_with_chanのsplit処理を_splitに委託した。
 
-	* Mask.pm: channel��ޤ᤿mask���������ؿ����ɲä�����
-	  mask_chan, mask_deep_chan��str�μ���chan���ɲä���Ƥ�������ǻ��ͤ�Ʊ����
-	  mask_array_chan��str_masks, chan_masks, str, chan�ȸ��������ˤʤäƤ��롣
-	  ����commit�����ͽ���Auto::Oper�դ꤬����ץ륳���ɤˤʤ�Ϥ���
+	* Mask.pm: channelを含めたmaskを処理する関数を追加した。
+	  mask_chan, mask_deep_chanはstrの次にchanが追加されているだけで仕様は同じ。
+	  mask_array_chanはstr_masks, chan_masks, str, chanと言う引数になっている。
+	  次にcommitされる予定のAuto::Oper辺りがサンプルコードになるはず。
 
 2003-02-26  Topia  <topia@clovery.jp>
 
-	* Multicast.pm: channel_p���ɲä�����
-	  nick_p��ʸ���������å�(length != 0)��detach�ν������ɲä�����
+	* Multicast.pm: channel_pを追加した。
+	  nick_pに文字数チェック(length != 0)とdetachの処理を追加した。
 
-	* LinedINETSocket.pm: �ǥ��ȥ饯����¹Ԥ���������socket����������Ƥ���褦����
-	  �ǥ��ȥ饯���򥳥��ȥ����Ȥ�����
+	* LinedINETSocket.pm: デストラクタを実行するより前にsocketが開放されているようだ。
+	  デストラクタをコメントアウトした。
 
-	* LinedINETSocket.pm: �����ɲá���ñ�̤Υ��塼����Ѥ��������Ϥ�Ԥ���
+	* LinedINETSocket.pm: 新規追加。行単位のキューを使用した入出力を行う。
 
 2003-02-26  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* ExternalSocket.pm: �����ɲá�
+	* ExternalSocket.pm: 新規追加。
 
-	* RunLoop.pm: RunLoop��Ǥ�դΥ����åȤ�ƻ�����褦�ˡ�
-	  �����åȤδƻ�ˤ�ExternalSocket���Ѥ��롣�Ȥ�����ExternalSocket.pm�ˤ��롣
+	* RunLoop.pm: RunLoopが任意のソケットを監視出来るように。
+	  ソケットの監視にはExternalSocketを用いる。使い方はExternalSocket.pmにある。
 
-	* Timer.pm: uninstall��������runloop��undef���������롣
+	* Timer.pm: uninstallした時はrunloopにundefを代入する。
 	
 2003-02-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* Module.pm (notification_of_message_io) : �����ɲá�
-	  �����С��䥯�饤����Ȥȼºݤ�������������å����������Τ����᥽�åɡ��ǥХå��ѡ�
+	* Module.pm (notification_of_message_io) : 新規追加。
+	  サーバーやクライアントと実際に送受信したメッセージが通知されるメソッド。デバッグ用。
 
-	* IrcIO/(Client/Server).pm : notification_of_message_io��Ƥ֤���ν�����
+	* IrcIO/(Client/Server).pm : notification_of_message_ioを呼ぶための修正。
 
-	* IrcIO/Client.pm : ʣ���Υ��饤����Ȥ���³���Ƥ���ݡ�
-	  NICK���ѹ���¾�Υ��饤����Ȥ�����äƤ��ʤ��ä��Τǽ�����
+	* IrcIO/Client.pm : 複数のクライアントを接続している際、
+	  NICKの変更が他のクライアントへ伝わっていなかったので修正。
 
 2003-02-19  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* tiarra-conf.el: �����ɲá�conf�ե������Emacs�ѥ⡼�ɡ�����ʡ�
-	  ���Υե����뤬�֤���Ƥ������load-path���ɲä������Τ褦��autoload��¹Ԥ�����ɤ���
+	* tiarra-conf.el: 新規追加。confファイルのEmacs用モード。試作品。
+	  このファイルが置かれている場所をload-pathに追加し、次のようなautoloadを実行すれば良い。
 	  (autoload 'tiarra-conf-mode "tiarra-conf" "tiarra.conf editing mode" t)
 
 2003-02-17  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Configuration.pm:
-		��@include��¾�Υե�����򥤥󥯥롼�ɲ�ǽ�ˡ�
-		  â����ĤΥե������ʣ����@include������Ͻ���ʤ���
-		���֥��å���{}�ΰ��֤򤢤����ټ�ͳ�ˡ�
-		���֥��å�����Ȥ������ɤ����{}���ά��ǽ�ˡ�
-		sample.conf�˾ܤ�������������ޤ���
+		・@includeで他のファイルをインクルード可能に。
+		  但し一つのファイルを複数回@includeする事は出来ない。
+		・ブロックの{}の位置をある程度自由に。
+		・ブロックの中身が空で良ければ{}を省略可能に。
+		sample.confに詳しい説明があります。
 
-	* IrcIO/Client.pm: $key=value;key=value;...$��������̾�ǥ������󤹤�ȡ�
-	  ����Υ��饤����Ȥδ֤ˤ����ƤΤ�conf�����ꤵ�줿���ܤ򥪡��С��饤�ɤ��롣
-	  ����ͭ���ʥ�����encoding�ǡ�����ϥ��饤����ȤȤ��̿����Ѥ���ʸ�������ɤǤ��롣
-	  ��:
-	  $encoding=euc$     ������̾�ǥ������󤷤���硢EUC-JP���̿���Ԥʤ���
+	* IrcIO/Client.pm: $key=value;key=value;...$形式の本名でログインすると、
+	  特定のクライアントの間においてのみconfで設定された項目をオーバーライドする。
+	  現在有効なキーはencodingで、これはクライアントとの通信に用いる文字コードである。
+	  例:
+	  $encoding=euc$     この本名でログインした場合、EUC-JPで通信を行なう。
 
 2003-02-17  Topia  <topia@clovery.jp>
 
-	* System/RemoteControl.pm: ʣ���Ԥ�mask��Ȥ���褦�ˤ�����
+	* System/RemoteControl.pm: 複数行のmaskを使えるようにした。
 
-	* Mask.pm: ����������㤬�ְ�äƤ����Τǽ�����
+	* Mask.pm: コメント中の例が間違っていたので修正。
 
-	* Mask.pm: ����ɽ���ޥå���+-��ǽ�Υ���/���դ��ǽ�ˤ�����
-	 comma-separeted mask array���Ϥ���ؿ����ɲä�����
-	 ñ���mask array���Ϥ���ؿ����ɲä�����
-	 wild card������ɽ���ˤ���make_regex���̴ؿ��Ȥ�����Ω��������
+	* Mask.pm: 正規表現マッチと+-機能のオン/オフを可能にした。
+	 comma-separeted mask arrayを渡せる関数を追加した。
+	 単純にmask arrayを渡せる関数を追加した。
+	 wild cardを正規表現にするmake_regexを別関数として独立させた。
 
-	* Auto/Utils.pm: $get_ch_name��param(0)��̵�����undef���֤��褦�ˤ�����
+	* Auto/Utils.pm: $get_ch_nameでparam(0)が無い場合undefを返すようにした。
 
 2003-02-15  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* RunLoop.pm: Time::HiRes�����󥹥ȡ��뤵��Ƥ���Ķ��Ǥ�
-	  Timer�����٤��ߥ��ä˾夬�롣���äƤ��ʤ�����äΤޤޡ�
+	* RunLoop.pm: Time::HiResがインストールされている環境では
+	  Timerの精度がミリ秒に上がる。入っていなければ秒のまま。
 
-	* PersonInChannel.pm: �᥽�å�remark,delete-remark�ɲá�
-	  �����դ����������롣
+	* PersonInChannel.pm: メソッドremark,delete-remark追加。
+	  註釈を付ける事が出来る。
 
-	* Multicast.pm: attach/detach�ǥ��顼�����å���Ԥʤ���
+	* Multicast.pm: attach/detachでエラーチェックを行なう。
 
 2003-02-13  Topia  <topia@clovery.jp>
 
-	* Auto/AliasDB/CallbackUtils.pm: MessageReplace callback ���ɲä��ޤ�����
-	 #(message_replace:[split_regexp]:[place]) �Ǥ���place��zero origin�ȤʤäƤ��ޤ���
+	* Auto/AliasDB/CallbackUtils.pm: MessageReplace callback を追加しました。
+	 #(message_replace:[split_regexp]:[place]) です。placeはzero originとなっています。
 	 ex. test alias -> #(message_replace: :1) -> alias
-	 �ޤ��������ѹ���register_stdcallbacks�ΰ�����$ch_name -> $msg�Ȥʤꡢ
-	 �����ѹ���Auto/AliasDB.pm, Auto/Utils.pm��ȿ�Ǥ����Ƥ��ޤ���
+	 また、この変更でregister_stdcallbacksの引数が$ch_name -> $msgとなり、
+	 その変更をAuto/AliasDB.pm, Auto/Utils.pmに反映させています。
 
-	* Auto/Answer.pm: ������$reply_anywhere��Ȥ��褦�ˤ�����
+	* Auto/Answer.pm: 返答に$reply_anywhereを使うようにした。
 
-	* Auto/Random.pm: �����ȥ�����ɤ��ɲ�/������������ɲä��Ƥ��ޤ���
+	* Auto/Random.pm: オートリロードと追加/削除の返答を追加しています。
 
-	* Auto/Alias.pm: Auto/AliasDB.pm���ɲäȺ����ܤ��Ƥ��ޤ���
-	 �ɲ�/������褿���������Ǥ���褦�ˤ��ޤ�����
+	* Auto/Alias.pm: Auto/AliasDB.pmに追加と削除を移しています。
+	 追加/削除出来た場合に返答できるようにしました。
 
-	* Auto/Utils.pm: �֤��ͤˡ�$reply_anywhere
-	 (���ˤ�äƥ����ͥ���֤�����priv���֤����ꤹ��)���ɲä��ޤ�����
-	 $reply_as_priv��extra_replaces���դ�����褦�ˤ��ޤ�����
-	  reply_with_stdcallbacks����Ѥ���褦�ˤ��ޤ�����
-	  reply_with_stdcallbacks��random��date��randomnick��randomselect�ʤɤ�callback��
-	  ��Ͽ���ޤ���
-	  user.now, host.now �ʤɤΥ����ꥢ�����ɲä���褦�ˤ��ޤ�����
+	* Auto/Utils.pm: 返り値に、$reply_anywhere
+	 (場合によってチャンネルに返したりprivで返したりする)を追加しました。
+	 $reply_as_privがextra_replacesを付けられるようにしました。
+	  reply_with_stdcallbacksを使用するようにしました。
+	  reply_with_stdcallbacksはrandomやdate、randomnick、randomselectなどのcallbackを
+	  登録します。
+	  user.now, host.now などのエイリアスを追加するようにしました。
 
-	* Auto/AliasDB.pm: Auto/Alias.pm�����ɲäȺ����ǽ��ܤ��ޤ�����
-	 �����ȥ�����ɤ���褦�ˤ��ޤ�����
-	 �Ϥ��줿�����ꥢ�����饭���򸫤Ĥ��Ф��ʤ��ä���硢callback��Ƥ֤褦�ˤ��ޤ�����
-	 #(name;%s ����) �ʤɤ�ɽ���򥵥ݡ��Ȥ��ޤ�����
-	 ���֥ե����ޥå�����б������̤�ޤ�ޤ���
-	 #(namesuf;#(name)%s)�Τ褦��ɽ�����Ǥ��ޤ���
+	* Auto/AliasDB.pm: Auto/Alias.pmから追加と削除機能を移しました。
+	 オートリロードするようにしました。
+	 渡されたエイリアスからキーを見つけ出せなかった場合、callbackを呼ぶようにしました。
+	 #(name;%s さん) などの表記をサポートしました。
+	 サブフォーマット中に対応する括弧を含めます。
+	 #(namesuf;#(name)%s)のような表記ができます。
 
-	* Auto/AliasDB/CallbackUtils.pm: AliasDB��Callback��ǽ��Ȥä�ɸ��Ū�ʳ�ĥ�Ǥ���
+	* Auto/AliasDB/CallbackUtils.pm: AliasDBのCallback機能を使った標準的な拡張です。
 
-	* Tools/DateConvert.pm: �����ɲá�plum��&'date��������
+	* Tools/DateConvert.pm: 新規追加。plumの&'dateに相当。
 
-	* System/Pong.pm: xchat�к��ˡ�ping�������pong����Ǥ�����褦�ˤ�����
+	* System/Pong.pm: xchat対策に、pingの代わりにpongを消滅させるようにした。
 
 2003-02-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* Multicast.pm: nick_p�Ǥ�nicklen���¤��᤿��
+	* Multicast.pm: nick_pでのnicklen制限をやめた。
 
 2003-02-12  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* RunLoop.pm: $(network)/user��general/user�򥪡��С��饤�ɲ�ǽ�ˡ�
+	* RunLoop.pm: $(network)/userでgeneral/userをオーバーライド可能に。
 
-	* System/RemoteControl.pm: �����ɲ�
+	* System/RemoteControl.pm: 新規追加
 
-	* ��������Υ����Ͻ񤤤Ƥ��ޤ���
+	* これ以前のログは書いていません。
 
 #       Id: $Id: ChangeLog,v 1.158 2004/08/22 11:28:41 topia Exp $
 #   Author: $Author: topia $

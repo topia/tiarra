@@ -1,28 +1,28 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# RunLoop¤ËÅĞÏ¿¤µ¤ì¡¢»ØÄê¤µ¤ì¤¿»ş¹ï¤Ëµ¯Æ°¤¹¤ë¥¿¥¤¥Ş¡¼¤Ç¤¹¡£
-# ¸½ºß¤Î¼ÂÁõ¤Ç¤Ï¡¢ÀºÅÙ¤ÏÉÃ¤È¤Ê¤Ã¤Æ¤¤¤Ş¤¹¡£
-# ¥¿¥¤¥Ş¡¼¤ÎÀ¸À®¤ËÉ¬Í×¤Ê¥Ñ¥é¥á¡¼¥¿¤Ï¡¢1)µ¯Æ°¤¹¤ë¥µ¥Ö¥ë¡¼¥Á¥ó¡¢2)µ¯Æ°»ş¹ïËô¤Ïµ¯Æ°¤Ş¤Ç¤ÎÉÃ¿ô¡¢
-# 3)µ¯Æ°¤Ş¤Ç¤ÎÉÃ¿ô¤ò»ØÄê¤·¤¿¾ì¹ç¤Ïµ¯Æ°¸å¤ËºÆ¤Ó¥¿¥¤¥Ş¡¼¤òRunLoop¤Ë¾è¤»¤ë¤«¤É¤¦¤«¡¢¤Ç¤¹¡£
+# RunLoopã«ç™»éŒ²ã•ã‚Œã€æŒ‡å®šã•ã‚ŒãŸæ™‚åˆ»ã«èµ·å‹•ã™ã‚‹ã‚¿ã‚¤ãƒãƒ¼ã§ã™ã€‚
+# ç¾åœ¨ã®å®Ÿè£…ã§ã¯ã€ç²¾åº¦ã¯ç§’ã¨ãªã£ã¦ã„ã¾ã™ã€‚
+# ã‚¿ã‚¤ãƒãƒ¼ã®ç”Ÿæˆã«å¿…è¦ãªãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã¯ã€1)èµ·å‹•ã™ã‚‹ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ã€2)èµ·å‹•æ™‚åˆ»åˆã¯èµ·å‹•ã¾ã§ã®ç§’æ•°ã€
+# 3)èµ·å‹•ã¾ã§ã®ç§’æ•°ã‚’æŒ‡å®šã—ãŸå ´åˆã¯èµ·å‹•å¾Œã«å†ã³ã‚¿ã‚¤ãƒãƒ¼ã‚’RunLoopã«ä¹—ã›ã‚‹ã‹ã©ã†ã‹ã€ã§ã™ã€‚
 #
-# µ¯Æ°¤¹¤ë¥µ¥Ö¥ë¡¼¥Á¥ó¤È¤·¤Æ¤Ï¡¢CODE·¿¤ÎÃÍ¤Ê¤é²¿¤Ç¤â¹½¤¤¤Ş¤»¤ó¡£
-# Timer¤Ï¤½¤ÎCODE¤Ë¡¢°ú¿ô¤È¤·¤Æ¼«Ê¬¼«¿È¤òÅÏ¤·¤Æ¥³¡¼¥ë¤·¤Ş¤¹¡£
+# èµ·å‹•ã™ã‚‹ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ã¨ã—ã¦ã¯ã€CODEå‹ã®å€¤ãªã‚‰ä½•ã§ã‚‚æ§‹ã„ã¾ã›ã‚“ã€‚
+# Timerã¯ãã®CODEã«ã€å¼•æ•°ã¨ã—ã¦è‡ªåˆ†è‡ªèº«ã‚’æ¸¡ã—ã¦ã‚³ãƒ¼ãƒ«ã—ã¾ã™ã€‚
 #
-# 3ÉÃ¸å¤ËHello, world!¤ÈÉ½¼¨¤¹¤ë¡£
+# 3ç§’å¾Œã«Hello, world!ã¨è¡¨ç¤ºã™ã‚‹ã€‚
 # my $timer = Timer->new(
 #     After => 3,
 #     Code => sub { print "Hello, world!"; }
 # )->install;
 #
-# 3ÉÃËè¤ËHello, world!¤ÈÉ½¼¨¤¹¤ë¡£
+# 3ç§’æ¯ã«Hello, world!ã¨è¡¨ç¤ºã™ã‚‹ã€‚
 # my $timer = Timer->new(
-#     After => 3, # Interval¤Ç¤âÎÉ¤¤
+#     After => 3, # Intervalã§ã‚‚è‰¯ã„
 #     Code => sub { print "Hello, world!"; },
 #     Repeat => 1
 # )->install;
 #
-# 3ÉÃ¸å¤ËHello, world!¤ÈÉ½¼¨¤¹¤ë¡£
+# 3ç§’å¾Œã«Hello, world!ã¨è¡¨ç¤ºã™ã‚‹ã€‚
 # my $timer = Timer->new(
 #     At => time + 3,
 #     Code => sub { print "Hello, world!"; }
@@ -39,33 +39,33 @@ utils->define_attr_accessor(0, qw(interval name));
 sub new {
     my ($class,%args) = @_;
     my $obj = {
-	fire_time => undef, # È¯Æ°¤¹¤ë»ş¹ï¤Î¥¨¥İ¥Ã¥¯ÉÃ¡£
-	interval => undef, # repeat¤¹¤ë¾ì¹ç¤Ï¡¢¤½¤Î´Ö³Ö¡£¤·¤Ê¤±¤ì¤ĞÌ¤ÄêµÁ¡£
-	code => undef, # Áö¤é¤»¤ë¥³¡¼¥É
-	runloop => undef, # RunLoop¤ËÅĞÏ¿¤µ¤ì¤Æ¤¤¤ë¾ì¹ç¤Ï¡¢¤½¤ÎRunLoop¡£
+	fire_time => undef, # ç™ºå‹•ã™ã‚‹æ™‚åˆ»ã®ã‚¨ãƒãƒƒã‚¯ç§’ã€‚
+	interval => undef, # repeatã™ã‚‹å ´åˆã¯ã€ãã®é–“éš”ã€‚ã—ãªã‘ã‚Œã°æœªå®šç¾©ã€‚
+	code => undef, # èµ°ã‚‰ã›ã‚‹ã‚³ãƒ¼ãƒ‰
+	runloop => undef, # RunLoopã«ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹å ´åˆã¯ã€ãã®RunLoopã€‚
 	name => utils->simple_caller_formatter('timer registered'),
     };
     bless $obj,$class;
 
-    # After¤ÈInterval¤ÏÆ±µÁ¡£
+    # Afterã¨Intervalã¯åŒç¾©ã€‚
     $args{'After'} = $args{'Interval'} if exists($args{'Interval'});
 
-    # At¤Ç»ØÄê¤¹¤ë¤«¡¢After¤Ş¤¿¤ÏInterval¤Ç»ØÄê¤¹¤ë¤«¡¢¤½¤Î¤É¤Á¤é¤«¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤é¤Ê¤¤¡£
+    # Atã§æŒ‡å®šã™ã‚‹ã‹ã€Afterã¾ãŸã¯Intervalã§æŒ‡å®šã™ã‚‹ã‹ã€ãã®ã©ã¡ã‚‰ã‹ã§ãªã‘ã‚Œã°ãªã‚‰ãªã„ã€‚
     if (exists($args{'At'}) && exists($args{'After'})) {
 	croak "Timer cannot be made with both parameters At and After (or Interval).\n";
     }
 
-    # At¤«¡¢After¤Ş¤¿¤ÏInterval¤«¡¢¤½¤Î¤É¤Á¤é¤«°ì¤Ä¤ÏÉ¬Í×¡£
+    # Atã‹ã€Afterã¾ãŸã¯Intervalã‹ã€ãã®ã©ã¡ã‚‰ã‹ä¸€ã¤ã¯å¿…è¦ã€‚
     if (!exists($args{'At'}) && !exists($args{'After'})) {
 	croak "Either parameter At or After (or Interval) is required to make Timer.\n";
     }
 
-    # Code¤Ï¾ï¤ËÉ¬Í×¡£
+    # Codeã¯å¸¸ã«å¿…è¦ã€‚
     if (!exists($args{'Code'})) {
 	croak "Code is always required to make Timer.\n";
     }
 
-    # Code¤¬CODE·¿¤Ç¤Ê¤±¤ì¤Ğdie¡£
+    # CodeãŒCODEå‹ã§ãªã‘ã‚Œã°dieã€‚
     if (ref($args{'Code'}) ne 'CODE') {
 	croak "Parameter Code was not valid CODE ref.\n";
     }
@@ -73,7 +73,7 @@ sub new {
     $obj->{code} = $args{'Code'};
 
     if (defined $args{'At'}) {
-	# At¤Çµ¯Æ°»ş¹ï¤¬Í¿¤¨¤é¤ì¤¿¾ì¹ç¤Ï¡¢Repeat¤Ï½ĞÍè¤Ê¤¤¡£
+	# Atã§èµ·å‹•æ™‚åˆ»ãŒä¸ãˆã‚‰ã‚ŒãŸå ´åˆã¯ã€Repeatã¯å‡ºæ¥ãªã„ã€‚
 	if ($args{'Repeat'}) {
 	    carp "Warning: It can't repeat that Timer made with At.\n";
 	}
@@ -81,7 +81,7 @@ sub new {
 	$obj->{fire_time} = $args{'At'};
     }
     elsif (defined $args{'After'}) {
-	# Repeat¤¬¿¿¤Ç¤¢¤ì¤Ğ¡¢´Ö³Ö¤òAfter¤Ş¤¿¤ÏInterval¤ÇÍ¿¤¨¤é¤ì¤¿¿ôÃÍ¤È¤¹¤ë¡£
+	# RepeatãŒçœŸã§ã‚ã‚Œã°ã€é–“éš”ã‚’Afterã¾ãŸã¯Intervalã§ä¸ãˆã‚‰ã‚ŒãŸæ•°å€¤ã¨ã™ã‚‹ã€‚
 	if ($args{'Repeat'}) {
 	    $obj->{interval} = $args{'After'};
 	}
@@ -105,12 +105,12 @@ sub time_to_fire {
 }
 
 sub install {
-    # RunLoop¤Ë¥¤¥ó¥¹¥È¡¼¥ë¤¹¤ë¡£
-    # °ú¿ô¤ò¾ÊÎ¬¤·¤¿¾ì¹ç¤Ï¥Ç¥Õ¥©¥ë¥È¤ÎRunLoop¤Ë¥¤¥ó¥¹¥È¡¼¥ë¤¹¤ë¡£
+    # RunLoopã«ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã™ã‚‹ã€‚
+    # å¼•æ•°ã‚’çœç•¥ã—ãŸå ´åˆã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®RunLoopã«ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã™ã‚‹ã€‚
     my ($this,$runloop) = @_;
 
     if (defined $this->{runloop}) {
-	# ´û¤Ë¥¤¥ó¥¹¥È¡¼¥ëºÑ¤ß¤À¤Ã¤¿¡£
+	# æ—¢ã«ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«æ¸ˆã¿ã ã£ãŸã€‚
 	croak "This Timer has been already installed to RunLoop.\n";
     }
 
@@ -125,11 +125,11 @@ sub install {
 }
 
 sub uninstall {
-    # ¥¤¥ó¥¹¥È¡¼¥ë¤·¤¿RunLoop¤«¤é¡¢¤³¤Î¥¿¥¤¥Ş¡¼¤ò¥¢¥ó¥¤¥ó¥¹¥È¡¼¥ë¤¹¤ë¡£
+    # ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã—ãŸRunLoopã‹ã‚‰ã€ã“ã®ã‚¿ã‚¤ãƒãƒ¼ã‚’ã‚¢ãƒ³ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã™ã‚‹ã€‚
     my $this = shift;
 
     unless (defined $this->{runloop}) {
-	# ¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤Ê¤¤¡£
+	# ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ãªã„ã€‚
 	croak "This Timer hasn't been installed yet\n";
     }
 
@@ -140,8 +140,8 @@ sub uninstall {
 
 sub execute {
     my $this = shift;
-    # Code¤ò¼Â¹Ô¤·¡¢É¬Í×¤Ê¤é¥ê¥Ô¡¼¥È¤¹¤ë¡£
-    # RunLoop¤Î¤ß¤¬¤³¤Î¥á¥½¥Ã¥É¤ò¸Æ¤Ù¤ë¡£
+    # Codeã‚’å®Ÿè¡Œã—ã€å¿…è¦ãªã‚‰ãƒªãƒ”ãƒ¼ãƒˆã™ã‚‹ã€‚
+    # RunLoopã®ã¿ãŒã“ã®ãƒ¡ã‚½ãƒƒãƒ‰ã‚’å‘¼ã¹ã‚‹ã€‚
     my ($package_of_caller,undef,undef) = caller;
     unless ($package_of_caller->isa('RunLoop')) {
 	croak "Only RunLoop may call method execute of Timer.\n";
@@ -166,7 +166,7 @@ sub execute {
 }
 
 sub reset {
-    # interval ¤«¤é fire_time ¤ò»»½Ğ¤·¤Ê¤ª¤¹
+    # interval ã‹ã‚‰ fire_time ã‚’ç®—å‡ºã—ãªãŠã™
     my ($this) = shift;
 
     if (defined $this->{interval}) {

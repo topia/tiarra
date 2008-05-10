@@ -67,12 +67,12 @@ sub message_io_hook {
 
 1;
 =pod
-info: ���饤����Ȥ���θĿ�Ū��priv�������Ϥ��ʤ��ʤ븽�ݤ���򤹤롣
+info: クライアントからの個人的なprivが相手に届かなくなる現象を回避する。
 default: on
 section: important
 
-# ���Υ⥸�塼��ϸĿͰ��Ƥ�privmsg�������Ԥ�nick�˥ͥåȥ��̾���ղä��ޤ���
-# �ޤ����Ǹ�����򤫤����Ƥ���5ʬ����� nick �ѹ��򥯥饤����Ȥ������ޤ���
-# ������ܤϤ���ޤ��󤬡� networks/channel-network-separator �� ! �� @ �ʳ���
-# �ѹ����뤳�Ȥ򤪤����ᤷ�ޤ���
+# このモジュールは個人宛てのprivmsgの送信者のnickにネットワーク名を付加します。
+# また、最後に声をかけられてから5分以内の nick 変更をクライアントに伝えます。
+# 設定項目はありませんが、 networks/channel-network-separator を ! や @ 以外に
+# 変更することをおすすめします。
 =cut

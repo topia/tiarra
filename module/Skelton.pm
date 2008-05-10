@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# �⥸�塼��Υ�����ȥ�
+# モジュールのスケルトン。
 # -----------------------------------------------------------------------------
 package Skelton;
 use strict;
@@ -10,9 +10,9 @@ use base qw(Module);
 
 sub new {
     my $class = shift;
-    # �⥸�塼�뤬ɬ�פˤʤä����˸ƤФ�롣
-    # ����ϥ⥸�塼��Υ��󥹥ȥ饯���Ǥ��롣
-    # ������̵����
+    # モジュールが必要になった時に呼ばれる。
+    # これはモジュールのコンストラクタである。
+    # 引数は無し。
     my $this = $class->SUPER::new(@_);
 
     return $this;
@@ -20,35 +20,35 @@ sub new {
 
 sub destruct {
     my $this = shift;
-    # �⥸�塼�뤬���פˤʤä����˸ƤФ�롣
-    # ����ϥ⥸�塼��Υǥ��ȥ饯���Ǥ��롣���Υ᥽�åɤ��ƤФ줿���DESTROY�������
-    # �����ʤ�᥽�åɤ�ƤФ�����̵���������ޡ�����Ͽ�������ϡ����Υ᥽�åɤ�
-    # ��Ǥ����äƤ���������ʤ���Фʤ�ʤ���
-    # ������̵����
+    # モジュールが不要になった時に呼ばれる。
+    # これはモジュールのデストラクタである。このメソッドが呼ばれた後はDESTROYを除いて
+    # いかなるメソッドも呼ばれる事が無い。タイマーを登録した場合は、このメソッドが
+    # 責任を持ってそれを解除しなければならない。
+    # 引数は無し。
 }
 
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
-    # �����С��ޤ��ϥ��饤����Ȥ����å��������褿���˸ƤФ�롣
-    # ����ͤ�Tiarra::IRC::Message�ޤ��Ϥ�������ޤ���undef��
+    # サーバーまたはクライアントからメッセージが来た時に呼ばれる。
+    # 戻り値はTiarra::IRC::Messageまたはその配列またはundef。
     #
     # $msg :
-    #    ����: Tiarra::IRC::Message���֥�������
-    #    �����С����顢�ޤ��ϥ��饤����Ȥ��������Ƥ�����å�������
-    #    �⥸�塼��Ϥ��Υ��֥������Ȥ򤽤Τޤ��֤��Ƥ��ɤ�����
-    #    ���Ѥ����֤��Ƥ��ɤ��������֤��ʤ��Ƥ��ɤ�����İʾ��֤��Ƥ��ɤ���
+    #    内容: Tiarra::IRC::Messageオブジェクト
+    #    サーバーから、またはクライアントから送られてきたメッセージ。
+    #    モジュールはこのオブジェクトをそのまま返しても良いし、
+    #    改変して返しても良いし何も返さなくても良いし二つ以上返しても良い。
     # $sender :
-    #    ����: IrcIO���֥�������
-    #    ���Υ�å�������ȯ����IrcIO�������С��ޤ��ϥ��饤����ȤǤ��롣
-    #    ��å������������С������褿�Τ����饤����Ȥ����褿�Τ���
-    #    $sender->isa('IrcIO::Server')�ʤɤȤ����Ƚ�����롣
+    #    内容: IrcIOオブジェクト
+    #    このメッセージを発したIrcIO。サーバーまたはクライアントである。
+    #    メッセージがサーバーから来たのかクライアントから来たのかは
+    #    $sender->isa('IrcIO::Server')などとすれば判定出来る。
     #
-    # �����С������饤����Ȥ�ή��Ǥ⡢Prefix������ʤ���å�������
-    # ή���Ƥ⹽��ʤ����դ˸����С����Τ褦�ʥ�å���������Ƥ�
-    # ���꤬������ʤ��褦�˥⥸�塼����߷פ��ʤ���Фʤ�ʤ���
+    # サーバー→クライアントの流れでも、Prefixを持たないメッセージを
+    # 流しても構わない。逆に言えば、そのようなメッセージが来ても
+    # 問題が起こらないようにモジュールを設計しなければならない。
     return $msg;
 }
-## Auto::Utils::generate_reply_closures ��Ȥ���硣
+## Auto::Utils::generate_reply_closures を使う場合。
 # sub message_arrived {
 #     my ($this,$msg,$sender) = @_;
 #     my @result = ($msg);
@@ -60,10 +60,10 @@ sub message_arrived {
 # 	$reply_anywhere->('Hello, #(name|default_name)',
 # 			'default_name' => '(your name)');
 # 	if ($get_raw_ch_name->() eq '#Tiarra_testing') {
-# 	    # �ʤ�餫�ν���
+# 	    # なんらかの処理
 # 	}
 # 	if ($get_full_ch_name->() eq '#Tiarra_testing@LocalServer') {
-# 	    # �ʤ�餫�ν���
+# 	    # なんらかの処理
 # 	}
 #     }
 #     return @result;
@@ -72,76 +72,76 @@ sub message_arrived {
 
 sub client_attached {
     my ($this,$client) = @_;
-    # ���饤����Ȥ���������³�������˸ƤФ�롣
-    # ����ͤ�̵����
+    # クライアントが新規に接続した時に呼ばれる。
+    # 戻り値は無し。
     #
     # $client :
-    #    ����: IrcIO::Client���֥�������
-    #    ��³���줿���饤����ȡ�
+    #    内容: IrcIO::Clientオブジェクト
+    #    接続されたクライアント。
 }
 
 sub client_detached {
     my ($this,$client) = @_;
-    # ���饤����Ȥ����Ǥ������˸ƤФ�롣
-    # ����ͤ�̵����
+    # クライアントが切断した時に呼ばれる。
+    # 戻り値は無し。
     #
     # $client :
-    #    ����: IrcIO::Client���֥�������
-    #    ���Ǥ������饤����ȡ�
+    #    内容: IrcIO::Clientオブジェクト
+    #    切断したクライアント。
 }
 
 sub connected_to_server {
     my ($this,$server,$new_connection) = @_;
-    # �����С�����³�������˸ƤФ�롣
-    # ����ͤ�̵����
+    # サーバーに接続した時に呼ばれる。
+    # 戻り値は無し。
     #
     # $server :
-    #    ����: IrcIO::Server���֥�������
-    #         ��³���������С���
+    #    内容: IrcIO::Serverオブジェクト
+    #         接続したサーバー。
     # $new_connection :
-    #    ����: ������
-    #         ��������³�ʤ�1�����Ǹ�μ�ư��³�Ǥ�undef��
+    #    内容: 真偽値
+    #         新規の接続なら1。切断後の自動接続ではundef。
 }
 
 sub disconnected_from_server {
     my ($this,$server) = @_;
-    # �����С��������Ǥ���(�����Ϥ��줿)���˸ƤФ�롣
-    # ����ͤ�̵����
+    # サーバーから切断した(或いはされた)時に呼ばれる。
+    # 戻り値は無し。
     #
     # $server :
-    #    ����: IrcIO::Server���֥�������
-    #         ���Ǥ��������С���
+    #    内容: IrcIO::Serverオブジェクト
+    #         切断したサーバー。
 }
 
 sub message_io_hook {
     my ($this,$message,$io,$type) = @_;
-    # �����С����������ä���å������������С��������å�������
-    # ���饤����Ȥ��������ä���å����������饤����Ȥ������å�������
-    # ���Υ᥽�åɤǳƥ⥸�塼������Τ���롣��å��������ѹ����ǽ�ǡ�
-    # ����ͤΥ롼���message_arrived��Ʊ����
+    # サーバーから受け取ったメッセージ、サーバーに送るメッセージ、
+    # クライアントから受け取ったメッセージ、クライアントに送るメッセージは
+    # このメソッドで各モジュールに通知される。メッセージの変更も可能で、
+    # 戻り値のルールはmessage_arrivedと同じ。
     #
-    # �̾�Υ⥸�塼��Ϥ��Υ᥽�åɤ��������ɬ�פ�̵����
+    # 通常のモジュールはこのメソッドを実装する必要は無い。
     #
     # $message :
-    #    ����: Tiarra::IRC::Message���֥�������
-    #         ���������Ƥ����å�����
+    #    内容: Tiarra::IRC::Messageオブジェクト
+    #         送受信しているメッセージ
     # $io :
-    #    ����: IrcIO::Server����IrcIO::Client���֥�������
-    #         ��������ԤäƤ���IrcIO
+    #    内容: IrcIO::Server又はIrcIO::Clientオブジェクト
+    #         送受信を行っているIrcIO
     # $type :
-    #    ����: ʸ����
-    #         'in'�ʤ������'out'�ʤ�����
+    #    内容: 文字列
+    #         'in'なら受信、'out'なら送信
     return $message;
 }
 
 sub control_requested {
     my ($this,$request) = @_;
-    # ��������ȥ�����ץ�����फ��Υ�å��������褿��
-    # ����ͤ�ControlPort::Reply��
+    # 外部コントロールプログラムからのメッセージが来た。
+    # 戻り値はControlPort::Reply。
     #
     # $request:
-    #    ���� : ControlPort::Request
-    #          ����줿�ꥯ������
+    #    内容 : ControlPort::Request
+    #          送られたリクエスト
     die "This module doesn't support controlling.\n";
 }
 
@@ -153,11 +153,11 @@ info:    Skelton for tiarra-module.
 default: off
 #section: important
 
-# �⥸�塼��������򤳤Τ�����˽�.
-# �ܺ٤Ϥ��Υ������ߤ��ʬ����Ȼפ��.
-# �񼰤� tiarra.conf �ˤ��Τޤޥ��ԡ��Ǥ������.
+# モジュールの説明をこのあたりに書く.
+# 詳細はこのソースみれば分かると思われ.
+# 書式は tiarra.conf にそのままコピーできる形式.
 
-# ��ˤ��ˤ�
+# もにゅもにゅ
 mask: *!*@*
 mask: ...
 

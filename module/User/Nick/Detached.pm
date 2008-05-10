@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# ���Υ⥸�塼���RunLoop��current_nick�����ʤ����������nick���ѹ����ʤ���
+# このモジュールはRunLoopのcurrent_nick、すなわちローカルnickを変更しない。
 # -----------------------------------------------------------------------------
 package User::Nick::Detached;
 use strict;
@@ -11,8 +11,8 @@ use RunLoop;
 
 sub client_attached {
     my ($this,$client) = @_;
-    # ���饤����Ȥ���³���줿�Ȥ������ϡ�
-    # ���ʤ��Ȥ��İʾ�Υ��饤����Ȥ�¸�ߤ���˷�ޤäƤ��롣
+    # クライアントが接続されたという事は、
+    # 少なくとも一つ以上のクライアントが存在するに決まっている。
     RunLoop->shared->broadcast_to_servers(
 	$this->construct_irc_message(
 	    Command => 'NICK',
@@ -21,7 +21,7 @@ sub client_attached {
 
 sub client_detached {
     my ($this,$client) = @_;
-    # ���饤����Ȥο���1(���Υ᥽�åɤ�����ä����0�ˤʤ�)�ʤ�NICK��¹ԡ�
+    # クライアントの数が1(このメソッドから戻った後に0になる)ならNICKを実行。
     if (@{RunLoop->shared->clients} == 1 &&
 	defined $this->config->detached) {
 
@@ -34,7 +34,7 @@ sub client_detached {
 
 sub connected_to_server {
     my ($this,$server,$new_connection) = @_;
-    # ���饤����Ȥο���0�ʤ�NICK��¹ԡ�
+    # クライアントの数が0ならNICKを実行。
     if (@{RunLoop->shared->clients} == 0 &&
 	defined $this->config->detached) {
 	
@@ -48,12 +48,12 @@ sub connected_to_server {
 1;
 
 =pod
-info: ���饤����Ȥ���³����Ƥ��ʤ����ˡ������nick���ѹ����ޤ���
+info: クライアントが接続されていない時に、特定のnickに変更します。
 default: off
 section: important
 
-# ���饤����Ȥ���³����Ƥ��ʤ�����nick��
-# ����nick�����˻Ȥ��Ƥ����顢Ŭ�����ѹ����ä����ƻ��Ѥ���ޤ���
-# ���饤����Ȥ��Ƥ���³�����ȡ��������Υ�������nick�����ޤ���
+# クライアントが接続されていない時のnick。
+# このnickが既に使われていたら、適当に変更が加えられて使用されます。
+# クライアントが再び接続されると、切断前のローカルnickに戻ります。
 detached: PHO_d
 =cut

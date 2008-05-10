@@ -13,8 +13,8 @@ sub message_arrived {
     if ($sender->server_p && $msg->command eq 'KICK' &&
         $msg->param(1) eq $sender->current_nick &&
 	Mask::match_deep([$this->config->channel('all')],$msg->param(0))) {
-	# ��ʬ������줿��
-	# +k����Ƥ�������ͥ�ʤ饭����ɤ��դ��롣
+	# 自分が蹴られた。
+	# +kされているチャンネルならキーワードを付ける。
 	my $ch = RunLoop->shared->channel($msg->param(0));
 	if (defined $ch) {
 	    my @params = ($ch->name);
@@ -35,10 +35,10 @@ sub message_arrived {
 1;
 
 =pod
-info: ����Υ����ͥ뤫��kick���줿���ˡ���ư������ʤ�����
+info: 特定のチャンネルからkickされた時に、自動で入りなおす。
 default: off
 section: important
 
-# �оݤȤʤ�����ͥ�̾�Υޥ���
+# 対象となるチャンネル名のマスク
 channel: *
 =cut

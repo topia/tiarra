@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# �Ǽ��Ĥ�do-not-touch-mode-of-channels (HASH*)�˵��Ҥ���Ƥ�������ͥ�Υ⡼�ɤ�Ϯ��ʤ���
+# 掲示板のdo-not-touch-mode-of-channels (HASH*)に記述されているチャンネルのモードは弄らない。
 # -----------------------------------------------------------------------------
 package Channel::Mode::Set;
 use strict;
@@ -21,13 +21,13 @@ sub message_arrived {
 	my $ch = $sender->channel($ch_plainname);
 	if (defined $ch) {
 	    my $myself = $ch->names($sender->current_nick);
-	    # ��ʬ�����äƤ��뤫��(�Х��Ǥ�ʤ��¤���defined��)
+	    # 自分は入っているか？(バグでもない限り常にdefined。)
 	    if (defined $myself) {
-		# ��ʬ��@����äƤ��뤫��
+		# 自分は@を持っているか？
 		my $i_have_o = $myself->has_o;
-		# �����ͥ���˼�ʬ��ͤ�������
+		# チャンネル内に自分一人だけか？
 		my $only_me = ($ch->names(undef,undef,'size') == 1);
-		# MODE���ѹ���������Ƥ��뤫��
+		# MODEの変更が許されているか？
 		my $allowed_mode =
 		    $this->is_allowed_changing_mode($ch_fullname);
 		if ($i_have_o && $only_me && $allowed_mode) {
@@ -55,7 +55,7 @@ sub set_modes {
     my ($this,$ch_fullname,$ch_plainname,$sender) = @_;
     foreach ($this->config->channel('all')) {
 	my ($ch_mask,$modes) = (m/^(.+?)\s+(.+)$/);
-	# ���Υ����ͥ�Υޥ�����$ch_name�ϥޥå����뤫��
+	# このチャンネルのマスクに$ch_nameはマッチするか？
 	if (Mask::match($ch_mask,$ch_fullname)) {
 	    foreach my $mode (split /,/,$modes) {
 		$sender->send_message(
@@ -70,14 +70,14 @@ sub set_modes {
 1;
 
 =pod
-info: �����ͥ������������˼�ưŪ�˥⡼�ɤ����ꤹ��⥸�塼�롣
+info: チャンネルを作成した時に自動的にモードを設定するモジュール。
 default: off
 section: important
 
-# �񼰤�<�����ͥ�̾�˥ޥå�����ޥ���> <���ꤹ��⡼��>[,<���ꤹ��⡼��>,...]�Ǥ���
-# #IRC���ü�@ircnet�ʤ�+t+n�򡢤���ʳ��ʤ�+n�����ꤹ���㡣
--channel: #IRC���ü�@ircnet +t
+# 書式は<チャンネル名にマッチするマスク> <設定するモード>[,<設定するモード>,...]です。
+# #IRC談話室@ircnetなら+t+nを、それ以外なら+nを設定する例。
+-channel: #IRC談話室@ircnet +t
 -channel: *                +n
-# LimeChat ɸ����������魯�������㡣
+# LimeChat 標準設定を模倣する設定例。
 -channel: * +sn
 =cut

@@ -12,13 +12,13 @@ use Data::Dumper;
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
 
-    # ���饤����Ȥ���Υ�å���������
+    # クライアントからのメッセージか？
     if ($sender->isa('IrcIO::Client')) {
-	# ���ꤵ�줿���ޥ�ɤ�?
+	# 指定されたコマンドか?
 	my $cmd = Mask::match_deep([$this->config->command('all')], $msg->command);
 	my $hexcmd = Mask::match_deep([$this->config->hex_command('all')], $msg->command);
 	if ($cmd || $hexcmd) {
-	    # ��å������ƹ���
+	    # メッセージ再構築
 	    my ($method) = join(' ', @{$msg->params});
 	    my ($ret, $err);
 	    do {
@@ -108,20 +108,20 @@ sub reload_pm {
 
 1;
 =pod
-info: ���饤����Ȥ��� Perl ����¹ԤǤ���褦�ˤ��롣
+info: クライアントから Perl 式を実行できるようにする。
 default: off
 
-# eval ��¹Ԥ��륳�ޥ��̾����ά�����ȥ��ޥ�ɤ��ɲä��ޤ���
-# ���λ����ޥ�ɤ�Tiarra�������٤��Τǡ�IRC�ץ��ȥ�����������줿
-# ���ޥ��̾�����ꤹ�٤��ǤϤ���ޤ���
+# eval を実行するコマンド名。省略されるとコマンドを追加しません。
+# この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された
+# コマンド名を設定すべきではありません。
 command: eval
 
-# hex eval ��¹Ԥ��륳�ޥ��̾����ά�����ȥ��ޥ�ɤ��ɲä��ޤ���
-# ���λ����ޥ�ɤ�Tiarra�������٤��Τǡ�IRC�ץ��ȥ�����������줿
-# ���ޥ��̾�����ꤹ�٤��ǤϤ���ޤ���
+# hex eval を実行するコマンド名。省略されるとコマンドを追加しません。
+# この時コマンドはTiarraが握り潰すので、IRCプロトコル上で定義された
+# コマンド名を設定すべきではありません。
 hex-command: hexeval
 
-# ɽ���������Կ�����ꤷ�ޤ�����ά����Ȥ��٤ƤιԤ�ɽ�����ޤ���
+# 表示する最大行数を指定します。省略するとすべての行を表示します。
 max-line: 30
 
 =cut

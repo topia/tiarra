@@ -1,147 +1,147 @@
 -*- outline -*-
 $Id$
 
-perl�Υ������˻Ȥ�pod�ѡ�����ή�Ѥ��Ƥ���Τǡ�packageʸ��=pod��=cut�ǽ�ɬ�פ�����ޤ���
-�إå���info-is-ommited��no-switch�Ϥɤ�����ͤ򿿤�������ʤ���Фʤ�ޤ���
+perlのソースに使うpodパーサを流用しているので、package文と=pod〜=cutで書く必要があります。
+ヘッダのinfo-is-ommitedとno-switchはどちらも値を真に定義しなければなりません。
 
 * general
 package general;
 =pod
-info: conf���Ȥ�ʸ�������ɤ�桼��������ʤɤ���ꤹ��
+info: conf自身の文字コードやユーザー情報などを指定する
 info-is-omitted: 1
 no-switch: 1
 
-# tiarra.conf���Ȥ�ʸ��������
-# ������̾��jis,sjis,euc,utf8,utf16,utf32����(�����ͤ�Unicode::Japanese�ˤ��Τޤ��Ϥ���ޤ�)
-# auto�����ꤵ�줿���ޤ��Ͼ�ά���줿���ϼ�ưȽ�̤��ޤ���
-conf-encoding: euc
+# tiarra.conf自身の文字コード
+# コード名はjis,sjis,euc,utf8,utf16,utf32等。(この値はUnicode::Japaneseにそのまま渡されます)
+# autoが指定された、または省略された場合は自動判別します。
+conf-encoding: utf8
 
-# �桼��������
-# ��ά��ǽ�Ǥ���
+# ユーザー情報
+# 省略不能です。
 nick: tiarra
 user: tiarra
 name: Tiarra the "Aeon"
 
-# �ɤΤ褦�ʥ桼�����⡼�ɤǥ������󤹤뤫��+iw��+i�Τ褦�˻��ꤹ�롣
-# ��ά���줿���ϥ桼�����⡼�ɤ��ä����ꤷ�ʤ���
+# どのようなユーザーモードでログインするか。+iwや+iのように指定する。
+# 省略された場合はユーザーモードを特に設定しない。
 -user-mode: +i
 
-# Tiarra�ؤ���³����Ĥ���ۥ���̾��ɽ�魯�ޥ�����
-# ���¤򤷤ʤ��ΤǤ����"*"����ꤹ�뤫��ά���롣
+# Tiarraへの接続を許可するホスト名を表わすマスク。
+# 制限をしないのであれば"*"を指定するか省略する。
 client-allowed: *
 
-# Tiarra�������ݡ��ȡ������˻��ꤷ���ݡ��Ȥإ��饤����Ȥ���³�����롣
-# ��ά���줿��ݡ��Ȥ򳫤��ʤ���
+# Tiarraが開くポート。ここに指定したポートへクライアントに接続させる。
+# 省略されたらポートを開かない。
 tiarra-port: 6667
 
-# Tiarra���ݡ���tiarra-port�򳫤��ݡ�IPv6��IPv4�Τɤ���ǥꥹ�˥󥰤�Ԥʤ�����
-# 'v4'�ޤ���'v6'�ǻ��ꤷ�ޤ����ǥե���Ȥ�'v4'�Ǥ���
-# IPv6��Ȥ�����ˤ�Socket6.pm�����Ѳ�ǽ�Ǥ���ɬ�פ�����ޤ���
+# Tiarraがポートtiarra-portを開く際、IPv6とIPv4のどちらでリスニングを行なうか。
+# 'v4'または'v6'で指定します。デフォルトは'v4'です。
+# IPv6を使うためにはSocket6.pmが利用可能である必要があります。
 -tiarra-ip-version: v4
 
-# Tiarra���ݡ���tiarra-port�򳫤��ݤΥ������륢�ɥ쥹��
-# ��̣��ʬ����ʤ���о�ά���Ʋ�������
-# �ǥե���Ȥϡ�IPv4�Τ�INADDR_ANY��IPv6�Τ�in6addr_any�ˤʤ�ޤ���
+# Tiarraがポートtiarra-portを開く際のローカルアドレス。
+# 意味が分からなければ省略して下さい。
+# デフォルトは、IPv4のはINADDR_ANY、IPv6のはin6addr_anyになります。
 -tiarra-ipv4-bind-addr: 0.0.0.0
 -tiarra-ipv6-bind-addr: ::0
 
-# Tiarra�˥��饤����Ȥ���³����ݤ��׵᤹��ѥ���ɤ�crypt����ʸ����
-# ����ʸ���󤬻��ꤵ�줿���ά���줿���ϥѥ���ɤ��׵ᤷ�ʤ���
-# crypt �� ./tiarra --make-password �ǹԤ��ޤ���
+# Tiarraにクライアントが接続する際に要求するパスワードをcryptした文字列。
+# 空の文字列が指定されたり省略された場合はパスワードを要求しない。
+# crypt は ./tiarra --make-password で行えます。
 tiarra-password: xl7cflIcH9AwE
 
-# �����ץ�����फ��tiarra�򥳥�ȥ����뤹��٤�UNIX�ɥᥤ�󥽥��åȤ�̾����
-# �㤨��"foo"����ꤷ����硢�����å�/tmp/tiarra-control/foo������롣
-# ��ά���줿���Ϥ��ε�ǽ��̵���Ȥ��롣
-# �ޤ�����UNIX�Ķ��ǤϤ��⤽��UNIX�ɥᥤ�󥽥��åȤ����Ѳ�ǽ�Ǥʤ����ᡢ
-# ���Τ褦�ʾ��ˤ⤳�ε�ǽ��̵���Ȥʤ롣
+# 外部プログラムからtiarraをコントロールする為のUNIXドメインソケットの名前。
+# 例えば"foo"を指定した場合、ソケット/tmp/tiarra-control/fooが作られる。
+# 省略された場合はこの機能を無効とする。
+# また、非UNIX環境ではそもそもUNIXドメインソケットが利用可能でないため、
+# そのような場合にもこの機能は無効となる。
 -control-socket-name: test
 
-# IRC�����С�����������ʸ���Υ����ɤȡ�IRC�����С�������ʸ���Υ�����
-# �ɤ�����ά���줿����jis��
+# IRCサーバーから送られる文字のコードと、IRCサーバーへ送る文字のコード
+# どちらも省略された場合はjis。
 server-in-encoding: jis
 server-out-encoding: jis
 
-# ���饤����Ȥ���������ʸ���Υ����ɤȡ����饤����Ȥ�������ʸ���Υ�����
-# �ɤ�����ά���줿����jis��
+# クライアントから受け取る文字のコードと、クライアントへ伝える文字のコード
+# どちらも省略された場合はjis。
 client-in-encoding: jis
 client-out-encoding: jis
 
-# Tiarra��ɸ����Ϥ��͡��ʥ�å���������Ϥ��뤬������ʸ�������ɤ���ꤹ�롣��ά���ˤ�euc�Ȥʤ롣
-# ������tiarra.conf�Υѡ�������λ����ޤǤ�ʸ�������ɤ��Ѵ��ϹԤʤ��ʤ�(�Ĥޤꤳ�����꤬ͭ���ˤʤ�ʤ�)���Ȥ����դ��Ʋ�������
-stdout-encoding: euc
+# Tiarraは標準出力に様々なメッセージを出力するが、その文字コードを指定する。省略時にはeucとなる。
+# ただしtiarra.confのパースが完了するまでは文字コードの変換は行なわれない(つまりこの設定が有効にならない)ことに注意して下さい。
+stdout-encoding: utf8
 
-# Tiarra�ϥ��顼��å�������ɸ����Ϥ˽��Ϥ��뤬�����λ�����³���Ƥ��륯�饤����Ȥ�����Х��饤����Ȥˤ�NOTICE�������������롣
-# �����ͤ�1�ˤ���ȡ����ε�ǽ��ͭ���ˤʤ롣��ά���뤫0����ꤹ��Ȥ��ε�ǽ��̵���ˤʤ롣
+# Tiarraはエラーメッセージを標準出力に出力するが、その時に接続しているクライアントがあればクライアントにもNOTICEで送る事が出来る。
+# この値を1にすると、その機能が有効になる。省略するか0を指定するとこの機能は無効になる。
 notice-error-messages: 1
 
-# Tiarra�ǥ����ͥ�ȥ桼�����Υޥ�������ꤹ��Ȥ��η�����
-# plum������Tiarra����������Ǥ��ޤ���
+# Tiarraでチャンネルとユーザーのマスクを指定するときの形式。
+# plum形式とTiarra形式が選択できます。
 #-----------------
-# plum����: (channel�ˤ�+��-�ϻȤ��ʤ���channel�Ͼ�ά�����*�Ȥߤʤ���)
+# plum形式: (channelには+や-は使えない。channelは省略すると*とみなす。)
 #   + syntax: user[ channel[ channel[ ...]]]
 #
 #  mask: +*!*@*.example.com #{example}@ircnet +{example3}@ircnet
 #  mask: -*!*@*.example.com #{example2}@2ch,+{example4}@2ch
 #  mask: -*!*@*
 #-----------------
-# Tiarra����: (channel�ˤ�+��-��Ȥ��롣)
+# Tiarra形式: (channelにも+や-を使える。)
 #   + syntax: channel user
 #
 #  mask: #{example}@ircnet,-#{example2}@2ch    +*!*@*.example.com
-#  mask: ++{example3}@ircnet,-+{example4}@2ch  +*!*@*.example.com # +�ǻϤޤ�����ͥ롣
+#  mask: ++{example3}@ircnet,-+{example4}@2ch  +*!*@*.example.com # +で始まるチャンネル。
 #  mask: *                                     -*!*@*
 #-----------------
-# �Ȥʤ�ޤ��� ������ĤϤޤä���Ʊ���ޥ�����ɽ���Ƥ��ޤ���
+# となります。 この二つはまったく同じマスクを表しています。
 
-# �����ͤ�plum�ˤ���ȡ�plum��������ά���뤫tiarra����ꤹ��ȡ�Tiarra�����ˤʤ�ޤ���
+# この値をplumにすると、plum形式、省略するかtiarraを指定すると、Tiarra形式になります。
 chanmask-mode: tiarra
 
-# �����С�����³����ݡ���������¦�ΤɤΥ��ɥ쥹�˥Х���ɤ��뤫��
-# ��̣��ʬ����ʤ���о�ά���Ʋ�������
-# �ǥե���Ȥϡ�IPv4�Τ�INADDR_ANY��IPv6�Τ�in6addr_any�ˤʤ�ޤ���
+# サーバーに接続する際、ローカル側のどのアドレスにバインドするか。
+# 意味が分からなければ省略して下さい。
+# デフォルトは、IPv4のはINADDR_ANY、IPv6のはin6addr_anyになります。
 -ipv4-bind-addr: 0.0.0.0
 -ipv6-bind-addr: ::0
 
-# tiarra ���� 001 �� 002 �䡢 recent log ����������Ȥ��ʤɤ˻Ȥ� prefix
-# ����ꤷ�ޤ��� hostname �� fqdn �äݤ���Τ���ꤹ����ɤ����⤷��ޤ���
-# �ǥե���Ȥ� tiarra �Ǥ��������Ѥ���ɬ�פϤ���ޤ���
+# tiarra が、 001 や 002 や、 recent log を送信するときなどに使う prefix
+# を指定します。 hostname や fqdn っぽいものを指定すると良いかもしれません。
+# デフォルトは tiarra です。普通変える必要はありません。
 -sysmsg-prefix: tiarra
 
 sysmsg-prefix-use-masks {
-  # sysmsg-prefix ����Ѥ��������ꤹ�롣
+  # sysmsg-prefix を使用する場所を指定する。
 
-  # �����ƥ��å�����(NumericReply �ʤ�)���ǥե���Ȥ� * �Ǥ���
-  # �դĤ�������ѹ�����ɬ�פϤ���ޤ���
+  # システムメッセージ(NumericReply など)。デフォルトは * です。
+  # ふつうこれを変更する必要はありません。
   system: *
 
-  # �ĿͰ���å�����(Notice,Privmsg �����)���ǥե���ȤϤʤ���
+  # 個人宛メッセージ(Notice,Privmsg の中で)。デフォルトはなし。
   -priv:
 
-  # �����ͥ밸��å�����(Notice,Privmsg �����)���ǥե���Ȥ� * �Ǥ���
-  # Ziciz �ʤɤΥ��饤����Ȥ���³������ϡ�
-  # -*::log ����ꤷ�Ƥ����Ȥ������⤷��ޤ���
+  # チャンネル宛メッセージ(Notice,Privmsg の中で)。デフォルトは * です。
+  # Ziciz などのクライアントを接続する場合は、
+  # -*::log を指定しておくといいかもしれません。
   channel: *
 }
 
-# Tiarra �� nick �ѹ����ξ��������������⡼�ɤ���ꤷ�ޤ���
-# 0: Tiarra ����³����Ʊ�ͤ˼�ư�������ޤ���
-# 1: ���饤����Ȥˤ��Τޤ��ꤲ�ޤ���
-#    ʣ���Υ��饤����Ȥ� nick ��ʣ���������������˴����Ǥ���
-#    (������­�� IRC ���饤����Ȥ�ʣ���Ĥʤ��äƤ������ޤߤޤ�)
-# 2: �б����륨�顼��å������դ��� NOTICE ���Ѵ����ơ�
-#    ���饤����Ȥ��ꤲ�ޤ���
-# multi-server-mode ���Υǥե���Ȥ� 0 �� single-server-mode ���Υǥե���Ȥ� 1 �Ǥ���
+# Tiarra が nick 変更時の衝突等を処理するモードを指定します。
+# 0: Tiarra が接続時と同様に自動処理します。
+# 1: クライアントにそのまま投げます。
+#    複数のクライアントが nick 重複を処理する場合は非常に危険です。
+#    (設定不足の IRC クライアントが複数つながっている場合も含みます)
+# 2: 対応するエラーメッセージ付きの NOTICE に変換して、
+#    クライアントに投げます。
+# multi-server-mode 時のデフォルトは 0 、 single-server-mode 時のデフォルトは 1 です。
 -nick-fix-mode: 0
 
 messages {
-  # Tiarra �����Ѥ��롢�����Ĥ��Υ�å���������ꤹ�롣
+  # Tiarra が使用する、いくつかのメッセージを指定する。
 
   quit {
-    # �ͥåȥ�����꤬�ѹ����졢����³����������ǥ�å�����
+    # ネットワーク設定が変更され、再接続する場合の切断メッセージ
     netconf-changed-reconnect: Server Configuration changed; reconnect
 
-    # �ͥåȥ�����꤬�ѹ����졢���Ǥ���������ǥ�å�����
+    # ネットワーク設定が変更され、切断する場合の切断メッセージ
     netconf-changed-disconnect: Server Configuration changed; disconnect
   }
 }
@@ -150,65 +150,65 @@ messages {
 * networks
 package networks;
 =pod
-info: Tiarra������³����ͥåȥ�������������¾
+info: Tiarraから接続するネットワークの定義、その他
 info-is-omitted: 1
 no-switch: 1
 
-# ʣ���Υ����С��ؤ���³���ǽ�ˤ��뤫�ɤ�����1(����)��0(����)�ǻ��ꡣ
-# �����1�ˤ���ȡ�����name��ʣ����������������ǽ�ˤʤꡢ
-# ʣ���Υ����С���Ʊ������³�����褦�ˤʤ�ޤ���
-# ���ΰ����������1�ˤ��Ƥ�����ϡ������ͥ�̾�˥ͥåȥ��̾���ղä��������
-# IRC������ʬ�Υ�å�������Tiarra�ˤ����Ѥ�����ޤ���
-# �����0�ˤ��Ƥ���֤ϡ�����name��ʣ�������������Ͻ���ʤ��ʤ�ޤ���
-# �ޥ�������С��⡼�ɤ������ư����Ѥ���ȡ����饤����Ȥ��鸫�������ͥ�̾��
-# �ѹ��ˤʤ�١������饤����Ȥ����Ū�����ƤΥ����ͥ뤫��part�����褦�˸�����
-# ����ľ���join��ľ�����褦�˸����ޤ���
-# �ǥե���ȤǤ�1�Ǥ���
+# 複数のサーバーへの接続を可能にするかどうか。1(オン)と0(オフ)で指定。
+# これを1にすると、次のnameを複数個定義する事が可能になり、
+# 複数のサーバーに同時に接続出来るようになります。
+# その一方、これを1にしている時は、チャンネル名にネットワーク名が付加される等、
+# IRCの大部分のメッセージがTiarraによる改変を受けます。
+# これを0にしている間は、次のnameを複数個定義する事は出来なくなります。
+# マルチサーバーモードの設定を起動中に変えると、クライアントから見たチャンネル名が
+# 変更になる為、全クライアントが一時的に全てのチャンネルからpartしたように見え、
+# その直後にjoinし直したように見えます。
+# デフォルトでは1です。
 multi-server-mode: 1
 
-# ��³����IRC�ͥåȥ����̾�����դ��ޤ�������̾���ϸ�ǻ��Ѥ��ޤ���
-# ʣ���Υͥåȥ������³����������¿��������Ʋ�������
+# 接続するIRCネットワークに名前を付けます。この名前は後で使用します。
+# 複数のネットワークに接続したい場合は多重定義して下さい。
 name: ircnet
 name: 2ch
 
-# �̾�Tiarra�Ǥϥ����ͥ�̾���#Tiarra@ircnet�פΤ褦��ɽ�����ޤ���
-# ����ϥͥåȥ��ircnet���#Tiarra�Ȥ��������ͥ��ɽ�路�ޤ���
-# @�ʹߤϾ�ά��ǽ�Ǥ�������ά���줿���Υǥե���ȤΥͥåȥ��̾�򤳤��ǻ��ꤷ�ޤ���
-# ��ά�������ϺǤ�Ϥ��������줿name���ǥե���Ȥˤʤ�ޤ���
-# (������name����Ĥ�̵���ä�����main���ǥե���Ȥˤʤ�ޤ�)
+# 通常Tiarraではチャンネル名を「#Tiarra@ircnet」のように表現します。
+# これはネットワークircnet内の#Tiarraというチャンネルを表わします。
+# @以降は省略可能ですが、省略された場合のデフォルトのネットワーク名をここで指定します。
+# 省略した場合は最も始めに定義されたnameがデフォルトになります。
+# (そしてnameが一つも無かった場合はmainがデフォルトになります)
 -default: ircnet
 
-# ��˽Ҥ٤��̤ꡢ�ǥե���ȤǤ�Tiarra�ϥ����ͥ�̾�ȥͥåȥ��̾��@�Ƕ��ڤ�ޤ���
-# ���ζ��ڤ�ʸ����Ǥ�դ�ʸ�����ѹ������������ޤ�����ά���줿����@�ˤʤ�ޤ���
+# 上に述べた通り、デフォルトではTiarraはチャンネル名とネットワーク名を@で区切ります。
+# この区切り文字は任意の文字に変更する事が出来ます。省略された場合は@になります。
 #
-# System::PrivTranslator �⥸�塼������Ѥ��Ƥ����硢 prefix �� nick ��ʬ�ˤ�
-# ���Ѥ���ޤ������Τ��ᡢ ! �� @ ��ޤ�ʸ��������Ѥ���ȥ��饤����Ȥ�����ư����
-# ��礬����ޤ��Τ����դ��Ƥ���������
+# System::PrivTranslator モジュールを利用している場合、 prefix の nick 部分にも
+# 利用されます。そのため、 ! や @ を含む文字列を利用するとクライアントが誤作動する
+# 場合がありますので注意してください。
 channel-network-separator: @
 
-# ��³��Υ����С��������Ǥ��줿���ˡ�join���Ƥ������Υ����С��Υ����ͥ��ɤ����뤫��
-# 1. "part-and-join"�ξ��ϡ����Ǥ����ȥ��饤����Ȥˤϥ����ͥ뤫��part�����褦�˸����ݤ���
-#    ����³����������ȺƤ�join�����褦�˸����ݤ��롣�Ǥ���٤��⤤��(�����plum�˻���ư��Ǥ���)
-# 2. "one-message"�ξ��ϡ����Ǥ����ȥ��饤����Ȥ˰��Ƥ�Tiarra��NOTICE�Ǥ��λݤ���𤹤롣
-#    ����³����������ȺƤ�NOTICE����𤹤롣JOIN��PART�Ϥ��ʤ��Τǡ�
-#    ���饤����Ȥ���Ϥޤ����Υ����ͥ�˻ĤäƤ��뤫�Τ褦�˸����롣
-# 3. "message-for-each"�ξ��ϡ����Ǥ����ȥ��饤����Ȥ˰��Ƥ�Tiarra��
-#    ��ã��ǽ�ˤʤä����ƤΥ����ͥ��NOTICE�Ǥ��λݤ���𤹤롣
-#    ����³����������ȺƤ�NOTICE����𤹤롣JOIN��PART�Ϥ��ʤ���
-# �ǥե���Ȥ�part-and-join�Ǥ���
+# 接続先のサーバーから切断された時に、joinしていたそのサーバーのチャンネルをどうするか。
+# 1. "part-and-join"の場合は、切断されるとクライアントにはチャンネルからpartしたように見せ掛け、
+#    再接続に成功すると再びjoinしたように見せ掛ける。最も負荷が高い。(これはplumに似た動作である)
+# 2. "one-message"の場合は、切断されるとクライアントに宛ててTiarraがNOTICEでその旨を報告する。
+#    再接続に成功すると再びNOTICEで報告する。JOINやPARTはしないので、
+#    クライアントからはまだそのチャンネルに残っているかのように見える。
+# 3. "message-for-each"の場合は、切断されるとクライアントに宛ててTiarraが
+#    到達不能になった全てのチャンネルにNOTICEでその旨を報告する。
+#    再接続に成功すると再びNOTICEで報告する。JOINやPARTはしない。
+# デフォルトはpart-and-joinです。
 action-when-disconnected: message-for-each
 
-# NICK���ѹ������٤ˡ��ѹ����������С��Ǥο�����NICK��NOTICE�Ǿ�����Τ��뤫�ɤ�����
-# 1�ʤ�ɬ�����Τ���0�ʤ��ѹ����nick����������nick(���饤����Ȥ�������ν����nick)�Ȱ�äƤ�����Τ����Τ��롣
-# �ǥե���Ȥ�0�Ǥ���
+# NICKを変更する度に、変更したサーバーでの新しいNICKをNOTICEで常に通知するかどうか。
+# 1なら必ず通知し、0なら変更後のnickがローカルnick(クライアントが見る事の出来るnick)と違っている場合のみ通知する。
+# デフォルトは0です。
 always-notify-new-nick: 0
 
 fixed-channels {
-  # Tiarra �����饤�������³���˥����ͥ�����������֤���ꤹ�롣
-  # �ޥå����ʤ��ä������ͥ�ˤĤ��ƤϺǸ�ˤޤȤ��
-  # (���֤������㤴����ˤʤä�)�����Ƥ��ޤ���
-  channel: #�Ƥ��Ȥ����ͤ�@ircnet
-  channel: #�Ƥ���@localserver
+  # Tiarra がクライアント接続時にチャンネル情報を送る順番を指定する。
+  # マッチしなかったチャンネルについては最後にまとめて
+  # (順番がごちゃごちゃになって)送られてきます。
+  channel: #てすとちゃんねる@ircnet
+  channel: #てすと@localserver
   channel: *@localserver
   channel: *@localserver:*.jp
 }
@@ -218,33 +218,33 @@ fixed-channels {
 * ircnet
 package ircnet;
 =pod
-info: �ͥåȥ������� (IRCnet)
+info: ネットワーク定義例 (IRCnet)
 info-is-omitted: 1
 no-switch: 1
 
-# �����С��Υۥ��Ȥȥݡ��ȡ���ά�Բġ�
+# サーバーのホストとポート。省略不可。
 host: irc.nara.wide.ad.jp
 port: 6663
 
-# general/user�����ꤷ���桼��̾��Ȥ鷺�ˡ��ƥͥåȥ�����ȼ��Υ桼��̾����Ѥ�������ǽ��
-# ��ά���줿��������general/user�����ꤷ����Τ��Ȥ��롣
+# general/userで設定したユーザ名を使わずに、各ネットワークで独自のユーザ名を使用する事も可能。
+# 省略されたら当然、general/userで設定したものが使われる。
 -user: hoge
 
-# general/name�����ꤷ����̾(������)��Ȥ鷺�ˡ��ƥͥåȥ�����ȼ�����̾����Ѳ�ǽ��
+# general/nameで設定した本名(建前上)を使わずに、各ネットワークで独自の本名を使用可能。
 -name: hoge
 
-# ���Υ����С����׵᤹��ѥ���ɡ���ά��ǽ��
+# このサーバーの要求するパスワード。省略可能。
 -password: hoge
 
-# general/setver-in/out-encoding�����ꤷ�����󥳡��ǥ��󥰤�Ȥ鷺�ˡ�
-# �ƥͥåȥ�����ȼ��Υ��󥳡��ǥ��󥰤���Ѥ�������ǽ��
-# ��ά���줿��������general�����ꤷ����Τ��Ȥ��롣
+# general/setver-in/out-encodingで設定したエンコーディングを使わずに、
+# 各ネットワークで独自のエンコーディングを使用する事も可能。
+# 省略されたら当然、generalで設定したものが使われる。
 -in-encoding: jis
 -out-encoding: jis
 
-# general/(ipv4|ipv6)bind-addr�����ꤷ���������륢�ɥ쥹��Ȥ鷺�ˡ�
-# �ƥͥåȥ�����ȼ���bind_addr����Ѥ�������ǽ��
-# ��ά���줿��general�����ꤷ����Τ��Ȥ��롣
+# general/(ipv4|ipv6)bind-addrで設定したローカルアドレスを使わずに、
+# 各ネットワークで独自のbind_addrを使用する事も可能。
+# 省略されたらgeneralで設定したものが使われる。
 -ipv4-bind-addr: 0.0.0.0
 -ipv6-bind-addr: ::0
 =cut
@@ -252,7 +252,7 @@ port: 6663
 * 2ch
 package 2ch;
 =pod
-info: �ͥåȥ������� (2ch)
+info: ネットワーク定義例 (2ch)
 info-is-omitted: 1
 no-switch: 1
 

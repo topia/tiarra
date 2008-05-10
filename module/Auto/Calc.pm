@@ -114,7 +114,7 @@ sub message_arrived {
 
 		    map {
 			if (defined($$_)) {
-			    # �����ν���
+			    # 汚染の除去
 			    $$_ =~ tr/\t\x0a\x0d/ /;
 			    $$_ =~ tr/\x00-\x19//d;
 			    $$_ =~ s/^\s+//;
@@ -148,7 +148,7 @@ sub message_arrived {
 		}
 		if ($err) {
 		    my $format = undef;
-		    # format �θ��̲�
+		    # format の個別化
 		    my $error_name = $err;
 		    if ($this->config->error_name_formatter) {
 
@@ -181,59 +181,59 @@ sub message_arrived {
 
 1;
 =pod
-info: Perl�μ���׻�������⥸�塼�롣
+info: Perlの式を計算させるモジュール。
 default: off
 
-# ȿ������ȯ������ꤷ�ޤ���
-request: �׻�
+# 反応する発言を指定します。
+request: 計算
 
-# ���Ѥ���Ĥ����&�����ͥ�Υޥ�����
-# ���Tiarra�⡼�ɻ��� [default: �ʤ�]
+# 使用を許可する人&チャンネルのマスク。
+# 例はTiarraモード時。 [default: なし]
 mask: * +*!*@*
 # [plum-mode] mask: +*!*@*
 
-# ��̤�̤������ä��Ȥ����֤���������ʸ���󡣾�ά������ undef ��
--undef: (̤���)
+# 結果が未定義だったときに置き換えられる文字列。省略されると undef 。
+-undef: (未定義)
 
-# ����˷׻��Ǥ����Ȥ��Υե����ޥå�
-# method: �׻���, result: ���, error: ���顼, signal: �����ʥ�
+# 正常に計算できたときのフォーマット
+# method: 計算式, result: 結果, error: エラー, signal: シグナル
 reply-format: #(method): #(result)
 
-# ���顼���������Ȥ��Υե����ޥå�
-# method: �׻���, result: ���, error: ���顼, signal: �����ʥ�
-error-format: #(method): ���顼�Ǥ���(#(error))
+# エラーが起きたときのフォーマット
+# method: 計算式, result: 結果, error: エラー, signal: シグナル
+error-format: #(method): エラーです。(#(error))
 
-# �����ʥ뤬ȯ�������Ȥ��Υե����ޥå�
--signal-format: #(method): �����ʥ�Ǥ���(#(signal))
+# シグナルが発生したときのフォーマット
+-signal-format: #(method): シグナルです。(#(signal))
 
-# signal-$SIGNALNAME-format ������
-# $SIGNALNAME �ˤϸ��� alarm/sigfpe ������ޤ���
-# �������ʤ���� signal-format �˥ե�����Хå����ޤ���
+# signal-$SIGNALNAME-format 形式。
+# $SIGNALNAME には現状 alarm/sigfpe があります。
+# 該当がなければ signal-format にフォールバックします。
 
-# �����Ĥ������󤲤ޤ���
--signal-alarm-format: #(method): �����ڤ�Ǥ���
--signal-sigfpe-format: #(method): ��ư�������׻��㳰�Ǥ���
+# いくつかの例を挙げます。
+-signal-alarm-format: #(method): 時間切れです。
+-signal-sigfpe-format: #(method): 浮動小数点計算例外です。
 
-# �����ॢ���Ȥ����ÿ�����ꤷ�ޤ��� alarm ���Ϥ���ޤ���
-# �Ƶ���ߤ��Τ˻Ȥ��ޤ������ɤ������꡼�����Ƥ�������ʷ�ϵ��Ǥ���
+# タイムアウトする秒数を指定します。 alarm に渡されます。
+# 再帰を止めるのに使えますが、どうもメモリリークしていそうな雰囲気です。
 timeout: 1
 
-# ���֥롼�����������Ĥ��뤫�ɤ�������ꤹ�롣
-# �Ƶ��������ǽ�ʤΤǡ����Ĥ�����Ϥ��Υ⥸�塼�����Ѥ�
-# Tiarra ��ư�������Ȥ򤪴��ᤷ�ޤ���
+# サブルーチン定義を許可するかどうかを指定する。
+# 再帰定義が可能なので、許可する場合はこのモジュール専用の
+# Tiarra を動かすことをお勧めします。
 permit-sub: 0
 
-# ���������ȯ������ꤷ�ޤ���
-# ���Υ⥸�塼��Ǥϸ����ѿ���ؿ�����ʤɤ�Ԥ��ޤ���
-# ���Υ��ޥ�ɤ�ȯ�Ԥ����Ȥ����򥯥ꥢ���ޤ���
-init: �׻������
+# 初期化する発言を指定します。
+# このモジュールでは現状変数や関数定義などを行えます。
+# このコマンドが発行されるとそれらをクリアします。
+init: 計算初期化
 
-# ���������Ĥ����&�����ͥ�Υޥ�����
-# ���Tiarra�⡼�ɻ��� [default: �ʤ�]
+# 初期化を許可する人&チャンネルのマスク。
+# 例はTiarraモード時。 [default: なし]
 init-mask: * +*!*@*
 # [plum-mode] mask: +*!*@*
 
-# �ƽ���������Ȥ���ȯ������ꤷ�ޤ���
-init-format: ��������ޤ�����
+# 再初期化したときの発言を指定します。
+init-format: 初期化しました。
 
 =cut

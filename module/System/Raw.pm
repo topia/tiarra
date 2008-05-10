@@ -12,7 +12,7 @@ sub message_arrived {
     my ($this, $msg, $sender) = @_;
     if ($sender->client_p and
 	  $msg->command eq uc($this->config->command || 'raw')) {
-	# ����¥ѥ�᥿�����ɬ�ס�
+	# 最低限パラメタは二つ必要。
 	if ($msg->n_params < 2) {
 	    $sender->send_message(
 		$this->construct_irc_message(
@@ -24,16 +24,16 @@ sub message_arrived {
 		       ]));
 	}
 	else {
-	    # ������λ����Τ롣����ϥޥ�����
+	    # 送り先の鯖を知る。これはマスク。
 	    my $target = $msg->param(0);
 	    
-	    # ��å������ƹ���
+	    # メッセージ再構築
 	    my $raw_msg = $this->construct_irc_message(
 		Line => join(' ', @{$msg->params}[1 .. ($msg->n_params - 1)]),
 		Encoding => 'utf8',
 	       );
 
-	    # ������ޥ����˥ޥå�����ͥåȥ�����Ƥˤ�������롣
+	    # 送信先マスクにマッチするネットワーク全てにこれを送る。
 	    my $sent;
 	    foreach my $network (RunLoop->shared->networks_list) {
 		if (Mask::match($target, $network->network_name)) {
@@ -52,22 +52,22 @@ sub message_arrived {
 			  ]));
 	    }
 	}
-	$msg = undef; # �˴�
+	$msg = undef; # 破棄
     }
     $msg;
 }
 
 1;
 =pod
-info: �ޥ����ǻ��ꤷ�������С���IRC��å�������ù�������ľ�����롣
+info: マスクで指定したサーバーにIRCメッセージを加工せずに直接送る。
 default: off
 
-# �㤨��QUIT��������ǰ��Ū�����Ǥ���ǽ��
+# 例えばQUITを送る事で一時的な切断が可能。
 
-# ���ε�ǽ�����Ѥ��뤿��Υ��ޥ��̾���ǥե���Ȥϡ�raw�ס�
-# ��/raw ircnet quit�פΤ褦�ˤ��ƻȤ���
-# ����ܤΥѥ�᡼����������Υͥåȥ��̾���磻��ɥ����ɻ��Ѳ�ǽ��
-# CHOCOA �ξ�硢 raw �����饤����ȤǻȤ��Ƥ��ޤ��Τǡ�
-# ���ޥ��̾���Ѥ��뤫�� /raw raw ircnet quit �Τ褦�ˤ���ɬ�פ����롣
+# この機能を利用するためのコマンド名。デフォルトは「raw」。
+# 「/raw ircnet quit」のようにして使う。
+# 一つ目のパラメータは送り先のネットワーク名。ワイルドカード使用可能。
+# CHOCOA の場合、 raw がクライアントで使われてしまうので、
+# コマンド名を変えるか、 /raw raw ircnet quit のようにする必要がある。
 command: raw
 =cut

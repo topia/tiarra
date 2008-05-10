@@ -69,7 +69,7 @@ sub message_arrived {
 	foreach my $block (@{$this->{config}}) {
 	    if (Mask::match_deep($block->{request}, $msg->param(1))) {
 		if (Mask::match_deep_chan($block->{mask}, $msg->prefix, $get_full_ch_name->())) {
-		    # �������ȯ����Ԥʤ���
+		    # ランダムな発言を行なう。
 		    my $rate_rand = int(rand() * hex('0xffffffff')) % 100;
 		    if ($rate_rand < ($block->{rate} || 100)) {
 			my $reply_str = $block->{database}->get_value() || undef;
@@ -78,7 +78,7 @@ sub message_arrived {
 		}
 	    } elsif (Mask::match_deep($block->{count_query}, $msg->param(1))) {
 		if (Mask::match_deep_chan($block->{mask}, $msg->prefix, $get_full_ch_name->())) {
-		    # ��Ͽ�������
+		    # 登録数を求める
 		    my $count = $block->{database}->length();
 		    $reply_anywhere->($block->{count_format}, 'count' => $count);
 		}
@@ -91,8 +91,8 @@ sub message_arrived {
 		if (defined $keyword && defined $param) {
 		    if (Mask::match_deep($block->{add}, $keyword) &&
 			    $msg_from_modifier_p->()) {
-			# ȯ�����ɲ�
-			# ���οͤ��ѹ�����Ĥ���Ƥ��롣
+			# 発言の追加
+			# この人は変更を許可されている。
 			if ($param ne '') {
 			    $block->{database}->add_value($param);
 			    $reply_anywhere->($block->{added_format}, 'message' => $param);
@@ -100,8 +100,8 @@ sub message_arrived {
 		    }
 		} elsif (Mask::match_deep($block->{remove}, $keyword) &&
 			$msg_from_modifier_p->()) {
-		    # ȯ���κ��
-		    # ���οͤϺ������Ĥ���Ƥ��롣
+		    # 発言の削除
+		    # この人は削除を許可されている。
 		    my $count = $block->{database}->del_value($param);
 		    $reply_anywhere->($block->{removed_format}, 'message' => $param, 'count' => $count);
 		}
@@ -115,61 +115,61 @@ sub message_arrived {
 1;
 
 =pod
-info: �����ȯ����ȿ�����ƥ������ȯ���򤷤ޤ���
+info: 特定の発言に反応してランダムな発言をします。
 default: off
 
-# Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���
+# Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。
 
-# ���Ѥ���֥��å��������
+# 使用するブロックの定義。
 blocks: wimikuji
 
 wimikuji {
-  # �������ȯ�������å������ν񤫤줿�ե�����ȡ�����ʸ�������ɤ���ꤷ�ޤ���
-  # �ե��������Ǥϰ�Ԥ˰�ĤΥ�å�������񤤤Ʋ�������
+  # ランダムに発言するメッセージの書かれたファイルと、その文字コードを指定します。
+  # ファイルの中では一行に一つのメッセージを書いて下さい。
   file: random.txt
   file-encoding: euc
 
-  # ȿ������ȯ����ɽ���ޥ�������ꤷ�ޤ���
-  request: ��ߤ���
+  # 反応する発言を表すマスクを指定します。
+  request: ゐみくじ
 
-  # ��å���������Ͽ�����������륭����ɤ���ꤷ�ޤ���
-  count-query: ��ߤ�����Ͽ��
+  # メッセージの登録数を返答するキーワードを指定します。
+  count-query: ゐみくじ登録数
 
-  # ��å���������Ͽ������������Ȥ���ȿ������ꤷ�ޤ���
-  # format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(count)����Ͽ���ˤʤ�ޤ���
-  count-format: ��ߤ�����#(count)����Ͽ����Ƥ��ޤ���
+  # メッセージの登録数を返答するときの反応を指定します。
+  # formatで指定できるものと同じです。#(count)は登録数になります。
+  count-format: ゐみくじは#(count)件登録されています。
 
-  # ������ʥ�å�������ȯ������ݤΥե����ޥåȤ���ꤷ�ޤ���
-  # �����ꥢ���ִ���ͭ���Ǥ���#(message)��#(nick.now)��#(channel)��
-  # ���줾���å��������ơ�����nick�������ͥ�̾���ִ�����ޤ���
-  # ������Ͽ����Ƥ��ʤ��Ȥ��Τ���ˡ�#(message|;̵��Ͽ)�Τ褦�˻��ꤹ����ɤ��Ǥ��礦��
-  format: #(name|nick.now)�α�̿��#(message)
+  # ランダムなメッセージを発言する際のフォーマットを指定します。
+  # エイリアス置換が有効です。#(message)、#(nick.now)、#(channel)は
+  # それぞれメッセージ内容、相手のnick、チャンネル名に置換されます。
+  # 何も登録されていないときのために、#(message|;無登録)のように指定すると良いでしょう。
+  format: #(name|nick.now)の運命は#(message)
 
-  # ȿ������ͤΥޥ�����
+  # 反応する人のマスク。
   mask: * *!*@*
   # plum: mask: *!*@*
 
-  # ��å��������ɲä��줿�Ȥ���ȿ������ꤷ�ޤ���
-  # format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(message)���ɲä��줿��å������ˤʤ�ޤ���
-  added-format: #(name|nick.now): ��ߤ��� #(message) ���ɲä��ޤ�����
+  # メッセージが追加されたときの反応を指定します。
+  # formatで指定できるものと同じです。#(message)は追加されたメッセージになります。
+  added-format: #(name|nick.now): ゐみくじ #(message) を追加しました。
 
-  # ��å�������������줿�Ȥ���ȿ������ꤷ�ޤ���
-  # format�ǻ���Ǥ����Τ�Ʊ���Ǥ���#(message)�Ϻ�����줿��å������ˤʤ�ޤ���
-  removed-format: #(name|nick.now): ��ߤ��� #(message) �������ޤ�����
+  # メッセージが削除されたときの反応を指定します。
+  # formatで指定できるものと同じです。#(message)は削除されたメッセージになります。
+  removed-format: #(name|nick.now): ゐみくじ #(message) を削除しました。
 
-  # ȯ����ȿ�������Ψ����ꤷ�ޤ���ɴʬΨ�Ǥ�����ά���줿����100�ȸ�������ޤ���
+  # 発言に反応する確率を指定します。百分率です。省略された場合は100と見做されます。
   rate: 100
 
-  # ��å��������ɲä��륭����ɤ���ꤷ�ޤ���
-  # �����ǻ��ꤷ��������ɤ�ȯ������ȡ���������å��������ɲä��ޤ���
-  # �ºݤ��ɲ���ˡ�ϡ�<add�ǻ��ꤷ���������> <�ɲä����å�����>�פǤ���
-  add: ��ߤ����ɲ�
+  # メッセージを追加するキーワードを指定します。
+  # ここで指定したキーワードを発言すると、新しいメッセージを追加します。
+  # 実際の追加方法は「<addで指定したキーワード> <追加するメッセージ>」です。
+  add: ゐみくじ追加
 
-  # ��å������������륭����ɤ���ꤷ�ޤ���
-  # �ºݤκ����ˡ�ϡ�<remove�ǻ��ꤷ���������> <������륭�����>�פǤ���
-  remove: ��ߤ������
+  # メッセージを削除するキーワードを指定します。
+  # 実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。
+  remove: ゐみくじ削除
 
-  # add��remove����Ĥ���͡���ά���줿����ï���ѹ��Ǥ��ޤ���
+  # addとremoveを許可する人。省略された場合は誰も変更できません。
   modifier: * *!*@*
   # plum: modifier: *!*@*
 }

@@ -26,8 +26,8 @@ my $conf_outputs = {
 };
 
 my $stdout_charset = 'utf8';
-my $conf_charset = 'euc';
-my $html_charset = 'euc';
+my $conf_charset = 'utf8';
+my $html_charset = 'utf8';
 
 if (!-f 'tiarra' || !-d 'main' || !-d 'module') {
     die "run this script on tiarra's directory.\n";
@@ -42,7 +42,7 @@ exit;
 
 sub makeconf {
 
-    # module����.pm�򸡺�
+    # module下の.pmを検索
     my @modules;
     find(sub {
 	if (-f $_ && $_ =~ m/\.pm$/) {
@@ -83,12 +83,12 @@ sub makeconf {
 
 our $classify_modules_CACHE;
 sub classify_modules {
-    # ���ټ¹Ԥ����顢���η�̤�����å��夵��롣
+    # 一度実行したら、その結果がキャッシュされる。
     if (defined($_ = $classify_modules_CACHE)) {
 	return $_;
     }
 
-    my $classified = {}; # {���롼��̾ => [����˴ޤޤ��⥸�塼���DocPod]}
+    my $classified = {}; # {グループ名 => [それに含まれるモジュールのDocPod]}
     my $classify = sub {
 	my $doc = shift;
 
@@ -108,7 +108,7 @@ sub classify_modules {
 	push @$vec,$doc;
     };
 
-    # module����.pm�򸡺�
+    # module下の.pmを検索
     find(sub {
 	if (-f $_ && $_ =~ m/\.pm$/) {
 	    my $parser = DocParser->new($_);
@@ -118,12 +118,12 @@ sub classify_modules {
 		die "ERROR[$_]: $@\n";
 	    }
 
-	    # ʬ��
+	    # 分類
 	    $classify->($doc) if defined $doc;
 	}
     },'module');
 
-    # ������
+    # ソート
     foreach (keys %$classified) {
 	@{$classified->{$_}} =
 	    map { $_->[1] }
@@ -136,9 +136,9 @@ sub classify_modules {
 }
 
 sub makehtml_mods {
-    # �ե�����ϥ��롼����˺�����������ա�
-    # ���ʤ�����ޤ��ǽ�����ƤΥ⥸�塼��򥰥롼�פ�ʬ�ह��ɬ�פ����롣
-    my $classified = &classify_modules; # {���롼��̾ => [����˴ޤޤ��⥸�塼���DocPod]}
+    # ファイルはグループ毎に作られる点に注意。
+    # すなわち、まず最初に全てのモジュールをグループに分類する必要がある。
+    my $classified = &classify_modules; # {グループ名 => [それに含まれるモジュールのDocPod]}
 
     mkdir 'doc/module';
 
@@ -162,28 +162,28 @@ sub makehtml_mods {
 	my $last_docpod = $docpods->[-1];
 	foreach my $docpod (@$docpods) {
 	    print "  parsing and translating ".$docpod->pkg_name."\n";
-	    # ���ԤϤ��Τޤ޽��ϡ�
-	    # key: value�ιԤϡ�<span id="key">��<span id="value">�ǽ��ϡ�
-	    # ����key��Ƭ��'-'���դ��Ƥ����顢ñ�ˤ���'-'��ä���
+	    # 空行はそのまま出力。
+	    # key: valueの行は、<span id="key">と<span id="value">で出力。
+	    # そのkeyの頭に'-'が付いていたら、単にその'-'を消す。
 	    #
-	    # '#'�ǻϤޤ�Ԥϡ�<p id="comment">�ǽ��Ϥ��뤬���ʲ����ü�ʥ롼��˽�����
-	    # 1. '#'�ιԤ�Ϣ³���Ƥ����硢�����ιԤ��ĤΥ��롼�פˤޤȤ�롣
-	    # 2. �ƥ��롼�����'#'�˸�³���붦�̤ο��Υ��ڡ������������
-	    # 3. ���������塢'#'��˥��ڡ������ޤ��ĤäƤ���ʤ顢�����&nbsp;���ִ����롣
+	    # '#'で始まる行は、<p id="comment">で出力するが、以下の特殊なルールに従う。
+	    # 1. '#'の行が連続している場合、それらの行を一つのグループにまとめる。
+	    # 2. 各グループ内で'#'に後続する共通の数のスペースを取り除く。
+	    # 3. 取り除いた後、'#'後にスペースがまだ残っているなら、それを&nbsp;に置換する。
 	    #
-	    # ��:
+	    # 例:
 	    # # foo
 	    # # bar {
 	    # #   baz
 	    # # }
-	    # ��
+	    # ↓
 	    # <p id="comment">
 	    #   foo<br />
 	    #   bar {<br />
 	    #   &nbsp;&nbsp;baz<br />
 	    #   }<br />
 	    # </p>
-	    my $html = ''; # ʸ�������ɤ�UTF-8
+	    my $html = ''; # 文字コードはUTF-8
 
 	    my @lines = split /\n/,$docpod->content;
 	    for (my $i = 0; $i < @lines; $i++) {
@@ -193,26 +193,26 @@ sub makehtml_mods {
 		    #$html .= "<br />\n";
 		}
 		elsif ($line =~ m/^\s*#/) {
-		    # ���롼�׺���
+		    # グループ作成
 		    my @group;
 		    for (; $i < @lines; $i++) {
 			if ($lines[$i] =~ m/^\s*#/) {
-			    # ����ϥ֥��å���³����
+			    # これはブロックの続き。
 			    (my $stripped = $lines[$i]) =~ s/^\s*#//;
 
-			    # ���֤�4�ĤΥ��ڡ������Ѵ�������ư��ϸ�ǽ������뤫���Τ�ʤ���
+			    # タブは4つのスペースに変換。この動作は後で修正するかも知れない。
 			    $stripped =~ s/\t/    /g;
 
 			    push @group,$stripped;
 			}
 			else {
 			    $i--;
-			    last; # �����ǽ����
+			    last; # ここで終わり
 			}
 		    }
 
-		    # ���̤�����Ƭ�Υ��ڡ����������ʤ���ƹԤˤĤ�����Ƭ�Υ��ڡ����θĿ��������
-		    # ���κǾ��ͤ���٤����ڡ����ο��Ȥ��롣
+		    # 共通する先頭のスペースを除去。すなわち各行について先頭のスペースの個数を数え、
+		    # その最小値を削るべきスペースの数とする。
 		    my $spaces_to_remove;
 		    foreach (@group) {
 			m/^(\s*)/;
@@ -233,7 +233,7 @@ sub makehtml_mods {
 			} @group;
 		    }
 
-		    # ����Ǥ�ĤäƤ�����Ƭ�Υ��ڡ�����&nbsp;���ִ���
+		    # それでも残っている先頭のスペースを&nbsp;に置換。
 		    @group = map {
 			s{^(\s*)(.*)}{
 			  my $spc = '&nbsp;' x length($1);
@@ -261,7 +261,7 @@ sub makehtml_mods {
 		}
 	    }
 
-	    # �ƥ�ץ��Ÿ��
+	    # テンプレを展開
 	    $t->module->expand(
 		content_name => _escapeHTML($docpod->pkg_name),
 		description  => _escapeHTML($unijp->set($docpod->header('info'))->$html_charset),
@@ -272,7 +272,7 @@ sub makehtml_mods {
 		description => _escapeHTML($unijp->set($docpod->header('info'))->$html_charset),
 	    );
 
-	    # ���줬�Ǹ�����ǤǤʤ���С�hr���ɲä��롣
+	    # これが最後の要素でなければ、hrを追加する。
 	    if ($docpod != $last_docpod) {
 		$t->module->hr->add;
 	    }
@@ -280,7 +280,7 @@ sub makehtml_mods {
 	    $t->module->add;
 	}
 
-	# �ե�����˽���
+	# ファイルに出力
 	my $fh = IO::File->new("doc/$group_path",'w');
 	$fh->print($t->str);
     }
@@ -291,15 +291,15 @@ sub makehtml_mods_toc {
 
     my $t = Template->new('doc-src/module-toc.html');
 
-    my $classified = &classify_modules; # {���롼��̾ => [����˴ޤޤ��⥸�塼���DocPod]}
+    my $classified = &classify_modules; # {グループ名 => [それに含まれるモジュールのDocPod]}
 
-    # module-group.tdoc���ɤ�ǡ��ƥ��롼�פ�������������롣
+    # module-group.tdocを読んで、各グループの説明を取得する。
     my $groups = DocParser->new('doc-src/module-group.tdoc');
 
     foreach my $groupname_key (sort {$a cmp $b} keys %$classified) {
 	my $groupname = $groupname_key ne '' ? $groupname_key : 'UNCLASSIFIED';
 	my $description = do {
-	    # ���Υ��롼�פ��Ф��ơ��������������Ƥ��뤫��
+	    # このグループに対して、説明が定義されているか？
 	    my $groupdoc = $groups->getdoc($groupname);
 	    if (defined $groupdoc) {
 		my $description = $groupdoc->header->{description};
@@ -324,7 +324,7 @@ sub makehtml_mods_toc {
 	    description => $unijp->set($description)->$html_charset,
 	);
 
-	# �ƥ⥸�塼��̾�Ȥ���������Ÿ����
+	# 各モジュール名とその説明を展開～
 	foreach my $moddoc (@{$classified->{$groupname_key}}) {
 	    print $moddoc->pkg_name." belongs to the group `".$groupname."'\n";
 	    $t->toc_group->toc_individual->add(

@@ -2,16 +2,16 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
+<!-- $Id: contents.html 11357 2008-05-10 14:03:50Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
-    <title>Log �ط��Υ⥸�塼�� - Tiarra Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Log 関係のモジュール - Tiarra Documentation</title>
     <link rel="stylesheet" type="text/css" href="../default.css" />
   </head>
   <body>
     <div class="header">
-      <h1>Log �ط��Υ⥸�塼��</h1>
+      <h1>Log 関係のモジュール</h1>
     </div>
 
     <hr class="sep" />
@@ -19,88 +19,88 @@
     <div class="pane-main">
       
       <div id="module-Log::Channel" class="module">
-        <div class="module-header"><h2 title="�����ͥ��priv�Υ�������⥸�塼�롣">Log::Channel</h2>
-          <span class="description">�����ͥ��priv�Υ�������⥸�塼�롣</span></div>
+        <div class="module-header"><h2 title="チャンネルやprivのログを取るモジュール。">Log::Channel</h2>
+          <span class="description">チャンネルやprivのログを取るモジュール。</span></div>
         <div class="content">
 	  <p class="comment">
-Log�ϤΥ⥸�塼��Ǥϡ��ʲ��Τ褦�����դ������ִ����Ԥʤ��롣<br />
+Log系のモジュールでは、以下のように日付や時刻の置換が行なわれる。<br />
 %% : %<br />
-%Y : ǯ(4��)<br />
-%m : ��(2��)<br />
-%d : ��(2��)<br />
-%H : ����(2��)<br />
-%M : ʬ(2��)<br />
-%S : ��(2��)<br />
+%Y : 年(4桁)<br />
+%m : 月(2桁)<br />
+%d : 日(2桁)<br />
+%H : 時間(2桁)<br />
+%M : 分(2桁)<br />
+%S : 秒(2桁)<br />
 </p>
 <p class="comment">
-��������¸����ǥ��쥯�ȥꡣTiarra����ư�������֤�������Хѥ���~����ϻȤ��ʤ���<br />
+ログを保存するディレクトリ。Tiarraが起動した位置からの相対パス。~指定は使えない。<br />
 </p>
 <div class="element"><span class="key">directory</span>:<span class="value">log</span></div>
 <p class="comment">
-�����ե������ʸ�������ɡ���ά���줿��jis��<br />
+ログファイルの文字コード。省略されたらjis。<br />
 </p>
-<div class="element"><span class="key">charset</span>:<span class="value">sjis</span></div>
+<div class="element"><span class="key">charset</span>:<span class="value">utf8</span></div>
 <p class="comment">
-�ƹԤΥإå��Υե����ޥåȡ���ά���줿��&#39;%H:%M&#39;��<br />
+各行のヘッダのフォーマット。省略されたら&#39;%H:%M&#39;。<br />
 </p>
 <div class="element"><span class="key">header</span>:<span class="value">%H:%M:%S</span></div>
 <p class="comment">
-�ե�����̾�Υե����ޥåȡ���ά���줿��&#39;%Y.%m.%d.txt&#39;<br />
+ファイル名のフォーマット。省略されたら&#39;%Y.%m.%d.txt&#39;<br />
 </p>
 <div class="element"><span class="key">filename</span>:<span class="value">%Y.%m.%d.txt</span></div>
 <p class="comment">
-�����ե�����Υ⡼��(8�ʿ�)����ά���줿��600<br />
+ログファイルのモード(8進数)。省略されたら600<br />
 </p>
 <div class="element"><span class="key">mode</span>:<span class="value">600</span></div>
 <p class="comment">
-�����ǥ��쥯�ȥ�Υ⡼��(8�ʿ�)����ά���줿��700<br />
+ログディレクトリのモード(8進数)。省略されたら700<br />
 </p>
 <div class="element"><span class="key">dir-mode</span>:<span class="value">700</span></div>
 <p class="comment">
-�������륳�ޥ�ɤ�ɽ���ޥ�������ά���줿�鵭Ͽ���������Υ��ޥ�ɤ�Ͽ���롣<br />
+ログを取るコマンドを表すマスク。省略されたら記録出来るだけのコマンドを記録する。<br />
 </p>
 <div class="element"><span class="key">command</span>:<span class="value">privmsg,join,part,kick,invite,mode,nick,quit,kill,topic,notice</span></div>
 <p class="comment">
-PRIVMSG��NOTICE��Ͽ����ݤˡ���ʬ��ȯ����¾�ͤ�ȯ���ǥե����ޥåȤ��Ѥ��뤫�ɤ�����1/0���ǥե���Ȥ�1��<br />
+PRIVMSGとNOTICEを記録する際に、自分の発言と他人の発言でフォーマットを変えるかどうか。1/0。デフォルトで1。<br />
 </p>
 <div class="element"><span class="key">distinguish-myself</span>:<span class="value">1</span></div>
 <p class="comment">
-�ƥ����ե�����򳫤��äѤʤ��ˤ��뤫�ɤ�����<br />
-���Υ��ץ�����¿���ξ�硢�ǥ����������������ޤ��Ƹ�Ψ�ɤ���������¸���ޤ���<br />
-������Ͽ���٤����ƤΥե�����򳫤����ޤޤˤ���Τǡ�50��100�Υ����ͥ��<br />
-�̡��Υե�����˥�������褦�ʾ��ˤϻȤ��٤��ǤϤ���ޤ���<br />
-���� fd �����դ줿��硢���饤����Ȥ���(�ޤ��ϥ����Ф�)��³�Ǥ��ʤ���<br />
-�����ʥ⥸�塼�������ɤǤ��ʤ��������������Ǥ��ʤ��ʤɤξɾ����������ǽ����<br />
-����ޤ���limit �ξܺ٤ˤĤ��Ƥ� OS ���Υɥ�����Ȥ򻲾Ȥ��Ƥ���������<br />
+各ログファイルを開きっぱなしにするかどうか。<br />
+このオプションは多くの場合、ディスクアクセスを抑えて効率良くログを保存しますが<br />
+ログを記録すべき全てのファイルを開いたままにするので、50や100のチャンネルを<br />
+別々のファイルにログを取るような場合には使うべきではありません。<br />
+万一 fd があふれた場合、クライアントから(またはサーバへ)接続できない・<br />
+新たなモジュールをロードできない・ログが全然できないなどの症状が起こる可能性が<br />
+あります。limit の詳細については OS 等のドキュメントを参照してください。<br />
 </p>
 <div class="element"><span class="key">keep-file-open</span>:<span class="value">1</span></div>
 <p class="comment">
-keep-file-open ���˳ƹԤ��Ȥ� flush ���뤫�ɤ�����<br />
-open/close ����٤ϵ��ˤʤ뤬�������ϼ��������ʤ��͸�����<br />
-keep-file-open ��ͭ���Ǥʤ��ʤ�̵�뤵��(1�ˤʤ�)�ޤ���<br />
+keep-file-open 時に各行ごとに flush するかどうか。<br />
+open/close の負荷は気になるが、ログは失いたくない人向け。<br />
+keep-file-open が有効でないなら無視され(1になり)ます。<br />
 </p>
 <div class="element"><span class="key">always-flush</span>:<span class="value">0</span></div>
 <p class="comment">
-keep-file-open��ͭ���ˤ�����硢ȯ�����٤˥����ե�������ɵ�����ΤǤϤʤ�<br />
-�����ʬ�̤�ί�ޤäƤ���񤭹��ޤ�롣���Τ��ᡢ�ե�����򳫤��Ƥ�<br />
-�Ƕ��ȯ���Ϥޤ��񤭹��ޤ�Ƥ��ʤ���ǽ�������롣<br />
-sync�����ꤹ��ȡ�¨�¤˥�����ǥ������˽񤭹��ि��Υ��ޥ�ɤ��ɲä���롣<br />
-��ά���줿���ϥ��ޥ�ɤ��ɲä��ʤ���<br />
+keep-file-openを有効にした場合、発言の度にログファイルに追記するのではなく<br />
+一定の分量が溜まってから書き込まれる。そのため、ファイルを開いても<br />
+最近の発言はまだ書き込まれていない可能性がある。<br />
+syncを設定すると、即座にログをディスクに書き込むためのコマンドが追加される。<br />
+省略された場合はコマンドを追加しない。<br />
 </p>
 <div class="element"><span class="key">sync</span>:<span class="value">sync</span></div>
 <p class="comment">
-�ƥ����ͥ�����ꡣ�����ͥ�̾����ʬ�ϥޥ����Ǥ��롣<br />
-�ĿͰ��Ƥ�����줿PRIVMSG��NOTICE�ϥ����ͥ�̾&quot;priv&quot;�Ȥ��Ƹ�������롣<br />
-���Ҥ��줿����Ǹ��������Τǡ����ƤΥ����ͥ�˥ޥå�����&quot;*&quot;�ʤɤϺǸ�˽񤫤ʤ���Фʤ�ʤ���<br />
-���ꤵ�줿�ǥ��쥯�ȥ꤬¸�ߤ��ʤ��ä��顢Log::Channel�Ϥ���򾡼�˺�롣<br />
-�ե����ޥåȤϼ����̤ꡣ<br />
-channel: &lt;�ǥ��쥯�ȥ�̾&gt; (&lt;�����ͥ�̾&gt; / &#39;priv&#39;)<br />
-��:<br />
+各チャンネルの設定。チャンネル名の部分はマスクである。<br />
+個人宛てに送られたPRIVMSGやNOTICEはチャンネル名&quot;priv&quot;として検索される。<br />
+記述された順序で検索されるので、全てのチャンネルにマッチする&quot;*&quot;などは最後に書かなければならない。<br />
+指定されたディレクトリが存在しなかったら、Log::Channelはそれを勝手に作る。<br />
+フォーマットは次の通り。<br />
+channel: &lt;ディレクトリ名&gt; (&lt;チャンネル名&gt; / &#39;priv&#39;)<br />
+例:<br />
 filename: %Y.%m.%d.txt<br />
-channel: IRCDanwasitu #IRC���ü�@ircnet<br />
+channel: IRCDanwasitu #IRC談話室@ircnet<br />
 channel: others *<br />
-������Ǥϡ�#IRC���ü�@ircnet�Υ�����IRCDanwasitu/%Y.%m.%d.txt�ˡ�<br />
-����ʳ�(priv��ޤ�)�Υ�����others/%Y.%m.%d.txt����¸����롣<br />
+この例では、#IRC談話室@ircnetのログはIRCDanwasitu/%Y.%m.%d.txtに、<br />
+それ以外(privも含む)のログはothers/%Y.%m.%d.txtに保存される。<br />
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">priv priv</span></div>
 <div class="element"><span class="key">channel</span>:<span class="value">others *</span></div>
@@ -113,38 +113,38 @@ channel: others *<br />
       
       
       <div id="module-Log::ChannelList" class="module">
-        <div class="module-header"><h2 title="�����ͥ�ꥹ�Ȥ�ƥ�ץ졼�Ȥ˱�ä� HTML �����ޤ���">Log::ChannelList</h2>
-          <span class="description">�����ͥ�ꥹ�Ȥ�ƥ�ץ졼�Ȥ˱�ä� HTML �����ޤ���</span></div>
+        <div class="module-header"><h2 title="チャンネルリストをテンプレートに沿って HTML 化します。">Log::ChannelList</h2>
+          <span class="description">チャンネルリストをテンプレートに沿って HTML 化します。</span></div>
         <div class="content">
 	  <p class="comment">
-list ���ޥ�ɤ��¹Ԥ��줿�ݤ�ư��ޤ���<br />
+list コマンドが実行された際に動作します。<br />
 </p>
 <p class="comment">
-���Ϥ������ե�����̾���ͥåȥ��̾���Ȥ�����Υ֥��å�����ꤷ�ޤ�����<br />
+出力したいファイル名、ネットワーク名、使う設定のブロックを指定します。。<br />
 </p>
 <div class="element"><span class="key">networks</span>:<span class="value">ircnet.html ircnet ircnet</span></div>
 <div class="block element"><span class="block key">ircnet</span>
 <div class="block content">
 <p class="comment">
-�ƥ�ץ졼�ȥե��������ꤷ�ޤ���<br />
+テンプレートファイルを指定します。<br />
 </p>
 <div class="element"><span class="key">template</span>:<span class="value">channellist.html.tmpl</span></div>
 <p class="comment">
-���Ϥȥƥ�ץ졼�ȥե������ʸ�������ɤ���ꤷ�ޤ���<br />
+出力とテンプレートファイルの文字コードを指定します。<br />
 </p>
 <div class="element"><span class="key">charset</span>:<span class="value">euc</span></div>
 <p class="comment">
-�����򳫻�/��λ��������Υե����ޥåȤ���ꤷ�ޤ���<br />
+取得を開始/終了した時刻のフォーマットを指定します。<br />
 </p>
-<div class="element"><span class="key">fetch-starttime</span>:<span class="value">%Yǯ%m��%d�� %H��%Mʬ(���ܻ���)</span></div>
-<div class="element"><span class="key">fetch-endtime</span>:<span class="value">%Yǯ%m��%d�� %H��%Mʬ(���ܻ���)</span></div>
+<div class="element"><span class="key">fetch-starttime</span>:<span class="value">%Y年%m月%d日 %H時%M分(日本時間)</span></div>
+<div class="element"><span class="key">fetch-endtime</span>:<span class="value">%Y年%m月%d日 %H時%M分(日本時間)</span></div>
 <p class="comment">
-ɽ����������ͥ�� mask ����ꤷ�ޤ���<br />
+表示するチャンネルの mask を指定します。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">*</span></div>
 <div class="element"><span class="key">mask</span>:<span class="value">-re:^\&(AUTH|SERVICES|LOCAL|HASH|SERVERS|NUMERICS|CHANNEL|KILLS|NOTICES|ERRORS)</span></div>
 <p class="comment">
-���Ϥ���ե�����Υ⡼�ɤ���ꤷ�ޤ���<br />
+出力するファイルのモードを指定します。<br />
 </p>
 <div class="element"><span class="key">mode</span>:<span class="value">644</span></div>
 </div></div>
@@ -157,88 +157,88 @@ list ���ޥ�ɤ��¹Ԥ��줿�ݤ�ư��ޤ���<br />
       
       
       <div id="module-Log::Raw" class="module">
-        <div class="module-header"><h2 title="�����ФȤ������̿�����¸����">Log::Raw</h2>
-          <span class="description">�����ФȤ������̿�����¸����</span></div>
+        <div class="module-header"><h2 title="サーバとの生の通信を保存する">Log::Raw</h2>
+          <span class="description">サーバとの生の通信を保存する</span></div>
         <div class="content">
 	  <p class="comment">
-Log�ϤΥ⥸�塼��Ǥϡ��ʲ��Τ褦�����դ������ִ����Ԥʤ��롣<br />
+Log系のモジュールでは、以下のように日付や時刻の置換が行なわれる。<br />
 %% : %<br />
-%Y : ǯ(4��)<br />
-%m : ��(2��)<br />
-%d : ��(2��)<br />
-%H : ����(2��)<br />
-%M : ʬ(2��)<br />
-%S : ��(2��)<br />
+%Y : 年(4桁)<br />
+%m : 月(2桁)<br />
+%d : 日(2桁)<br />
+%H : 時間(2桁)<br />
+%M : 分(2桁)<br />
+%S : 秒(2桁)<br />
 </p>
 <p class="comment">
-��������¸����ǥ��쥯�ȥꡣTiarra����ư�������֤�������Хѥ���~����ϻȤ��ʤ���<br />
+ログを保存するディレクトリ。Tiarraが起動した位置からの相対パス。~指定は使えない。<br />
 </p>
 <div class="element"><span class="key">directory</span>:<span class="value">rawlog</span></div>
 <p class="comment">
-�ƹԤΥإå��Υե����ޥåȡ���ά���줿��&#39;%H:%M&#39;��<br />
+各行のヘッダのフォーマット。省略されたら&#39;%H:%M&#39;。<br />
 </p>
 <div class="element"><span class="key">header</span>:<span class="value">%H:%M:%S</span></div>
 <p class="comment">
-�ե�����̾�Υե����ޥåȡ���ά���줿��&#39;%Y.%m.%d.txt&#39;<br />
+ファイル名のフォーマット。省略されたら&#39;%Y.%m.%d.txt&#39;<br />
 </p>
 <div class="element"><span class="key">filename</span>:<span class="value">%Y-%m-%d.txt</span></div>
 <p class="comment">
-�����ե�����Υ⡼��(8�ʿ�)����ά���줿��600<br />
+ログファイルのモード(8進数)。省略されたら600<br />
 </p>
 <div class="element"><span class="key">mode</span>:<span class="value">600</span></div>
 <p class="comment">
-�����ǥ��쥯�ȥ�Υ⡼��(8�ʿ�)����ά���줿��700<br />
+ログディレクトリのモード(8進数)。省略されたら700<br />
 </p>
 <div class="element"><span class="key">dir-mode</span>:<span class="value">700</span></div>
 <p class="comment">
-�ȤäƤ���ʸ�������ɤ��褯�狼��ʤ��ä��Ȥ���ʸ�������ɡ���ά���줿��utf8��<br />
-���֤󤳤λ��꤬�����뤳�ȤϤʤ��Ȼפ��ޤ����ġġ�<br />
+使っている文字コードがよくわからなかったときの文字コード。省略されたらutf8。<br />
+たぶんこの指定が生きることはないと思いますが……。<br />
 </p>
 <div class="element"><span class="key">charset</span>:<span class="value">jis</span></div>
 <p class="comment">
-NumericReply ��̾�����褷��ɽ������(�����Ȥ��� dump �Ǥ�̵���ʤ�ޤ�)<br />
+NumericReply の名前を解決して表示する(ちゃんとした dump では無くなります)<br />
 </p>
 <div class="element"><span class="key">resolve-numeric</span>:<span class="value">1</span></div>
 <p class="comment">
-�������륳�ޥ�ɤ�ɽ���ޥ�������ά���줿�鵭Ͽ���������Υ��ޥ�ɤ�Ͽ���롣<br />
+ログを取るコマンドを表すマスク。省略されたら記録出来るだけのコマンドを記録する。<br />
 </p>
 <div class="element"><span class="key">command</span>:<span class="value">*,-ping,-pong</span></div>
 <p class="comment">
-�ƥ����ե�����򳫤��äѤʤ��ˤ��뤫�ɤ�����<br />
-���Υ��ץ�����¿���ξ�硢�ǥ����������������ޤ��Ƹ�Ψ�ɤ���������¸���ޤ���<br />
-������Ͽ���٤����ƤΥե�����򳫤����ޤޤˤ���Τǡ�50��100�Υ����ͥ��<br />
-�̡��Υե�����˥�������褦�ʾ��ˤϻȤ��٤��ǤϤ���ޤ���<br />
-���� fd �����դ줿��硢���饤����Ȥ���(�ޤ��ϥ����Ф�)��³�Ǥ��ʤ���<br />
-�����ʥ⥸�塼�������ɤǤ��ʤ��������������Ǥ��ʤ��ʤɤξɾ����������ǽ����<br />
-����ޤ���limit �ξܺ٤ˤĤ��Ƥ� OS ���Υɥ�����Ȥ򻲾Ȥ��Ƥ���������<br />
+各ログファイルを開きっぱなしにするかどうか。<br />
+このオプションは多くの場合、ディスクアクセスを抑えて効率良くログを保存しますが<br />
+ログを記録すべき全てのファイルを開いたままにするので、50や100のチャンネルを<br />
+別々のファイルにログを取るような場合には使うべきではありません。<br />
+万一 fd があふれた場合、クライアントから(またはサーバへ)接続できない・<br />
+新たなモジュールをロードできない・ログが全然できないなどの症状が起こる可能性が<br />
+あります。limit の詳細については OS 等のドキュメントを参照してください。<br />
 </p>
 <div class="element"><span class="key">keep-file-open</span>:<span class="value">1</span></div>
 <p class="comment">
-keep-file-open ���˳ƹԤ��Ȥ� flush ���뤫�ɤ�����<br />
-open/close ����٤ϵ��ˤʤ뤬�������ϼ��������ʤ��͸�����<br />
-keep-file-open ��ͭ���Ǥʤ��ʤ�̵�뤵��(1�ˤʤ�)�ޤ���<br />
+keep-file-open 時に各行ごとに flush するかどうか。<br />
+open/close の負荷は気になるが、ログは失いたくない人向け。<br />
+keep-file-open が有効でないなら無視され(1になり)ます。<br />
 </p>
 <div class="element"><span class="key">always-flush</span>:<span class="value">0</span></div>
 <p class="comment">
-keep-file-open��ͭ���ˤ�����硢ȯ�����٤˥����ե�������ɵ�����ΤǤϤʤ�<br />
-�����ʬ�̤�ί�ޤäƤ���񤭹��ޤ�롣���Τ��ᡢ�ե�����򳫤��Ƥ�<br />
-�Ƕ��ȯ���Ϥޤ��񤭹��ޤ�Ƥ��ʤ���ǽ�������롣<br />
-sync�����ꤹ��ȡ�¨�¤˥�����ǥ������˽񤭹��ि��Υ��ޥ�ɤ��ɲä���롣<br />
-��ά���줿���ϥ��ޥ�ɤ��ɲä��ʤ���<br />
+keep-file-openを有効にした場合、発言の度にログファイルに追記するのではなく<br />
+一定の分量が溜まってから書き込まれる。そのため、ファイルを開いても<br />
+最近の発言はまだ書き込まれていない可能性がある。<br />
+syncを設定すると、即座にログをディスクに書き込むためのコマンドが追加される。<br />
+省略された場合はコマンドを追加しない。<br />
 </p>
 <div class="element"><span class="key">sync</span>:<span class="value">sync</span></div>
 <p class="comment">
-�ƥ����Ф����ꡣ������̾����ʬ�ϥޥ����Ǥ��롣<br />
-���Ҥ��줿����Ǹ��������Τǡ����ƤΥ����Ф˥ޥå�����&quot;*&quot;�ʤɤϺǸ�˽񤫤ʤ���Фʤ�ʤ���<br />
-���ꤵ�줿�ǥ��쥯�ȥ꤬¸�ߤ��ʤ��ä��顢����˺���롣<br />
-�ե����ޥåȤϼ����̤ꡣ<br />
-channel: &lt;�ǥ��쥯�ȥ�̾&gt; &lt;������̾�ޥ���&gt;<br />
-��:<br />
+各サーバの設定。サーバ名の部分はマスクである。<br />
+記述された順序で検索されるので、全てのサーバにマッチする&quot;*&quot;などは最後に書かなければならない。<br />
+指定されたディレクトリが存在しなかったら、勝手に作られる。<br />
+フォーマットは次の通り。<br />
+channel: &lt;ディレクトリ名&gt; &lt;サーバ名マスク&gt;<br />
+例:<br />
 filename: %Y-%m-%d.txt<br />
 server: ircnet ircnet<br />
 server: others *<br />
-������Ǥϡ�ircnet�Υ�����ircnet/%Y.%m.%d.txt�ˡ�<br />
-����ʳ��Υ�����others/%Y.%m.%d.txt����¸����롣<br />
+この例では、ircnetのログはircnet/%Y.%m.%d.txtに、<br />
+それ以外のログはothers/%Y.%m.%d.txtに保存される。<br />
 </p>
 <div class="element"><span class="key">server</span>:<span class="value">ircnet ircnet</span></div>
 <div class="element"><span class="key">server</span>:<span class="value">others *</span></div>
@@ -251,26 +251,26 @@ server: others *<br />
       
       
       <div id="module-Log::Recent" class="module">
-        <div class="module-header"><h2 title="���饤����Ȥ���³�������ˡ���¸���Ƥ������Ƕ�Υ�å����������롣">Log::Recent</h2>
-          <span class="description">���饤����Ȥ���³�������ˡ���¸���Ƥ������Ƕ�Υ�å����������롣</span></div>
+        <div class="module-header"><h2 title="クライアントを接続した時に、保存しておいた最近のメッセージを送る。">Log::Recent</h2>
+          <span class="description">クライアントを接続した時に、保存しておいた最近のメッセージを送る。</span></div>
         <div class="content">
 	  <p class="comment">
-���饤����ȥ��ץ����� no-recent-logs �����ꤵ��Ƥ�����������ޤ���<br />
+クライアントオプションの no-recent-logs が指定されていれば送信しません。<br />
 </p>
 <p class="comment">
-�ƹԤΥإå��Υե����ޥåȡ���ά���줿��&#39;%H:%M&#39;��<br />
+各行のヘッダのフォーマット。省略されたら&#39;%H:%M&#39;。<br />
 </p>
 <div class="element"><span class="key">header</span>:<span class="value">%H:%M:%S</span></div>
 <p class="comment">
-����������ͥ���˲��Ԥޤ���¸���뤫����ά���줿��10��<br />
+ログをチャンネル毎に何行まで保存するか。省略されたら10。<br />
 </p>
 <div class="element"><span class="key">line</span>:<span class="value">15</span></div>
 <p class="comment">
-PRIVMSG��NOTICE��Ͽ����ݤˡ���ʬ��ȯ����¾�ͤ�ȯ���ǥե����ޥåȤ��Ѥ��뤫�ɤ�����1/0���ǥե���Ȥ�1��<br />
+PRIVMSGとNOTICEを記録する際に、自分の発言と他人の発言でフォーマットを変えるかどうか。1/0。デフォルトで1。<br />
 </p>
 <div class="element"><span class="key">distinguish-myself</span>:<span class="value">1</span></div>
 <p class="comment">
-�ɤΥ�å���������¸���뤫����ά���줿����¸��ǽ�����ƤΥ�å���������¸���롣<br />
+どのメッセージを保存するか。省略されたら保存可能な全てのメッセージを保存する。<br />
 </p>
 <div class="element"><span class="key">command</span>:<span class="value">privmsg,notice,topic,join,part,quit,kill</span></div>
 
@@ -284,15 +284,15 @@ PRIVMSG��NOTICE��Ͽ����ݤˡ���ʬ��ȯ����¾�ͤ�ȯ���ǥե����ޥåȤ��Ѥ��뤫�ɤ
     <div class="pane-sidebar">
       <ul class="menu">
         
-        <li><a href="#module-Log::Channel" title="�����ͥ��priv�Υ�������⥸�塼�롣">Log::Channel</a></li>
+        <li><a href="#module-Log::Channel" title="チャンネルやprivのログを取るモジュール。">Log::Channel</a></li>
         
-        <li><a href="#module-Log::ChannelList" title="�����ͥ�ꥹ�Ȥ�ƥ�ץ졼�Ȥ˱�ä� HTML �����ޤ���">Log::ChannelList</a></li>
+        <li><a href="#module-Log::ChannelList" title="チャンネルリストをテンプレートに沿って HTML 化します。">Log::ChannelList</a></li>
         
-        <li><a href="#module-Log::Raw" title="�����ФȤ������̿�����¸����">Log::Raw</a></li>
+        <li><a href="#module-Log::Raw" title="サーバとの生の通信を保存する">Log::Raw</a></li>
         
-        <li><a href="#module-Log::Recent" title="���饤����Ȥ���³�������ˡ���¸���Ƥ������Ƕ�Υ�å����������롣">Log::Recent</a></li>
+        <li><a href="#module-Log::Recent" title="クライアントを接続した時に、保存しておいた最近のメッセージを送る。">Log::Recent</a></li>
         
-        <li><a href="../module-toc.html">�⥸�塼����������</a></li>
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
       </ul>
     </div>
   </body>

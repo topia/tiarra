@@ -2,16 +2,16 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
+<!-- $Id: contents.html 11357 2008-05-10 14:03:50Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
-    <title>User �ط��Υ⥸�塼�� - Tiarra Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>User 関係のモジュール - Tiarra Documentation</title>
     <link rel="stylesheet" type="text/css" href="../default.css" />
   </head>
   <body>
     <div class="header">
-      <h1>User �ط��Υ⥸�塼��</h1>
+      <h1>User 関係のモジュール</h1>
     </div>
 
     <hr class="sep" />
@@ -19,13 +19,13 @@
     <div class="pane-main">
       
       <div id="module-User::Away::Client" class="module">
-        <div class="module-header"><h2 title="���饤����Ȥ���Ĥ���³����Ƥ��ʤ�����AWAY�����ꤷ�ޤ���">User::Away::Client</h2>
-          <span class="description">���饤����Ȥ���Ĥ���³����Ƥ��ʤ�����AWAY�����ꤷ�ޤ���</span></div>
+        <div class="module-header"><h2 title="クライアントが一つも接続されていない時にAWAYを設定します。">User::Away::Client</h2>
+          <span class="description">クライアントが一つも接続されていない時にAWAYを設定します。</span></div>
         <div class="content">
 	  <p class="comment">
-�ɤΤ褦��AWAY��å����������ꤹ�뤫����ά���줿����AWAY�����ꤷ�ޤ���<br />
+どのようなAWAYメッセージを設定するか。省略された場合はAWAYを設定しません。<br />
 </p>
-<div class="element"><span class="key">away</span>:<span class="value">��ʤ���</span></div>
+<div class="element"><span class="key">away</span>:<span class="value">居ない。</span></div>
 
         </div>
       </div>
@@ -35,23 +35,23 @@
       
       
       <div id="module-User::Away::Nick" class="module">
-        <div class="module-header"><h2 title="�˥å��͡����ѹ��˱����� AWAY �����ꤷ�ޤ���">User::Away::Nick</h2>
-          <span class="description">�˥å��͡����ѹ��˱����� AWAY �����ꤷ�ޤ���</span></div>
+        <div class="module-header"><h2 title="ニックネーム変更に応じて AWAY を設定します。">User::Away::Nick</h2>
+          <span class="description">ニックネーム変更に応じて AWAY を設定します。</span></div>
         <div class="content">
 	  <p class="comment">
-�˥å��͡�����ѹ������Ȥ��ˡ����Υ˥å��͡�����б�����AWAY��<br />
-���ꤵ��Ƥ���С�����AWAY�����ꤷ�ޤ��������Ǥʤ����AWAY����ä��ޤ���<br />
+ニックネームを変更したときに、そのニックネームに対応するAWAYが<br />
+設定されていれば、そのAWAYを設定します。そうでなければAWAYを取り消します。<br />
 </p>
 <p class="comment">
-&nbsp;��: &lt;nick�Υޥ���&gt; &lt;���ꤹ��AWAY��å�����&gt;<br />
+&nbsp;書式: &lt;nickのマスク&gt; &lt;設定するAWAYメッセージ&gt;<br />
 <br />
-&nbsp;nick��hoge_zzz���ѹ�����ȡ��ֿ��Ƥ���פȤ���AWAY�����ꤹ�롣<br />
-&nbsp;hoge_work�ޤ���hoge_zzz���ѹ��������ϡ��ֻŻ���פȤ���AWAY�����ꤹ�롣<br />
-&nbsp;����ʳ���nick���ѹ���������AWAY����ä���<br />
-&nbsp;��Ԥ�����ɽ�������Ѥ��ơ�away: re:hoge_(work|zzz) �Ż���פȤ��Ƥ��ɤ���<br />
+&nbsp;nickをhoge_zzzに変更すると、「寝ている」というAWAYを設定する。<br />
+&nbsp;hoge_workまたはhoge_zzzに変更した場合は、「仕事中」というAWAYを設定する。<br />
+&nbsp;それ以外のnickに変更した場合はAWAYを取り消す。<br />
+&nbsp;後者は正規表現を利用して「away: re:hoge_(work|zzz) 仕事中」としても良い。<br />
 </p>
-<div class="element"><span class="key">away</span>:<span class="value">hoge_zzz           ���Ƥ���</span></div>
-<div class="element"><span class="key">away</span>:<span class="value">hoge_work,hoge_zzz �Ż���</span></div>
+<div class="element"><span class="key">away</span>:<span class="value">hoge_zzz           寝ている</span></div>
+<div class="element"><span class="key">away</span>:<span class="value">hoge_work,hoge_zzz 仕事中</span></div>
 
         </div>
       </div>
@@ -61,13 +61,13 @@
       
       
       <div id="module-User::Filter" class="module">
-        <div class="module-header"><h2 title="���ꤵ�줿��ʪ�����PRIVMSG��NOTICE��񤭴����롣">User::Filter</h2>
-          <span class="description">���ꤵ�줿��ʪ�����PRIVMSG��NOTICE��񤭴����롣</span></div>
+        <div class="module-header"><h2 title="指定された人物からのPRIVMSGやNOTICEを書き換える。">User::Filter</h2>
+          <span class="description">指定された人物からのPRIVMSGやNOTICEを書き換える。</span></div>
         <div class="content">
 	  <p class="comment">
-��ʪ�Υޥ����ȡ��ִ��ѥ�����������<br />
-�ִ��ѥ��������#(message)�ϡ�ȯ�����Ƥ��ִ�����ޤ���<br />
-��ʪ��ʣ���Υޥ����˰��פ�����ϡ��ǽ�˰��פ�����Τ��Ȥ��ޤ���<br />
+人物のマスクと、置換パターンを定義。<br />
+置換パターン中の#(message)は、発言内容に置換されます。<br />
+人物が複数のマスクに一致する場合は、最初に一致したものが使われます。<br />
 </p>
 <div class="element"><span class="key">pattern</span>:<span class="value">*!*@* #(message)</span></div>
 
@@ -79,16 +79,16 @@
       
       
       <div id="module-User::Ignore" class="module">
-        <div class="module-header"><h2 title="���ꤵ�줿�ʹ֤����PRIVMSG��NOTICE���˴����ƥ��饤����Ȥ�����ʤ��褦�ˤ���⥸�塼�롣">User::Ignore</h2>
-          <span class="description">���ꤵ�줿�ʹ֤����PRIVMSG��NOTICE���˴����ƥ��饤����Ȥ�����ʤ��褦�ˤ���⥸�塼�롣</span></div>
+        <div class="module-header"><h2 title="指定された人間からのPRIVMSGやNOTICEを破棄してクライアントへ送らないようにするモジュール。">User::Ignore</h2>
+          <span class="description">指定された人間からのPRIVMSGやNOTICEを破棄してクライアントへ送らないようにするモジュール。</span></div>
         <div class="content">
 	  <p class="comment">
-�оݤȤʤ륳�ޥ�ɤΥޥ�������ά���ˤ�&quot;privmsg,notice&quot;�����ꤵ��Ƥ��롣<br />
-������privmsg��notice�ʳ����˴����Ƥ��ޤ��ȡ�(Tiarra��ʿ���Ǥ�)���饤����Ȥ����𤹤롣<br />
+対象となるコマンドのマスク。省略時には&quot;privmsg,notice&quot;が設定されている。<br />
+ただしprivmsgとnotice以外を破棄してしまうと、(Tiarraは平気でも)クライアントが混乱する。<br />
 </p>
 <div class="element"><span class="key">command</span>:<span class="value">privmsg,notice</span></div>
 <p class="comment">
-mask��ʣ�������ǽ��������줿���֤ǥޥå��󥰤��Ԥʤ��ޤ���<br />
+maskは複数定義可能。定義された順番でマッチングが行なわれます。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">example!*@*.example.net</span></div>
 
@@ -100,13 +100,13 @@ mask��ʣ�������ǽ��������줿���֤ǥޥå��󥰤��Ԥʤ��ޤ���<br />
       
       
       <div id="module-User::Nick::Detached" class="module">
-        <div class="module-header"><h2 title="���饤����Ȥ���³����Ƥ��ʤ����ˡ������nick���ѹ����ޤ���">User::Nick::Detached</h2>
-          <span class="description">���饤����Ȥ���³����Ƥ��ʤ����ˡ������nick���ѹ����ޤ���</span></div>
+        <div class="module-header"><h2 title="クライアントが接続されていない時に、特定のnickに変更します。">User::Nick::Detached</h2>
+          <span class="description">クライアントが接続されていない時に、特定のnickに変更します。</span></div>
         <div class="content">
 	  <p class="comment">
-���饤����Ȥ���³����Ƥ��ʤ�����nick��<br />
-����nick�����˻Ȥ��Ƥ����顢Ŭ�����ѹ����ä����ƻ��Ѥ���ޤ���<br />
-���饤����Ȥ��Ƥ���³�����ȡ��������Υ�������nick�����ޤ���<br />
+クライアントが接続されていない時のnick。<br />
+このnickが既に使われていたら、適当に変更が加えられて使用されます。<br />
+クライアントが再び接続されると、切断前のローカルnickに戻ります。<br />
 </p>
 <div class="element"><span class="key">detached</span>:<span class="value">PHO_d</span></div>
 
@@ -118,14 +118,14 @@ mask��ʣ�������ǽ��������줿���֤ǥޥå��󥰤��Ԥʤ��ޤ���<br />
       
       
       <div id="module-User::ServerOper" class="module">
-        <div class="module-header"><h2 title="����Υͥåȥ������³��������OPER���ޥ�ɤ�ȯ�Ԥ��ޤ���">User::ServerOper</h2>
-          <span class="description">����Υͥåȥ������³��������OPER���ޥ�ɤ�ȯ�Ԥ��ޤ���</span></div>
+        <div class="module-header"><h2 title="特定のネットワークに接続した時、OPERコマンドを発行します。">User::ServerOper</h2>
+          <span class="description">特定のネットワークに接続した時、OPERコマンドを発行します。</span></div>
         <div class="content">
 	  <p class="comment">
-&nbsp;��: &lt;�ͥåȥ��̾&gt; &lt;���ڥ졼��̾&gt; &lt;���ڥ졼���ѥ����&gt;<br />
+&nbsp;書式: &lt;ネットワーク名&gt; &lt;オペレータ名&gt; &lt;オペレータパスワード&gt;<br />
 <br />
-&nbsp;�ͥåȥ��&quot;local&quot;����³�����������ڥ졼��̾oper��<br />
-&nbsp;���ڥ졼���ѥ����oper-pass��OPER���ޥ�ɤ�ȯ�Ԥ����㡣<br />
+&nbsp;ネットワーク&quot;local&quot;に接続した時、オペレータ名oper、<br />
+&nbsp;オペレータパスワードoper-passでOPERコマンドを発行する例。<br />
 </p>
 <div class="element"><span class="key">oper</span>:<span class="value">local oper oper-pass</span></div>
 
@@ -137,42 +137,42 @@ mask��ʣ�������ǽ��������줿���֤ǥޥå��󥰤��Ԥʤ��ޤ���<br />
       
       
       <div id="module-User::Vanish" class="module">
-        <div class="module-header"><h2 title="���ꤵ�줿��ʪ��¸�ߤ��͡��ʥ�å���������õ�롣">User::Vanish</h2>
-          <span class="description">���ꤵ�줿��ʪ��¸�ߤ��͡��ʥ�å���������õ�롣</span></div>
+        <div class="module-header"><h2 title="指定された人物の存在を、様々なメッセージから消去する。">User::Vanish</h2>
+          <span class="description">指定された人物の存在を、様々なメッセージから消去する。</span></div>
         <div class="content">
 	  <p class="comment">
-�оݤȤʤä���ʪ��ȯ�Ԥ���JOIN��PART��INVITE��QUIT��NICK�Ͼõ�졢NAMES���֤��͡���ꥹ�Ȥ����ä��롣<br />
-�ޤ����оݤȤʤä���ʪ��NJOIN��õ��롣<br />
+対象となった人物の発行したJOIN、PART、INVITE、QUIT、NICKは消去され、NAMESの返すネームリストからも消える。<br />
+また、対象となった人物のNJOINも消去される。<br />
 </p>
 <p class="comment">
-Vanish�оݤ�ȯ�Ԥ���MODE��õ�뤫�ɤ������ǥե���Ȥ�0��<br />
-�õ��Ȥϱ�����������MODE���Τ�Τ�ä��Ƥ��ޤ��ΤǤϤʤ���<br />
-���Υ桼�����������&quot;HIDDEN!HIDDEN@HIDDEN.BY.USER.VANISH&quot;��MODE��¹Ԥ������ˤ��롣<br />
+Vanish対象が発行したMODEを消去するかどうか。デフォルトで0。<br />
+消去するとは云え、本当にMODEそのものを消してしまうのではなく、<br />
+そのユーザーの代わりに&quot;HIDDEN!HIDDEN@HIDDEN.BY.USER.VANISH&quot;がMODEを実行した事にする。<br />
 </p>
 <div class="element"><span class="key">drop-mode-by-target</span>:<span class="value">1</span></div>
 <p class="comment">
-Vanish�оݤ��оݤȤ���MODE +o/-o/+v/-v��õ�뤫�ɤ������ǥե���Ȥ�1��<br />
+Vanish対象を対象とするMODE +o/-o/+v/-vを消去するかどうか。デフォルトで1。<br />
 </p>
 <div class="element"><span class="key">drop-mode-switch-for-target</span>:<span class="value">1</span></div>
 <p class="comment">
-Vanish�оݤ�ȯ�Ԥ���KICK��õ�뤫�ɤ������ǥե���Ȥ�0��<br />
-�����˾ä��ΤǤϤʤ���&quot;HIDDEN!HIDDEN@HIDDEN.BY.USER.VANISH&quot;��KICK��¹Ԥ������ˤ��롣<br />
+Vanish対象が発行したKICKを消去するかどうか。デフォルトで0。<br />
+本当に消すのではなく、&quot;HIDDEN!HIDDEN@HIDDEN.BY.USER.VANISH&quot;がKICKを実行した事にする。<br />
 </p>
 <div class="element"><span class="key">drop-kick-by-target</span>:<span class="value">1</span></div>
 <p class="comment">
-Vanish�оݤ��оݤȤ���KICK��õ�뤫�ɤ������ǥե���Ȥ�0��<br />
+Vanish対象を対象とするKICKを消去するかどうか。デフォルトで0。<br />
 </p>
 <div class="element"><span class="key">drop-kick-for-target</span>:<span class="value">0</span></div>
 <p class="comment">
-Vanish�оݤ�ȯ�Ԥ���TOPIC��õ�뤫�ɤ������ǥե���Ȥ�0��<br />
-�����˾ä��ΤǤ�̵������¾�������Ʊ����<br />
+Vanish対象が発行したTOPICを消去するかどうか。デフォルトで0。<br />
+本当に消すのでは無いが、他の設定と同じ。<br />
 </p>
 <div class="element"><span class="key">drop-topic-by-target</span>:<span class="value">1</span></div>
 <p class="comment">
-�����ͥ��Vanish�оݤ������<br />
-����Υ����ͥ�ǤΤ��оݤȤ��롢�Ȥ��ä�������ǽ��<br />
-�ޤ���priv�ξ��ϡ�#___priv___@�ͥåȥ��̾�פȤ���ʸ���������ͥ�̾������Ȥ��ƥޥå��󥰤�Ԥʤ���<br />
-��: mask: &lt;�����ͥ�Υޥ���&gt; &lt;�桼�����Υޥ���&gt;<br />
+チャンネルとVanish対象の定義。<br />
+特定のチャンネルでのみ対象とする、といった事が可能。<br />
+また、privの場合は「#___priv___@ネットワーク名」という文字列をチャンネル名の代わりとしてマッチングを行なう。<br />
+書式: mask: &lt;チャンネルのマスク&gt; &lt;ユーザーのマスク&gt;<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">#example@example  example!exapmle@example.com</span></div>
 
@@ -186,21 +186,21 @@ Vanish�оݤ�ȯ�Ԥ���TOPIC��õ�뤫�ɤ������ǥե���Ȥ�0��<br />
     <div class="pane-sidebar">
       <ul class="menu">
         
-        <li><a href="#module-User::Away::Client" title="���饤����Ȥ���Ĥ���³����Ƥ��ʤ�����AWAY�����ꤷ�ޤ���">User::Away::Client</a></li>
+        <li><a href="#module-User::Away::Client" title="クライアントが一つも接続されていない時にAWAYを設定します。">User::Away::Client</a></li>
         
-        <li><a href="#module-User::Away::Nick" title="�˥å��͡����ѹ��˱����� AWAY �����ꤷ�ޤ���">User::Away::Nick</a></li>
+        <li><a href="#module-User::Away::Nick" title="ニックネーム変更に応じて AWAY を設定します。">User::Away::Nick</a></li>
         
-        <li><a href="#module-User::Filter" title="���ꤵ�줿��ʪ�����PRIVMSG��NOTICE��񤭴����롣">User::Filter</a></li>
+        <li><a href="#module-User::Filter" title="指定された人物からのPRIVMSGやNOTICEを書き換える。">User::Filter</a></li>
         
-        <li><a href="#module-User::Ignore" title="���ꤵ�줿�ʹ֤����PRIVMSG��NOTICE���˴����ƥ��饤����Ȥ�����ʤ��褦�ˤ���⥸�塼�롣">User::Ignore</a></li>
+        <li><a href="#module-User::Ignore" title="指定された人間からのPRIVMSGやNOTICEを破棄してクライアントへ送らないようにするモジュール。">User::Ignore</a></li>
         
-        <li><a href="#module-User::Nick::Detached" title="���饤����Ȥ���³����Ƥ��ʤ����ˡ������nick���ѹ����ޤ���">User::Nick::Detached</a></li>
+        <li><a href="#module-User::Nick::Detached" title="クライアントが接続されていない時に、特定のnickに変更します。">User::Nick::Detached</a></li>
         
-        <li><a href="#module-User::ServerOper" title="����Υͥåȥ������³��������OPER���ޥ�ɤ�ȯ�Ԥ��ޤ���">User::ServerOper</a></li>
+        <li><a href="#module-User::ServerOper" title="特定のネットワークに接続した時、OPERコマンドを発行します。">User::ServerOper</a></li>
         
-        <li><a href="#module-User::Vanish" title="���ꤵ�줿��ʪ��¸�ߤ��͡��ʥ�å���������õ�롣">User::Vanish</a></li>
+        <li><a href="#module-User::Vanish" title="指定された人物の存在を、様々なメッセージから消去する。">User::Vanish</a></li>
         
-        <li><a href="../module-toc.html">�⥸�塼����������</a></li>
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
       </ul>
     </div>
   </body>

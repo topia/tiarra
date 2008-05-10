@@ -11,27 +11,27 @@ sub message_arrived {
     my ($this,$msg,$sender) = @_;
 
     if ($sender->isa('IrcIO::Client')) {
-	# ���饤����Ȥ���Υ��ޥ��
+	# クライアントからのコマンド
 	if ($msg->command eq uc($this->config->command)) {
-	    # �ɤ������饤����Ȥؤ������ʤ�����å�����ɽ��
+	    # どうせクライアントへは送られないがメッセージ表示
 	    RunLoop->shared->notify_msg(
 		"System::Shutdown received shutdown command from client.");
 	    ::shutdown(join(' ', @{$msg->params}));;
 	}
     }
     elsif ($sender->isa('IrcIO::Server')) {
-	# priv����
+	# privか？
 	if (defined $msg->nick &&
 	    $msg->param(0) eq RunLoop->shared->current_nick &&
 	    ($msg->command eq 'PRIVMSG' || $msg->command eq 'NOTICE')) {
 	    my ($command, $message) = split(/\s+/, $msg->param(1));
-	    # ȯ�����Ƥ�message�˴������פ��Ƥ��뤫��
+	    # 発言内容はmessageに完全一致しているか？
 	    if (Mask::match_deep([$this->config->message('all')],
 				 $command)) {
-		# ȯ���Ԥ�mask�˥ޥå����뤫��
+		# 発言者はmaskにマッチするか？
 		if (Mask::match_deep([$this->config->mask('all')],
 				     $msg->prefix)) {
-		    # �ɤ������饤����Ȥˤ������ʤ�����å�����ɽ��
+		    # どうせクライアントには送られないがメッセージ表示
 		    RunLoop->shared->notify_msg(
 			"System::Shutdown received shutdown command from ".$msg->prefix.".");
 		    ::shutdown($message);
@@ -45,23 +45,23 @@ sub message_arrived {
 1;
 
 =pod
-info: Tiarra��λ�����롣
+info: Tiarraを終了させる。
 default: off
 
-# ���饤����Ȥ�������Υ��ޥ�ɤ��¹Ԥ��줿���䡢
-# ï������Ŀ�Ū��(priv��)�����ȯ��������줿����
-# Tiarra ��λ�����ޤ���
+# クライアントから特定のコマンドが実行された時や、
+# 誰かから個人的に(privで)特定の発言が送られた時に
+# Tiarra を終了させます。
 
-# �ɲä��륳�ޥ�ɡ���ά���줿���ϥ��ޥ�ɤǤΥ���åȥ������̵���ˤʤ�ޤ���
+# 追加するコマンド。省略された場合はコマンドでのシャットダウンは無効になります。
 -command: shutdown
 
-# Tiarra�򥷥�åȥ����󤵤���priv��ȯ����
-# ��ά���줿����priv�ǤΥ���åȥ������̵���ˤʤ�ޤ���
-# �ѥ�᡼���Ȥ��� shutdown ��å����������Ǥ��ޤ���
+# Tiarraをシャットダウンさせるprivの発言。
+# 省略された場合はprivでのシャットダウンは無効になります。
+# パラメータとして shutdown メッセージを指定できます。
 -message: shutdown
 
-# priv�ǤΥ���åȥ��������Ĥ���͡�
-# ��ά���줿����priv�ǤΥ���åȥ������̵���ˤʤ�ޤ���
-# ʣ���Υޥ�������ꤷ�����ϡ���ĤǤ�ޥå������Τ�����Х���åȥ����󤷤ޤ���
+# privでのシャットダウンを許可する人。
+# 省略された場合はprivでのシャットダウンは無効になります。
+# 複数のマスクを指定した場合は、一つでもマッチするものがあればシャットダウンします。
 -mask: example!example@*.example.jp
 =cut

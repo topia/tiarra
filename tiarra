@@ -50,8 +50,8 @@ BEGIN {
 
 # optional modules
 use Tiarra::OptionalModules;
-# ³°Éô¤«¤é¸Æ¤Ù¤ë¥ª¥×¥·¥ç¥ó¥â¥¸¥å¡¼¥ë¤ÎÂ¸ºß¥Á¥§¥Ã¥¯¡£
-# (²áµî¸ß´¹)
+# å¤–éƒ¨ã‹ã‚‰å‘¼ã¹ã‚‹ã‚ªãƒ—ã‚·ãƒ§ãƒ³ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®å­˜åœ¨ãƒã‚§ãƒƒã‚¯ã€‚
+# (éå»äº’æ›)
 sub ipv6_enabled { Tiarra::OptionalModules->ipv6; }
 
 use Tiarra::Resolver; # early initialization
@@ -63,19 +63,19 @@ use ReloadTrigger;
 use IO::Handle;
 our $terminated = 0;
 
-# version ¤Ï¥Ğ¡¼¥¸¥ç¥óÈÖ¹æ
+# version ã¯ãƒãƒ¼ã‚¸ãƒ§ãƒ³ç•ªå·
 our $version = '0.1';
 
-# based ¤Ï¥Ù¡¼¥¹¤Ë¤·¤Æ¤¤¤ë Tiarra ¤Î¥Ğ¡¼¥¸¥ç¥ó(¥Ñ¥Ã¥±¡¼¥¸¤Ş¤¿¤Ï fork »şÍÑ)
+# based ã¯ãƒ™ãƒ¼ã‚¹ã«ã—ã¦ã„ã‚‹ Tiarra ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³(ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã¾ãŸã¯ fork æ™‚ç”¨)
 our $based_version = '';
 
-# short ¤ÏÃ»¤¤¥Ğ¡¼¥¸¥ç¥óÈÖ¹æ¡£(CTCP-Version ¤ÎÊÖÅú¤Ë»È¤ï¤ì¤ë)
+# short ã¯çŸ­ã„ãƒãƒ¼ã‚¸ãƒ§ãƒ³ç•ªå·ã€‚(CTCP-Version ã®è¿”ç­”ã«ä½¿ã‚ã‚Œã‚‹)
 our $short_version = '';
 
 
-# ¥ª¥ê¥¸¥Ê¥ë(based_version ¤¬Ì¤ÄêµÁ)¤Ê¤é¤Ğ svnversion ¤ò¥Á¥§¥Ã¥¯¤¹¤ë¡£
+# ã‚ªãƒªã‚¸ãƒŠãƒ«(based_version ãŒæœªå®šç¾©)ãªã‚‰ã° svnversion ã‚’ãƒã‚§ãƒƒã‚¯ã™ã‚‹ã€‚
 &check_svnversion unless $based_version;
-# short_version ¤¬Ì¤ÄêµÁ¤Ê¤é version ¤ÎÃÍ¤ò»È¤¦¡£
+# short_version ãŒæœªå®šç¾©ãªã‚‰ version ã®å€¤ã‚’ä½¿ã†ã€‚
 $short_version ||= $version;
 
 &install_signal_handlers;
@@ -162,8 +162,8 @@ sub find_option {
 }
 
 sub find_options {
-    # $opt_regex: ¥ª¥×¥·¥ç¥óÌ¾¤ÎÀµµ¬É½¸½¡£¸åÊı»²¾È¤ò°ì¤Ä¤À¤±ºî¤ë»ö¡£
-    # Ìá¤êÃÍ: ([$1, ÃÍ], ...)
+    # $opt_regex: ã‚ªãƒ—ã‚·ãƒ§ãƒ³åã®æ­£è¦è¡¨ç¾ã€‚å¾Œæ–¹å‚ç…§ã‚’ä¸€ã¤ã ã‘ä½œã‚‹äº‹ã€‚
+    # æˆ»ã‚Šå€¤: ([$1, å€¤], ...)
     my $opt_regex = shift;
     grep {
 	defined;
@@ -272,18 +272,18 @@ sub main {
 	$print->("ok\n");
     };
 
-    # quiet¥â¡¼¥É¤Ê¤éSTDIN, STDOUT, STDERR¤òÊÄ¤¸¤ë¡£
+    # quietãƒ¢ãƒ¼ãƒ‰ãªã‚‰STDIN, STDOUT, STDERRã‚’é–‰ã˜ã‚‹ã€‚
     if ($quiet) {
 	close STDIN;
 	close STDOUT;
 	close STDERR;
     }
 
-    # quiet¥â¡¼¥É¤Ç¤¢¤ê¡¢³î¤Äno-fork¥ª¥×¥·¥ç¥ó¤¬»ØÄê¤µ¤ì¤Ê¤«¤Ã¤¿¤éfork¡£
+    # quietãƒ¢ãƒ¼ãƒ‰ã§ã‚ã‚Šã€ä¸”ã¤no-forkã‚ªãƒ—ã‚·ãƒ§ãƒ³ãŒæŒ‡å®šã•ã‚Œãªã‹ã£ãŸã‚‰forkã€‚
     if ($quiet && !$no_fork) {
 	my $child_pid = fork;
 	if ($child_pid == 0) {
-	    # »Ò¥×¥í¥»¥¹
+	    # å­ãƒ—ãƒ­ã‚»ã‚¹
 	    $boot->();
 	} elsif (!defined $child_pid) {
 	    print "Tiarra: fork() failed.\n";
@@ -295,7 +295,7 @@ sub main {
 }
 
 sub printmsg {
-    # Ê¸»ú¥³¡¼¥É¤ÏUTF-8¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤é¤Ê¤¤¡£
+    # æ–‡å­—ã‚³ãƒ¼ãƒ‰ã¯UTF-8ã§ãªã‘ã‚Œã°ãªã‚‰ãªã„ã€‚
     my $msg = shift;
     local($|) = 1;
     if (!defined $msg) {
@@ -303,7 +303,7 @@ sub printmsg {
     }
     $msg =~ s/\n*$//s;
 
-    # Configuration¤¬ÆÉ¤ß¹ş¤Ş¤ì¤Æ¤¤¤Ê¤¤»ş¤ËÊ¸»ú¥³¡¼¥ÉÊÑ´¹¤¹¤ë¤Èdie¡£
+    # ConfigurationãŒèª­ã¿è¾¼ã¾ã‚Œã¦ã„ãªã„æ™‚ã«æ–‡å­—ã‚³ãƒ¼ãƒ‰å¤‰æ›ã™ã‚‹ã¨dieã€‚
     eval {
 	local $SIG{__DIE__} = 'IGNORE';
 	local $SIG{__WARN__} = 'IGNORE';

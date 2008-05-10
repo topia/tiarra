@@ -1,12 +1,12 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# ¤³¤Î¥¯¥é¥¹¤ÏTiarra¥í¡¼¥«¥ë¤Ê¥Á¥ã¥ó¥Í¥ë¤ò´ÉÍı¤·¤Ş¤¹¡£
-# ³Æ¥¯¥é¥¤¥¢¥ó¥È¤Ë¡¢¤½¤Î¥¯¥é¥¤¥¢¥ó¥È¤¬Æş¤Ã¤Æ¤¤¤ëTiarra¥í¡¼¥«¥ë¥Á¥ã¥ó¥Í¥ë¤ò
-# Ãğ¼á`tiarra-local-channels'¤È¤·¤Æ»ı¤¿¤»¤Ş¤¹¡£
-# ¤³¤ÎÃğ¼á¤Ï¥Á¥ã¥ó¥Í¥ëÌ¾¤ÎÇÛÎó¤Ç¤¹¡£
+# ã“ã®ã‚¯ãƒ©ã‚¹ã¯Tiarraãƒ­ãƒ¼ã‚«ãƒ«ãªãƒãƒ£ãƒ³ãƒãƒ«ã‚’ç®¡ç†ã—ã¾ã™ã€‚
+# å„ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«ã€ãã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒå…¥ã£ã¦ã„ã‚‹Tiarraãƒ­ãƒ¼ã‚«ãƒ«ãƒãƒ£ãƒ³ãƒãƒ«ã‚’
+# è¨»é‡ˆ`tiarra-local-channels'ã¨ã—ã¦æŒãŸã›ã¾ã™ã€‚
+# ã“ã®è¨»é‡ˆã¯ãƒãƒ£ãƒ³ãƒãƒ«åã®é…åˆ—ã§ã™ã€‚
 # -----------------------------------------------------------------------------
-# »È¤¤Êı:
+# ä½¿ã„æ–¹:
 #
 # -----------------------------------------------------------------------------
 package LocalChannelManager;
@@ -21,15 +21,15 @@ our $_shared_instance;
 sub _new {
     my $class = shift;
     my $this = {
-	registered => {}, # {¥Á¥ã¥ó¥Í¥ëÌ¾ => [¥È¥Ô¥Ã¥¯(Ê¸»úÎó), ¥Ï¥ó¥É¥é(¥¯¥í¡¼¥¸¥ã)]}
+	registered => {}, # {ãƒãƒ£ãƒ³ãƒãƒ«å => [ãƒˆãƒ”ãƒƒã‚¯(æ–‡å­—åˆ—), ãƒãƒ³ãƒ‰ãƒ©(ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£)]}
     };
     bless $this => $class;
 }
 
 sub register {
-    # Name => ¥Á¥ã¥ó¥Í¥ëÌ¾
-    # Topic => ¥È¥Ô¥Ã¥¯
-    # Handler => ¥Ï¥ó¥É¥é; $handler->($client, $msg)¤Î¤è¤¦¤Ë¸Æ¤Ğ¤ì¤ë¡£
+    # Name => ãƒãƒ£ãƒ³ãƒãƒ«å
+    # Topic => ãƒˆãƒ”ãƒƒã‚¯
+    # Handler => ãƒãƒ³ãƒ‰ãƒ©; $handler->($client, $msg)ã®ã‚ˆã†ã«å‘¼ã°ã‚Œã‚‹ã€‚
     my ($class_or_this, %args) = @_;
     my $this = $class_or_this->_this;
 
@@ -66,7 +66,7 @@ sub registered_p {
 }
 
 sub message_arrived {
-    # Tiarra::IRC::Message¤Ş¤¿¤Ïundef¤òÊÖ¤¹¡£
+    # Tiarra::IRC::Messageã¾ãŸã¯undefã‚’è¿”ã™ã€‚
     my ($class_or_this, $msg, $sender) = @_;
     my $this = $class_or_this->_this;
 
@@ -82,30 +82,30 @@ sub message_arrived {
 sub _JOIN {
     my ($this, $msg, $sender) = @_;
 
-    # ¥Á¥ã¥ó¥Í¥ëÌ¾¤Î¥ê¥¹¥È¤«¤é¡¢Tiarra¥í¡¼¥«¥ë¥Á¥ã¥ó¥Í¥ë¤òÈ´¤­¼è¤ë¡£
+    # ãƒãƒ£ãƒ³ãƒãƒ«åã®ãƒªã‚¹ãƒˆã‹ã‚‰ã€Tiarraãƒ­ãƒ¼ã‚«ãƒ«ãƒãƒ£ãƒ³ãƒãƒ«ã‚’æŠœãå–ã‚‹ã€‚
     my @new_list;
     foreach my $ch_name (split m/,/, $msg->param(0)) {
 	if ($this->registered_p($ch_name)) {
 	    my ($topic, $handler) = @{$this->{registered}{$ch_name}};
 
-	    # ¤³¤Î¥¯¥é¥¤¥¢¥ó¥È¤Î`tiarra-local-channels'¤ËÆş¤Ã¤Æ¤¤¤ë¤«¡©
+	    # ã“ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®`tiarra-local-channels'ã«å…¥ã£ã¦ã„ã‚‹ã‹ï¼Ÿ
 	    my $list = $sender->remark('tiarra-local-channels');
 	    if (!defined $list) {
 		$list = [];
 		$sender->remark('tiarra-local-channels', $list);
 	    }
 	    if (!{map {$_ => 1} @$list}->{$ch_name}) {
-		# Æş¤Ã¤Æ¤¤¤Ê¤¤¤Î¤ÇJOIN½èÍı¤ò¹Ô¤¦¡£
+		# å…¥ã£ã¦ã„ãªã„ã®ã§JOINå‡¦ç†ã‚’è¡Œã†ã€‚
 		push @$list, $ch_name;
 
 		my $local_nick = RunLoop->shared->current_nick;
-		# ¤Ş¤ºJOIN
+		# ã¾ãšJOIN
 		$sender->send_message(
 		    $this->construct_irc_message(
 			Prefix => $sender->fullname,
 			Command => 'JOIN',
 			Param => $ch_name));
-		# ¼¡¤ËRPL_TOPIC(¤¢¤ì¤Ğ)
+		# æ¬¡ã«RPL_TOPIC(ã‚ã‚Œã°)
 		if ($topic ne '') {
 		    $sender->send_message(
 			$this->construct_irc_message(
@@ -117,7 +117,7 @@ sub _JOIN {
 				$topic,
 			    ]));
 		}
-		# ¼¡¤ËRPL_NAMREPLY¡£¤³¤ÎËÜ¿Í¤À¤±¡£
+		# æ¬¡ã«RPL_NAMREPLYã€‚ã“ã®æœ¬äººã ã‘ã€‚
 		$sender->send_message(
 		    $this->construct_irc_message(
 			Prefix => 'Tiarra',
@@ -126,7 +126,7 @@ sub _JOIN {
 				   '=',
 				   $ch_name,
 				   $local_nick]));
-		# ¤½¤·¤ÆRPL_ENDOFNAMES
+		# ãã—ã¦RPL_ENDOFNAMES
 		$sender->send_message(
 		    $this->construct_irc_message(
 			Prefix => 'Tiarra',

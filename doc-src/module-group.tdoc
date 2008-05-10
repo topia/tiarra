@@ -1,62 +1,62 @@
 -*- outline -*-
 $Id$
 
-�ƥ⥸�塼���ʬ��̾(= ���롼��̾)�ȡ�����������
-���롼��̾�Ȥϡ��⥸�塼��̾��m/^(.+?)::/��Ϳ��������ʬ��ؤ���
+各モジュールの分類名(= グループ名)と、その説明。
+グループ名とは、モジュール名のm/^(.+?)::/で与えられる部分を指す。
 
-����ʬ��ɽ���������Ƥ��ʤ��⥸�塼��ϡ����롼�� `UNCLASSIFIED' ��°�����Τȸ�������롣
+この分類表で定義されていないモジュールは、グループ `UNCLASSIFIED' に属するものと見做される。
 
 * Auto
 package Auto;
 =pod
-description: ��ưȿ��
+description: 自動反応
 =cut
 
 * Channel
 package Channel;
 =pod
-description: �����ͥ���Ф������
+description: チャンネルに対する操作
 =cut
 
 * Client
 package Client;
 =pod
-description: ���饤����ȤȤ�������
+description: クライアントとの入出力
 =cut
 
 * CTCP
 package CTCP;
 =pod
-description: CTCP ��Ϣ
+description: CTCP 関連
 =cut
 
 * Debug
 package Debug;
 =pod
-description: Tiarra�䡢Tiarra�⥸�塼��ΥǥХå���
+description: Tiarraや、Tiarraモジュールのデバッグ用
 =cut
 
 * Log
 package Log;
 =pod
-description: �����ε�Ͽ
+description: ログの記録
 =cut
 
 * System
 package System;
 =pod
-description: Tiarra���Ȥ�ư��˴ؤ�����
+description: Tiarra自身の動作に関するもの
 =cut
 
 * User
 package User;
 =pod
-description: ����οʹ֤��Ф���ư��伫ʬ���ȤˤĤ��Ƥ�ư��
+description: 特定の人間に対する動作や自分自身についての動作
 =cut
 
 * UNCLASSIFIED
 package UNCLASSIFIED;
 =pod
-description: ̤ʬ��Υ⥸�塼��
+description: 未分類のモジュール
 =cut
 

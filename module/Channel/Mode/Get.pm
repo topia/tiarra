@@ -11,7 +11,7 @@ sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
     $this->{buffer} = []; # [IrcIO::Server,Tiarra::IRC::Message]
-    $this->{timer} = undef; # Timer��ɬ�פʻ������Ȥ��롣
+    $this->{timer} = undef; # Timer：必要な時だけ使われる。
     $this;
 }
 
@@ -29,7 +29,7 @@ sub message_arrived {
 	    $msg->command eq 'JOIN' &&
 	    defined $msg->nick &&
 	    $msg->nick eq RunLoop->shared->current_nick) {
-	# ��ʬ��JOIN�ʤΤǡ�MODE #channel��ȯ��
+	# 自分のJOINなので、MODE #channelを発行
 	foreach (split /,/,$msg->param(0)) {
 	    my $ch_shortname = Multicast::detatch($_);
 	    my $entry = [$sender,
@@ -46,14 +46,14 @@ sub message_arrived {
 
 sub setup_timer {
     my ($this) = @_;
-    # ���˥����ޡ�������Ƥ����鲿�⤻������롣
+    # 既にタイマーが作られていたら何もせずに戻る。
     if (!defined $this->{timer}) {
 	$this->{timer} = Timer->new(
 	    Interval => 1,
 	    Repeat => 1,
 	    Code => sub {
 		my $timer = shift;
-		# ���٤���Ĥ�������Ф���
+		# 一度に二つずつ送り出す。
 		my $msg_per_once = 2;
 		my $buffer = $this->{buffer};
 		for (my $i = 0;
@@ -63,7 +63,7 @@ sub setup_timer {
 		    $entry->[0]->send_message($entry->[1]);
 		}
 		splice @$buffer,0,2;
-		# �Хåե������ˤʤä��齪λ��
+		# バッファが空になったら終了。
 		if (@$buffer == 0) {
 		    $timer->uninstall;
 		    $this->{timer} = undef;
@@ -75,14 +75,14 @@ sub setup_timer {
 1;
 
 =pod
-info: �����ͥ��JOIN�����������Υ����ͥ�Υ⡼�ɤ�������ޤ���
+info: チャンネルにJOINした時、そのチャンネルのモードを取得します。
 default: off
 section: important
 
-# Channel::Mode::Set����������ư������ˤ�
-# �����ͥ�Υ⡼�ɤ�Tiarra���İ����Ƥ���ɬ�פ�����ޤ���
-# ��ưŪ�˥⡼�ɤ�������륯�饤����ȤǤ����ɬ�פ���ޤ��󤬡�
-# �����Ǥʤ���Ф��Υ⥸�塼���Ȥ��٤��Ǥ���
+# Channel::Mode::Set等が正しく動くためには
+# チャンネルのモードをTiarraが把握しておく必要があります。
+# 自動的にモードを取得するクライアントであれば必要ありませんが、
+# そうでなければこのモジュールを使うべきです。
 
-# ������ܤ�̵����
+# 設定項目は無し。
 =cut

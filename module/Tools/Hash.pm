@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# Hash ��ǡ������ȥ졼���Ȥ��������˻Ȥ���褦�ˤ��륯�饹��
+# Hash をデータストレージとして便利に使えるようにするクラス。
 # -----------------------------------------------------------------------------
 # copyright (C) 2004 Topia <topia@clovery.jp>. all rights reserved.
 package Tools::Hash;
@@ -116,7 +116,7 @@ sub get_value_random {
 
     my $values = $this->get_array($key);
     if ($values) {
-	# ȯ��. �ɤ줫������֡�
+	# 発見. どれか一つ選ぶ。
 	my $idx = int(rand() * hex('0xffffffff')) % @$values;
 	return $values->[$idx];
     }
@@ -128,7 +128,7 @@ sub get_value {
 
     my $values = $this->get_array($key);
     if ($values) {
-	# ȯ��.
+	# 発見.
 	return $values->[0];
     }
     return undef;
@@ -141,7 +141,7 @@ sub get_array {
 	sub {
 	    my $value = $this->data->{$key};
 	    if (defined $value) {
-		# ȯ��
+		# 発見
 		if (ref($value) eq 'ARRAY') {
 		    return $value;
 		} else {
@@ -170,8 +170,8 @@ sub add_hash {
 }
 
 sub add_array {
-    # ��������� 1(true) ���֤롣
-    # �����ʥ����Τ��Ἲ�Ԥ������� 0(false) ���֤롣
+    # 成功すれば 1(true) が返る。
+    # 不正なキーのため失敗した場合は 0(false) が返る。
 
     my ($this, $key, @values) = @_;
 
@@ -209,12 +209,12 @@ sub del_array {
 			    } @values))
 			} @$data;
 		    $count -= scalar(@$data);
-		    # ���ι��ܤ����ˤʤä�����ܼ��Τ���
+		    # この項目が空になったら項目自体を削除
 		    if (@$data == 0) {
 			delete $this->data->{$key};
 		    }
 		} else {
-		    # @values �����ꤵ��Ƥ��ʤ����Ϲ��ܺ��
+		    # @values が指定されていない場合は項目削除
 		    delete $this->data->{$key};
 		}
 		$this->set_modified;

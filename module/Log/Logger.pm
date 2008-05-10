@@ -24,14 +24,14 @@ our $MARKER = {
 sub new {
     my ($class,$enstringed_callback,$exception_object,@exceptions) = @_;
     # enstringed_callback:
-    #   ¥á¥Ã¥»¡¼¥¸¤ò¥í¥°Ê¸»úÎó²½¤·¤¿»þ¤Ë¸Æ¤Ð¤ì¤ë´Ø¿ô¡£CODE·¿¡£
-    #   °ú¿ô¤òÆó¤Ä¼è¤ê¡¢°ì¤ÄÌÜ¤Ï¥Á¥ã¥ó¥Í¥ëÌ¾¡¢Æó¤ÄÌÜ¤Ï¥í¥°Ê¸»úÎó¡£
+    #   ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’ãƒ­ã‚°æ–‡å­—åˆ—åŒ–ã—ãŸæ™‚ã«å‘¼ã°ã‚Œã‚‹é–¢æ•°ã€‚CODEåž‹ã€‚
+    #   å¼•æ•°ã‚’äºŒã¤å–ã‚Šã€ä¸€ã¤ç›®ã¯ãƒãƒ£ãƒ³ãƒãƒ«åã€äºŒã¤ç›®ã¯ãƒ­ã‚°æ–‡å­—åˆ—ã€‚
     # exception_object:
-    #   exceptions¤Ç»ØÄê¤µ¤ì¤¿¥á¥½¥Ã¥É¤ò¸Æ¤Ö¤È¤­¡¢¤É¤Î¥ª¥Ö¥¸¥§¥¯¥È¤Ç¸Æ¤Ö¤«¡£
+    #   exceptionsã§æŒ‡å®šã•ã‚ŒãŸãƒ¡ã‚½ãƒƒãƒ‰ã‚’å‘¼ã¶ã¨ãã€ã©ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã§å‘¼ã¶ã‹ã€‚
     # exceptions:
-    #   ÆÃÄê¤Î¥á¥Ã¥»¡¼¥¸¤Î¥í¥°Ê¸»úÎó²½¤ò¥ª¡¼¥Ð¡¼¥é¥¤¥É¤¹¤ë
-    #   'S_PRIVMSG'Åù¡£
-    #   °ú¿ô¤Ï(Tiarra::IRC::Message,IrcIO)¡¢Ìá¤êÃÍ¤Ï[¥Á¥ã¥ó¥Í¥ëÌ¾,¥í¥°Ê¸»úÎó]¤ÎÇÛÎó
+    #   ç‰¹å®šã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®ãƒ­ã‚°æ–‡å­—åˆ—åŒ–ã‚’ã‚ªãƒ¼ãƒãƒ¼ãƒ©ã‚¤ãƒ‰ã™ã‚‹
+    #   'S_PRIVMSG'ç­‰ã€‚
+    #   å¼•æ•°ã¯(Tiarra::IRC::Message,IrcIO)ã€æˆ»ã‚Šå€¤ã¯[ãƒãƒ£ãƒ³ãƒãƒ«å,ãƒ­ã‚°æ–‡å­—åˆ—]ã®é…åˆ—
     my $this = {
 	enstringed => $enstringed_callback,
 	exception_object => $exception_object,
@@ -55,7 +55,7 @@ sub log {
     };
     my $method_name = "${prefix}_".$msg->command;
     my @results;
-    # ¤³¤Î¥á¥½¥Ã¥É¤Ïexceptions¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤ë¤«¡©
+    # ã“ã®ãƒ¡ã‚½ãƒƒãƒ‰ã¯exceptionsã§å®šç¾©ã•ã‚Œã¦ã„ã‚‹ã‹ï¼Ÿ
     if (defined $this->{exceptions}->{$method_name}) {
 	eval {
 	    @results = $this->{exception_object}->$method_name($msg,$sender);
@@ -64,7 +64,7 @@ sub log {
 	}
     }
     else {
-	# ¤³¤Î¥¯¥é¥¹¤Ë¥á¥½¥Ã¥É¤Ï¤¢¤ë¤«¡©
+	# ã“ã®ã‚¯ãƒ©ã‚¹ã«ãƒ¡ã‚½ãƒƒãƒ‰ã¯ã‚ã‚‹ã‹ï¼Ÿ
 	if ($this->can($method_name)) {
 	    eval {
 		@results = $this->$method_name($msg,$sender);
@@ -106,8 +106,8 @@ sub S_PART {
 
 sub S_KICK {
     my ($this,$msg,$sender) = @_;
-    # RFC2812¤Ë¤Ï¡¢¡Ö¥µ¡¼¥Ð¤Ï¥¯¥é¥¤¥¢¥ó¥È¤ËÊ£¿ô¤Î¥Á¥ã¥ó¥Í¥ë¤ä¥æ¡¼¥¶¤ÎKICK¥á¥Ã¥»¡¼¥¸¤ò
-    # Á÷¤Ã¤Æ¤Ï¡Ö¤¤¤±¤Þ¤»¤ó¡×¡£¤³¤ì¤Ï¡¢¸Å¤¤¥¯¥é¥¤¥¢¥ó¥È¥½¥Õ¥È¥¦¥§¥¢¤È¤Î²¼°Ì¸ß´¹¤Î¤¿¤á¤Ç¤¹¡£¡×¤È¤¢¤ë¡£
+    # RFC2812ã«ã¯ã€ã€Œã‚µãƒ¼ãƒã¯ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã«è¤‡æ•°ã®ãƒãƒ£ãƒ³ãƒãƒ«ã‚„ãƒ¦ãƒ¼ã‚¶ã®KICKãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’
+    # é€ã£ã¦ã¯ã€Œã„ã‘ã¾ã›ã‚“ã€ã€‚ã“ã‚Œã¯ã€å¤ã„ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚½ãƒ•ãƒˆã‚¦ã‚§ã‚¢ã¨ã®ä¸‹ä½äº’æ›ã®ãŸã‚ã§ã™ã€‚ã€ã¨ã‚ã‚‹ã€‚
     [$msg->param(0),
      sprintf('- %s by %s from %s (%s)',
 	     $msg->param(1),$msg->nick,$msg->param(0),$msg->param(2))];
@@ -199,12 +199,12 @@ sub PRIVMSG_or_NOTICE
 
 # -----------------------------------------------------------------------------
 # $hashref = $obj->_build_message($msg, $sender).
-# Log/Channel ¤«¤éÇÒ¼Ú.
-# ¤¿¤À
-# - distinguish_myself ¤¬¾Ê¤«¤ì¤Æ¤¤¤ë.
-# - PRIV¤Ç¤âÁê¼ê¤ÎÌ¾Á°¤¬channelÌ¾¤È¤·¤Æ»È¤ï¤ì¤ë.
-# - ¹¥¤­¤Ëformat½ÐÍè¤ë¤è¤¦¤Ë²òÀÏ¤·¤¿¾ðÊó¤òHASHREF¤ÇÊÖ¤·¤Æ¤¤¤ë.
-# ¤È¤¤¤¦ÅÀ¤ÇÊÑ¹¹¤µ¤ì¤Æ¤¤¤ë.
+# Log/Channel ã‹ã‚‰æ‹å€Ÿ.
+# ãŸã 
+# - distinguish_myself ãŒçœã‹ã‚Œã¦ã„ã‚‹.
+# - PRIVã§ã‚‚ç›¸æ‰‹ã®åå‰ãŒchannelåã¨ã—ã¦ä½¿ã‚ã‚Œã‚‹.
+# - å¥½ãã«formatå‡ºæ¥ã‚‹ã‚ˆã†ã«è§£æžã—ãŸæƒ…å ±ã‚’HASHREFã§è¿”ã—ã¦ã„ã‚‹.
+# ã¨ã„ã†ç‚¹ã§å¤‰æ›´ã•ã‚Œã¦ã„ã‚‹.
 #
 sub _build_message
 {
@@ -232,12 +232,12 @@ sub _build_message
   my ($speaker, $ch_short);
   if( $sender->isa('IrcIO::Client') )
   {
-    # ¼«Ê¬¤ÎÈ¯¸À.
+    # è‡ªåˆ†ã®ç™ºè¨€.
     $speaker  = RunLoop->shared_loop->network( $netname )->current_nick;
     $ch_short = $target;
   }else
   {
-    # Áê¼ê¤Î.
+    # ç›¸æ‰‹ã®.
     $speaker  = $msg->nick || $sender->current_nick;
     $ch_short = $is_priv ? $speaker : $target;
   }

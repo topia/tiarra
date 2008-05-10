@@ -15,16 +15,16 @@ sub message_arrived {
   my ($this,$msg,$sender) = @_;
   my @result = ($msg);
 
-  # ¥µ¡¼¥Ð¡¼¤«¤é¤Î¥á¥Ã¥»¡¼¥¸¤«¡©
+  # ã‚µãƒ¼ãƒãƒ¼ã‹ã‚‰ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‹ï¼Ÿ
   if ($sender->isa('IrcIO::Server')) {
-    # PRIVMSG¤«¡©
+    # PRIVMSGã‹ï¼Ÿ
     if ($msg->command eq 'PRIVMSG') {
       my ($get_ch_name,undef,undef,$reply_anywhere)
 	= Auto::Utils::generate_reply_closures($msg,$sender,\@result);
 
       my ($req, $str) = split(/\s+/, $msg->param(1), 2);
       if (Mask::match_array([$this->config->request('all')], $req, 1)) {
-	# °ìÃ×¤·¤Æ¤¤¤¿¡£
+	# ä¸€è‡´ã—ã¦ã„ãŸã€‚
 	if (Mask::match_deep_chan([$this->config->mask('all')],$msg->prefix,$get_ch_name->())) {
 	  $reply_anywhere->(join('', ($this->config->prefix||''), $str, ($this->config->suffix||'')));
 	}

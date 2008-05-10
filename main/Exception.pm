@@ -11,7 +11,7 @@ sub new {
     my ($class,$msg) = @_;
     my $this = {
 	msg => $msg,
-	stacktrace => undef, # ╦Е╓г╫Я╓╞║ёcallerц╘╓К╓нллещ║ё
+	stacktrace => undef, # Е╬▄Ц│╖Ф⌡╦Ц│▐Ц─┌callerХ╬©Ц┌▀Ц│╝И²╒Е─▓Ц─┌
     };
     bless $this,$class;
 }

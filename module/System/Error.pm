@@ -25,14 +25,14 @@ sub message_io_hook {
 1;
 
 =pod
-info: �����С������ERROR��å�������NOTICE��������
+info: サーバーからのERRORメッセージをNOTICEに埋め込む
 default: on
 
-# �����off�ˤ���ȥ��饤����Ȥ�ERROR��å����������Τޤ������ޤ���
-# ���饤����ȤȤδ֤Ǥ�ERROR��å������ϼ�����Ƿٹ�˻Ȥ��Ƥ��ꡢ
-# ���Τޤ�ή���Ƥ��ޤ��ȥ��饤����Ȥ����𤹤��ǽ��������ޤ���
-#   ������ܤϤ���ޤ���
+# これをoffにするとクライアントにERRORメッセージがそのまま送られます。
+# クライアントとの間ではERRORメッセージは主に切断警告に使われており、
+# そのまま流してしまうとクライアントが混乱する可能性があります。
+#   設定項目はありません。
 
-# ���Υ⥸�塼�����򤷤�ERROR��å������򥯥饤����Ȥ����ꤿ�����ϡ�
-# remark��send-error-as-is-to-client����ꤷ�Ƥ���������
+# このモジュールを回避してERRORメッセージをクライアントに送りたい場合は、
+# remarkのsend-error-as-is-to-clientを指定してください。
 =cut

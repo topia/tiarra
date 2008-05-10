@@ -24,14 +24,14 @@ sub message_arrived {
   my ($this,$msg,$sender) = @_;
   my @result = ($msg);
 
-  # PRIVMSG �ʳ���̵��.
+  # PRIVMSG 以外は無視.
   if( $msg->command ne 'PRIVMSG' )
   {
     return @result;
   }
 
-  # �����С�����ʳ�(��ʬ��ȯ��)��,
-  # ���꤬�ʤ����̵��.
+  # サーバーから以外(自分の発言)は,
+  # 設定がなければ無視.
   if( !$sender->isa('IrcIO::Server') )
   {
     if( !as_boolean( $this->config->answer_to_myself() ) )
@@ -45,17 +45,17 @@ sub message_arrived {
       my $msgval = $msg->param(1);
       my $msg_ch_full = Auto::Utils::get_full_ch_name($msg, 0);
 
-      # reply�����ꤵ�줿��Τ��椫�顢���פ��Ƥ����Τ������ȯ����
-      # ���פˤ�Mask::match���Ѥ��롣
+      # replyに設定されたものの中から、一致しているものがあれば発言。
+      # 一致にはMask::matchを用いる。
       foreach ($this->config->reply('all')) {
 	my ($mask,$reply_msg) = m/^(.+?)\s+(.+)$/;
 	if (Mask::match($mask,$msgval)) {
-	  # ���פ��Ƥ�����
+	  # 一致していた。
 	  $reply_anywhere->($reply_msg);
 	}
       }
 
-      # channel-reply �Υ����å���
+      # channel-reply のチェック。
       foreach ($this->config->channel_reply('all')) {
 	my ($chan_mask, $msg_mask, $reply_msg) = split(' ', $_, 3);
 	$chan_mask =~ s/\[(.*)\]$//;
@@ -64,17 +64,17 @@ sub message_arrived {
 	defined($reply_msg) or next;
 	if( !Mask::match($msg_mask,$msgval) )
 	{
-	  # ��å��������ޥå����ʤ�.
+	  # メッセージがマッチしない.
 	  next;
 	}
 	if( !Mask::match($chan_mask,$msg_ch_full)) {
-	  # �����ͥ뤬�ޥå����ʤ�.
+	  # チャンネルがマッチしない.
 	  next;
 	}
-	# �ޥå������ΤǤ��ֻ�.
+	# マッチしたのでお返事.
 	$reply_anywhere->($reply_msg);
 
-	# [last] ���꤬����Ф����Ǥ����ޤ�.
+	# [last] 指定があればここでおしまい.
 	if( grep{$_ eq 'last'} @opts )
 	{
 	  last;
@@ -87,34 +87,34 @@ sub message_arrived {
 1;
 
 =pod
-info: �����ȯ����ȿ�������б�����ȯ���򤹤롣
+info: 特定の発言に反応して対応する発言をする。
 default: off
 
-# Auto::Alias��ͭ���ˤ��Ƥ���С������ꥢ���ִ���Ԥʤ��ޤ���
+# Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。
 
-# ȿ������ȯ���ȡ�������Ф����ֻ���������ޤ���
-# �����ꥢ���ִ���ͭ���Ǥ���#(nick.now)��$(channel)�Ϥ��줾��
-# ���θ��ߤ�nick�ȥ����ͥ�̾���ִ�����ޤ���
+# 反応する発言と、それに対する返事を定義します。
+# エイリアス置換が有効です。#(nick.now)と$(channel)はそれぞれ
+# 相手の現在のnickとチャンネル名に置換されます。
 #
-# ���ޥ��: reply
-# ��: <ȿ������ȯ���Υޥ���> <������Ф����ֻ�>
-# ��:
--reply: ����ˤ���* ����ˤ��ϡ�#(name|nick.now)����
-# ������Ǥ�ï�����֤���ˤ��ϡפǻϤޤ�ȯ���򤹤�ȡ�
-# ȯ�������ͤΥ����ꥢ���򻲾Ȥ��ơ֤���ˤ��ϡ��������󡣡פΤ褦��ȯ�����ޤ���
+# コマンド: reply
+# 書式: <反応する発言のマスク> <それに対する返事>
+# 例:
+-reply: こんにちは* こんにちは、#(name|nick.now)さん。
+# この例では誰かが「こんにちは」で始まる発言をすると、
+# 発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。
 #
-# ���ޥ��: channel-reply
-# ��: <ȿ����������ͥ�Υޥ���> <ȿ������ȯ���Υޥ���> <������Ф����ֻ�>
-# ��:
--channel-reply: #��������@ircnet ����ˤ���* ����ˤ��ϡ�#(name|nick.now)����
-# ������Ǥ�#��������@ircnet��ï�����֤���ˤ��ϡפǻϤޤ�ȯ���򤹤�ȡ�
-# ȯ�������ͤΥ����ꥢ���򻲾Ȥ��ơ֤���ˤ��ϡ��������󡣡פΤ褦��ȯ�����ޤ���
+# コマンド: channel-reply
+# 書式: <反応するチャンネルのマスク> <反応する発言のマスク> <それに対する返事>
+# 例:
+-channel-reply: #あいさつ@ircnet こんにちは* こんにちは、#(name|nick.now)さん。
+# この例では#あいさつ@ircnetで誰かが「こんにちは」で始まる発言をすると、
+# 発言した人のエイリアスを参照して「こんにちは、○○さん。」のように発言します。
 #
-# ���ޥ��: answer-to-myself
-# ��: <������>
-# ��:
+# コマンド: answer-to-myself
+# 書式: <真偽値>
+# 例:
 -answer-to-myself: on
-# ��ʬ��ȯ���ˤ�ȿ������褦�ˤʤ�ޤ���
-# �ǥե���Ȥ� off �Ǥ���
+# 自分の発言にも反応するようになります。
+# デフォルトは off です。
 
 =cut

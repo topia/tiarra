@@ -2,16 +2,16 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 3004 2007-12-10 12:45:39Z topia $ -->
+<!-- $Id: contents.html 11357 2008-05-10 14:03:50Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP" />
-    <title>CTCP �ط��Υ⥸�塼�� - Tiarra Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>CTCP 関係のモジュール - Tiarra Documentation</title>
     <link rel="stylesheet" type="text/css" href="../default.css" />
   </head>
   <body>
     <div class="header">
-      <h1>CTCP �ط��Υ⥸�塼��</h1>
+      <h1>CTCP 関係のモジュール</h1>
     </div>
 
     <hr class="sep" />
@@ -19,11 +19,11 @@
     <div class="pane-main">
       
       <div id="module-CTCP::ClientInfo" class="module">
-        <div class="module-header"><h2 title="CTCP CLIENTINFO�˱������롣">CTCP::ClientInfo</h2>
-          <span class="description">CTCP CLIENTINFO�˱������롣</span></div>
+        <div class="module-header"><h2 title="CTCP CLIENTINFOに応答する。">CTCP::ClientInfo</h2>
+          <span class="description">CTCP CLIENTINFOに応答する。</span></div>
         <div class="content">
 	  <p class="comment">
-CTCP::Version��interval��Ʊ����<br />
+CTCP::Versionのintervalと同じ。<br />
 </p>
 <div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
 
@@ -35,83 +35,83 @@ CTCP::Version��interval��Ʊ����<br />
       
       
       <div id="module-CTCP::DCC::RewriteAddress" class="module">
-        <div class="module-header"><h2 title="���饤����Ȥ��������� CTCP DCC �Υ��ɥ쥹���Ѵ����롣">CTCP::DCC::RewriteAddress</h2>
-          <span class="description">���饤����Ȥ��������� CTCP DCC �Υ��ɥ쥹���Ѵ����롣</span></div>
+        <div class="module-header"><h2 title="クライアントが送信した CTCP DCC のアドレスを変換する。">CTCP::DCC::RewriteAddress</h2>
+          <span class="description">クライアントが送信した CTCP DCC のアドレスを変換する。</span></div>
         <div class="content">
 	  <p class="comment">
-&nbsp;CTCP DCC �˻��ꤵ��Ƥ��륢�ɥ쥹�� tiarra �Ǽ���������Τ�<br />
-&nbsp;�񤭴����ޤ���(EXPERIMENTAL)<br />
+&nbsp;CTCP DCC に指定されているアドレスを、 tiarra で取得したものに<br />
+&nbsp;書き換えます。(EXPERIMENTAL)<br />
 <br />
-&nbsp;IPv4 �Τߥ��ݡ��Ȥ��Ƥ��ޤ���<br />
+&nbsp;IPv4 のみサポートしています。<br />
 <br />
-&nbsp;���Υ⥸�塼��ϰ�ö CTCP DCC ��å��������˴�����Τǡ�<br />
-&nbsp;�̤Υ��饤����Ȥˤ���������ޤ���<br />
+&nbsp;このモジュールは一旦 CTCP DCC メッセージを破棄するので、<br />
+&nbsp;別のクライアントには送信されません。<br />
 </p>
 <p class="comment">
-�Ѵ����� DCC �����ס� [�ǥե������: CHAT SEND]<br />
+変換する DCC タイプ。 [デフォルト値: CHAT SEND]<br />
 </p>
 <div class="element"><span class="key">type</span>:<span class="value">CHAT SEND</span></div>
 <p class="comment">
-�Ѵ��ѥ��ɥ쥹�μ�����ˡ�����򤹤롣�ǥե�����ͤϤ���ޤ���<br />
-�ʲ��μ�����ˡ(server-socket client-socket dns http)����<br />
-ɬ�פʤ��(ʣ����)����ꤷ�Ƥ���������<br />
+変換用アドレスの取得方法を選択する。デフォルト値はありません。<br />
+以下の取得方法(server-socket client-socket dns http)から<br />
+必要なもの(複数可)を指定してください。<br />
 </p>
 <div class="element"><span class="key">resolver</span>:<span class="value">client-socket server-socket dns http</span></div>
 <p class="comment">
-������ˡ������<br />
-�ʤˤ����꤬�ʤ��Ȥ��ϥ֥��å����Τ��ά���뤳�Ȥ�Ǥ��ޤ���<br />
+取得方法と設定<br />
+なにも設定がないときはブロック自体を省略することもできます。<br />
 </p>
 <div class="block element"><span class="block key">server-socket</span>
 <div class="block content">
 <p class="comment">
-�����Х����åȤΥ������륢�ɥ쥹����ޤ���<br />
+サーバソケットのローカルアドレスを取ります。<br />
 client &lt;-&gt; tiarra[this address] &lt;-&gt; server<br />
 </p>
 </div></div>
 <div class="block element"><span class="block key">client-socket</span>
 <div class="block content">
 <p class="comment">
-���饤����ȥ����åȤΥ�⡼�ȥ��ɥ쥹����ޤ���<br />
+クライアントソケットのリモートアドレスを取ります。<br />
 client [this address]&lt;-&gt; tiarra &lt;-&gt; server<br />
 </p>
 </div></div>
 <div class="block element"><span class="block key">dns</span>
 <div class="block content">
 <p class="comment">
-DNS ������Ʒ��ꤷ�ޤ���IP���ɥ쥹�λ�����ǽ�Ǥ���<br />
+DNS を引いて決定します。IPアドレスの指定も可能です。<br />
 </p>
 <div class="element"><span class="key">host</span>:<span class="value">example.com</span></div>
 </div></div>
 <div class="block element"><span class="block key">http</span>
 <div class="block content">
 <p class="comment">
-�����Ǥ�ñ��� GET �������ݡ��Ȥ��Ƥ��ޤ���<br />
+現状では単純な GET しかサポートしていません。<br />
 </p>
 <p class="comment">
-���������� URL<br />
+アクセス先 URL<br />
 </p>
 <div class="element"><span class="key">url</span>:<span class="value">http://checkip.dyndns.org/</span></div>
 <p class="comment">
-IP ���ɥ쥹������ regex<br />
+IP アドレス取得用 regex<br />
 </p>
 <div class="element"><span class="key">regex</span>:<span class="value">Current IP Address: (\d+\.\d+\.\d+\.\d+)</span></div>
 </div></div>
 <p class="comment">
-&nbsp;�꥾��Ф�������<br />
+&nbsp;リゾルバの選び方<br />
 <br />
-&nbsp;&nbsp;* tiarra ��ư����Ƥ��륵���Фȥ��󥿡��ͥåȤδ֤˥롼���������ꡢ<br />
-&nbsp;&nbsp;&nbsp;&nbsp;�������Х륢�ɥ쥹���ʤ����<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*-socket �����Ω���ޤ��� http �����Ѥ��Ƥ���������<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ŭ���� DDNS ����äƤ����dns ���ɤ��Ǥ��礦��<br />
+&nbsp;&nbsp;* tiarra を動作させているサーバとインターネットの間にルータ等があり、<br />
+&nbsp;&nbsp;&nbsp;&nbsp;グローバルアドレスがない場合<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*-socket は役に立ちません。 http を利用してください。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;適当な DDNS を持っていればdns も良いでしょう。<br />
 <br />
-&nbsp;&nbsp;* tiarra ����󥿥륵���Фʤ�LAN��ˤʤ������Ф�ư��Ƥ�����<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server-socket, http �����Ω���ޤ���<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;client-socket ��������Ǥ���<br />
+&nbsp;&nbsp;* tiarra がレンタルサーバなどLAN上にないサーバで動作している場合<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server-socket, http は役に立ちません。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;client-socket がお勧めです。<br />
 <br />
-&nbsp;&nbsp;* tiarra ��LAN��ˤ��ꡢ�������Х륢�ɥ쥹�ΤĤ��Ƥ���ۥ��Ȥ�<br />
-&nbsp;&nbsp;&nbsp;&nbsp;ư��Ƥ�����<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;client-socket �����Ω���ޤ���<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server-socket ��������Ǥ���<br />
+&nbsp;&nbsp;* tiarra がLAN上にあり、グローバルアドレスのついているホストで<br />
+&nbsp;&nbsp;&nbsp;&nbsp;動作している場合<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;client-socket は役に立ちません。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server-socket がお勧めです。<br />
 </p>
 
         </div>
@@ -122,11 +122,11 @@ IP ���ɥ쥹������ regex<br />
       
       
       <div id="module-CTCP::Ping" class="module">
-        <div class="module-header"><h2 title="CTCP PING�˱������롣">CTCP::Ping</h2>
-          <span class="description">CTCP PING�˱������롣</span></div>
+        <div class="module-header"><h2 title="CTCP PINGに応答する。">CTCP::Ping</h2>
+          <span class="description">CTCP PINGに応答する。</span></div>
         <div class="content">
 	  <p class="comment">
-CTCP::Version��interval��Ʊ����<br />
+CTCP::Versionのintervalと同じ。<br />
 </p>
 <div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
 
@@ -138,11 +138,11 @@ CTCP::Version��interval��Ʊ����<br />
       
       
       <div id="module-CTCP::Time" class="module">
-        <div class="module-header"><h2 title="CTCP TIME�˱������롣">CTCP::Time</h2>
-          <span class="description">CTCP TIME�˱������롣</span></div>
+        <div class="module-header"><h2 title="CTCP TIMEに応答する。">CTCP::Time</h2>
+          <span class="description">CTCP TIMEに応答する。</span></div>
         <div class="content">
 	  <p class="comment">
-CTCP::Version��interval��Ʊ����<br />
+CTCP::Versionのintervalと同じ。<br />
 </p>
 <div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
 
@@ -154,17 +154,17 @@ CTCP::Version��interval��Ʊ����<br />
       
       
       <div id="module-CTCP::UserInfo" class="module">
-        <div class="module-header"><h2 title="CTCP USERINFO�˱������롣">CTCP::UserInfo</h2>
-          <span class="description">CTCP USERINFO�˱������롣</span></div>
+        <div class="module-header"><h2 title="CTCP USERINFOに応答する。">CTCP::UserInfo</h2>
+          <span class="description">CTCP USERINFOに応答する。</span></div>
         <div class="content">
 	  <p class="comment">
-CTCP::Version��interval��Ʊ����<br />
+CTCP::Versionのintervalと同じ。<br />
 </p>
 <div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
 <p class="comment">
-USERINFO�Ȥ����֤���å�������<br />
+USERINFOとして返すメッセージ。<br />
 </p>
-<div class="element"><span class="key">message</span>:<span class="value">�ƥ���</span></div>
+<div class="element"><span class="key">message</span>:<span class="value">テスト</span></div>
 
         </div>
       </div>
@@ -174,18 +174,18 @@ USERINFO�Ȥ����֤���å�������<br />
       
       
       <div id="module-CTCP::Version" class="module">
-        <div class="module-header"><h2 title="CTCP VERSION�˱������롣">CTCP::Version</h2>
-          <span class="description">CTCP VERSION�˱������롣</span></div>
+        <div class="module-header"><h2 title="CTCP VERSIONに応答する。">CTCP::Version</h2>
+          <span class="description">CTCP VERSIONに応答する。</span></div>
         <div class="content">
 	  <p class="comment">
-&nbsp;Ϣ³����CTCP�ꥯ�����Ȥ��Ф�������δֳ֡�ñ�̤��á�<br />
-&nbsp;�㤨��3�ä����ꤷ����硢���ٱ������Ƥ���3�ô֤�<br />
-&nbsp;CTCP�˰��ڱ������ʤ��ʤ롣�ǥե���Ȥ�3��<br />
+&nbsp;連続したCTCPリクエストに対する応答の間隔。単位は秒。<br />
+&nbsp;例えば3秒に設定した場合、一度応答してから3秒間は<br />
+&nbsp;CTCPに一切応答しなくなる。デフォルトは3。<br />
 <br />
-&nbsp;�ʤ���CTCP��������ε�Ͽ�ϡ����Ƥ�CTCP�⥸�塼��Ƕ�ͭ����롣<br />
-&nbsp;�㤨��CTCP VERSION�����ä�ľ���CTCP CLIENTINFO�����ä��Ȥ��Ƥ⡢<br />
-&nbsp;CTCP::ClientInfo��interval�����ꤵ�줿���֤�᤮�Ƥ��ʤ����<br />
-&nbsp;��Ԥϱ������ʤ���<br />
+&nbsp;なお、CTCP受信時刻の記録は、全てのCTCPモジュールで共有される。<br />
+&nbsp;例えばCTCP VERSIONを送った直後にCTCP CLIENTINFOを送ったとしても、<br />
+&nbsp;CTCP::ClientInfoのintervalで設定された時間を過ぎていなければ<br />
+&nbsp;後者は応答しない。<br />
 </p>
 <div class="element"><span class="key">interval</span>:<span class="value">3</span></div>
 
@@ -199,19 +199,19 @@ USERINFO�Ȥ����֤���å�������<br />
     <div class="pane-sidebar">
       <ul class="menu">
         
-        <li><a href="#module-CTCP::ClientInfo" title="CTCP CLIENTINFO�˱������롣">CTCP::ClientInfo</a></li>
+        <li><a href="#module-CTCP::ClientInfo" title="CTCP CLIENTINFOに応答する。">CTCP::ClientInfo</a></li>
         
-        <li><a href="#module-CTCP::DCC::RewriteAddress" title="���饤����Ȥ��������� CTCP DCC �Υ��ɥ쥹���Ѵ����롣">CTCP::DCC::RewriteAddress</a></li>
+        <li><a href="#module-CTCP::DCC::RewriteAddress" title="クライアントが送信した CTCP DCC のアドレスを変換する。">CTCP::DCC::RewriteAddress</a></li>
         
-        <li><a href="#module-CTCP::Ping" title="CTCP PING�˱������롣">CTCP::Ping</a></li>
+        <li><a href="#module-CTCP::Ping" title="CTCP PINGに応答する。">CTCP::Ping</a></li>
         
-        <li><a href="#module-CTCP::Time" title="CTCP TIME�˱������롣">CTCP::Time</a></li>
+        <li><a href="#module-CTCP::Time" title="CTCP TIMEに応答する。">CTCP::Time</a></li>
         
-        <li><a href="#module-CTCP::UserInfo" title="CTCP USERINFO�˱������롣">CTCP::UserInfo</a></li>
+        <li><a href="#module-CTCP::UserInfo" title="CTCP USERINFOに応答する。">CTCP::UserInfo</a></li>
         
-        <li><a href="#module-CTCP::Version" title="CTCP VERSION�˱������롣">CTCP::Version</a></li>
+        <li><a href="#module-CTCP::Version" title="CTCP VERSIONに応答する。">CTCP::Version</a></li>
         
-        <li><a href="../module-toc.html">�⥸�塼����������</a></li>
+        <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
       </ul>
     </div>
   </body>

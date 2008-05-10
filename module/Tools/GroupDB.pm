@@ -2,16 +2,16 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# �����ꥢ���Τ褦�ˡ�Hash��쥳���ɤȤ���DB��������롣
+# エイリアスのように、HashをレコードとしたDBを管理する。
 # -----------------------------------------------------------------------------
 # copyright (C) 2003-2004 Topia <topia@clovery.jp>. all rights reserved.
 
 
-# - ����(����) -
-#  * ����̾��Ⱦ�ѥ��ڡ����ϴޤ���ޤ��� error ���Фޤ���
-#  * �ͤ���Ƭ���Ǹ�ˤ������ʸ��(\s)���ɤ߹��߻��˾ü����ޤ���
-#  * ��ǽ��­�Ǥ���
-#  * �����ɤ��ɤߤˤ����Ǥ���
+# - 情報(注意) -
+#  * キー名に半角スペースは含められません。 error が出ます。
+#  * 値の先頭、最後にある空白文字(\s)は読み込み時に消失します。
+#  * 機能不足です。
+#  * コードが読みにくいです。
 
 # technical information
 #  - datafile format
@@ -19,12 +19,12 @@
 #      -> key 'abc', value 'def'
 #    | : abc : def
 #      -> key ':abc:', value 'def'
-#    LINE := KEY ANYSPACES [value] ANYSPACES �����ܡ�
+#    LINE := KEY ANYSPACES [value] ANYSPACES が基本。
 #    KEY := ANYSPACES [keyname] ANYSPACES ':' || ANYSPACES ':' [keyname] ':'
 #    ANYSPACES := REGEXP:\s*
-#    [keyname] �ˤϥ�����򥹥ڡ������Ѵ���������̾�����롣
-#      ����̾����Ƭ�ޤ��ϺǸ�˥��ڡ�����������ϡ�KEY�θ�ԤΥե����ޥåȤ���Ѥ��롣
-#    [value] �Ϥ��Τޤޡ��Ĥޤ�ʣ���Ԥˤʤ�ǡ������ɲäǤ��ʤ������顼��Ф��٤���?
+#    [keyname] にはコロンをスペースに変換したキー名が入る。
+#      キー名の先頭または最後にスペースがある場合は、KEYの後者のフォーマットを使用する。
+#    [value] はそのまま。つまり複数行になるデータは追加できない。エラーを出すべきか?
 
 package Tools::GroupDB;
 use strict;
@@ -44,23 +44,23 @@ use base qw(Tiarra::SessionMixin);
 use base qw(Tiarra::Utils);
 
 sub new {
-    # ���󥹥ȥ饯��
+    # コンストラクタ
 
-    # - ���� -
-    # $fpath	: ��¸����ե�����Υѥ������ե����� or undef �ǥե�����˴�Ϣ�դ����ʤ�DB����������ޤ���
+    # - 引数 -
+    # $fpath	: 保存するファイルのパス。空ファイル or undef でファイルに関連付けられないDBが作成されます。
     # $primary_key
-    # 		: �祭�������ꤷ�ޤ����ǡ����١���Ū�������Ϥޤä�������ޤ���(��)����Ŭ���˺�äƲ�������
-    # 		  $split_primary�����ꤵ��Ƥ��ʤ����� undef ���Ϥ����Ȥ�����ޤ���
-    # $charset	: �ե������ʸ�����åȤ���ꤷ�ޤ�����ά����� UTF-8 �ˤʤ�ޤ���
+    # 		: 主キーを設定します。データベース的な利点はまったくありません(笑)が、適当に作って下さい。
+    # 		  $split_primaryが指定されていない場合は undef を渡すことが出来ます。
+    # $charset	: ファイルの文字セットを指定します。省略すれば UTF-8 になります。
     # $split_primary
-    # 		: true �ʤ顢�ǡ����ե����뤫����ɤ߹��߻��ˡ�$primary_key�Ƕ��ڤ�ޤ���
-    # 		  �����Ǥʤ���Хǡ�����̵���Ԥ����ڤ�ˤʤ�ޤ�����ά������ false �Ǥ���
-    # $use_re	: �ͤθ���/����Ƚ�������ɽ����ĥ��Ȥ����ɤ�������ά�����лȤ��ޤ���
+    # 		: true なら、データファイルからの読み込み時に、$primary_keyで区切ります。
+    # 		  そうでなければデータの無い行が区切りになります。省略されれば false です。
+    # $use_re	: 値の検索/一致判定に正規表現拡張を使うかどうか。省略されれば使いません。
     # $ignore_proc
-    # 		: ̵�뤹��Ԥ���ꤹ�륯�������㡣�Ԥ�����˸ƤӽФ��졢 true ���֤�Ф��ιԤ�̵�뤷�ޤ���
-    # 		  ������ ignore ���줿�Ԥϲ��Ϥ����Ԥ��ޤ���Τǡ�
-    # 		  $split_primary=0�Ǥ���ڤ��ǧ�����줿��Ϥ��ޤ���
-    # 		  ����Ū�����դȤ��ơ����ξ��֤Υǡ����١�������¸���줿���� ignore ���줿�Ԥ����ƾ��Ǥ��ޤ���
+    # 		: 無視する行を指定するクロージャ。行を引数に呼び出され、 true が返ればその行を無視します。
+    # 		  ここで ignore された行は解析さえ行いませんので、
+    # 		  $split_primary=0でも区切りと認識されたりはしません。
+    # 		  一般的な注意として、この状態のデータベースが保存された場合は ignore された行は全て消滅します。
 
     my ($class,$fpath,$primary_key,$charset,$split_primary,$use_re,$ignore_proc) = @_;
 
@@ -73,18 +73,18 @@ sub new {
     }
 
     my $this = {
-	time => undef, # �ե�����κǽ��ɤ߹��߻���
+	time => undef, # ファイルの最終読み込み時刻
 	fpath => $fpath,
 	primary_key => $primary_key,
 	split_primary => $split_primary || 0,
-	charset => $charset || 'utf8', # �ե������ʸ��������
+	charset => $charset || 'utf8', # ファイルの文字コード
 	use_re => $use_re || 0,
 	ignore_proc => $ignore_proc || sub { $_[0] =~ /^\s*#/; },
 	cleanup_queued => undef,
 
 	caller_name => $class->simple_caller_formatter('GroupDB registered'),
 	database => undef, # ARRAY<HASH*>
-	# <���� SCALAR,�ͤν��� ARRAY<SCALAR>>
+	# <キー SCALAR,値の集合 ARRAY<SCALAR>>
     };
 
     bless $this,$class;
@@ -219,7 +219,7 @@ sub _synchronize {
 		    $values = $person->data->{$key};
 		    # can use colon(:) on key, but cannot use space( ).
 		    $key =~ s/:/ /g;
-		    # \s ����Ƭ/�Ǹ�ˤ��ä�����ɤ߹��ߤǾä����ΤǤ�����ɻߡ�
+		    # \s が先頭/最後にあった場合読み込みで消え去るのでそれを防止。
 		    $key = ':' . $key if ($key =~ /^\s/ || $key =~ /\s$/);
 		    map {
 			my $line = "$key: " . $_ . "\n";
@@ -243,7 +243,7 @@ sub groups {
 }
 
 sub find_group_with_primary {
-    # ���դ���ʤ����undef���֤���
+    # 見付からなければundefを返す。
     my ($this, $value) = @_;
 
     $this->_check_primary_key;
@@ -384,11 +384,11 @@ sub new_group {
 }
 
 sub add_group {
-    # �ǡ����١����˥��롼�פ��ɲä��롣
-    # ��������� 1(true) ���֤롣
-    # sanity check ��­��ʤ��Τ� new_group ��Ȥ����Ȥ�侩���ޤ���
+    # データベースにグループを追加する。
+    # 常に成功し 1(true) が返る。
+    # sanity check が足りないので new_group を使うことを推奨します。
 
-    # key �� space ���ޤޤ�ʤ��������å����٤��������Ȥꤢ�����Ϥ��Ƥ��ʤ���
+    # key に space が含まれないかチェックすべきだが、とりあえずはしていない。
     my ($this, @groups) = @_;
     $this->with_session(
 	sub {
@@ -406,8 +406,8 @@ sub add_group {
 }
 
 sub del_group {
-    # �ǡ����١������饰�롼�פ������롣
-    # ���롼�פ���ˤ��ƥ��꡼�󥢥åפˤޤ����ޤ���
+    # データベースからグループを削除する。
+    # グループを空にしてクリーンアップにまかせます。
 
     my ($this, @groups) = @_;
     $this->with_session(
@@ -428,10 +428,10 @@ sub add_array_with_primary {
     $this->_check_primary_key;
     $this->with_session(
 	sub {
-	    # �ɲá����뤫��
+	    # 追加。あるか？
 	    my $group = $this->find_group_with_primary($primary);
 
-	    # primary_key ���ͤ˽�ʣ���Ǥ��ʤ��������å���
+	    # primary_key の値に重複ができないかチェック。
 	    if ($key eq $this->primary_key &&
 		    $this->_check_primary_key_dups(@values)) {
 		return 0;
@@ -441,8 +441,8 @@ sub add_array_with_primary {
 		# found.
 		return $group->add_array($key, @values);
 	    } else {
-		# 1. ̵���ä���硢primary_key�������ɲä�������롣
-		# 2. primary_key ���ͤ� @values �����פ��뤫�����å���
+		# 1. 無かった場合、primary_keyだけは追加が許される。
+		# 2. primary_key の値と @values が一致するかチェック。
 		if ($key eq $this->primary_key &&
 			$this->_match([@values], $primary)) {
 		    $this->new_group(@values);
@@ -462,7 +462,7 @@ sub del_array_with_primary {
     $this->_check_primary_key;
     $this->with_session(
 	sub {
-	    # ��������뤫��
+	    # 削除。あるか？
 	    my $group = $this->find_group_with_primary($primary);
 
 	    if (defined $group) {
@@ -483,13 +483,13 @@ sub _cleanup {
     if ($this->cleanup_queued || $force) {
 	my $count = scalar @{$this->{database}};
 	if (defined $this->primary_key) {
-	    # primary_key����Ĥ�ʤ������ꥢ���������롣
+	    # primary_keyが一つもないエイリアスを削除する。
 	    @{$this->{database}} = grep {
 		my $primary = $_->{$this->primary_key};
 		defined $primary && @$primary > 0;
 	    } @{$this->{database}};
 	} else {
-	    # ��Ȥ����Υ����ꥢ���������롣
+	    # 中身が空のエイリアスを削除する。
 	    @{$this->{database}} = grep {
 		$_->keys;
 	    } @{$this->{database}};
@@ -514,9 +514,9 @@ sub _before_session_finish {
 
 # replace support functions
 sub replace_with_callbacks {
-    # �ޥ������ִ���Ԥʤ���%optional���ִ����ɲä��륭�����ͤ��Ȥߤǡ���ά�ġ�
-    # $callbacks��group/optional���ִ��Ǥ��ʤ��ä��ݤ˸ƤӽФ���륳����Хå��ؿ��Υ�ե���󥹡�
-    # optional���ͤ�SCALAR�Ǥ�ARRAY<SCALAR>�Ǥ��ɤ���
+    # マクロの置換を行なう。%optionalは置換に追加するキーと値の組みで、省略可。
+    # $callbacksはgroup/optionalで置換できなかった際に呼び出されるコールバック関数のリファレンス。
+    # optionalの値はSCALARでもARRAY<SCALAR>でも良い。
     my ($this,$primary,$str,$callbacks,%optional) = @_;
     my $main_table = $this->find_group_with_primary($primary) || {};
     return Tools::HashTools::replace_recursive($str,[$main_table,\%optional],$callbacks);
@@ -539,7 +539,7 @@ sub del_array {
 *del_value = \&del_array;
 
 sub dup_group {
-    # ���롼�פ�ʣ����Ԥ��ޤ���
+    # グループの複製を行います。
 
     my ($group) = @_;
     return undef unless defined($group);
@@ -549,12 +549,12 @@ sub dup_group {
 
 # group misc functions
 sub concat_string_to_key {
-    # prefix �� suffix �� group �� key ���ղä��ޤ���
+    # prefix や suffix を group の key に付加します。
 
-    # - ���� -
-    # $group	: ���롼�ס�
-    # $prefix	: prefix ʸ���� ('to.' �Ȥ� 'from.' �Ȥ�)
-    # $suffix	: suffix ʸ����
+    # - 引数 -
+    # $group	: グループ。
+    # $prefix	: prefix 文字列 ('to.' とか 'from.' とか)
+    # $suffix	: suffix 文字列
     my ($group, $prefix, $suffix) = @_;
     return dup_group($group)->manipulate_keyname(
 	prefix => $prefix,

@@ -1,34 +1,34 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# Tiarra::IRC::Message¤ÏIRC¤Î¥á¥Ã¥»¡¼¥¸¤òÉ½¤ï¤¹¥¯¥é¥¹¤Ç¤¹¡£¼ÂºÝ¤Î¥á¥Ã¥»¡¼¥¸¤ÏUTF-8¤ÇÊÝ»ý¤·¤Þ¤¹¡£
-# À¸¤Î¥á¥Ã¥»¡¼¥¸¤Î¥Ñ¡¼¥¹¡¢¥·¥ê¥¢¥é¥¤¥º¡¢¤½¤·¤Æ¥á¥Ã¥»¡¼¥¸¤ÎÀ¸À®¤ò¥µ¥Ý¡¼¥È¤·¤Þ¤¹¡£
-# ¥Ñ¡¼¥¹¤È¥·¥ê¥¢¥é¥¤¥º¤Ë¤ÏÊ¸»ú¥³¡¼¥É¤ò»ØÄê¤·¤Æ²¼¤µ¤¤¡£¥³¡¼¥É¤òÊÑ´¹¤·¤Þ¤¹¡£
-# Line¤ÈEncoding°Ê³°¤Î¼êÃÊ¤Ç¥¤¥ó¥¹¥¿¥ó¥¹¤òÀ¸À®¤¹¤ëºÝ¤Ï¡¢
-# ¥Ñ¥é¥á¡¼¥¿¤È¤·¤ÆUTF-8¤ÎÃÍ¤òÅÏ¤·¤Æ²¼¤µ¤¤¡£
+# Tiarra::IRC::Messageã¯IRCã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¡¨ã‚ã™ã‚¯ãƒ©ã‚¹ã§ã™ã€‚å®Ÿéš›ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã¯UTF-8ã§ä¿æŒã—ã¾ã™ã€‚
+# ç”Ÿã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®ãƒ‘ãƒ¼ã‚¹ã€ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚ºã€ãã—ã¦ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®ç”Ÿæˆã‚’ã‚µãƒãƒ¼ãƒˆã—ã¾ã™ã€‚
+# ãƒ‘ãƒ¼ã‚¹ã¨ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚ºã«ã¯æ–‡å­—ã‚³ãƒ¼ãƒ‰ã‚’æŒ‡å®šã—ã¦ä¸‹ã•ã„ã€‚ã‚³ãƒ¼ãƒ‰ã‚’å¤‰æ›ã—ã¾ã™ã€‚
+# Lineã¨Encodingä»¥å¤–ã®æ‰‹æ®µã§ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆã™ã‚‹éš›ã¯ã€
+# ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã¨ã—ã¦UTF-8ã®å€¤ã‚’æ¸¡ã—ã¦ä¸‹ã•ã„ã€‚
 # -----------------------------------------------------------------------------
-# À¸À®ÊýË¡°ìÍ÷
+# ç”Ÿæˆæ–¹æ³•ä¸€è¦§
 #
 # $msg = new Tiarra::IRC::Message(Line => ':foo!~foo@hogehoge.net PRIVMSG #hoge :hoge',
 #                       Encoding => 'jis');
-# print $msg->command; # 'PRIVMSG'¤òÉ½¼¨
+# print $msg->command; # 'PRIVMSG'ã‚’è¡¨ç¤º
 #
-# $msg = new Tiarra::IRC::Message(Server => 'irc.hogehoge.net', # Server¤ÏPrefix¤Ç¤âÎÉ¤¤¡£
+# $msg = new Tiarra::IRC::Message(Server => 'irc.hogehoge.net', # Serverã¯Prefixã§ã‚‚è‰¯ã„ã€‚
 #                       Command => '366',
 #                       Params => ['hoge','#hoge','End of /NAMES list.']);
-# print $msg->serialize('jis'); # ":irc.hogehoge.net 366 hoge #hoge :End of /NAMES list."¤òÉ½¼¨
+# print $msg->serialize('jis'); # ":irc.hogehoge.net 366 hoge #hoge :End of /NAMES list."ã‚’è¡¨ç¤º
 #
 # $msg = new Tiarra::IRC::Message(Nick => 'foo',
 #                       User => '~bar',
-#                       Host => 'hogehoge.net', # °Ê¾å£³¤Ä¤Î¥Ñ¥é¥á¡¼¥¿¤ÎÂå¤ï¤ê¤ËPrefix => 'foo!~bar@hogehoge.net'¤Ç¤âÎÉ¤¤¡£
+#                       Host => 'hogehoge.net', # ä»¥ä¸Šï¼“ã¤ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®ä»£ã‚ã‚Šã«Prefix => 'foo!~bar@hogehoge.net'ã§ã‚‚è‰¯ã„ã€‚
 #                       Command => 'NICK',
-#                       Params => 'huga', # Params¤ÏÍ×ÁÇ¤¬°ì¤Ä¤À¤±¤Ê¤é¥¹¥«¥é¡¼ÃÍ¤Ç¤âÎÉ¤¤¡£(¤³¤Î»þ¡¢Params¤Ç¤Ê¤¯Param¤Ç¤âÎÉ¤¤¡£)
-#                       Remarks => {'saitama' => 'SAITAMA'}, # È÷¹ÍÍó¡£
-# print $msg->serialize('jis'); # ":foo!~bar@hogehoge.net NICK :huga"¤òÉ½¼¨
+#                       Params => 'huga', # Paramsã¯è¦ç´ ãŒä¸€ã¤ã ã‘ãªã‚‰ã‚¹ã‚«ãƒ©ãƒ¼å€¤ã§ã‚‚è‰¯ã„ã€‚(ã“ã®æ™‚ã€Paramsã§ãªãParamã§ã‚‚è‰¯ã„ã€‚)
+#                       Remarks => {'saitama' => 'SAITAMA'}, # å‚™è€ƒæ¬„ã€‚
+# print $msg->serialize('jis'); # ":foo!~bar@hogehoge.net NICK :huga"ã‚’è¡¨ç¤º
 #
 # $msg = new Tiarra::IRC::Message(Command => 'NOTICE',
 #                       Params => ['foo','hugahuga']);
-# print $msg->serialize('jis'); # "NOTICE foo :hugahuga"¤òÉ½¼¨
+# print $msg->serialize('jis'); # "NOTICE foo :hugahuga"ã‚’è¡¨ç¤º
 #
 package Tiarra::IRC::Message;
 use strict;
@@ -192,15 +192,15 @@ sub new {
     $obj->[GENERATOR] = undef;
 
     if (exists $args{'Line'}) {
-	$args{'Line'} =~ s/\x0d\x0a$//s; # ¹ÔËö¤Îcrlf¤Ï¾Ãµî¡£
-	$obj->_parse($args{'Line'},$args{'Encoding'} || 'auto'); # Encoding¤¬¾ÊÎ¬¤µ¤ì¤¿¤é¼«Æ°È½ÊÌ
+	$args{'Line'} =~ s/\x0d\x0a$//s; # è¡Œæœ«ã®crlfã¯æ¶ˆåŽ»ã€‚
+	$obj->_parse($args{'Line'},$args{'Encoding'} || 'auto'); # EncodingãŒçœç•¥ã•ã‚ŒãŸã‚‰è‡ªå‹•åˆ¤åˆ¥
     }
     else {
 	if (exists $args{'Prefix'}) {
-	    $obj->prefix($args{'Prefix'}); # prefix¤¬»ØÄê¤µ¤ì¤¿
+	    $obj->prefix($args{'Prefix'}); # prefixãŒæŒ‡å®šã•ã‚ŒãŸ
 	}
 	elsif (exists $args{'Server'}) {
-	    $obj->prefix($args{'Server'}); # prefix·èÄê
+	    $obj->prefix($args{'Server'}); # prefixæ±ºå®š
 	}
 	else {
 	    foreach (qw(Nick User Host)) {
@@ -211,7 +211,7 @@ sub new {
 	    }
 	}
 
-	# Command¤ÏÀäÂÐ¤ËÌµ¤±¤ì¤Ð¤Ê¤é¤Ê¤¤¡£
+	# Commandã¯çµ¶å¯¾ã«ç„¡ã‘ã‚Œã°ãªã‚‰ãªã„ã€‚
 	if (exists $args{'Command'}) {
 	    $obj->command($args{'Command'});
 	}
@@ -220,17 +220,17 @@ sub new {
 	}
 
 	if (exists $args{'Params'}) {
-	    # Params¤¬¤¢¤Ã¤¿¡£·¿¤Ï¥¹¥«¥é¡¼¤â¤·¤¯¤ÏÇÛÎó¥ê¥Õ¥¡
+	    # ParamsãŒã‚ã£ãŸã€‚åž‹ã¯ã‚¹ã‚«ãƒ©ãƒ¼ã‚‚ã—ãã¯é…åˆ—ãƒªãƒ•ã‚¡
 	    my $params = $args{'Params'};
 	    my $type = ref($params);
 	    if (defined $type && $type eq 'ARRAY') {
-		$obj->[PARAMS] = [@$params]; # ¥³¥Ô¡¼¤ò³ÊÇ¼
+		$obj->[PARAMS] = [@$params]; # ã‚³ãƒ”ãƒ¼ã‚’æ ¼ç´
 	    } else {
 		$obj->[PARAMS] = [$params];
 	    }
 	}
 	elsif (exists $args{'Param'}) {
-	    # Param¤¬¤¢¤Ã¤¿¡£·¿¤Ï¥¹¥«¥é¡¼¤Î¤ß
+	    # ParamãŒã‚ã£ãŸã€‚åž‹ã¯ã‚¹ã‚«ãƒ©ãƒ¼ã®ã¿
 	    $obj->[PARAMS] = [$args{'Param'}];
 	}
     }
@@ -337,20 +337,20 @@ sub _parse {
     my $pos = 0;
     # prefix
     if (substr($line,0,1) eq ':') {
-	# :¤Ç»Ï¤Þ¤Ã¤Æ¤¤¤¿¤é
+	# :ã§å§‹ã¾ã£ã¦ã„ãŸã‚‰
 	my $pos_space = index($line,' ');
 	$this->prefix(substr($line,1,$pos_space - 1));
-	$pos = $pos_space + 1; # ¥¹¥Ú¡¼¥¹¤Î¼¡¤«¤é²ò¼áºÆ³«
+	$pos = $pos_space + 1; # ã‚¹ãƒšãƒ¼ã‚¹ã®æ¬¡ã‹ã‚‰è§£é‡ˆå†é–‹
     }
     # command & params
     my $add_command_or_param = sub {
 	my $value_raw = shift;
 	if ($this->command) {
-	    # command¤Ï¤â¤¦ÀßÄêºÑ¤ß¡£¼¡¤Ï¥Ñ¥é¥á¡¼¥¿¤À¡£
+	    # commandã¯ã‚‚ã†è¨­å®šæ¸ˆã¿ã€‚æ¬¡ã¯ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã ã€‚
 	    $this->_raw_push($value_raw);
 	}
 	else {
-	    # ¤Þ¤À¥³¥Þ¥ó¥É¤¬ÀßÄê¤µ¤ì¤Æ¤¤¤Ê¤¤¡£
+	    # ã¾ã ã‚³ãƒžãƒ³ãƒ‰ãŒè¨­å®šã•ã‚Œã¦ã„ãªã„ã€‚
 	    $this->command($value_raw);
 	}
     };
@@ -359,7 +359,7 @@ sub _parse {
 
 	my $pos_space = index($line,' ',$pos);
 	if ($pos_space == -1) {
-	    # ½ªÎ»
+	    # çµ‚äº†
 	    $param = substr($line,$pos);
 	}
 	else {
@@ -372,10 +372,10 @@ sub _parse {
 		carp 'max param exceeded; please fix upstream server!';
 	    }
 	    if (substr($param,0,1) eq ':') {
-		$param = substr($line, $pos); # ¤³¤ì°Ê¹ß¤ÏÁ´¤Æ°ì¤Ä¤Î°ú¿ô¡£
-		$param =~ s/^://; # :¤¬¤¢¤Ã¤¿¾ì¹ç¤Ï³°¤¹¡£
+		$param = substr($line, $pos); # ã“ã‚Œä»¥é™ã¯å…¨ã¦ä¸€ã¤ã®å¼•æ•°ã€‚
+		$param =~ s/^://; # :ãŒã‚ã£ãŸå ´åˆã¯å¤–ã™ã€‚
 		$add_command_or_param->($param);
-		last; # ¤³¤³¤Ç½ª¤ï¤ê¡£
+		last; # ã“ã“ã§çµ‚ã‚ã‚Šã€‚
 	    }
 	    else {
 		$add_command_or_param->($param);
@@ -386,14 +386,14 @@ sub _parse {
 	    last;
 	}
 	else {
-	    $pos = $pos_space + 1; # ¥¹¥Ú¡¼¥¹¤Î¼¡¤«¤é²ò¼áºÆ³«
+	    $pos = $pos_space + 1; # ã‚¹ãƒšãƒ¼ã‚¹ã®æ¬¡ã‹ã‚‰è§£é‡ˆå†é–‹
 	}
     }
 
     $this->encoding_params($encoding);
 
-    # ²ò¼á·ë²Ì¤ÎÀµÅöÀ­¤ò¥Á¥§¥Ã¥¯¡£
-    # command¤¬Ìµ¤«¤Ã¤¿¤édie¡£
+    # è§£é‡ˆçµæžœã®æ­£å½“æ€§ã‚’ãƒã‚§ãƒƒã‚¯ã€‚
+    # commandãŒç„¡ã‹ã£ãŸã‚‰dieã€‚
     unless ($this->COMMAND) {
 	croak __PACKAGE__." parsed invalid one, which doesn't have command.\n  $line";
     }
@@ -423,8 +423,8 @@ probe encoding flow:
 =cut
 
 sub serialize {
-    # encoding¤ò¾ÊÎ¬¤¹¤ë¤Èutf8¤Ë¤Ê¤ë¡£
-    # encoding¤òremark¤Ç»Ï¤á¤¿¾ì¹ç¤Ï remark ¤Ë¤è¤ëÀßÄê¤òÍ¥Àè
+    # encodingã‚’çœç•¥ã™ã‚‹ã¨utf8ã«ãªã‚‹ã€‚
+    # encodingã‚’remarkã§å§‹ã‚ãŸå ´åˆã¯ remark ã«ã‚ˆã‚‹è¨­å®šã‚’å„ªå…ˆ
     my ($this,$encoding) = @_;
 
     if (defined $encoding && $encoding =~ /^remark(?:,(.*))$/) {
@@ -445,17 +445,17 @@ sub serialize {
 	my $unicode = Tiarra::Encoding->new;
 	my $n_params = $this->n_params;
 	if ($n_params > MAX_PARAMS) {
-	    # É½¸½ÉÔÇ½¤Ê¤Î¤À
+	    # è¡¨ç¾ä¸èƒ½ãªã®ã 
 	    warn "this message exceeded maximum param numbers! params: @{$this->[PARAMS]}";
 	}
 	for (my $i = 0;$i < $n_params;$i++) {
 	    my $arg = $this->[PARAMS]->[$i];
 	    if ($i == $n_params - 1) {
-		# ºÇ¸å¤Î¥Ñ¥é¥á¥¿¤Ê¤éÆ¬¤Ë¥³¥í¥ó¤òÉÕ¤±¤Æ¸å¤Ë¤Ï¥¹¥Ú¡¼¥¹¤òÃÖ¤«¤Ê¤¤¡£
-		# Ã¢¤·È¾³Ñ¥¹¥Ú¡¼¥¹¤¬°ì¤Ä¤âÌµ¤¯¡¢³î¤Ä¥³¥í¥ó¤Ç»Ï¤Þ¤Ã¤Æ¤¤¤Ê¤±¤ì¤Ð¥³¥í¥ó¤òÉÕ¤±¤Ê¤¤¡£
-		# ¥Ñ¥é¥á¥¿¤¬¶õÊ¸»úÎó¤Ç¤¢¤Ã¤¿¾ì¹ç¤ÏÎã³°¤È¤·¤Æ¥³¥í¥ó¤òÉÕ¤±¤ë¡£
-		# ¤Þ¤¿¡¢ remark/always-use-colon-on-last-param ¤¬ÉÕ¤¤¤Æ¤¤¤¿¾ì¹ç¤â
-		# ¥³¥í¥ó¤òÉÕ¤±¤ë¡£
+		# æœ€å¾Œã®ãƒ‘ãƒ©ãƒ¡ã‚¿ãªã‚‰é ­ã«ã‚³ãƒ­ãƒ³ã‚’ä»˜ã‘ã¦å¾Œã«ã¯ã‚¹ãƒšãƒ¼ã‚¹ã‚’ç½®ã‹ãªã„ã€‚
+		# ä½†ã—åŠè§’ã‚¹ãƒšãƒ¼ã‚¹ãŒä¸€ã¤ã‚‚ç„¡ãã€ä¸”ã¤ã‚³ãƒ­ãƒ³ã§å§‹ã¾ã£ã¦ã„ãªã‘ã‚Œã°ã‚³ãƒ­ãƒ³ã‚’ä»˜ã‘ãªã„ã€‚
+		# ãƒ‘ãƒ©ãƒ¡ã‚¿ãŒç©ºæ–‡å­—åˆ—ã§ã‚ã£ãŸå ´åˆã¯ä¾‹å¤–ã¨ã—ã¦ã‚³ãƒ­ãƒ³ã‚’ä»˜ã‘ã‚‹ã€‚
+		# ã¾ãŸã€ remark/always-use-colon-on-last-param ãŒä»˜ã„ã¦ã„ãŸå ´åˆã‚‚
+		# ã‚³ãƒ­ãƒ³ã‚’ä»˜ã‘ã‚‹ã€‚
 		$arg = $unicode->from_to($arg, 'utf8', $encoding);
 		if (CORE::length($arg) > 0 and
 		      index($arg, ' ') == -1 and
@@ -466,10 +466,10 @@ sub serialize {
 		else {
 		    $result .= ":$arg";
 		}
-		# ËÜÅö¤ÏCTCP¥á¥Ã¥»¡¼¥¸¤ò³°¤·¤Æ¥¨¥ó¥³¡¼¥É¤¹¤Ù¤­¤«¤âÃÎ¤ì¤Ê¤¤¡£
+		# æœ¬å½“ã¯CTCPãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å¤–ã—ã¦ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‰ã™ã¹ãã‹ã‚‚çŸ¥ã‚Œãªã„ã€‚
 	    }
 	    else {
-		# ºÇ¸å¤Î¥Ñ¥é¥á¥¿¤Ç¤Ê¤±¤ì¤Ð¸å¤Ë¥¹¥Ú¡¼¥¹¤òÃÖ¤¯¡£
+		# æœ€å¾Œã®ãƒ‘ãƒ©ãƒ¡ã‚¿ã§ãªã‘ã‚Œã°å¾Œã«ã‚¹ãƒšãƒ¼ã‚¹ã‚’ç½®ãã€‚
 		# do stringify force to avoid bug on unijp
 		$result .= $unicode->from_to($arg, 'utf8', $encoding).' ';
 	    }
