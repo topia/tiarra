@@ -2,7 +2,7 @@
 <!DOCTYPE html
 	  PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 	  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<!-- $Id: contents.html 11357 2008-05-10 14:03:50Z topia $ -->
+<!-- $Id: contents.html 11365 2008-05-10 14:58:28Z topia $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -283,6 +283,57 @@ NOTE:<br />
 &nbsp;module/Tools/HTTPClient.pm     rev.8220<br />
 &nbsp;main/Tiarra/Socket/Buffered.pm rev.8219<br />
 &nbsp;以降が必要です.<br />
+</p>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::FetchTitle::Plugin::ExtractHeading" class="module">
+        <div class="module-header"><h2 title="本文から見出しを抽出するFetchTitleプラグイン.">Auto::FetchTitle::Plugin::ExtractHeading</h2>
+          <span class="description">本文から見出しを抽出するFetchTitleプラグイン.</span></div>
+        <div class="content">
+	  <p class="comment">
+Auto::FetchTitle { ... } での設定.<br />
++ Auto::FetchTitle {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;plugins {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ExtractHeading {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;extra: name1 name2 ...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;extra-name1 {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;url:        http://www.example.com/*<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;recv_limit: 10*1024<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;extract:    re:&lt;div id=&quot;title&quot;&gt;(.*?)&lt;/div&gt;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;}<br />
+</p>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
+      <div id="module-Auto::FetchTitle::Plugin::Mixi" class="module">
+        <div class="module-header"><h2 title="Mixiにログインして見出し抽出出来るようにするFetchTitleプラグイン.">Auto::FetchTitle::Plugin::Mixi</h2>
+          <span class="description">Mixiにログインして見出し抽出出来るようにするFetchTitleプラグイン.</span></div>
+        <div class="content">
+	  <p class="comment">
+Auto::FetchTitle { ... } での設定.<br />
++ Auto::FetchTitle {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;plugins {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mixi {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mixi-user: xxx<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mixi-pass: yyy<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;}<br />
+mixi-pass には {B}bbbb でBASE64エンコード値も可能.<br />
 </p>
 
         </div>
@@ -820,6 +871,10 @@ plum: mask: +*!*@*<br />
         <li><a href="#module-Auto::ChannelWithoutOper" title="チャンネルオペレータ権限がなくなってしまったときに発言する。">Auto::ChannelWithoutOper</a></li>
         
         <li><a href="#module-Auto::FetchTitle" title="発言に含まれるURLからタイトルを取得.">Auto::FetchTitle</a></li>
+        
+        <li><a href="#module-Auto::FetchTitle::Plugin::ExtractHeading" title="本文から見出しを抽出するFetchTitleプラグイン.">Auto::FetchTitle::Plugin::ExtractHeading</a></li>
+        
+        <li><a href="#module-Auto::FetchTitle::Plugin::Mixi" title="Mixiにログインして見出し抽出出来るようにするFetchTitleプラグイン.">Auto::FetchTitle::Plugin::Mixi</a></li>
         
         <li><a href="#module-Auto::Im" title="名前が呼ばれると、その発言をim.kayac.comに送信する">Auto::Im</a></li>
         
