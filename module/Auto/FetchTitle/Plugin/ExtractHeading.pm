@@ -25,6 +25,10 @@ sub new
 {
   my $pkg   = shift;
   my $this = $pkg->SUPER::new(@_);
+
+  $this->{extra} = undef;
+  $this->_parse_extra_config();
+
   $this;
 }
 
@@ -44,12 +48,106 @@ sub register
 }
 
 # -----------------------------------------------------------------------------
+# $this->_parse_extra_config().
+# parse user config.
+#
+sub _parse_extra_config
+{
+  my $this = shift;
+  my @config;
+  $this->{extra} = \@config;
+
+  $this->notice(__PACKAGE__."#_parse_extra_config");
+  $this->notice(">> ".join(", ", map{split(' ', $_)}$this->config->extra('all')));
+
+  foreach my $token (map{split(' ', $_)}$this->config->extra('all'))
+  {
+     $this->notice("extra: $token");
+     my $name  = "extra-$token";
+     my $block = $this->config->$name;
+     if( !$block )
+     {
+       $this->notice("no such extra config: $name");
+       next;
+     }
+     if( !ref($block) )
+     {
+       my $literal = $block;
+       $block = Configuration::Block->new($name);
+       $block->extract($literal);
+     }
+     my $has_param;
+     my $config = {};
+     $config->{name} = $name;
+     $config->{url}  = $block->url;
+     if( !$config->{url} )
+     {
+       $this->notice("no url on $name");
+       next;
+     }
+     if( my $recv_limit = $block->get('recv_limit') )
+     {
+       while( $recv_limit =~ s/^\s*(\d+)\*(\d+)/$1*$2/e )
+       {
+       }
+       $config->{recv_limit} = $recv_limit;
+       $has_param = 1;
+     }
+     my @extract;
+     foreach my $line ($block->extract('all'))
+     {
+       $has_param ||= 1;
+       my $type;
+       my $value = $line;
+       if( $value =~ s/^(\w+)(:\s*|\s+)// )
+       {
+         $type = $1;
+       }
+       $type ||= 're';
+       if( $type eq 're' )
+       {
+         $value =~ s{^/(.*)/(\w*)\z/}{(?$2:$1)};
+         my $re = eval{
+           local($SIG{__DIE__}) = 'DEFAULT';
+           qr/$value/s;
+         };
+         if( my $err = $@ )
+         {
+           chomp $err;
+           $this->notice("invalid regexp $re on $name, $err");
+           next;
+         }
+         push(@extract, $re);
+       }else
+       {
+         $this->notice("unknown extract type $type on $name");
+         next;
+       }
+     }
+     if( @extract )
+     {
+       $config->{extract} = @extract==1 ? $extract[0] : \@extract;
+     }
+     if( keys %$config==1 )
+     {
+       $this->notice("no config on $name");
+       next;
+     }
+     push(@config, $config);
+  }
+
+  $this;
+}
+
+# -----------------------------------------------------------------------------
 # $this->_config().
 # config for extract-heading.
 #
 sub _config
 {
+  my $this = shift;
   my $config = [
+    @{$this->{extra}},
     {
       # 1. ぷりんと楽譜.
       url        => 'http://www.print-gakufu.com/*',
@@ -74,9 +172,15 @@ sub _config
       remove => qr/^NIKKEI NET：/,
     },
     {
-      # 4. nhkニュース.
+      # 4a. nhkニュース.
       url     => 'http://www*.nhk.or.jp/news/*',
       extract => qr{<p class="newstitle">(.*?)</p>},
+    },
+    {
+      # 4b. nhk関西のニュース.
+      url        => 'http://www*.nhk.or.jp/*/lnews/*',
+      recv_limit => 8*1024,
+      extract    => qr{<h3>(.*?)</h3>},
     },
     {
       # 5. creative (timeout).
@@ -145,6 +249,31 @@ sub _config
       # 14. tv-asahi.
       url        => 'http://www.tv-asahi.co.jp/ann/news/*',
       extract    => qr{<FONT class=TITLE>(.*?)</FONT>}s,
+    },
+    {
+      # 15. game?
+      url        => 'http://splax.net/jun.html?p=*',
+      extract    => sub{
+        my $req = shift;
+        if( $req->{url} =~ /\?p=([^&;=#]+)/ )
+        {
+          my $q = $1;
+          $q =~ s/%([0-9A-F]{2})/pack("H*",$1)/gie;
+          $q =~ s/\*([0-9A-F]{2})/pack("H*",$1)/gie;
+          $q = Unicode::Japanese->new($q, "sjis")->utf8;
+          $q =~ s/\*.*//;
+          $q = "「$qの唄」";
+        }else
+        {
+          return;
+        }
+      },
+    },
+    {
+      # 16. recordchina.
+      url        => 'http://www.recordchina.co.jp/group/*',
+      recv_limit => 12*1024,
+      extract    => qr{<div id="news_detail_title" class="ft04">(.*?)</div>}s,
     },
   ];
   $config;
@@ -218,6 +347,11 @@ sub filter_response
     }
 
     my $extract_list = $conf->{extract};
+    if( !$extract_list )
+    {
+      $DEBUG and $ctx->_debug($req, "debug: - - no extract");
+      next;
+    }
     if( ref($extract_list) ne 'ARRAY' )
     {
       $extract_list = [$extract_list];
@@ -290,4 +424,27 @@ __END__
 	AnnoCPAN
 	CPAN
 	RT
+
+=begin tiarra-doc
+
+info:    本文から見出しを抽出するFetchTitleプラグイン.
+default: off
+
+# Auto::FetchTitle { ... } での設定.
+# + Auto::FetchTitle {
+#     plugins {
+#       ExtractHeading {
+#         extra: name1 name2 ...
+#         extra-name1 {
+#           url:        http://www.example.com/*
+#           recv_limit: 10*1024
+#           extract:    re:<div id="title">(.*?)</div>
+#         }
+#       }
+#    }
+#  }
+
+=end tiarra-doc
+
+=cut
 
