@@ -292,6 +292,54 @@ NOTE:<br />
       <hr class="sep" />
       
       
+      <div id="module-Auto::Im" class="module">
+        <div class="module-header"><h2 title="名前が呼ばれると、その発言をim.kayac.comに送信する">Auto::Im</h2>
+          <span class="description">名前が呼ばれると、その発言をim.kayac.comに送信する</span></div>
+        <div class="content">
+	  <p class="comment">
+反応する人のマスクを指定します。<br />
+省略すると全員に反応します。<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
+<p class="comment">
+反応するキーワードを正規表現で指定します。<br />
+複数指定したい時は複数行指定してください。<br />
+</p>
+<div class="element"><span class="key">regex-keyword</span>:<span class="value">(?i:fugahoge)</span></div>
+<p class="comment">
+反応するキーワードを指定します。<br />
+複数指定したい時は,(コンマ)で区切るか、複数行指定してください。<br />
+</p>
+<div class="element"><span class="key">keyword</span>:<span class="value">hoge</span></div>
+<p class="comment">
+im.kayac.com に送るメッセージのフォーマットを指定します。<br />
+デフォルト値: [tiarra][#(channel):#(nick.now)] #(text)<br />
+</p>
+<div class="element"><span class="key">format</span>:<span class="value">[tiarra][#(channel):#(nick.now)] #(text)</span></div>
+<p class="comment">
+im.kayac.comで登録したユーザ名を入力します。<br />
+im.kayac.comについては http://im.kayac.com/#docs を参考にしてください。<br />
+</p>
+<div class="element"><span class="key">user</span>:<span class="value">username</span></div>
+<p class="comment">
+im.kayac.comで秘密鍵認証を選択した場合は設定してください。<br />
+省略すると認証なしになります。<br />
+</p>
+<div class="element"><span class="key">secret</span>:<span class="value">some secret</span></div>
+<p class="comment">
+im.kayac.comでパスワード認証を選択した場合は設定してください。<br />
+省略すると認証なしになります。<br />
+secret と両方指定した場合は secret が優先されています。<br />
+</p>
+<div class="element"><span class="key">password</span>:<span class="value">some password</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
       <div id="module-Auto::Joined" class="module">
         <div class="module-header"><h2 title="特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。">Auto::Joined</h2>
           <span class="description">特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。</span></div>
@@ -772,6 +820,8 @@ plum: mask: +*!*@*<br />
         <li><a href="#module-Auto::ChannelWithoutOper" title="チャンネルオペレータ権限がなくなってしまったときに発言する。">Auto::ChannelWithoutOper</a></li>
         
         <li><a href="#module-Auto::FetchTitle" title="発言に含まれるURLからタイトルを取得.">Auto::FetchTitle</a></li>
+        
+        <li><a href="#module-Auto::Im" title="名前が呼ばれると、その発言をim.kayac.comに送信する">Auto::Im</a></li>
         
         <li><a href="#module-Auto::Joined" title="特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。">Auto::Joined</a></li>
         
