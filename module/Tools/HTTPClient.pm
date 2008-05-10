@@ -19,6 +19,7 @@ use Module::Use qw(Tools::HTTPParser);
 our $HAS_IPV6 = Tiarra::OptionalModules->ipv6;
 
 # 本当はHTTP::RequestとHTTP::Responseを使いたいが…
+# HTTP::Request からの情報取得のみ対応。
 
 our $DEBUG = 0;
 
@@ -29,6 +30,16 @@ sub new {
     my ($class, %args) = @_;
     my $this = bless {} => $class;
 
+    if ($args{Request}) {
+	my $req = $args{Request};
+	if (!$req->isa('HTTP::Request')) {
+	    croak "Argument `Request' must be HTTP::Request object.";
+	}
+	$args{Method} = $req->method;
+	$args{Url} = $req->uri;
+	$args{Content} = $req->content;
+	$args{Header} = $req->headers;
+    }
     if (!$args{Method}) {
 	croak "Argument `Method' is required";
     }
