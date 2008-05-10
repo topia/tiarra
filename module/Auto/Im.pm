@@ -1,37 +1,35 @@
+# -----------------------------------------------------------------------------
+# $Id$
+# -----------------------------------------------------------------------------
 package Auto::Im;
 use strict;
 use warnings;
 use base qw(Module);
-use Module::Use qw(Auto::Utils Tools::DateConvert);
-use Auto::Utils;
-use Tools::DateConvert;
-use Mask;
-
-use LWP::UserAgent;
+use Module::Use qw(Auto::AliasDB Tools::HTTPClient);
+use Auto::AliasDB;
+use Tools::HTTPClient; # >= r11345
 use HTTP::Request::Common;
-
-# デフォルト設定
-my $DATE_FORMAT = '%H:%M';
-my $FORMAT = '#(date) << #(from.name|from.nick|from.nick.now) >> #(message)';
-my $SUBJECT = 'Message from IRC';
 
 sub new {
   my ($class) = shift;
   my $this = $class->SUPER::new(@_);
 
-  my ($user) = $this->config->user;
-  $this->{user} = $user;
+  if ($this->config->secret) {
+      # signature required
+      require Digest::SHA;
+  }
+
+  my $regex = join '|', (
+      (map "(?:$_)", $this->config->regex_keyword('all')),
+      (map "(?i:$_)", map quotemeta, split /,/, $this->config->keyword('all')),
+     );
+  eval {
+      $this->{regex} = qr/$regex/;
+  }; if ($@) {
+      $this->_runloop->notify_error($@);
+  }
 
   return $this;
-}
-
-sub destruct {
-    my $this = shift;
-    # モジュールが不要になった時に呼ばれる。
-    # これはモジュールのデストラクタである。このメソッドが呼ばれた後はDESTROYを除いて
-    # いかなるメソッドも呼ばれる事が無い。タイマーを登録した場合は、このメソッドが
-    # 責任を持ってそれを解除しなければならない。
-    # 引数は無し。
 }
 
 sub message_arrived {
@@ -42,20 +40,40 @@ sub message_arrived {
   if ($sender->isa('IrcIO::Server')) {
       # PRIVMSGか？
       if ($msg->command eq 'PRIVMSG') {
-          my ($get_ch_name,$reply_in_ch,$reply_as_priv,$reply_anywhere, $get_full_ch_name)
-          = Auto::Utils::generate_reply_closures($msg,$sender,\@result);
-          
-          my $full_ch_name = $get_full_ch_name->();
+	  my $text = $msg->param(1);
 
-          my ($str, $who, $text) = split(/\s+/, $msg->param(1), 3);
-
-          if (Mask::match_deep([$this->config->keyword('all')], $str)) {
-              # 一致していた。
-              LWP::UserAgent->new->request( POST "http://im.kayac.com/api/post/$this->{user}",
-                  [ message => "[tiarra][$full_ch_name] $str $who $text" ]
-              );
-              #$this->_send($msg, $sender, $who, $text, $get_ch_name, $reply_anywhere);
-          }
+	  if ($text =~ $this->{regex}) {
+	      my $full_ch_name = $msg->param(0);
+	      my $url = "http://im.kayac.com/api/post/" . $this->config->user;
+	      my $text = Auto::AliasDB->stdreplace(
+		  $msg->prefix,
+		  $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
+		  $msg, $sender,
+		  channel => $full_ch_name,
+		  text => $text,
+		 );
+	      my $req;
+	      if ($this->config->secret) {
+		  $req = POST $url,
+		      [ message => $text,
+			sig => Digest::SHA->new(1)
+			    ->add($text . $this->config->secret)->hexdigest ];
+	      } else {
+		  $req = POST $url,
+		      [ message => $text ];
+	      }
+	      my $runloop = $this->_runloop;
+	      Tools::HTTPClient->new(
+		  Request => $req,
+		 )->start(
+		     Callback => sub {
+			 my $stat = shift;
+			 $runloop->notify_warn(__PACKAGE__." post failed: $stat")
+			     unless ref($stat);
+			 ## FIXME: check response (should check 'error')
+		     },
+		    );
+	  }
       }
   }
 
@@ -68,8 +86,16 @@ sub message_arrived {
 info: 名前が呼ばれると、その発言をim.kayac.comに送信する
 default: off
 
-# 反応するキーワードを指定します。,区切りで複数指定できるようです
+# 反応するキーワードを正規表現で指定します。
+# 複数指定したい時は複数行指定してください。
+-regex-keyword: (?i:fugahoge)
+
+# 反応するキーワードを指定します。
+# 複数指定したい時は,(コンマ)で区切るか、複数行指定してください。
 keyword: hoge
+
+# im.kayac.com に送るメッセージのフォーマットを指定します。
+format: [tiarra][#(channel):#(nick.now)] #(text)
 
 # im.kayac.comで登録したユーザ名を入力します。
 # im.kayac.comについては http://im.kayac.com/#docs を参考にしてください。
