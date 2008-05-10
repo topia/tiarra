@@ -66,4 +66,13 @@ sub message_arrived {
 
 =pod
 info: 名前が呼ばれると、その発言をim.kayac.comに送信する
+default: off
+
+# 反応するキーワードを指定します。,区切りで複数指定できるようです
+keyword: hoge
+
+# im.kayac.comで登録したユーザ名を入力します。
+# im.kayac.comについては http://im.kayac.com/#docs を参考にしてください。
+user: username
+
 =cut
