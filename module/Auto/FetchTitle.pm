@@ -50,6 +50,11 @@ our @LATIN1_MAP = qw(
 $LATIN1_MAP[0x82-0x80] = ',';
 $LATIN1_MAP[0xa0-0x80] = ' ';
 
+our $TOP_LEVEL_DOMAINS = {
+  map{ $_=>1 } qw(.biz  .com  .edu  .gov  .info  .int  .mil  .net  .org
+  .aero  .asia  .cat  .coop  .jobs  .mobi  .museum  .tel  .travel)
+};
+
 our $HAS_IMAGE_EXIFTOOL = do{
   eval{ local($SIG{__DIE__}) = 'DEFAULT'; require Image::ExifTool; };
   !$@;
@@ -1634,6 +1639,7 @@ sub _parse_response
     $DEBUG and $this->_debug($full_ch_name, "debug: broken utf-8 found and fixed");
     my $url = $req->{url};
     $this->_log("broken utf-8 on $url (enc=$enc)");
+    $DEBUG and $this->_debug($req, "broken utf-8 on $url (enc=$enc)");
   }
 
   # decode.
@@ -1872,10 +1878,24 @@ sub _parse_cookies
         $attrs{lc $key} = defined($val) ? $val : 1;
       }
     }
-    if( $attrs{domain} && $attrs{domain} ne $domain )
+    if( $attrs{domain} )
     {
-      $this->_error("_parse_cookies, domain $attrs{domain} does not match with one in url $domain, ignore this cookie");
-      next;
+      my $pass;
+      if( $attrs{domain} eq $domain )
+      {
+        $pass = 1;
+      }elsif( $domain =~ /\Q$attrs{domain}\E\z/ && $attrs{domain} =~ /^\./ )
+      {
+        my $nr_dots = $attrs{domain} =~ tr/././;
+        $pass = $nr_dots >= 3;
+        $pass ||= $attrs{domain} =~ /\.[^.]{3,}\.jp\z/;
+        $pass ||= $attrs{domain} =~ /(\.\w+)\z/ && $TOP_LEVEL_DOMAINS->{$1};
+      }
+      if( !$pass )
+      {
+        $this->_error("_parse_cookies, domain $attrs{domain} does not match with one in url $domain, ignore this cookie");
+        next;
+      }
     }
     $attrs{_scheme}   = $scheme;
     $attrs{domain}  ||= $domain;
@@ -1958,7 +1978,7 @@ sub _unescapeHTML
     if( defined($1) || defined($2) )
     {
       my $ch = defined($1) ? $1 : hex($2);
-      $ch && $ch < 127 ? chr($ch) : "[$ch]";
+      $ch && $ch < 127 ? chr($ch) : $ENCODER->new(pack("n",$ch), 'ucs2')->utf8;
     }else
     {
       $map->{$3} || "[$3]";
