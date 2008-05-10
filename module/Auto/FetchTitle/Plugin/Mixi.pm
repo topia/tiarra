@@ -356,3 +356,23 @@ __END__
 	CPAN
 	RT
 
+=begin tiarra-doc
+
+info:    Mixiにログインして見出し抽出出来るようにするFetchTitleプラグイン.
+default: off
+
+# Auto::FetchTitle { ... } での設定.
+# + Auto::FetchTitle {
+#     plugins {
+#       Mixi {
+#         mixi-user: xxx
+#         mixi-pass: yyy
+#       }
+#    }
+#  }
+# mixi-pass には {B}bbbb でBASE64エンコード値も可能.
+
+=end tiarra-doc
+
+=cut
+
