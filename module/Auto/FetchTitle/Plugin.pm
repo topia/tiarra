@@ -29,6 +29,27 @@ sub new
 }
 
 # -----------------------------------------------------------------------------
+# $pkg->config().
+# (util)
+#
+sub config
+{
+  shift->{config}
+}
+
+# -----------------------------------------------------------------------------
+# $pkg->notice($msg).
+# (util)
+#
+sub notice
+{
+  my $this = shift;
+  my $msg  = shift;
+  defined($msg) or $msg = '';
+  RunLoop->shared_loop->notify_msg($msg);
+}
+
+# -----------------------------------------------------------------------------
 # $obj->register($context).
 #
 sub register
