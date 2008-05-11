@@ -67,9 +67,9 @@ our $use_threads_state_checking;
 BEGIN {
     $use_threads = Tiarra::OptionalModules->threads;
     if ($use_threads) {
-	require Thread::Queue;
 	require threads;
 	require threads::shared;
+	require Thread::Queue;
 	## threads 1.33 or earlier, not support $thr->is_running()
 	$use_threads_state_checking = threads->can('is_running');
     }
