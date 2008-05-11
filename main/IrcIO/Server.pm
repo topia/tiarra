@@ -264,10 +264,6 @@ sub connect {
     $this->{nick_retry} = 0;
     $this->{logged_in} = undef;
     $this->state_connecting(1);
-    my $conn_stat = $this->{connection_status} = {
-	start => time,
-	tried => [],
-    };
 
     Tiarra::Resolver->resolve('addr', $this->{server_host}, sub {
 				  $this->_connect_stage_1(@_);
