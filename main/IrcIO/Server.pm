@@ -172,13 +172,19 @@ sub config_local_or_general {
 sub reload_config {
     my $this = shift;
     my $conf = $this->{config} = $this->_conf->get($this->{network_name});
-    $this->{server_host} = $conf->host;
-    $this->{server_port} = $conf->port;
+    $this->{server_hosts} = [
+	    {
+		host => $conf->host,
+		port => [$conf->port],
+	    },
+	   ];
+    $this->{server_host} = undef;
+    $this->{server_port} = undef;
     $this->{server_password} = $conf->password;
     $this->{initial_nick} = $this->config_local_or_general('nick'); # ログイン時に設定するnick。
     $this->{user_shortname} = $this->config_local_or_general('user');
     $this->{user_realname} = $this->config_local_or_general('name');
-    $this->{prefer_socket_types} = [qw(ipv6 ipv4)];
+    #$this->{prefer_socket_types} = [qw(ipv6 ipv4)];
 }
 
 sub destination {
@@ -248,10 +254,7 @@ sub reconnect {
     $this->connect;
 }
 
-# connect --(resolve)--> stage_1 --> (queueing) --> try_next -->
-#  each connect method
-#    ok  -> attach
-#    err -> _connect_error
+# connect --(resolve)--> _connect_try_next -->
 
 sub connect {
     my $this = shift;
@@ -265,60 +268,42 @@ sub connect {
     $this->{logged_in} = undef;
     $this->state_connecting(1);
 
-    Tiarra::Resolver->resolve('addr', $this->{server_host}, sub {
-				  $this->_connect_stage_1(@_);
-			      });
+    $this->{server_queue} = $this->{server_hosts};
+
+    $this->_connect_try_next;
     $this;
 }
 
-sub _connect_stage_1 {
-    my ($this, $entry) = @_;
-
-    my %addrs_by_types;
-    my $server_port = $this->{server_port};
-
-    return if $this->finalizing;
-
-    if ($entry->answer_status eq $entry->ANSWER_OK) {
-	foreach my $addr (@{$entry->answer_data}) {
-	    if ($addr =~ m/^(?:\d+\.){3}\d+$/) {
-		push (@{$addrs_by_types{ipv4}}, $addr);
-	    } elsif ($addr =~ m/^[0-9a-fA-F:]+$/) {
-		push (@{$addrs_by_types{ipv6}}, $addr);
-	    } else {
-		$this->die("unsupported addr type: $addr");
-	    }
-	}
-    } else {
-	$this->printmsg("Couldn't resolve hostname: $this->{server_host}");
-	$this->_queue_retry;
-	return;
-    }
-
-    foreach my $sock_type (@{$this->{prefer_socket_types}}) {
-	my $struct;
-	push (@{$this->{connection_queue}},
-	      map {
-		  $struct = {
-		      type => $sock_type,
-		      addr => $_,
-		      host => $entry->query_data,
-		      port => $server_port,
-		  };
-	      } @{$addrs_by_types{$sock_type}});
-    }
-    $this->_connect_try_next;
-}
 
 sub _connect_try_next {
     my $this = shift;
 
     return if $this->finalizing;
     my $trying =
-	$this->{connecting} = shift @{$this->{connection_queue}};
+	$this->{connecting} = shift @{$this->{server_queue}};
     if (defined $trying) {
-	my $methodname = '_try_connect_' . $this->{connecting}->{type};
-	$this->$methodname($trying);
+
+	$this->{connector} = Tiarra::Socket::Connect->new(
+	    host => $this->{connecting}->{host},
+	    port => $this->{connecting}->{port},
+	    callback => sub {
+		my ($subject, $socket, $obj, $errno) = @_;
+
+		if ($subject eq 'sock') {
+		    $this->attach($socket);
+		} elsif ($subject eq 'error') {
+		    $this->_connect_error($obj);
+		} elsif ($subject eq 'warn') {
+		    $this->_connect_warn($obj);
+		}
+	    },
+	    hooks => {
+		before_connect => sub {
+		    $this->_hook_before_connect(@_);
+		},
+	    },
+	   );
+
     } else {
 	$this->printmsg("Couldn't connect to any host");
 	$this->_queue_retry;
@@ -326,51 +311,21 @@ sub _connect_try_next {
     }
 }
 
-sub _try_connect_ipv4 {
-    my ($this, $conn_struct) = @_;
+sub _hook_before_connect {
+    my ($this, $stage, $connecting) = @_;
 
-    my %additional;
-    my $ipv4_bind_addr =
-	$this->config_local_or_general('ipv4-bind-addr') ||
-	    $this->config_local_or_general('bind-addr'); # 下は過去互換性の為に残す。
-    if (defined $ipv4_bind_addr) {
-	$additional{bind_addr} = $ipv4_bind_addr;
+    my $type = $connecting->{type};
+    my $bind_addr;
+    if ($type eq 'ipv4') {
+	# 下は過去互換性の為に残す。
+	$bind_addr = $this->config_local_or_general('ipv4-bind-addr') ||
+	    $this->config_local_or_general('bind-addr');
+    } elsif ($type eq 'ipv6') {
+	$bind_addr = $this->config_local_or_general('ipv6-bind-addr');
     }
-    $this->_try_connect_socket($conn_struct, %additional);
-}
-
-sub _try_connect_ipv6 {
-    my ($this, $conn_struct) = @_;
-
-    my %additional;
-    my $ipv6_bind_addr = $this->config_local_or_general('ipv6-bind-addr');
-    if (defined $ipv6_bind_addr) {
-	$additional{bind_addr} = $ipv6_bind_addr;
+    if (defined $bind_addr) {
+	$connecting->{bind_addr} = $bind_addr;
     }
-
-    $this->_try_connect_socket($conn_struct, %additional);
-}
-
-sub _try_connect_socket {
-    my ($this, $conn_struct, %additional) = @_;
-
-    $this->{connector} = Tiarra::Socket::Connect->new(
-	host => $conn_struct->{host},
-	addr => $conn_struct->{addr},
-	port => $conn_struct->{port},
-	callback => sub {
-	    my ($subject, $socket, $obj) = @_;
-
-	    if ($subject eq 'sock') {
-		$this->attach($socket);
-	    } elsif ($subject eq 'error') {
-		$this->_connect_error($obj);
-	    } elsif ($subject eq 'warn') {
-		$this->_connect_warn($obj);
-	    }
-	},
-	%additional);
-    $this;
 }
 
 sub attach {
@@ -379,6 +334,7 @@ sub attach {
     $this->SUPER::attach($connector->sock);
     $this->{connecting} = undef;
     $this->{server_addr} = $connector->current_addr;
+    $this->{server_port} = $connector->current_port;
     $this->{proto} = $connector->current_type;
     $this->state_connected(1);
 
@@ -393,15 +349,14 @@ sub attach {
 sub _connect_error {
     my ($this, $msg) = @_;
 
-    # avoid double error message (we don't use timeout)
-    #$this->printmsg("Couldn't connect to ".$this->destination.": $msg\n");
+    $this->printmsg("$msg");
     $this->_connect_try_next;
 }
 
 sub _connect_warn {
     my ($this, $msg) = @_;
 
-    $this->printmsg("$msg\n");
+    $this->printmsg("$msg");
 }
 
 sub _send_connection_messages {
