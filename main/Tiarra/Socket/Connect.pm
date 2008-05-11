@@ -25,7 +25,7 @@ utils->define_attr_enum_accessor('domain', 'eq',
 # tcp:
 #   my $connector = connect->new(
 #       host => [hostname],
-#       port => [port],
+#       port => [port] or [ports],
 #       callback => sub {
 #           my ($genre, $connector, $msg_or_sock, $errno) = @_;
 #           if ($genre eq 'warn') {
@@ -143,12 +143,12 @@ sub connect {
 	my $entry = Tiarra::Resolver::QueueData->new;
 	$entry->answer_status($entry->ANSWER_OK);
 	$entry->answer_data([$this->addr]);
-	$this->_connect_stage($entry);
+	$this->_connect_after_resolve($entry);
     } else {
 	Tiarra::Resolver->resolve(
 	    'addr', $this->host, sub {
 		eval {
-		    $this->_connect_stage(@_);
+		    $this->_connect_after_resolve(@_);
 		}; if ($@) {
 		    $this->_connect_error("internal error: $@");
 		}
@@ -157,7 +157,7 @@ sub connect {
     $this;
 }
 
-sub _connect_stage {
+sub _connect_after_resolve {
     my ($this, $entry) = @_;
 
     my %addrs_by_types;
@@ -174,14 +174,22 @@ sub _connect_stage {
 
     foreach my $sock_type (@{$this->prefer}) {
 	my $struct;
-	push (@{$this->{queue}},
-	      map {
-		  $struct = {
-		      type => $sock_type,
-		      addr => $_,
-		      port => $this->port,
-		  };
-	      } @{$addrs_by_types{$sock_type}});
+	my @ports;
+	if (ref($this->port) eq 'ARRAY') {
+	    @ports = @{$this->port};
+	} else {
+	    @ports = $this->port;
+	}
+	foreach my $port (@ports) {
+	    push (@{$this->{queue}},
+		  map {
+		      $struct = {
+			  type => $sock_type,
+			  addr => $_,
+			  port => $port,
+		      };
+		  } @{$addrs_by_types{$sock_type}});
+	}
     }
     $this->_connect_try_next;
 }
@@ -373,7 +381,7 @@ sub current_port {
 
     utils->get_first_defined(
 	$this->{connecting}->{port},
-	$this->port);
+	ref($this->port) ? join(',', @{$this->port}) : $this->port);
 }
 
 sub current_bind_addr {
@@ -482,16 +490,10 @@ sub proc_sock {
 	    $this->cleanup;
 	    $this->_call;
 	} else {
-	    $this->_warn(
-		$this->sock_errno_to_msg($!, 'connection try error'), $!);
-	    $this->_handle_sock_error;
+	    $this->_handle_sock_error($!, 'connection try error');
 	}
     } elsif (!IO::Select->new($this->sock)->can_write(0)) {
-	$this->_warn('cannot write socket error');
-	my $error = $this->errno;
-	$this->cleanup;
-	$this->close;
-	$this->_connect_warn_try_next($error, "cant write on $state");
+	$this->_handle_sock_error(undef, "can't write on $state");
     } else {
 	# ignore first ready-to-read
 	if ($state ne 'read' || $this->{unexpected_want_to_read_count}++) {
@@ -503,10 +505,12 @@ sub proc_sock {
 sub _handle_sock_error {
     my $this = shift;
 
-    my $error = $this->errno;
+    my $error = shift;
+    my $msg = shift;
+    $error = $this->errno unless defined $error;
     $this->cleanup;
     $this->close;
-    $this->_connect_warn_try_next($error);
+    $this->_connect_warn_try_next($error, $msg);
 }
 
 1;
