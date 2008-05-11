@@ -12,12 +12,30 @@ use Tiarra::Utils;
 # failsafe to module-reload
 our $status = {};
 our %modules = (
-    'threads' => [qw(threads threads::shared)],
-    'ipv6' => [qw(IO::Socket::INET6 Socket6)],
-    'time_hires' => [qw(Time::HiRes)],
-    'unix_dom' => [qw(IO::Socket::UNIX)],
-    'encode' => [qw(Encode)],
-    'base64' => [qw(MIME::Base64)],
+    'threads' => {
+	requires => [qw(threads threads::shared Thread::Queue)],
+	note => 'for threading dns resolving',
+    },
+    'ipv6' => {
+	requires => [qw(IO::Socket::INET6 Socket6)],
+	note => 'for ipv6 support',
+    },
+    'time_hires' => {
+	requires => [qw(Time::HiRes)],
+	note => 'for hi-resolution timer support',
+    },
+    'unix_dom' => {
+	requires => [qw(IO::Socket::UNIX)],
+	note => 'for control port support'
+    },
+    'encode' => {
+	requires => [qw(Encode)],
+	note => 'for Tiarra::Encoding::Encode encoding driver',
+    },
+    'base64' => {
+	requires => [qw(MIME::Base64)],
+	note => 'for Tiarra::Encoding::Encode\'s base64 support',
+    },
    );
 
 sub _new {
@@ -30,22 +48,53 @@ sub all_modules {
 
 sub repr_modules {
     my $this = shift->_this;
-    $this->check_all;
-    my @enabled = sort grep $this->check($_), keys %modules;
-    my @disabled = sort grep !$this->check($_), keys %modules;
+    my $verbose = shift;
+    my %status = $this->check_all;
+    my @enabled = sort grep $status{$_}, keys %status;
+    my @disabled = sort grep !$status{$_}, keys %status;
 
-    ((@enabled ?
-	  ("enabled:",
-	   map {
-	       "  - $_ (" . join(', ', map {
-		   "$_ " . $_->VERSION;
-	       } @{$modules{$_}}) . ")"
-	   } @enabled) : ()),
-     (@disabled ?
-	  ("disabled:",
-	   map {
-	       "  - $_ (" . join(', ', @{$modules{$_}}) . ")"
-	   } @disabled) : ()));
+    my $repr_module = sub {
+	my ($modname, $eachmod) = @_;
+	my $ver;
+	my $error = $this->{$modname}->{errors}->{$eachmod};
+	if (defined $error) {
+	    if ($verbose) {
+		$error =~ s/ at .*//s;
+		$error =~ s/ \(\@INC .*\)//g;
+		$error =~ s/[\r\n]+/ /sg;
+		$error =~ s/ +$//g;
+		"[failed: $error]";
+	    } else {
+		"[failed to load]";
+	    }
+	} else {
+	    eval {
+		$ver = $eachmod->VERSION;
+	    };
+	    if (!defined $ver) {
+		'unknown';
+	    } else {
+		$ver;
+	    }
+	}
+    };
+
+    my $repr_modules = sub {
+	my $title = shift;
+	my $modname;
+	(@_ ?
+	     ("$title:",
+	      map {
+		  $modname = $_;
+		  "  - $_ (" . join(', ', map {
+		      "$_ " . $repr_module->($modname, $_);
+		  } @{$modules{$_}->{requires}}) . ") " .
+		      $modules{$_}->{note}
+	      } @_) : ())
+    };
+
+    ($repr_modules->("enabled", @enabled),
+     $repr_modules->("disabled", @disabled));
 }
 
 sub check_all {
@@ -57,10 +106,19 @@ sub check {
     my ($class_or_this, $name) = @_;
     my $this = $class_or_this->_this;
 
-    return $this->{$name} if defined $this->{$name};
+    return $this->{$name}->{status} if defined $this->{$name};
     die "module $name spec. not found" unless defined $modules{$name};
 
-    $this->{$name} = eval join(' && ', map { "require $_" } @{$modules{$name}}) . ';';
+    my $failed;
+    for my $mod (@{$modules{$name}->{requires}}) {
+	if (!eval "require $mod") {
+	    $failed = 1;
+	};
+	if ($@) {
+	    $this->{$name}->{errors}->{$mod} = $@;
+	}
+    }
+    $this->{$name}->{status} = !$failed;
 }
 
 sub AUTOLOAD {
