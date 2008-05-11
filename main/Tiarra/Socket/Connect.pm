@@ -210,10 +210,10 @@ sub _connect_try_next {
 		    $this->connect;
 		});
 	    $this->_connect_warn(
-		'all dead, ' .
+		'all connection attempt failed, ' .
 		    utils->to_ordinal_number($this->try_count) . ' retry');
 	} else {
-	    $this->_connect_error('all dead');
+	    $this->_connect_error('all connection attempt failed');
 	}
     }
 }
