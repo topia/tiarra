@@ -163,7 +163,7 @@ sub _connect_stage {
     my %addrs_by_types;
 
     if ($entry->answer_status ne $entry->ANSWER_OK) {
-	$this->_connect_error("Couldn't resolve hostname");
+	$this->_connect_error("Couldn't resolve hostname: ".$this->host);
 	return undef; # end
     }
 
@@ -257,9 +257,8 @@ sub _try_connect_tcp {
 	Timeout => undef,
 	Proto => 'tcp');
     if (!defined $sock) {
-	$this->_connect_error(
-	    $this->sock_errno_to_msg($!, 'Couldn\'t prepare socket'),
-	    $!);
+	$this->_connect_warn("Couldn't prepare socket: $@");
+	$this->_connect_try_next;
 	return;
     }
     if (!defined $sock->blocking(0)) {
@@ -310,6 +309,13 @@ sub _try_connect_unix {
 	return;
     }
 
+    eval {
+	$this->_call_hooks('before_connect', $this->{connecting});
+    }; if ($@) {
+	$this->_call_skip($@);
+	$this->_connect_try_next;
+	return;
+    }
     require IO::Socket::UNIX;
     my $sock = IO::Socket::UNIX->new(Peer => $this->{connecting}->{addr});
     if (defined $sock) {
