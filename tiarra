@@ -348,7 +348,7 @@ sub get_env {
     push @lines, "Environment Information:";
     push @lines, "  - Perl $Config{version} built for $Config{archname}";
     push @lines, "Optional Modules:";
-    push @lines, map "  $_", Tiarra::OptionalModules->repr_modules;
+    push @lines, map "  $_", Tiarra::OptionalModules->repr_modules(&debug_mode);
     push @lines, "Bundle Modules:";
     foreach my $mod (qw(Unicode::Japanese enum)) {
 	my $modfile = $mod . '.pm';
