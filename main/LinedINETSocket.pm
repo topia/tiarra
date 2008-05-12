@@ -44,10 +44,10 @@ sub new {
 }
 
 sub disconnect {
-    my ($this, $errno, $genre, @params) = @_;
-    $this->SUPER::disconnect($errno, $genre, @params);
+    my ($this, $genre, $errno, @params) = @_;
+    $this->SUPER::disconnect($genre, $errno, @params);
     if (defined $this->{disconnect_callback}) {
-	$this->{disconnect_callback}->($errno, $genre);
+	$this->{disconnect_callback}->($genre, $errno);
     }
 }
 
