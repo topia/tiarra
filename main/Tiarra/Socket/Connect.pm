@@ -15,7 +15,7 @@ use Tiarra::OptionalModules;
 use Tiarra::Utils;
 utils->define_attr_accessor(0, qw(domain host addr port callback),
 			    qw(bind_addr prefer timeout),
-			    qw(retry_int retry_count try_count),
+			    qw(retry_int retry_count),
 			    qw(hooks));
 utils->define_attr_enum_accessor('domain', 'eq',
 				 qw(tcp unix));
@@ -28,55 +28,84 @@ utils->define_attr_enum_accessor('domain', 'eq',
 #       port => [port] or [ports],
 #       callback => sub {
 #           my ($genre, $connector, $msg_or_sock, $errno) = @_;
-#           if ($genre eq 'warn') {
-#               # warnings
-#               #   $msg_or_sock: msg
-#               warn $msg_or_sock;
-#           } elsif ($genre eq 'error') {
-#               # error: error detected and connect attempt aborted.
-#               #        if you need, re-initialize connect.
-#               #   $msg_or_sock: msg
+#           if ($genre eq 'error') {
+#               # error: 重大なエラーが見つかったか、全ての接続に失敗したとき。
+#               #        これ以降は何もしないので、必要な場合は
+#               #        新しいインスタンスを作成してください。
+#               #   $msg_or_sock: なんらかのメッセージ。
+#               #   $errno: 原因となる errno があるときはセットされています。
 #               die $msg_or_sock;
 #           } elsif ($genre eq 'sock') {
-#               # connection successful. return socket.
-#               #   $msg_or_sock: sock
+#               # sock: 接続に成功したのでソケットを返します。
+#               #   $msg_or_sock: 対応する IO::Socket のインスタンス。
 #               attach($connector->current_addr, $connector->current_port,
 #                      $msg_or_sock);
-#           # optional genre
-#           } elsif ($genre eq 'skip') {
-#               # skipped by hook closure
-#               #   $msg_or_sock: msg
-#               warn $msg_or_sock;
-#           } elsif ($genre eq 'interrupt') {
-#               # connection interrupted by user
-#               #   $msg_or_sock: undef
-#               die 'interrupted';
+#           # timeout を指定したときは実装するようにしてください。
 #           } elsif ($genre eq 'timeout') {
-#               # connection interrupted by timer
+#               # timeout: 引数で指定された timeout が経過して、接続が
+#               #          中断された時に呼ばれます。
 #               #   $msg_or_sock: undef
 #               die 'timeout';
+#           # これ以降は必ずしも実装しなくてもかまいません。
+#           } elsif ($genre eq 'warn') {
+#               # warnings: 個々のホストに対する接続エラーとか。
+#               #   $msg_or_sock: なんらかのメッセージ。
+#               #   $errno: 原因となる errno があるときはセットされています。
+#               warn $msg_or_sock;
+#           } elsif ($genre eq 'progress') {
+#               # progress: 接続の進行状況を示します。
+#               #           主に試行開始メッセージが飛んできます。
+#               #   $msg_or_sock: なんらかのメッセージ。
+#               warn $msg_or_sock;
+#           } elsif ($genre eq 'skip') {
+#               # skip: before_connect フックにより skip を指示されると
+#               #       呼び出されます。
+#               #   $msg_or_sock: skip された接続先を含むメッセージ
+#               warn $msg_or_sock;
+#           } elsif ($genre eq 'interrupt') {
+#               # interrupt: ユーザーにより接続が中断された
+#               #            (interrupt が呼び出された)時に呼び出されます。
+#               #   $msg_or_sock: undef
+#               die 'interrupted';
 #           }
 #       },
-#       # optional params
+#       ## オプション系
+#       # 既に正引きしたアドレスを持っている場合に指定します。
 #       addr => [already resolved addr],
+#       # bind addr を指定します。必ずアドレスを書くようにしてください。
 #       bind_addr => [bind_addr (cannot specify host)],
-#       timeout => [timeout], # didn't test enough, please send report when bugs.
-#       retry_int => [retry interval],
+#       # タイムアウトを秒単位で指定します。
+#       #  十分にテストされているとは言い難いので、おかしな動作を見つけたら
+#       #  レポートを送ってください。
+#       timeout => [timeout],
+#       # 接続に失敗したあと、時間をおいて再試行する回数を指定します。
+#       # 再試行回数は $connector->try_count で取得できます。
 #       retry_count => [retry count],
+#       # リトライ時の待ち時間を秒単位で指定します。
+#       retry_int => [retry interval],
+#       # 希望するソケット種類を ['ipv4', 'ipv6'] という形式で指定します。
+#       # デフォルトは ipv6 -> ipv4 の順です。
 #       prefer => [prefer socket type(and order) (ipv4, ipv6) as string's
 #                  array ref, default ipv6, ipv4],
+#       # ソケットドメイン。既定値ですが、必要であれば tcp を指定してください。
 #       domain => 'tcp', # default
+#       # フック。
 #       hooks => {
-#           before_connect => {
+#           # 接続前フック。
+#           before_connect => { # hook before connection attempt
 #               my ($stage, $connecting) = @_;
-#               # hook before connection attempt
-#               #   $stage: 'before_connect'
-#               #   $connecting: { # be able to modify this hash.
-#               #       addr => $addr, port => $port,
-#               #       type => 'ipv4' or 'ipv6',
-#               #       bind_addr => undef or set connection-local bind_addr,
-#               #   }
+#               #   $stage: 'before_connect' という文字列が渡ります。
+#               #   $connecting:
+#               #     接続オプション。このハッシュは書き換えることができます。
+#               #     { # be able to modify this hash.
+#               #         addr => $addr, port => $port,
+#               #         type => 'ipv4' or 'ipv6',
+#               #         # この接続にのみ適用する bind_addr があれば
+#               #         # 指定してください。
+#               #         (bind_addr => [connection local bind_addr]),
+#               #     }
 #               if ( /* not_want_to_connect */ ) {
+#                   # die するとこの接続はスキップされます。
 #                   die 'skip this connection';
 #               }
 #           }
@@ -199,10 +228,11 @@ sub _connect_try_next {
 
     $this->{connecting} = shift @{$this->{queue}};
     if (defined $this->{connecting}) {
+	$this->_notify_progress("Connecting to ".$this->destination);
 	my $methodname = '_try_connect_' . $this->{connecting}->{type};
 	$this->$methodname;
     } else {
-	if ($this->retry_int && (++$this->try_count <= $this->retry_count)) {
+	if ($this->retry_int && (++$this->{try_count} <= $this->retry_count)) {
 	    $this->{timer} = Timer->new(
 		After => $this->retry_int,
 		Code => sub {
@@ -245,7 +275,7 @@ sub _try_connect_tcp {
     eval {
 	$this->_call_hooks('before_connect', $this->{connecting});
     }; if ($@) {
-	$this->_call_skip($@);
+	$this->_notify_skip($@);
 	$this->_connect_try_next;
 	return;
     }
@@ -320,7 +350,7 @@ sub _try_connect_unix {
     eval {
 	$this->_call_hooks('before_connect', $this->{connecting});
     }; if ($@) {
-	$this->_call_skip($@);
+	$this->_notify_skip($@);
 	$this->_connect_try_next;
 	return;
     }
@@ -398,6 +428,10 @@ sub current_type {
     $this->{connecting}->{type};
 }
 
+sub try_count {
+    shift->{try_count} + 1;
+}
+
 sub _error {
     # connection error; and finish ->connect chain
     my ($this, $msg, $errno) = @_;
@@ -412,20 +446,27 @@ sub _warn {
     $this->callback->('warn', $this, $msg, $errno);
 }
 
-sub _call {
-    # connection successful
-    my $this = shift;
+sub _notify_progress {
+    # connection progress message.
+    my ($this, $msg) = @_;
 
-    $this->callback->('sock', $this, $this->sock);
+    $this->callback->('progress', $this, $msg);
 }
 
-sub _call_skip {
+sub _notify_skip {
     # this address/port skipped; but continue trying
     my ($this, $str, $errno) = @_;
 
     $this->callback->('skip', $this,
 		      "skip connection attempt to ".$this->destination.$str,
 		      $errno);
+}
+
+sub _call {
+    # connection successful
+    my $this = shift;
+
+    $this->callback->('sock', $this, $this->sock);
 }
 
 sub _call_hooks {
