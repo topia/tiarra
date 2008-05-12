@@ -301,6 +301,8 @@ sub _connect_try_next {
 		    $this->_connect_error($obj);
 		} elsif ($subject eq 'warn') {
 		    $this->_connect_warn($obj);
+		} elsif ($subject eq 'progress') {
+		    $this->_connect_warn($obj);
 		}
 	    },
 	    hooks => {
