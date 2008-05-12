@@ -222,9 +222,16 @@ info: ネットワーク定義例 (IRCnet)
 info-is-omitted: 1
 no-switch: 1
 
-# サーバーのホストとポート。省略不可。
-host: irc.nara.wide.ad.jp
-port: 6663
+
+# サーバーのホストとポートを指定。複数行可。(host/port が指定されていない場合は)省略不可。
+# 同じサーバの複数のポート指定は順番に試すので、大量に書かない方がよい。
+server: irc.nara.wide.ad.jp 6662 6663
+server: irc.fujisawa.wide.ad.jp 6661 6664
+
+# サーバーのホストとポート。(server が指定されていない場合は)省略不可。
+# server を指定した場合は server が優先されます。
+-host: irc.nara.wide.ad.jp
+-port: 6663
 
 # general/userで設定したユーザ名を使わずに、各ネットワークで独自のユーザ名を使用する事も可能。
 # 省略されたら当然、general/userで設定したものが使われる。

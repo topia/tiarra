@@ -172,11 +172,17 @@ sub config_local_or_general {
 sub reload_config {
     my $this = shift;
     my $conf = $this->{config} = $this->_conf->get($this->{network_name});
+    my @servers = $conf->server('all');
+    if (!@servers) {
+	@servers = ([$conf->host, $conf->port]);
+    } else {
+	@servers = map {[split(/\s+/, $_)]} @servers;
+    }
     $this->{server_hosts} = [
-	    {
-		host => $conf->host,
-		port => [$conf->port],
-	    },
+	    map { +{
+		host => shift(@$_),
+		port => $_,
+	    } } @servers,
 	   ];
     $this->{server_host} = undef;
     $this->{server_port} = undef;
