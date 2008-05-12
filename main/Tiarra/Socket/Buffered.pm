@@ -37,7 +37,7 @@ sub disconnect_after_writing {
 }
 
 sub disconnect {
-    my ($this, $errno, $genre, @params) = @_;
+    my ($this, $genre, $errno, @params) = @_;
 
     $this->uninstall if $this->installed;
     $this->close;
