@@ -1,0 +1,12 @@
+* IrcIO::Server: ERROR が帰ってきた場合に次のサーバではなくリストの
+  最初から試行を始めるのをどうにかする。
+  (keywords: reload_config, reconnect, state_*, runloop->update_networks)
+
+* identify 用のモジュールが欲しい。自動 join の前に送出するためには
+  どうすべきか検討する。選択肢は:
+
+    1. モジュールの順番を指定できるようにする
+    2. early hook を追加する
+    3. tiarra.conf に必要に応じて移動するよう書く
+
+  のどれか。他に要望がなければ多分3。
