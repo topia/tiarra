@@ -275,7 +275,6 @@ my $required = {
     general => ['nick','user','name'],
     # [ネットワーク名]のhost,portは別処理。
 };
-my $required_in_each_networks = ['host','port'];
 sub _check_required_definitions {
     my ($this,$blocks) = @_;
     if (!defined $blocks) {
@@ -297,17 +296,19 @@ sub _check_required_definitions {
 	}
     }
     
-    # 各ネットワークのhostとportをチェック。
+    # 各ネットワークのserver/host,portをチェック。
     my @network_names = $blocks->{networks}->name('all');
     foreach my $network_name (@network_names) {
-	foreach my $required_key (@{$required_in_each_networks}) {
-	    my $block = $blocks->{$network_name};
-	    if (!defined $block) {
-		die "Block $network_name was not found. It was enumerated in networks/name.\n";
-	    }
-	    if (!defined $blocks->{$network_name}->get($required_key)) {
-		# 必要だとされているのに定義が無かった。
-		$error->($network_name,$required_key);
+	my $block = $blocks->{$network_name};
+	if (!defined $block) {
+	    die "Block $network_name was not found. It was enumerated in networks/name.\n";
+	}
+	if (!defined $block->get('server')) {
+	    foreach my $required_key (qw(host port)) {
+		if (!defined $block->get($required_key)) {
+		    # 必要だとされているのに定義が無かった。
+		    $error->($network_name,$required_key);
+		}
 	    }
 	}
     }
