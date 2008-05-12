@@ -97,10 +97,14 @@ sub modify_notifyicon_tooltip {
 	substr($tooltip,$tooltip_length - 1) = '';
     }
     if (!$can_use_win32api || $this->{notifyicondata_version} <= 1) {
-	# This is internal API!
-	Win32::GUI::NotifyIcon::Modify($this->{notify_icon}->{-handle},
-				       -id => $this->{notify_icon}->{-id},
-				       -tip => $tooltip);
+	eval {
+	    $this->{notify_icon}->Change(-tip => $tooltip);
+	}; if ($@) {
+	    # This is internal API!
+	    Win32::GUI::NotifyIcon::Modify($this->{notify_icon}->{-handle},
+					   -id => $this->{notify_icon}->{-id},
+					   -tip => $tooltip);
+	}
     } else {
 	my ($struct,$ret);
 
