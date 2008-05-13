@@ -341,6 +341,7 @@ sub attach {
 
     $this->SUPER::attach($connector->sock);
     $this->{connecting} = undef;
+    $this->{server_host} = $connector->host;
     $this->{server_addr} = $connector->current_addr;
     $this->{server_port} = $connector->current_port;
     $this->{proto} = $connector->current_type;
