@@ -5,9 +5,10 @@ package Auto::Im;
 use strict;
 use warnings;
 use base qw(Module);
-use Module::Use qw(Auto::AliasDB Tools::HTTPClient);
+use Module::Use qw(Auto::AliasDB Tools::HTTPClient Auto::Utils);
 use Auto::AliasDB;
 use Tools::HTTPClient; # >= r11345
+use Auto::Utils;
 use HTTP::Request::Common;
 
 sub new {
@@ -52,6 +53,7 @@ sub message_arrived {
 		  $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
 		  $msg, $sender,
 		  channel => $full_ch_name,
+		  raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
 		  text => $text,
 		 );
 	      my @data = (message => $text);
@@ -99,6 +101,7 @@ keyword: hoge
 
 # im.kayac.com に送るメッセージのフォーマットを指定します。
 # デフォルト値: [tiarra][#(channel):#(nick.now)] #(text)
+# #(channel) のかわりに #(raw_channel) を利用するとネットワーク名がつきません。
 format: [tiarra][#(channel):#(nick.now)] #(text)
 
 # im.kayac.comで登録したユーザ名を入力します。
