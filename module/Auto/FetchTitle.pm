@@ -22,7 +22,7 @@ use Scalar::Util qw(weaken);
 use Tiarra::Encoding;
 use Tools::HTTPClient;
 
-our $VERSION   = '0.02';
+our $VERSION   = '0.03';
 
 # 全角空白.
 our $U_IDEOGRAPHIC_SPACE = "\xe3\x80\x80";
@@ -86,7 +86,7 @@ $|=1;
 #     $obj->_process_command(..).
 #     return.
 #   </if>
-#   $obj->extract_urls(..).
+#   $obj->_extract_urls(..).
 #   $obj->_check_mask($url).
 #   $obj->_create_request(..).
 #   $obj->_add_request($req).
@@ -480,6 +480,14 @@ sub _create_request
   my $url          = shift;
   my $mask_conf    = shift;
 
+  my $url_orig = $url;
+  $url =~ s/([^ -~])/'%'.uc(unpack("H*",$1))/ge;
+  if( $url ne $url_orig )
+  {
+    $this->_debug($full_ch_name, "url will be encoded: $url");
+    $this->_debug($full_ch_name, "original is: $url_orig");
+  }
+
   my $anchor;
   ($url, $anchor) = split(/#/, $url, 2);
   my $req = {
@@ -572,10 +580,9 @@ sub _extract_urls
   my @urls = map{ m{ (\S?\w+://\S+) }gx } @tokens;
   foreach my $url (@urls)
   {
-    my $par_begin = substr($url, 0, 1);
+    my $par_begin = $url =~ s/^(\W)// ? $1 : '';
     my $par_end   = $pars->{$par_begin};
     $par_end or next;
-    $url =~ s/^\Q$par_begin\E//;
     $url =~ s/\Q$par_end\E\z//;
   }
 
@@ -1973,6 +1980,8 @@ sub _unescapeHTML
    gt   => '>',
    amp  => '&',
    quot => '"',
+   laquo => "\xc2\xab",
+   raquo => "\xc2\xbb",
   };
   $html =~ s{&#(\d+);|&#x([0-9a-fA-F]+);|&(\w+);}{
     if( defined($1) || defined($2) )
