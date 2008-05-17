@@ -275,6 +275,12 @@ sub _config
       recv_limit => 12*1024,
       extract    => qr{<div id="news_detail_title" class="ft04">(.*?)</div>}s,
     },
+    {
+      # 17. oricon.groumet.
+      url        => 'http://gourmet.oricon.co.jp/*',
+      recv_limit => 15*1024,
+      extract    => qr{<h1>(.*?)</h1>}s,
+    },
   ];
   $config;
 }
