@@ -367,9 +367,9 @@ sub _parse {
 	}
 
 	if ($param ne '') {
-	    if ($this->n_params > MAX_PARAMS && !$param_count_warned) {
+	    if ($this->_n_raw_params >= MAX_PARAMS && !$param_count_warned) {
 		$param_count_warned = 1;
-		carp 'max param exceeded; please fix upstream server!';
+		warn 'max param exceeded; please fix upstream server!';
 	    }
 	    if (substr($param,0,1) eq ':') {
 		$param = substr($line, $pos); # これ以降は全て一つの引数。
