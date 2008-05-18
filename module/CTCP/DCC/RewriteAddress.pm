@@ -100,26 +100,27 @@ our %resolvers = (
 	resolver => sub{
 	    my ($this, $actions, $sender, $conf, $msg, $addr, $port) = @_;
 
-	    my $regex = "".$conf->regex;
+	    my $regex = "".$conf->regex; # regex to string
+	    my $callback = sub {
+		my $resp = shift;
+		$actions->{step}->(
+		    sub {
+			return undef unless ref($resp);
+			if ($resp->{Content} !~ /$regex/) {
+			    $this->_runloop->notify_warn(
+				__PACKAGE__." http: regex not match: $regex");
+			    #::printmsg("http: content: $resp->{Content}");
+			    return undef;
+			}
+			$actions->{callback}->($1, $port);
+			1;
+		    });
+	    };
 	    Tools::HTTPClient->new(
 		Method => 'GET',
 		Url => $conf->url,
 		Debug => 1,
-	       )->start(
-		   sub {
-		       my $resp = shift;
-		       $actions->{step}->(
-			   sub {
-			       return undef unless ref($resp);
-			       if ($resp->{Content} !~ /$regex/) {
-				   ::printmsg("http: regex: $regex");
-				   ::printmsg("http: content: $resp->{Content}");
-				   return undef;
-			       }
-			       $actions->{callback}->($1, $port);
-			       1;
-			   });
-		   });
+	       )->start($callback);
 	    1;
 	},
     },
@@ -168,9 +169,11 @@ sub get_dcc_address_port {
 	my $ret = eval { shift->(@_) };
 	if (!defined $ret) {
 	    if ($@) {
-		::printmsg("$resolver: error occurred: $@");
+		$this->_runloop->notify_warn(
+		    __PACKAGE__." $resolver: error occurred: $@");
 	    }
-	    ::printmsg("$resolver: cannot resolved. try next method.");
+	    $this->_runloop->notify_warn(
+		__PACKAGE__." $resolver: cannot resolved. try next method.");
 	    $next->();
 	} else {
 	    $ret;
@@ -195,17 +198,20 @@ sub get_dcc_address_port {
 		my $resolved = shift;
 		my $ret = eval {
 		    if ($resolved->answer_status ne $resolved->ANSWER_OK) {
-			::printmsg("resolver: $type/$data: return not OK");
-			::printmsg("resolver: ". $resolved->answer_data);
-			return undef; # next method
+			$this->_runloop->notify_warn(
+			    __PACKAGE__." resolver: $type/$data: return not OK");
+			undef; # next method
+		    } else {
+			$callback->(@args, $resolved, @_);
 		    }
-		    $callback->(@args, $resolved, @_);
 		};
 		if (!defined $ret) {
 		    if ($@) {
-			::printmsg("$resolver: error occurred: $@");
+			$this->_runloop->notify_warn(
+			    __PACKAGE__." $resolver: error occurred: $@");
 		    }
-		    ::printmsg("$resolver: cannot resolved. try next method.");
+		    $this->_runloop->notify_warn(
+			__PACKAGE__." $resolver: cannot resolved. try next method.");
 		    $next->();
 		} else {
 		    $ret;
@@ -223,7 +229,8 @@ sub get_dcc_address_port {
     $next = sub {
 	if (!@resolvers) {
 	    ## FIXME: on cannot resolve
-	    ::printmsg(__PACKAGE__."/rewrite_dcc: cannot resolve address at all");
+	    $this->_runloop->notify_warn(
+		__PACKAGE__." cannot resolve address at all");
 	    $callback->();
 	}
 	$resolver = shift(@resolvers);
