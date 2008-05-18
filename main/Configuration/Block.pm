@@ -94,7 +94,10 @@ sub equals {
 	}
 	elsif (UNIVERSAL::isa($this_value,'Configuration::Block')) {
 	    # ブロックなので再帰的に比較。
-	    return $this_value->equals($that_value);
+	    my $ret = $this_value->equals($that_value);
+	    if (!$ret) {
+		return undef;
+	    }
 	}
 	else {
 	    if ($this_value ne $that_value) {
