@@ -223,10 +223,10 @@ sub filter_prereq
     }
     $prev = $prev->{old};
   }
-  if( $seen->{login} >= 2 || $seen->{news_login} >= 2 )
+  if( $seen->{login} >= 2 || $seen->{news_login} >= 3 )
   {
-    my $msg = "mixi multiple login pages (login=$seen->{login},news_login=$seen->{news_login})";
-    $ctx->_debug($req, $msg);
+    my $msg = "login pages (login=$seen->{login},news_login=$seen->{news_login})";
+    #$ctx->_debug($req, $msg);
     #$req->{response} = "mixi multiple login pages (login=$seen->{login},news_login=$seen->{news_login})";
     #return;
   }
@@ -362,15 +362,32 @@ info:    Mixiにログインして見出し抽出出来るようにするFetchTi
 default: off
 
 # Auto::FetchTitle { ... } での設定.
+#
 # + Auto::FetchTitle {
-#     plugins {
-#       Mixi {
-#         mixi-user: xxx
-#         mixi-pass: yyy
-#       }
+#    mask: #* &mixi http://*
+#    plugins {
+#      Mixi {
+#        mixi-user: xxx
+#        mixi-pass: yyy
+#      }
+#    }
+#    conf-mixi {
+#      filter-mixi {
+#        url: http://mixi.jp/*
+#        url: http://news.mixi.jp/*
+#        type: mixi
+#        timeout: 10
+#        #閲覧可能なコミュニティの指定.
+#        #mixi-community: 0
+#      }
 #    }
 #  }
+#
+# アカウント情報は plugins Mixi に記述.
 # mixi-pass には {B}bbbb でBASE64エンコード値も可能.
+#
+# newsだけしか使わない場合でも, ログイン処理が必要なので
+# mixi.jp/* 側も必要になります.
 
 =end tiarra-doc
 
