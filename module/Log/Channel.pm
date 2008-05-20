@@ -16,6 +16,8 @@ use ControlPort;
 use Mask;
 use Multicast;
 
+our $DEFAULT_FILENAME_ENCODING = $^O eq 'MSWin32' ? 'sjis' : 'utf8';
+
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
@@ -179,7 +181,14 @@ sub _channel_match {
 	if (Mask::match($ch->[1],$channel)) {
 	    # マッチした。
 	    my $fname_format = $this->config->filename || '%Y.%m.%d.txt';
-	    my $fpath_format = $ch->[0]."/$fname_format";
+	    # あまり好ましくなさそうな文字はあらかじめエスケープ.
+	    my $chan_filename = $channel;
+	    $chan_filename =~ s/![0-9A-Z]{5}/!/;
+	    $chan_filename =~ s{([^-\w@#%!+&.\x80-\xff])}{
+	      sprintf('=%02x', unpack("C", $1));
+	    }ge;
+	    my $chan_dir = Auto::AliasDB->shared->replace(undef, $ch->[0], channel => $chan_filename);
+	    my $fpath_format = "$chan_dir/$fname_format";
 
 	    $this->{matching_cache}->{$channel} = $fpath_format;
 	    return $fpath_format;
@@ -210,6 +219,14 @@ sub _write {
 	    Tools::DateConvert::replace($abstract_fpath);
 	}
     };
+    my $filename_encoding = $this->config->filename_encoding || $DEFAULT_FILENAME_ENCODING;
+    if( $filename_encoding ne 'ascii' )
+    {
+      $concrete_fpath = Tiarra::Encoding->new($concrete_fpath)->conv($filename_encoding);
+    }else
+    {
+      $concrete_fpath =~ s/([^ -~])/sprintf('=%02x', unpack("C", $1))/ge;
+    }
     my $header = Tools::DateConvert::replace(
 	$this->config->header || '%H:%M'
     );
@@ -383,6 +400,16 @@ sync: sync
 # channel: others *
 # この例では、#IRC談話室@ircnetのログはIRCDanwasitu/%Y.%m.%d.txtに、
 # それ以外(privも含む)のログはothers/%Y.%m.%d.txtに保存される。
+# #(channel) はチャンネル名に展開される。
+# (古いバージョンだと展開されずにそのままディレクトリ名になってしまいます。)
 channel: priv priv
-channel: others *
+channel: #(channel) *
+-channel: others *
+
+# ファイル名のエンコーディング.
+# 指定可能な値は, utf8, sjis, euc, jis, ascii.
+# ascii は実際には utf8 と同等で8bit部分が全てquoted-printableされる.
+# デフォルトはWindowsではsjis, それ以外では utf8.
+-filename-encoding: utf8
+
 =cut
