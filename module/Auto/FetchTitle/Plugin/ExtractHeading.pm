@@ -25,6 +25,7 @@ sub new
 {
   my $pkg   = shift;
   my $this = $pkg->SUPER::new(@_);
+  *DEBUG = \$Auto::FetchTitle::DEBUG;
 
   $this->{extra} = undef;
   $this->_parse_extra_config();
@@ -57,8 +58,8 @@ sub _parse_extra_config
   my @config;
   $this->{extra} = \@config;
 
-  $this->notice(__PACKAGE__."#_parse_extra_config");
-  $this->notice(">> ".join(", ", map{split(' ', $_)}$this->config->extra('all')));
+  $DEBUG and $this->notice(__PACKAGE__."#_parse_extra_config");
+  $DEBUG and $this->notice(">> ".join(", ", map{split(' ', $_)}$this->config->extra('all')));
 
   foreach my $token (map{split(' ', $_)}$this->config->extra('all'))
   {
@@ -281,6 +282,12 @@ sub _config
       recv_limit => 15*1024,
       extract    => qr{<h1>(.*?)</h1>}s,
     },
+    {
+      # 18. biglobe.
+      url        => 'http://news.biglobe.ne.jp/politics/*',
+      recv_limit => 30*1024,
+      extract    => qr{<h4 class="ch15">(.*?)(?:&nbsp;.*)?</h4>}s,
+    },
   ];
   $config;
 }
@@ -389,7 +396,7 @@ sub filter_response
     my $remove_list = $conf->{remove};
     if( ref($remove_list) ne 'ARRAY' )
     {
-      $remove_list = [$remove_list];
+      $remove_list = defiend($remove_list) ? [$remove_list] : [];
     }
     foreach my $_remove (@$remove_list)
     {
