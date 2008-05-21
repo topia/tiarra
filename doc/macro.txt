@@ -1,0 +1,49 @@
+
+マクロ展開.
+-----------
+
+#(xxx)
+  ==> xxx の値.
+#(xxx|yyy|zzz)
+  ==> xxx の値か yyy の値か zzz の値.
+      (値はdefinedかどうかで判断される)
+#(foo;FOO-%s|bar;BAR-%s)
+  ==> 書式付き展開.
+      {foo=>1} なら "FOO-1", {bar=>2} なら "BAR-2"
+
+展開用のライブラリ.
+-------------------
+
+Tools::HashTools::replace_recursive($format, [\%pairs], [\&callback]);
+
+%pairs は $pairs{$key} = $vlaue か $pairs{$key} = \@values.
+配列だった場合最初の要素が使われる.
+
+[\%pairs] に見つからなかった場合は[\&callback]を順番に呼び出して探索.
+
+便利ライブラリ.
+---------------
+
+Auto::AliasDB->shared->replace($userinfo, $str, key=>$value, ...)
+  $userinfo ::= 'nick!user@addr'
+  
+Auto::AliasDB->shared->stdreplace($userinfo, $str, $msg, $sender, key=>$value, ...)
+  nick.now
+  user.now
+  host.now
+  prefix.now
+  (多分他にも?)
+  (date:やrandomselect:とかのフィルタ類も有効になる)
+
+Tools::GroupDB
+  $userinfo はこっちにスルーされる.
+  データベースファイルから,
+  'user' カラム($primaryで指定される)で $userinfo を検索して
+  マッチしたレコードのキー/値ペアを置換キーに追加する.
+  そして Tools::HashTools::replace_recursive(..) に.
+
+日付展開.
+---------
+
+%Y-%m-%d とか.
+Tools::DateConvert.
