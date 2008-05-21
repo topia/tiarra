@@ -18,6 +18,7 @@ use Log::Logger;
 use Auto::Utils;
 use BulletinBoard;
 use Module::Use qw(Tools::HTTPServer Tools::HTTPParser Log::Logger Auto::Utils);
+use Unicode::Japanese;
 
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
@@ -534,21 +535,15 @@ sub _dispatch
     }
 
     $ch_short =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
-    $ch_short =~ s/^=// or $ch_short = '#'.$ch_short;
-    if( !$this->{cache}{$netname}{$ch_short} )
+    my $ch_short_orig = $ch_short;
+    $ch_short = $this->_detect_channel($ch_short, $netname);
+    if( !$ch_short )
     {
-      use Unicode::Japanese;
-      my $ch2 = Unicode::Japanese->new($ch_short,'sjis')->utf8;
-      if( $this->{cache}{$netname}{$ch2} )
-      {
-        $ch_short = $ch2;
-      }else
-      {
-        RunLoop->shared_loop->notify_msg(__PACKAGE__."#_dispatch($path), not in cache ($netname/$ch_short)");
-        $this->_response($req, 404);
-        return;
-      }
+      RunLoop->shared_loop->notify_msg(__PACKAGE__."#_dispatch($path), not in cache ($netname/$ch_short_orig)");
+      $this->_response($req, 404);
+      return;
     }
+
     if( !$this->_can_show($req, $ch_short, $netname) )
     {
       #RunLoop->shared_loop->notify_msg(__PACKAGE__."#_dispatch($path), could not show ($netname/$ch_short)");
@@ -583,6 +578,58 @@ sub _dispatch
   {
     $this->_response($req, 404);
   }
+}
+
+# $this->_detect_channel($ch_short, $netname).
+sub _detect_channel
+{
+  my $this = shift;
+  my $ch_short = shift;
+  my $netname  = shift;
+
+  if( $ch_short =~ s/^=// )
+  {
+    # priv or special channels.
+    return $ch_short;
+  }
+
+  if( $ch_short =~ s/^!// )
+  {
+    foreach my $key (keys %{$this->{cache}{$netname}})
+    {
+      $key =~ /^![0-9A-Z]{5}/ or next;
+      substr($key, 6) eq $ch_short or next;
+      return $key;
+    }
+    # try decode from sjis.
+    my $ch2 = Unicode::Japanese->new($ch_short,'sjis')->utf8;
+    foreach my $key (keys %{$this->{cache}{$netname}})
+    {
+      $key =~ /^![0-9A-Z]{5}/ or next;
+      substr($key, 6) eq $ch2 or next;
+      return $key;
+    }
+    # not found.
+    return undef;
+  }
+
+  # normal channels.
+  $ch_short = '#'.$ch_short;
+  if( $this->{cache}{$netname}{$ch_short} )
+  {
+    # found.
+    return $ch_short;
+  }
+
+  # try decode from sjis.
+  my $ch2 = Unicode::Japanese->new($ch_short,'sjis')->utf8;
+  if( $this->{cache}{$netname}{$ch2} )
+  {
+    return $ch2;
+  }
+
+  # not found.
+  return undef;
 }
 
 sub _response
@@ -770,12 +817,26 @@ sub _gen_list
       foreach my $channame (@channels)
       {
         my $link_ch = $channame;
-        $link_ch =~ s/^#// or $link_ch = "=$link_ch";
+        if( $link_ch =~ s/^#// )
+        {
+          # normal channels.
+        }elsif( $link_ch =~ s/^![0-9A-Z]{5}/!/ )
+        {
+          # channel    =  ( "#" / "+" / ( "!" channelid ) / "&" ) chanstring [ ":" chanstring ]
+          # channelid  = 5( %x41-5A / digit )   ; 5( A-Z / 0-9 )
+          # (RFC2812)
+        }else
+        {
+          $link_ch = "=$link_ch";
+        }
         my $link = "log\0$netname\0$link_ch\0";
         $link =~ s{/}{%2F}g;
         $link =~ tr{\0}{/};
         $link = $this->_escapeHTML($link);
-        $content .= qq{<li><a href="$link">$channame</a></li>\n};
+
+        my $channame_label = $this->_escapeHTML($channame);
+        $channame_label =~ s/^![0-9A-Z]{5}/!/;
+        $content .= qq{<li><a href="$link">$channame_label</a></li>\n};
       }
       $content .= "  </ul>\n";
       $content .= "</li>\n";
@@ -1041,6 +1102,7 @@ sub _gen_log
   }
 
   my $ch_long = Multicast::attach($ch_short, $netname);
+  $ch_long =~ s/^![0-9A-Z]{5}/!/;
   my $ch_long_esc = $this->_escapeHTML($ch_long);
   my $name_esc = $this->_escapeHTML($cgi->{n} || '');
 
@@ -1296,6 +1358,7 @@ sub _gen_chan_info
   }
 
   my $ch_long = Multicast::attach($ch_short, $netname);
+  $ch_long =~ s/^![0-9A-Z]{5}/!/;
   my $ch_long_esc = $this->_escapeHTML($ch_long);
 
   my $tmpl = $this->_tmpl_chan_info();
@@ -1346,12 +1409,12 @@ PART: <input type="text" name="part" value="<&PART_MSG>" />
 </form>
 
 <form action="./info" method="post">
-JOIN <input type="text" name="join" value="<&CH_LONG>" />
+JOIN <input type="hidden" name="join" value="<&CH_LONG>" />
 <input type="submit" value="入室" /><br />
 </form>
 
 <form action="./info" method="post">
-DELETE <input type="text" name="delete" value="<&CH_LONG>" />
+DELETE <input type="hidden" name="delete" value="<&CH_LONG>" />
 <input type="submit" value="削除" /><br />
 </form>
 
