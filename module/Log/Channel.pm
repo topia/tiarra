@@ -8,11 +8,12 @@ use IO::File;
 use File::Spec;
 use Tiarra::Encoding;
 use base qw(Module);
-use Module::Use qw(Tools::DateConvert Log::Logger Log::Writer Auto::AliasDB);
+use Module::Use qw(Tools::DateConvert Log::Logger Log::Writer);
 use Tools::DateConvert;
 use Log::Logger;
 use Log::Writer;
-use Auto::AliasDB;
+use Module::Use qw(Tools::HashTools);
+use Tools::HashTools;
 use ControlPort;
 use Mask;
 use Multicast;
@@ -109,10 +110,14 @@ sub message_arrived {
     $message;
 }
 
-*S_PRIVMSG = \&PRIVMSG_or_NOTICE;
-*S_NOTICE = \&PRIVMSG_or_NOTICE;
-*C_PRIVMSG = \&PRIVMSG_or_NOTICE;
-*C_NOTICE = \&PRIVMSG_or_NOTICE;
+{
+    no warnings qw(once);
+    *S_PRIVMSG = \&PRIVMSG_or_NOTICE;
+    *S_NOTICE = \&PRIVMSG_or_NOTICE;
+    *C_PRIVMSG = \&PRIVMSG_or_NOTICE;
+    *C_NOTICE = \&PRIVMSG_or_NOTICE;
+}
+
 sub PRIVMSG_or_NOTICE {
     my ($this,$msg,$sender) = @_;
     my $target = Multicast::detatch($msg->param(0));
@@ -188,7 +193,8 @@ sub _channel_match {
 	    $chan_filename =~ s{([^-\w@#%!+&.\x80-\xff])}{
 	      sprintf('=%02x', unpack("C", $1));
 	    }ge;
-	    my $chan_dir = Auto::AliasDB->shared->replace(undef, $ch->[0], channel => $chan_filename);
+	    my $chan_dir = Tools::HashTools::replace_recursive(
+		$ch->[0], [{channel => $chan_filename}]);
 	    my $fpath_format = "$chan_dir/$fname_format";
 
 	    $this->{matching_cache}->{$channel} = $fpath_format;
