@@ -15,7 +15,7 @@ use warnings;
 use base qw(Module);
 use BulletinBoard;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 our $DEBUG = 0;
 
@@ -86,7 +86,7 @@ sub message_arrived
       $this->_apply(-check);
     }elsif( $param0 eq 'apply' )
     {
-      if( @$params==1 )
+      if( @$params==0 )
       {
         $this->_apply(-apply => -all);
       }else
@@ -129,8 +129,8 @@ sub _show_history
   $runloop->notify_msg(__PACKAGE__.", $nr_history ".($nr_history==1?'entry':'entries')." in history");
 
   my $base  = shift @$params;
-  my $limit = 3;
-  if( !$base || $base !~ /^0*\d+\z/ )
+  my $limit = 5;
+  if( !defined($base) || $base !~ /^0*\d+\z/ )
   {
     $base = @$history - $limit + 1;
   }
@@ -224,7 +224,7 @@ sub _apply
           pkg       => $patch->{pkg},
           subname   => $patch->{subname},
           installed => undef,
-          install   => (reverse sort keys %{$patch->{revs}})[0],
+          install   => (reverse sort {$a<=>$b} keys %{$patch->{revs}})[0],
         });
       }
     }
@@ -272,10 +272,25 @@ sub _apply
 
     my $patch = $patches_hashref->{$pkg}{$subname};
     $patch   or $runloop->notify_msg("  no such patch, [$pkg] [$subname]."), next;
-    my @revs     = reverse sort keys %{$patch->{revs}};
+    my @revs     = reverse sort {$a<=>$b} keys %{$patch->{revs}};
     $runloop->notify_msg("  pkg  => $pkg");
     $runloop->notify_msg("  sub  => $subname");
-    $runloop->notify_msg("  revs => ".join(", ", @revs));
+    $runloop->notify_msg("  revs => ".join(", ", map{"r$_"} @revs));
+    my $filter;
+    if( $patch->{constants} )
+    {
+      $runloop->notify_msg("  constants => ");
+      foreach my $key (sort keys %{$patch->{constants}})
+      {
+        $runloop->notify_msg("    $key => $patch->{constants}{$key}");
+      }
+      my $keys = join('|', map{quotemeta($_)} keys %{$patch->{constants}});
+      my $re   = qr/\b(?:$keys)\b/;
+      $filter = sub{
+        my $ref = shift;
+        $$ref =~ s/($re)/$patch->{constants}{$1}/g;
+      };
+    }
     my $cursub = $pkg->can($patch->{subname});
     if( !defined(&$cursub) )
     {
@@ -284,6 +299,7 @@ sub _apply
       next;
     }
     my $curtext = $deparse->coderef2text($cursub);
+    $filter and $filter->(\$curtext, undef);
     my $curmd5  = $digest->($curtext);
     $runloop->notify_msg("  current => $curmd5");
     $DEBUG and print "<<current>>\n$curtext\n";
@@ -299,6 +315,7 @@ sub _apply
         next;
       }
       my $dump = $deparse->coderef2text($sub);
+      $filter and $filter->(\$dump, $rev);
       $DEBUG and print "<<$rev>>\n$dump\n";
       my $md5 = $digest->($dump);
       $lastest ||= {rev=>$rev,'sub'=>$sub,md5=>$md5};
@@ -418,7 +435,7 @@ sub _load_patches
       pkg => 'ModuleManager',
       subname => 'reload_modules_if_modified',
       revs => {
-        r3004 => <<'EOF',
+        3004 => <<'EOF',
 # package ModuleManager.
 # sub _reload_modules_if_modified_r8809.
 sub {
@@ -539,7 +556,7 @@ sub {
     }
 }
 EOF
-        r8809 => <<'EOF'
+        8809 => <<'EOF'
 # package ModuleManager.
 # sub _reload_modules_if_modified_r8809.
 sub {
@@ -677,7 +694,7 @@ EOF
       pkg => 'LinedINETSocket',
       subname => 'connect',
       revs => {
-        r3004 => <<'EOF',
+        3004 => <<'EOF',
 # package LinedINETSocket
 # sub _connect_r3004
 no strict 'refs'; # by SelfLoader.
@@ -694,7 +711,7 @@ sub {
     $this->attach($sock);
 }
 EOF
-        r8930 => <<'EOF',
+        8930 => <<'EOF',
 # package LinedINETSocket
 # sub _connect_r8930
 no strict 'refs'; # by SelfLoader.
@@ -719,6 +736,136 @@ sub {
 EOF
       },
     },
+    {
+      pkg => 'Configuration::Block',
+      subname => 'equals',
+      constants => {
+        BLOCK_NAME => Configuration::Block::BLOCK_NAME(),
+        TABLE      => Configuration::Block::TABLE(),
+      },
+      revs => {
+        3004 => <<'EOF',
+sub {
+    # 二つのConfiguration::Blockが完全に等価なら1を返す。
+    my ($this,$that) = @_;
+    # ブロック名
+    if ($this->[BLOCK_NAME] ne $that->[BLOCK_NAME]) {
+	return undef;
+    }
+    # キーの数
+    my @this_keys = keys %{$this->[TABLE]};
+    my @that_keys = keys %{$that->[TABLE]};
+    if (@this_keys != @that_keys) {
+	return undef;
+    }
+    # 各要素
+    my $size = @this_keys;
+    for (my $i = 0; $i < $size; $i++) {
+	# キー
+	if ($this_keys[$i] ne $that_keys[$i]) {
+	    return undef;
+	}
+	# 値の型
+	my $this_value = $this->[TABLE]->{$this_keys[$i]};
+	my $that_value = $that->[TABLE]->{$that_keys[$i]};
+	if (ref($this_value) ne ref($that_value)) {
+	    return undef;
+	}
+	# 値
+	if (ref($this_value) eq 'ARRAY') {
+	    # 配列なので要素数と全要素を比較。
+	    if (@$this_value != @$that_value) {
+		return undef;
+	    }
+	    my $valsize = @$this_value;
+	    for (my $j = 0; $j < $valsize; $j++) {
+		if ($this_value->[$j] ne $that_value->[$j]) {
+		    return undef;
+		}
+	    }
+	}
+	elsif (UNIVERSAL::isa($this_value,'Configuration::Block')) {
+	    # ブロックなので再帰的に比較。
+	    return $this_value->equals($that_value);
+	}
+	else {
+	    if ($this_value ne $that_value) {
+		return undef;
+	    }
+	}
+    }
+    return 1;
+}
+EOF
+        11868 => <<'EOF',
+sub {
+    # 二つのConfiguration::Blockが完全に等価なら1を返す。
+    my ($this,$that) = @_;
+    # ブロック名
+    if ($this->[BLOCK_NAME] ne $that->[BLOCK_NAME]) {
+	return undef;
+    }
+    # キーの数
+    my @this_keys = keys %{$this->[TABLE]};
+    my @that_keys = keys %{$that->[TABLE]};
+    if (@this_keys != @that_keys) {
+	return undef;
+    }
+    # 各要素
+    my $size = @this_keys;
+    for (my $i = 0; $i < $size; $i++) {
+	# キー
+	if ($this_keys[$i] ne $that_keys[$i]) {
+	    return undef;
+	}
+	# 値の型
+	my $this_value = $this->[TABLE]->{$this_keys[$i]};
+	my $that_value = $that->[TABLE]->{$that_keys[$i]};
+	if (ref($this_value) ne ref($that_value)) {
+	    return undef;
+	}
+	# 値
+	if (ref($this_value) eq 'ARRAY') {
+	    # 配列なので要素数と全要素を比較。
+	    if (@$this_value != @$that_value) {
+		return undef;
+	    }
+	    my $valsize = @$this_value;
+	    for (my $j = 0; $j < $valsize; $j++) {
+		if ($this_value->[$j] ne $that_value->[$j]) {
+		    return undef;
+		}
+	    }
+	}
+	elsif (UNIVERSAL::isa($this_value,'Configuration::Block')) {
+	    # ブロックなので再帰的に比較。
+	    my $ret = $this_value->equals($that_value);
+	    if (!$ret) {
+		return undef;
+	    }
+	}
+	else {
+	    if ($this_value ne $that_value) {
+		return undef;
+	    }
+	}
+    }
+    return 1;
+}
+EOF
+      },
+    },
+#    {
+#      pkg => 'Tiarra::XXX',
+#      subname => 'xxx',
+#      #filter => sub {},
+#      revs => {
+#        3004 => <<'EOF',
+#EOF
+#        9999 => <<'EOF',
+#EOF
+#      },
+#    },
   ];
 }
 
@@ -750,6 +897,8 @@ default: off
 
 # 対応している箇所.
 # ModuleManager / reload_modules_if_modified / r3004 => r8809
+# LinedINETSocket / connect / r3004 => r8930
+# Configuration::Block / equals / r3004 => r11868
 
 # /livepatch check で確認.
 # /livepatch apply で適用.
