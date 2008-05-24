@@ -163,7 +163,7 @@ sub _config
       extract    => qr{<font class="kijimidashi".*?>(.*?)</font>}s,
     },
     {
-      # 3. nikkei.
+      # 3a. nikkei.
       url        => 'http://www.nikkei.co.jp/*',
       recv_limit => 16*1024,
       extract => [
@@ -171,6 +171,12 @@ sub _config
         qr{<h3 class="topNews-ttl3">(.*?)</h3>}s,
       ],
       remove => qr/^NIKKEI NET：/,
+    },
+    {
+      # 3b. nikkei.
+      url        => 'http://release.nikkei.co.jp/*',
+      recv_limit => 18*1024,
+      extract => qr{<h1 id="heading" class="heading">(.*)</h1>}s,
     },
     {
       # 4a. nhkニュース.
@@ -396,7 +402,7 @@ sub filter_response
     my $remove_list = $conf->{remove};
     if( ref($remove_list) ne 'ARRAY' )
     {
-      $remove_list = defiend($remove_list) ? [$remove_list] : [];
+      $remove_list = defined($remove_list) ? [$remove_list] : [];
     }
     foreach my $_remove (@$remove_list)
     {
