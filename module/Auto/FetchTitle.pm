@@ -22,7 +22,7 @@ use Scalar::Util qw(weaken);
 use Tiarra::Encoding;
 use Tools::HTTPClient;
 
-our $VERSION   = '0.03';
+our $VERSION   = '0.04';
 
 # 全角空白.
 our $U_IDEOGRAPHIC_SPACE = "\xe3\x80\x80";
@@ -121,6 +121,7 @@ sub new
 
   $this->{loaded_at}     = time;
   $this->{debug}         = $this->config->debug;
+  $this->{old_config}    = $this->config;
 
   $this->{request_queue} = {};   # { $ch_full => [] }.
   $this->{reply_queue}   = undef;
@@ -137,6 +138,9 @@ sub new
   weaken($weaken_this);
   $this->{conf_hook} = Configuration::Hook->new(sub{
     my $this = $weaken_this or return;
+    local($DEBUG) = $this->{debug};
+    $this->_reload_check() or return;
+    $DEBUG = $this->{debug}; # refresh from new config.
     $this->_reload_config();
     $this->_reload_plugins();
   })->install('reloaded');
@@ -162,6 +166,24 @@ sub destruct
   }
 
   $this->run_hook('plugin.finalize', undef);
+}
+
+# -----------------------------------------------------------------------------
+# $obj->_reload_check().
+#
+sub _reload_check
+{
+  my $this = shift;
+  if( !$this->{old_config} )
+  {
+    return 1;
+  }
+  if( $this->{old_config}->equals($this->config) )
+  {
+    $DEBUG and RunLoop->shared->notify_msg(__PACKAGE__."#_reload_config, not changed.");
+    return undef;
+  }
+  return 1;
 }
 
 # -----------------------------------------------------------------------------
