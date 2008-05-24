@@ -324,16 +324,33 @@ Auto::FetchTitle { ... } での設定.<br />
           <span class="description">Mixiにログインして見出し抽出出来るようにするFetchTitleプラグイン.</span></div>
         <div class="content">
 	  <p class="comment">
-Auto::FetchTitle { ... } での設定.<br />
-+ Auto::FetchTitle {<br />
+&nbsp;Auto::FetchTitle { ... } での設定.<br />
+<br />
+&nbsp;+ Auto::FetchTitle {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;mask: #* &amp;mixi http://*<br />
 &nbsp;&nbsp;&nbsp;&nbsp;plugins {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mixi {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mixi-user: xxx<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mixi-pass: yyy<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
-&nbsp;&nbsp;&nbsp;}<br />
-&nbsp;}<br />
-mixi-pass には {B}bbbb でBASE64エンコード値も可能.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;conf-mixi {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;filter-mixi {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;url: http://mixi.jp/*<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;url: http://news.mixi.jp/*<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type: mixi<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;timeout: 10<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#閲覧可能なコミュニティの指定.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#mixi-community: 0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;アカウント情報は plugins Mixi に記述.<br />
+&nbsp;mixi-pass には {B}bbbb でBASE64エンコード値も可能.<br />
+<br />
+&nbsp;newsだけしか使わない場合でも, ログイン処理が必要なので<br />
+&nbsp;mixi.jp/* 側も必要になります.<br />
 </p>
 
         </div>
@@ -365,6 +382,7 @@ mixi-pass には {B}bbbb でBASE64エンコード値も可能.<br />
 <p class="comment">
 im.kayac.com に送るメッセージのフォーマットを指定します。<br />
 デフォルト値: [tiarra][#(channel):#(nick.now)] #(text)<br />
+#(channel) のかわりに #(raw_channel) を利用するとネットワーク名がつきません。<br />
 </p>
 <div class="element"><span class="key">format</span>:<span class="value">[tiarra][#(channel):#(nick.now)] #(text)</span></div>
 <p class="comment">
