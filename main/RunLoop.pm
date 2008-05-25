@@ -752,7 +752,7 @@ sub run {
 	    LocalPort => $tiarra_port,
 	    Proto => 'tcp',
 	    Reuse => 1,
-	    Listen => 0);
+	    Listen => 5);
 	my $ip_version = $conf_general->tiarra_ip_version || 'v4';
 	my $tiarra_server_socket = do {
 	    if ($ip_version eq 'v4') {

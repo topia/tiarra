@@ -181,6 +181,17 @@ module/Skelton.pm にモジュールのスケルトンがありますので、
 				接続時に Join しているチャンネルごとに呼ばれる。
 				チャンネル情報とともに recent log を送ったりする場合に使える。
 
+
+* macro
+
+  string := *( text | macro | '#' )
+  macro := '#(' expand ( '|' expand )* ')'
+  expand := ( variable-name )? ( ';' ( text-without-paren | paren-pair )* )?
+  variable-name := text-without-paren | paren-pair
+  paren-pair := '(' ( text-without-paren | paren-pair )* ')'
+  text-without-paren := /[^()]+/
+  text := /[^#]+/
+
 Local variables:
 mode: text
 End:
