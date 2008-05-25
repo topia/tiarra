@@ -23,11 +23,17 @@ use Unicode::Japanese;
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
 
+our $VERSION = '0.02';
+
 our $DEBUG = 0;
 
 our $DEFAULT_MAX_LINES = 100;
 our $DEFAULT_NAME      = '???';
 our $DEFAULT_SHOW_LINES = 20;
+
+# 開発メモ.
+# 認証毎で既読情報を保持(とりあえず共通で保持まで実装).
+# sharedモードの時はセッション内でのみ保持.
 
 1;
 
@@ -57,8 +63,10 @@ sub new
   );
 
   # トップ何行かのキャッシュ.
-  $this->{bbs_val} = undef;
-  $this->{cache} = undef;
+  $this->{bbs_val}   = undef;
+  $this->{cache}     = undef;
+  $this->{max_lines} = undef;
+  $this->{sess}      = undef;
   $this->_load_cache();
 
   my $config = $this->config;
@@ -103,7 +111,7 @@ sub destruct
   $this->{logger} = undef;
 
   $this->{bbs_val}{unloaded_at} = time;
-  $this->_debug(__PACKAGE__."->destruct(), done.");
+  $DEBUG and $this->_debug(__PACKAGE__."->destruct(), done.");
 }
 
 # -----------------------------------------------------------------------------
@@ -124,12 +132,15 @@ sub _load_cache
       inited_at   => time,
       unloaded_at => 0,
       cache       => {},
+      session     => {},
     };
     BulletinBoard->shared->set($BBS_KEY, $BBS_VAL);
   }
+  $BBS_VAL->{session} ||= {};
 
   $this->{bbs_val} = $BBS_VAL;
   $this->{cache}   = $BBS_VAL->{cache};
+  $this->{session} = $BBS_VAL->{session};
 
   $runloop->notify_msg(__PACKAGE__."#_load_cache, bbs[$BBS_KEY].inited_at ".localtime($BBS_VAL->{inited_at}));
   $runloop->notify_msg(__PACKAGE__."#_load_cache, bbs[$BBS_KEY].unloaded_at ".($BBS_VAL->{unloaded_at}?localtime($BBS_VAL->{unloaded_at}):'-'));
@@ -145,8 +156,21 @@ sub _load_cache
     {
       my $channame = $channel->name;
       $this->{cache}{$netname}{$channame} ||= $this->_new_cache_entry($netname, $channame);
+      my $cache = $this->{cache}{$netname}{$channame};
+
+      # old version does not have these entries.
+      $this->{cache}{$netname}{$channame}{netname}  ||= $netname;
+      $this->{cache}{$netname}{$channame}{ch_short} ||= $channame;
     }
   }
+
+  my $limit = $this->config->max_lines || 0;
+  $limit =~ s/^0+//;
+  if( !$limit || $limit !~ /^[1-9]\d*\z/ )
+  {
+    $limit = $DEFAULT_MAX_LINES;
+  }
+  $this->{max_lines}{''} = $limit;
 }
 
 
@@ -157,6 +181,8 @@ sub _new_cache_entry
   my $ch_short = shift;
   +{
     recent => [],
+    netname  => $netname,
+    ch_short => $ch_short,
   };
 }
 
@@ -335,12 +361,7 @@ sub _log_writer
   $info->{lineno} = $prev && $prev->{ymd} eq $info->{ymd} ? $prev->{lineno} + 1 : 1;
 
   push(@$recent, $info);
-  my $limit = $this->config->max_lines || 0;
-  $limit =~ s/^0+//;
-  if( !$limit || $limit !~ /^[1-9]\d*\z/ )
-  {
-    $limit = $DEFAULT_MAX_LINES;
-  }
+  my $limit = $this->{max_lines}{''};
   @$recent > $limit and @$recent = @$recent[-$limit..-1];
 }
 
@@ -413,10 +434,10 @@ sub _on_request
     client    => $cli,
     peer      => $peer,
     conflist  => $conflist,
-    need_auth => 1,
     ua_type   => undef,
     cgi_hash  => undef, # generated on demand.
-    req_param => undef, # generated on demand.
+    req_param => undef, # config params, generated on demand.
+    session   => undef,
   };
   if( my $ua = $req->{Header}{'User-Agent'} )
   {
@@ -434,7 +455,7 @@ sub _on_request
 
   if( $req->{Method} !~ /^(GET|POST|HEAD)\z/ )
   {
-    $this->_debug("$peer: method not allowed: $req->{Method}");
+    $DEBUG and $this->_debug("$peer: method not allowed: $req->{Method}");
     # 405 Method Not Allowed
     $this->_response($req, 405);
     return;
@@ -442,37 +463,24 @@ sub _on_request
 
   if( !@$conflist )
   {
-    $this->_debug("$peer: Forbidden by no conf");
+    $DEBUG and $this->_debug("$peer: Forbidden by no conf");
     # 403 Forbidden.
     $this->_response($req, 403);
     return;
   }
 
-  my ($user, $pass);
-  if( my $line = $req->{Header}{Authorization} )
+  my $accepted = $this->auth($conflist, $req);
+  if( @$accepted )
   {
-    my ($type, $val) = split(' ', $line, 2);
-    if( $type eq 'Basic' )
-    {
-      require MIME::Base64;
-      my $dec = MIME::Base64::decode($val);
-      ($user,$pass) = split(/:/, $dec, 2);
-    }
-  }
-  my $need_auth = 1;
-  if( !$user )
-  {
-    @$conflist = grep{ !$_->{auth} } @$conflist;
+    $DEBUG and $this->_debug("$peer: has auth");
+    @$conflist = @$accepted;
   }else
   {
-    @$conflist = grep{ 
-      my $auth = $_->{auth};
-      my ($auth_user,$auth_pass) = split(' ', $auth);
-      $auth_pass = _decode_value($auth_pass);
-      $auth_user eq $user && $auth_pass eq $pass;
-    } @$conflist;
+    $DEBUG and $this->_debug("$peer: no auth");
+    @$conflist = grep{ !$_->{auth} } @$conflist;
+    $DEBUG and $this->_debug("$peer: has guest entry ".(@$conflist?"yes":"no"));
   }
-  $need_auth = @$conflist==0;
+  my $need_auth = @$conflist == 0;
 
   if( $req->{Path} =~ /\?auth(?:=|[&;]|$)/ )
   {
@@ -480,7 +488,7 @@ sub _on_request
   }
   if( $need_auth )
   {
-    $this->_debug("$peer: response: Authenticate Required");
+    $DEBUG and $this->_debug("$peer: response: Authenticate Required");
     my $realm = 'Authenticate Required';
     # 401 Unauthorized
     my $res = {
@@ -493,10 +501,135 @@ sub _on_request
     return;
   }
 
+  my $sid = '*';
+  $req->{session} = $this->_get_session($sid);
+
   $this->_debug("$peer: accept.");
   $this->_dispatch($req);
 }
 
+sub _get_session
+{
+  my $this = shift;
+  my $sid  = shift;
+
+  my $sess = ($this->{session}{$sid} ||= {});
+  my $now  = time;
+  $sess->{_created_at} ||= $now;
+  $sess->{_updated_at} =   $now;
+  $sess;
+}
+
+sub auth
+{
+  my $this     = shift;
+  my $conflist = shift;
+  my $req      = shift;
+  my @accepts;
+
+  our $AUTH ||= {
+    ':basic'    => \&_auth_basic,
+    ':softbank' => \&_auth_softbank,
+    ':au'       => \&_auth_au,
+  };
+  foreach my $conf (@$conflist)
+  {
+    my $authlist = $conf->{auth} or next;
+    foreach my $auth (@$authlist)
+    {
+      $auth or next;
+      my @param = split(' ', $auth) or next;
+      $param[0] =~ /^:/ or unshift(@param, ':basic');
+      my $sub = $AUTH->{$param[0]};
+      if( !$sub )
+      {
+        next;
+      }
+      my $ok = $this->$sub(\@param, $req);
+      if( $ok )
+      {
+        push(@accepts, $conf);
+      }elsif( defined($ok) )
+      {
+        return undef;
+      }
+    }
+  }
+  \@accepts;
+}
+
+sub _auth_basic
+{
+  my $this  = shift;
+  my $param = shift;
+  my $req   = shift;
+
+  my $line = $req->{Header}{Authorization};
+  $line or return;
+
+  my ($type, $val) = split(' ', $line, 2);
+  $type eq 'Basic' or return;
+
+  require MIME::Base64;
+  my $dec = MIME::Base64::decode($val);
+  my ($user,$pass) = split(/:/, $dec, 2);
+
+  if( !_verify_value($param->[1], $user) )
+  {
+    return;
+  }
+  if( !_verify_value($param->[2], $pass) )
+  {
+    return;
+  }
+  1;
+}
+
+sub _auth_softbank
+{
+  my $this  = shift;
+  my $param = shift;
+  my $req   = shift;
+
+  #TODO: carrier ip-addresses range.
+
+  my $uid = $req->{Header}{'X-JPHONE-UID'};
+  my $sn = do{
+    my ($ua1) = split(' ', $req->{Header}{'User-Agent'} || '');
+    my @ua = split('/', $ua1 || '');
+    my $carrier = uc($ua[0] || '');
+    my $sn = $carrier eq 'J-PHONE'  ? $ua[3] 
+           : $carrier eq 'VODAFONE' ? $ua[4]
+           : $carrier eq 'SOFTBANK' ? $ua[4]
+           : undef;
+    $sn;
+  };
+  if( _verify_value($param->[1], $uid) )
+  {
+    return 1;
+  }
+  if( _verify_value($param->[1], $sn) )
+  {
+    return 1;
+  }
+  return;
+}
+
+sub _auth_au
+{
+  my $this  = shift;
+  my $param = shift;
+  my $req   = shift;
+
+  #TODO: carrier ip-addresses range.
+  # http://www.au.kddi.com/ezfactory/tec/spec/ezsava_ip.html
+  my $subno = $req->{Header}{'X-UP-SUBNO'};
+  if( !_verify_value($param->[1], $subno) )
+  {
+    return;
+  }
+  return 1;
+}
 
 sub _dispatch
 {
@@ -536,10 +669,11 @@ sub _dispatch
 
     $ch_short =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
     my $ch_short_orig = $ch_short;
-    $ch_short = $this->_detect_channel($ch_short, $netname);
+    my $netname_orig  = $netname;
+    ($ch_short, $netname) = $this->_detect_channel($ch_short, $netname);
     if( !$ch_short )
     {
-      RunLoop->shared_loop->notify_msg(__PACKAGE__."#_dispatch($path), not in cache ($netname/$ch_short_orig)");
+      RunLoop->shared_loop->notify_msg(__PACKAGE__."#_dispatch($path), not in cache ($netname_orig/$ch_short_orig)");
       $this->_response($req, 404);
       return;
     }
@@ -580,7 +714,7 @@ sub _dispatch
   }
 }
 
-# $this->_detect_channel($ch_short, $netname).
+# ($ch_short, $netname) = $this->_detect_channel($ch_short, $netname).
 sub _detect_channel
 {
   my $this = shift;
@@ -590,7 +724,22 @@ sub _detect_channel
   if( $ch_short =~ s/^=// )
   {
     # priv or special channels.
-    return $ch_short;
+    if( $this->{cache}{$netname}{$ch_short} )
+    {
+      return wantarray ? ($ch_short, $netname) : $ch_short;
+    }
+    foreach my $extract_line ( $this->config->extract_network('all') )
+    {
+      my ($extract, $sep) = split(' ', $extract_line);
+      $sep ||= '@';
+      my $ch_long = $this->_attach($ch_short, $netname, $sep);
+      if( $this->{cache}{$extract}{$ch_long} )
+      {
+        return wantarray ? ($ch_long, $extract) : $ch_short;
+      }
+    }
+    # not found.
+    return undef;
   }
 
   if( $ch_short =~ s/^!// )
@@ -599,7 +748,7 @@ sub _detect_channel
     {
       $key =~ /^![0-9A-Z]{5}/ or next;
       substr($key, 6) eq $ch_short or next;
-      return $key;
+      return wantarray ? ($key, $netname) : $key;
     }
     # try decode from sjis.
     my $ch2 = Unicode::Japanese->new($ch_short,'sjis')->utf8;
@@ -607,8 +756,26 @@ sub _detect_channel
     {
       $key =~ /^![0-9A-Z]{5}/ or next;
       substr($key, 6) eq $ch2 or next;
-      return $key;
+      return wantarray ? ($key, $netname) : $key;
     }
+
+    foreach my $extract_line ( $this->config->extract_network('all') )
+    {
+      my ($extract, $sep) = split(' ', $extract_line);
+      $sep ||= '@';
+      my $ch_long  = $this->_attach($ch_short, $netname, $sep);
+      my $ch_long2 = $this->_attach($ch2,      $netname, $sep);
+      foreach my $key (keys %{$this->{cache}{$extract}})
+      {
+        $key =~ /^![0-9A-Z]{5}/ or next;
+        my $subkey = substr($key, 6);
+        if( $subkey eq $ch_long || $subkey eq $ch_long2 )
+        {
+          return wantarray ? ($key, $extract) : $key;
+        }
+      }
+    }
+
     # not found.
     return undef;
   }
@@ -618,14 +785,25 @@ sub _detect_channel
   if( $this->{cache}{$netname}{$ch_short} )
   {
     # found.
-    return $ch_short;
+    return wantarray ? ($ch_short, $netname) : $ch_short;
+  }
+
+  foreach my $extract_line ( $this->config->extract_network('all') )
+  {
+    my ($extract, $sep) = split(' ', $extract_line);
+    $sep ||= '@';
+    my $ch_long = $this->_attach($ch_short, $netname, $sep);
+    if( $this->{cache}{$extract}{$ch_long} )
+    {
+      return wantarray ? ($ch_long, $extract) : $ch_short;
+    }
   }
 
   # try decode from sjis.
   my $ch2 = Unicode::Japanese->new($ch_short,'sjis')->utf8;
   if( $this->{cache}{$netname}{$ch2} )
   {
-    return $ch2;
+    return wantarray ? ($ch2, $netname) : $ch2;
   }
 
   # not found.
@@ -720,7 +898,7 @@ sub _find_conf
       name  => $name,
       block => $block,
       masks => [$block->mask('all')], # 公開するチャンネルの一覧.
-      auth  => $block->auth,
+      auth  => [$block->auth('all')],
     };
     push(@conflist, $allow);
   }
@@ -729,29 +907,48 @@ sub _find_conf
 }
 
 # -----------------------------------------------------------------------------
-# $val = _decode_value($val).
-# "{B}xxx" とかのデコード.
+# $match = _verify_value($enc, $plain).
+# パスワードの比較検証.
+# "{MD5}xxx" (MD5)
+# "{B}xxx"   (BASE64)
+# "{RAW}xxx" (生パスワード)
+# "xxx"      (生パスワード)
 #
-sub _decode_value
+sub _verify_value
 {
-  my $val = shift;
-  if( $val && $val =~ s/^\{(.*?)\}// )
+  my $enc   = shift;
+  my $plain = shift;
+  if( !defined($enc) || !defined($plain) )
   {
-    my $type = $1;
-    if( $type =~ /^(B|B64|BASE64)\z/ )
-    {
-      eval { require MIME::Base64; };
-      if( $@ )
-      {
-        die "no MIME::Base64";
-      }
-      $val = MIME::Base64::decode($val);
-    }else
-    {
-      die "unsupported packed value, type=$type";
-    }
+    return undef;
   }
-  $val;
+  my $type = $enc =~ s/^\{(.*?)\}// ? $1 : 'RAW';
+
+  if( $type =~ /^(B|B64|BASE64)\z/ )
+  {
+    eval { require MIME::Base64; };
+    if( $@ )
+    {
+      die "no MIME::Base64";
+    }
+    my $cmp = MIME::Base64::encode($plain, '');
+    return $enc eq $cmp;
+  }elsif( $type =~ /^(MD5)\z/ )
+  {
+    eval { require Digest::MD5; };
+    if( $@ )
+    {
+      die "no Digest::MD5";
+    }
+    my $cmp = Digest::MD5::md5_hex($plain);
+    return $enc eq $cmp;
+  }elsif( $type =~ /^(RAW)\z/ )
+  {
+    return $enc eq $plain;
+  }else
+  {
+    die "unsupported packed value, type=$type";
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -771,7 +968,7 @@ sub _can_show
   foreach my $allow (@$conflist)
   {
     my $ok = Mask::match_deep($allow->{masks}, $ch_full);
-    $this->_debug("- $netname / $ch_short = ".($ok?"ok":"ng")." ".join(", ",@{$allow->{masks}}));
+    $DEBUG and $this->_debug("- can_show: $netname / $ch_short = ".($ok?"ok":"ng")." mask: ".join(", ",@{$allow->{masks}}));
     if( $ok )
     {
       return $ok;
@@ -791,6 +988,14 @@ sub _gen_list
   my $peerhost = $req->{peerhost};
   my $conflist = $req->{conflist};
 
+  my $show_all;
+  if( my $show = $this->_get_cgi_hash($req)->{show} )
+  {
+    $show_all = $show eq 'all';
+  }
+
+  # 表示できるネットワーク＆チャンネルを抽出.
+  #
   my %channels;
   foreach my $netname (keys %{$this->{cache}})
   {
@@ -799,23 +1004,94 @@ sub _gen_list
       my $ok = $this->_can_show($req, $ch_short, $netname);
       if( $ok )
       {
-        push(@{$channels{$netname}}, $ch_short);
+        my $cache  = $this->{cache}{$netname}{$ch_short};
+        my $pack = {
+          disp_netname  => $netname,
+          disp_ch_short => $ch_short,
+          anchor        => undef,
+          unseen        => undef,
+          unseen_plus   => undef,
+        };
+
+        my $recent = $cache->{recent} || [];
+        my $seen = $req->{session}{seen}{$netname}{$ch_short} || 0;
+        my $nr_unseen = 0;
+        foreach my $r (reverse @$recent)
+        {
+          $r == $seen and last;
+          ++$nr_unseen;
+        }
+
+        $pack->{unseen} = $nr_unseen;
+        if( $nr_unseen == $this->{max_lines}{''} && $recent->[0] != $seen )
+        {
+          $pack->{unseen_plus} = 1;
+        }
+
+        if( $seen )
+        {
+          $pack->{anchor} = "L.$seen->{ymd}.$seen->{lineno}";
+        }
+
+        if( $nr_unseen > 0 || $show_all )
+        {
+          push(@{$channels{$netname}}, $pack);
+        }
       }
     }
   }
+  # 別のTiarraさんのネットワークを解凍(設定があったとき).
+  my %new_channels;
+  foreach my $extract_line ( $this->config->extract_network('all') )
+  {
+    my ($extract, $sep) = split(' ', $extract_line);
+    $sep ||= '@';
+    my $list = delete $channels{$extract} or next;
+    foreach my $pack (@$list)
+    {
+      my $ch_long = $pack->{disp_ch_short};
+      my ($ch_short, $netname, $is_explicit) = $this->_detach($ch_long, $sep);
+      if( !$is_explicit )
+      {
+        # wrong separator?
+        next;
+      }
+      if( $channels{$netname} && !$new_channels{$netname} )
+      {
+        # no merge.
+        next;
+      }
+      $pack->{disp_netname}  = $netname;
+      $pack->{disp_ch_short} = $ch_short;
+      push(@{$new_channels{$netname}}, $pack);
+    }
+  }
+  %channels = (%channels, %new_channels);
 
+  # ネットワーク＆チャンネルの一覧をHTML化.
+  #
+  my $is_pc = $req->{ua_type} eq 'pc';
   my $content = "";
-  $content .= "<ul>\n";
+  $content .= $is_pc ? "<ul>\n" : "<div>\n";
   if( keys %channels )
   {
     foreach my $netname (sort keys %channels)
     {
-      $content .= "<li> $netname\n";
-      $content .= "  <ul>\n";
-      my @channels = @{$channels{$netname}};
-      @channels = sort @channels;
-      foreach my $channame (@channels)
+      if( $is_pc )
       {
+        $content .= "<li> $netname\n";
+        $content .= "  <ul>\n";
+      }else
+      {
+        $content .= "[$netname]<br />\n";
+      }
+      my @channels = @{$channels{$netname}};
+      @channels = sort {$a->{disp_ch_short} cmp $b->{disp_ch_short}} @channels;
+      my $seqno = 0;
+      foreach my $pack (@channels)
+      {
+        my $channame = $pack->{disp_ch_short};
+        ++$seqno;
         my $link_ch = $channame;
         if( $link_ch =~ s/^#// )
         {
@@ -830,27 +1106,50 @@ sub _gen_list
           $link_ch = "=$link_ch";
         }
         my $link = "log\0$netname\0$link_ch\0";
-        $link =~ s{/}{%2F}g;
+        $link =~ s{/}{%252F}g;
         $link =~ tr{\0}{/};
         $link = $this->_escapeHTML($link);
 
+        my $unseen;
+        if( !$pack->{unseen} )
+        {
+          $unseen = '';
+        }else
+        {
+          my $nr_unseen = $pack->{unseen};
+          my $plus      = $pack->{unseen_plus} ? '+' : '';
+          $unseen = " ($nr_unseen$plus)";
+        }
+
         my $channame_label = $this->_escapeHTML($channame);
         $channame_label =~ s/^![0-9A-Z]{5}/!/;
-        $content .= qq{<li><a href="$link">$channame_label</a></li>\n};
+        my $ref = $pack->{anchor} ? "?r=$pack->{anchor}" : '';
+        if( $is_pc )
+        {
+          $content .= qq{    <li><a href="$link$ref">$channame_label</a>$unseen</li>\n};
+        }else
+        {
+          $content .= qq{$seqno. <a href="$link$ref">$channame_label</a>$unseen<br />\n};
+        }
       }
-      $content .= "  </ul>\n";
-      $content .= "</li>\n";
+      if( $is_pc )
+      {
+        $content .= "  </ul>\n";
+        $content .= "</li>\n";
+      }
     }
   }else
   {
-    $content = "<li>no channels</li>\n";
+    $content = $is_pc ? "<li>no channels</li>\n" : "no channels\n";
   }
-  $content .= "</ul>\n";
+  $content .= $is_pc ? "</ul>\n" : "<div\n>";
 
   my $tmpl = $this->_gen_list_html();
   $this->_expand($tmpl, {
     CONTENT => $content,
     UA_TYPE => $req->{ua_type},
+    SHOW_TOGGLE_LABEL => $show_all ? 'MiniList' : 'ShowAll',
+    SHOW_TOGGLE_VALUE => $show_all ? 'updated' : 'all',
   });
 }
 sub _gen_list_html
@@ -881,7 +1180,8 @@ ENTER: <input type="text" name="enter" value="" />
 
 <p>
 [
-<a href="./" accesskey="0">再表示</a>[0]
+<a href="./" accesskey="0">再表示</a>[0] |
+<a href="./?show=<&SHOW_TOGGLE_VALUE>" accesskey="#"><&SHOW_TOGGLE_LABEL></a>[#]
 ]
 </p>
 
@@ -909,7 +1209,7 @@ sub _post_list
     if( $network )
     {
       $this->{cache}{$netname}{$ch_short} ||= $this->_new_cache_entry($netname, $ch_short);
-      $this->_debug("enter: $netname/$ch_short");
+      $DEBUG and $this->_debug("enter: $netname/$ch_short");
       my $link_ch = $ch_short;
       $link_ch =~ s/^#// or $link_ch = "=$link_ch";
       my $link = "log\0$netname\0$link_ch\0";
@@ -971,29 +1271,18 @@ sub _gen_log
     if( my $chan = $net->channel($ch_short) )
     {
       my $topic = $chan->topic || '(no-topic)';
-      my $names = $chan->names || {};
-      $names = [ values %$names ];
-      @$names = map{
-        my $pic = $_; # $pic :: PersonInChannel.
-        my $nick  = $pic->person->nick;
-        my $sigil = $pic->priv_symbol;
-        "$sigil$nick";
-      } @$names;
-      @$names = sort @$names;
       my $topic_esc = $this->_escapeHTML($topic);
-      my $names_esc = $this->_escapeHTML(join(' ', @$names));
       $content .= "<p>\n";
       $content .= "<span class=\"chan-topic\">TOPIC: $topic_esc</span><br />\n";
-      #$content .= "<span class=\"chan-names\">member: $names_esc</span><br />\n";
       $content .= "</p>\n";
     }
-  }else
-  {
   }
 
   my $cache  = $this->{cache}{$netname}{$ch_short};
   my $recent = $cache->{recent};
   my $cgi    = $this->_get_cgi_hash($req);
+
+  $req->{session}{seen}{$netname}{$ch_short} = @$recent && $recent->[-1];
 
   # 表示位置の探索.
   my $show_lines = $DEFAULT_SHOW_LINES;
@@ -1059,7 +1348,7 @@ sub _gen_log
   if( @$recent )
   {
     my $sort_order = $this->_get_req_param($req, 'sort-order');
-    $this->_debug("sort_order = $sort_order");
+    $DEBUG and $this->_debug("sort_order = $sort_order");
     if( $sort_order ne 'asc' )
     {
       @$recent = reverse @$recent;
@@ -1200,7 +1489,7 @@ sub _get_req_param
   if( $key eq 'mode' )
   {
     $val ||= 'owner';
-    if( $val !~ /^(owner|shared)\z/ )
+    if( $val !~ /^(?:owner|shared)\z/ )
     {
       $val = 'owner';
     }
@@ -1208,7 +1497,7 @@ sub _get_req_param
   if( $key eq 'sort-order' )
   {
     $val ||= 'asc';
-    $val = $val =~ /^(desc|rev)/ ? 'desc' : 'asc';
+    $val = $val =~ /^(?:desc|rev)/ ? 'desc' : 'asc';
   }
 
   $req->{req_param}{$key} = $val;
@@ -1518,6 +1807,74 @@ sub _escapeHTML
   Tools::HTTPParser->escapeHTML(@_);
 }
 
+# ($ch_short, $net_name, $explicit) = $this->_detach($ch_long, $sep);
+# $ch_short = $this->_detach($ch_long, $sep);
+sub _detach {
+    my $this = shift;
+    my $str  = shift;
+    my $sep  = shift;
+
+    if (!defined $str) {
+	die "Arg[0] was undef.\n";
+    }
+    elsif (ref($str) ne '') {
+	die "Arg[0] was ref.\n";
+    }
+
+    my @result;
+    if ((my $sep_index = index($str,$sep)) != -1) {
+	my $before_sep = substr($str,0,$sep_index);
+	my $after_sep = substr($str,$sep_index+length($sep));
+	if ((my $colon_pos = index($after_sep,':')) != -1) {
+	    # #さいたま@taiyou:*.jp  →  #さいたま:*.jp + taiyou
+	    @result = ($before_sep.substr($after_sep,$colon_pos),
+		       substr($after_sep,0,$colon_pos),
+		       1);
+	}
+	else {
+	    # #さいたま@taiyou  →  #さいたま + taiyou
+	    @result = ($before_sep,$after_sep,1);
+	}
+    }
+    else {
+	@result = ($str,$this->_runloop->default_network,undef);
+    }
+    return wantarray ? @result : $result[0];
+}
+
+sub _attach {
+    # $strはChannelInfoのオブジェクトでも良い。
+    # $network_nameは省略可能。IrcIO::Serverのオブジェクトでも良い。
+    my $this = shift;
+    my $str  = shift;
+    my $network_name = shift;
+    my $separator    = shift;
+
+    if (ref($str) eq 'ChannelInfo') {
+	$str = $str->name;
+    }
+    if (ref($network_name) eq 'IrcIO::Server') {
+	$network_name = $network_name->network_name;
+    }
+
+    if (!defined $str) {
+	die "Arg[0] was undef.\n";
+    }
+    elsif (ref($str) ne '') {
+	die "Arg[0] was ref.\n";
+    }
+
+    $network_name = $this->_runloop->default_network if $network_name eq '';
+    if ((my $pos_colon = index($str,':')) != -1) {
+	# #さいたま:*.jp  →  #さいたま@taiyou:*.jp
+	$str =~ s/:/$separator.$network_name.':'/e;
+    }
+    else {
+	# #さいたま  →  #さいたま@taiyou
+	$str .= $separator.$network_name;
+    }
+    $str;
+}
 # -----------------------------------------------------------------------------
 # End of Module.
 # -----------------------------------------------------------------------------
@@ -1558,6 +1915,7 @@ css:  /style/irc-style.css
 
 # ReverseProxy 利用時の追加設定.
 # 接続元が全部プロキシサーバになっちゃうのでその対応.
+# ReverseProxy 使わず直接公開の場合は不要.
 -extract-forwarded-for: 127.0.0.1
 
 # 利用する接続設定の一覧.
@@ -1578,7 +1936,14 @@ allow-private {
   # 接続元IPアドレスの制限.
   host: 127.0.0.1
   # 認証設定.
-  auth: user pass
+  # auth: <user> <pass>
+  # auth: :basic <user> <pass>
+  # auth: :softbank <端末ID>
+  # auth: :softbank <UID>
+  # auth: :au <SUBNO>
+  # <pass> には {MD5}xxxx や {B}xxx を利用可能.
+  # そのままべた書きも出来るけれど.
+  auth: :basic user pass
   # 公開するチャンネルの指定.
   mask: #*@*
   mask: *@*
@@ -1606,6 +1971,16 @@ allow-public {
 # 発言BOXで名前指定しなかったときのデフォルトの名前.
 # mode: shared の時に使われる.
 -name-default: (noname)
+
+# 外部にTiarraさんを使っているときに, そこのネットワークを切り出して表示する.
+# exteact-network: <netname> <remote-sep>
+# <netname> ::= このTiarraさんから見たときの外部Tiarraさんのネットワーク名.
+#               (このtiarra.confで指定しているネットワーク名)
+# <remote-sep> ::= 外部Tiarraさんで使っているセパレータ.
+#                  (こっちはこのtiarra.confのではないです)
+#                  省略すると @ と仮定.
+-exteact-network: tiarra
+-exteact-network: tiarra @
 
 =end tiarra-doc
 
