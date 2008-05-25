@@ -347,12 +347,6 @@ sub _makeconf {
 	die "It doesn't have `info' header.\n";
     }
 
-    # requiredヘッダがあれば内容を出力。
-    my $required = $pod->header->{required};
-    if (defined $required) {
-	$result .=  "$indent# required: $required\n";
-    }
-
     # ルール:
     # '#'で始まる行はそのまま出力。
     # 空行もそのまま出力。

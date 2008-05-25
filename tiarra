@@ -235,8 +235,7 @@ sub main {
 	eval {
 	    RunLoop->shared_loop->run;
 	}; if ($@) {
-	    print STDERR "Tiarra aborted: $@\n";
-	    return 98;
+	    die "Tiarra aborted: $@\n";
 	} else {
 	    print "Tiarra successfully finished.\n";
 	}
@@ -285,12 +284,12 @@ sub main {
 	my $child_pid = fork;
 	if ($child_pid == 0) {
 	    # 子プロセス
-	    return $boot->();
+	    $boot->();
 	} elsif (!defined $child_pid) {
 	    print "Tiarra: fork() failed.\n";
 	}
     } else {
-	return $boot->();
+	$boot->();
     }
     return 0;
 }

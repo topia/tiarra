@@ -113,64 +113,63 @@ sub _mail_send_reserve {
 
   return Tools::MailSend->shared->
     mail_send(
-	use_pop3 => $this->{use_pop3},
-	pop3_host => $this->config->pop3host,
-	pop3_port => $this->config->pop3port,
-	pop3_user => $this->config->pop3user,
-	pop3_pass => $this->config->pop3pass,
-	pop3_expire => $this->config->pop3_expire,
-	smtp_host => $this->config->smtphost,
-	smtp_port => $this->config->smtpport,
-	smtp_user => $this->config->smtpuser,
-	smtp_pass => $this->config->smtppass,
-	smtp_fqdn => $this->config->smtp_fqdn,
-	sender => 'Auto::MesMail::' . $msg->prefix(),
-	priority => 0,
-	env_from => $this->{from_addr},
-	env_to => [Tools::MailSend::parse_mailaddrs(
-	    @{Auto::AliasDB::get_array($to, 'mail')})],
-	from => ($this->config->from_header ||
-		     $this->config->from || $this->{from_addr}),
-	to => Auto::AliasDB::get_value($to, 'mail'),
-	subject => $subject,
-	data_type => Tools::MailSend::DATA_TYPES->{inner_iter},
-	data => \&_data,
-	reply_ok => \&_reply_ok,
-	reply_error => \&_reply_error,
-	reply_fatal => \&_reply_fatal,
-	local => {
-	    this => $this,
-	    alias => $alias,
-	    from =>
-		Auto::AliasDB::concat_string_to_key(
-		    Auto::AliasDB->shared->
-			    find_alias_with_stdreplace($msg->nick,
-						       $msg->name,
-						       $msg->host,
-						       $msg->prefix,
-						       1 # public
-						      ), 'from.'),
-	    to =>
-		Auto::AliasDB->shared->
-			remove_private(
-			    Auto::AliasDB::concat_string_to_key($to, 'to.'),
-			    'to.'),
-	    reply_anywhere => $reply_anywhere,
-	    time => $time,
-	    replacer => sub {
-		my ($str, %extra_replaces) = @_;
+	      use_pop3 => $this->{use_pop3},
+	      pop3_host => $this->config->pop3host,
+	      pop3_port => $this->config->pop3port,
+	      pop3_user => $this->config->pop3user,
+	      pop3_pass => $this->config->pop3pass,
+	      pop3_expire => $this->config->pop3_expire,
+	      smtp_host => $this->config->smtphost,
+	      smtp_port => $this->config->smtpport,
+	      smtp_user => $this->config->smtpuser,
+	      smtp_pass => $this->config->smtppass,
+	      smtp_fqdn => $this->config->smtp_fqdn,
+	      sender => 'Auto::MesMail::' . $msg->prefix(),
+	      priority => 0,
+	      env_from => $this->{from_addr},
+	      env_to => [Tools::MailSend::parse_mailaddrs(@{Auto::AliasDB::get_array($to, 'mail')})],
+	      from => $this->config->from_header || $this->config->from || $this->{from_addr},
+	      to => Auto::AliasDB::get_value($to, 'mail'),
+	      subject => $subject,
+	      data_type => Tools::MailSend::DATA_TYPES->{inner_iter},
+	      data => \&_data,
+	      reply_ok => \&_reply_ok,
+	      reply_error => \&_reply_error,
+	      reply_fatal => \&_reply_fatal,
+	      local => 
+	      {
+	       this => $this,
+	       alias => $alias,
+	       from => 
+	       Auto::AliasDB::concat_string_to_key(
+				      Auto::AliasDB->shared->
+				        find_alias_with_stdreplace($msg->nick, 
+								   $msg->name, 
+								   $msg->host,
+								   $msg->prefix,
+								   1 # public
+								  ), 'from.'),
+	       to => 
+	       Auto::AliasDB->shared->
+	         remove_private(
+				Auto::AliasDB::concat_string_to_key($to, 'to.'),
+				'to.'),
+	       reply_anywhere => $reply_anywhere,
+	       time => $time,
+	       replacer => sub {
+		 my ($str, %extra_replaces) = @_;
 
-		Auto::AliasDB->shared->
-			stdreplace(
-			    $msg->prefix || $sender->fullname,
-			    $str,
-			    $msg,
-			    $sender,
-			    %extra_replaces,
-			    'channel' => $get_ch_name->());
-	    },
-	},
-       );
+		 Auto::AliasDB->shared->
+		     stdreplace(
+				$msg->prefix || $sender->fullname,
+				$str,
+				$msg,
+				$sender,
+				%extra_replaces,
+				'channel' => $get_ch_name->());
+	       },
+	      },
+	     );
 }
 
 sub _data {
