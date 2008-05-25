@@ -47,3 +47,17 @@ Tools::GroupDB
 
 %Y-%m-%d とか.
 Tools::DateConvert.
+
+EBNF
+----
+大体こんな感じ:
+
+ string := *( text | macro | '#' )
+ macro := '#(' expand ( '|' expand )* ')'
+ expand := ( variable-name )? ( ';' ( macro | format-specifier | text-without-paren | paren-pair )* )?
+ variable-name := text-without-paren | paren-pair
+ paren-pair := '(' ( text-without-paren | paren-pair )* ')'
+ format-specifier := '%' char-without-paren
+ text-without-paren := ( char-without-paren )+
+ text := /[^#]+/
+ char-without-paren := /[^()]/
