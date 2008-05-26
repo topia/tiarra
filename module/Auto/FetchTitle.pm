@@ -195,7 +195,7 @@ sub _reload_config
 
   $this->_runloop->notify_msg(__PACKAGE__.", reload config.");
   $this->{debug} = $this->config->debug;
-  if( $this->{debug} && $this->{debug} =~ /^(off|no|false)/i )
+  if( $this->{debug} && $this->{debug} =~ /^(?:off|no|false)/i )
   {
     $this->{debug} = undef;
   }
@@ -465,9 +465,9 @@ sub _dispatch
     }
     $DEBUG and $this->_debug($full_ch_name, "debug: check $_url");
     my $url = $_url;
-    $url =~ s{^ttp(s?)://}{http$1://};
+    $url =~ s{^(?=ttps?://)}{h};
     $url =~ m{^https?://} or next;
-    $url =~ s{^https?://[-\w.\x80-\xff]+\z}{$url/};
+    $url =~ s{^https?://[-\w.\x80-\xff]+\z}{$&/};
     $DEBUG && $url ne $_url and $this->_debug($full_ch_name, "debug: fixed url is $url");
 
     # 処理対象か確認.
@@ -677,7 +677,7 @@ sub _add_request
   my $queue = ($this->{request_queue}{$full_ch_name} ||= []);
   push(@$queue, $req);
 
-  
+
   # drop orphan requests if exists.
   $this->_close_request($full_ch_name);
 
@@ -704,7 +704,7 @@ sub _decode_value
   if( $val && $val =~ s/^\{(.*?)\}// )
   {
     my $type = $1;
-    if( $type =~ /^(B|B64|BASE64)\z/ )
+    if( $type =~ /^B(?:(?:ASE)?64)?\z/ )
     {
       eval { require MIME::Base64; };
       if( $@ )
@@ -1298,7 +1298,7 @@ sub _is_allowed_local
       }
     }
   }
-  
+
   return undef;
 }
 
@@ -1943,7 +1943,7 @@ sub _parse_cookies
         $tm[5] += 1900, $tm[4] += 1;
         sprintf('%04d-%02d-%02d %02d:%02d:%02d', reverse @tm[0..5]);
       };
-      $attrs{_is_expired} = $cmp lt $now_cmp; 
+      $attrs{_is_expired} = $cmp lt $now_cmp;
     }
     push(@parsed_cookies, \%attrs);
     #$DEBUG and print "new cookie: ".Dumper(\%attrs);
@@ -2291,9 +2291,9 @@ reply-suffix: " [AR]"
 #debug-dumpfile: fetchtitle.log
 
 # NOTE:
-#  利用するにはcodereposから
+#  利用するにはCodeReposから
 #  module/Tools/HTTPClient.pm     rev.8220
-#  main/Tiarra/Socket/Buffered.pm rev.8219 
+#  main/Tiarra/Socket/Buffered.pm rev.8219
 #  以降が必要です.
 
 =end tiarra-doc
@@ -2311,7 +2311,7 @@ Version 0.02
  + Auto::FetchTitle {
    reply-prefix: "(FetchTitle) "
    reply-suffix: " [AR]"
- 
+
    mask: * http://*
  }
 
