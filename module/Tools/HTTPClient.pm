@@ -148,7 +148,7 @@ sub start {
 	$this->{header}{Host} = $host;
     }
 
-    #googleさん関係でいまいち動かない？
+    #Googleさん関係でいまいち動かない？
     #if (!$this->{header}{Connection}) {
     #  # HTTP/1.1 だと Keep-Alive がデフォルトだけど,
     #  # ひとまず気にしない….
@@ -256,7 +256,7 @@ sub _resolve_locally
     alarm(0);
   };
   $@ && !$timedout and die;
-    
+
   return $addr;
 }
 
@@ -342,7 +342,7 @@ sub _resolved
     #$DEBUG and print "<<sendbuf>>\n".$this->{socket}->sendbuf."<</sendbuf>>\n";;
     $this->{socket}->eol( pack("C*", map{rand(256)}1..32) );
 
-    #googleさん関係でいまいち動かない？
+    #Googleさん関係でいまいち動かない？
     #$this->{shutdown_wr_after_writing} = !$this->{header}{Connection} || $this->{header}{Connection} =~ /close/i || $this->{header}{Connection} !~ /Keep-Alive/i;
     #if( $this->{host} =~ /google|gmail/ )
     #{
@@ -361,7 +361,7 @@ sub _resolved
 # $obj->_main().
 # (private)
 #
-sub _main 
+sub _main
 {
   my $this = shift;
 
@@ -421,7 +421,7 @@ sub _main
     if( $this->{parser}->isa('Tools::HTTPParser') )
     {
       my $st = $this->{parser}->object->{StreamState};
-      $success = $st =~ /^(body|parsed)\z/ && $this->{parser}{rest} eq '';
+      $success = $st =~ /^(?:body|parsed)\z/ && $this->{parser}{rest} eq '';
     }else
     {
       $this->{parser}->object->content( $this->{parser}->data );
@@ -455,7 +455,7 @@ sub _end {
     my ($this, $err) = @_;
 
     $this->stop;
-    
+
     if ($err) {
       $this->{callback}->($err);
     }
@@ -535,7 +535,7 @@ Tools::HTTPClient - HTTP Client
 HTTP Client for tiarra.
 
 ブロックしないように処理は非推奨なので,
-ブロックしないように調整されている HTTP 
+ブロックしないように調整されている HTTP
 クライアントモジュール.
 
 =head1 METHODS
@@ -586,7 +586,7 @@ C<\&callback> は, HTTPが正常に完了すればHASH-refを,
     my $content     = $response->{Content};
   }
 
-C<\&progress_callback> も同様, 
+C<\&progress_callback> も同様,
 ただしこちらはエラーの報告には呼ばれない.
 
 =head2 stop
