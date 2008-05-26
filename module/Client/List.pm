@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------
 # $Id$
 # -----------------------------------------------------------------------------
-# System::ClientList
+# Client::List
 # -----------------------------------------------------------------------------
-package System::ClientList;
+package Client::List;
 use strict;
 use warnings;
 use base qw(Module);
@@ -115,7 +115,7 @@ sub _reply_client_list
 
 =begin tiarra-doc
 
-info:    Clientsの一覧を取得.
+info:    Clientの一覧を取得.
 default: off
 #section: important
 

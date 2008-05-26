@@ -125,6 +125,30 @@ hex eval を実行するコマンド名。省略されるとコマンドを追�
       <hr class="sep" />
       
       
+      <div id="module-Client::List" class="module">
+        <div class="module-header"><h2 title="Clientの一覧を取得.">Client::List</h2>
+          <span class="description">Clientの一覧を取得.</span></div>
+        <div class="content">
+	  <p class="comment">
+接続しているクライアントを一覧.<br />
+/clientlist を投げると, その時に接続しているクライアントの一覧を返す.<br />
+出力例:<br />
+clientlist<br />
+&nbsp;&nbsp;*** 1 client<br />
+&nbsp;&nbsp;*** [1] 127.0.0.1:23695<br />
+</p>
+<p class="comment">
+一覧を返すトリガーとするコマンド.<br />
+</p>
+<div class="element"><span class="key">command</span>:<span class="value">clientlist</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
       <div id="module-Client::PatchworkMessage" class="module">
         <div class="module-header"><h2 title="IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する">Client::PatchworkMessage</h2>
           <span class="description">IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する</span></div>
@@ -247,6 +271,8 @@ names rehash に使うコマンドを指定します。<br />
         <li><a href="#module-Client::Eval" title="クライアントから Perl 式を実行できるようにする。">Client::Eval</a></li>
         
         <li><a href="#module-Client::GetVersion" title="クライアントに CTCP Version を発行してバージョン情報を得る">Client::GetVersion</a></li>
+        
+        <li><a href="#module-Client::List" title="Clientの一覧を取得.">Client::List</a></li>
         
         <li><a href="#module-Client::PatchworkMessage" title="IRC メッセージにちょっと変更を加えて、クライアントのバグを抑制する">Client::PatchworkMessage</a></li>
         
