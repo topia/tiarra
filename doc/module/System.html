@@ -18,6 +18,30 @@
 
     <div class="pane-main">
       
+      <div id="module-System::ClientList" class="module">
+        <div class="module-header"><h2 title="Clientsの一覧を取得.">System::ClientList</h2>
+          <span class="description">Clientsの一覧を取得.</span></div>
+        <div class="content">
+	  <p class="comment">
+接続しているクライアントを一覧.<br />
+/clientlist を投げると, その時に接続しているクライアントの一覧を返す.<br />
+出力例:<br />
+clientlist<br />
+&nbsp;&nbsp;*** 1 client<br />
+&nbsp;&nbsp;*** [1] 127.0.0.1:23695<br />
+</p>
+<p class="comment">
+一覧を返すトリガーとするコマンド.<br />
+</p>
+<div class="element"><span class="key">command</span>:<span class="value">clientlist</span></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
       <div id="module-System::Error" class="module">
         <div class="module-header"><h2 title="サーバーからのERRORメッセージをNOTICEに埋め込む">System::Error</h2>
           <span class="description">サーバーからのERRORメッセージをNOTICEに埋め込む</span></div>
@@ -385,6 +409,8 @@ exteact-network: &lt;netname&gt; &lt;remote-sep&gt;<br />
 
     <div class="pane-sidebar">
       <ul class="menu">
+        
+        <li><a href="#module-System::ClientList" title="Clientsの一覧を取得.">System::ClientList</a></li>
         
         <li><a href="#module-System::Error" title="サーバーからのERRORメッセージをNOTICEに埋め込む">System::Error</a></li>
         
