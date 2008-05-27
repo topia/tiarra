@@ -576,10 +576,12 @@ sub _auth_basic
 
   if( !_verify_value($param->[1], $user) )
   {
+    $DEBUG and ::printmsg("$req->{peer}: $param->[0] user $param->[1] does not match with '$user' (user)");
     return;
   }
   if( !_verify_value($param->[2], $pass) )
   {
+    $DEBUG and ::printmsg("$req->{peer}: $param->[0] pass $param->[2] does not match with '$pass' (pass)");
     return;
   }
   1;
@@ -612,6 +614,7 @@ sub _auth_softbank
   {
     return 1;
   }
+  $DEBUG and ::printmsg("$req->{peer}: $param->[0] pass $param->[1] does not match with '$uid' (uid), '$sn' (sn)");
   return;
 }
 
@@ -626,6 +629,7 @@ sub _auth_au
   my $subno = $req->{Header}{'X-UP-SUBNO'};
   if( !_verify_value($param->[1], $subno) )
   {
+    $DEBUG and ::printmsg("$req->{peer}: $param->[0] pass $param->[1] does not match with '$subno' (subno)");
     return;
   }
   return 1;
