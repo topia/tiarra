@@ -763,11 +763,11 @@ IRCで応答の追加削除等を行いたいときにはそれに更に設定�
 </p>
 <p class="comment">
 機能:<br />
-- 通常応答<br />
-- 登録数確認(count-query)<br />
-- 反応確認(request)<br />
-- 反応追加(add)<br />
-- 反応削除(remove)<br />
+- 通常応答(mask)<br />
+- 登録数確認(count-query/mask)<br />
+- 反応確認(request/modifier)<br />
+- 反応追加(add/modifier)<br />
+- 反応削除(remove/modifier)<br />
 通常応答以外は設定を省略することで機能を無効にできます。<br />
 </p>
 <p class="comment">
@@ -810,28 +810,10 @@ plum: mask: *!*@*<br />
 </p>
 <div class="element"><span class="key">rate</span>:<span class="value">100</span></div>
 <p class="comment">
-反応の確認を行うためのキーワードを指定します。<br />
-実際の指定方法は、「&lt;requestで指定したキーワード&gt; &lt;チェックしたい発言&gt;」です。<br />
-省略するとこの機能は無効になります。<br />
-指定したときだけこの機能が有効になります。<br />
-</p>
-<div class="element"><span class="key">request</span>:<span class="value">反応チェック</span></div>
-<p class="comment">
-request に反応するときのフォーマットを指定します。<br />
-#(key) がキーワード、 #(message) が発言に置換されます。<br />
-request を指定したときのみ必要。<br />
-</p>
-<div class="element"><span class="key">reply-format</span>:<span class="value">「#(key)」という発言に「#(message)」と反応します。</span></div>
-<p class="comment">
-request に反応する最大個数(ブロックの数)を指定します。<br />
-あまり大きな値を指定すると、アタックが可能になったり、ログが流れて邪魔なので注意してください。<br />
-通常の反応には関与しません。また、応答の行数ではありません。<br />
-</p>
-<div class="element"><span class="key">max-reply</span>:<span class="value">5</span></div>
-<p class="comment">
 メッセージの登録数を返答するキーワードを指定します。<br />
 省略するとこの機能は無効になります。<br />
 指定したときだけこの機能が有効になります。<br />
+mask で許可された人(通常応答を返す人)が使えます。<br />
 </p>
 <div class="element"><span class="key">count-query</span>:<span class="value">反応登録数</span></div>
 <p class="comment">
@@ -846,6 +828,7 @@ count-query を指定したときのみ必要。<br />
 実際の追加方法は「&lt;addで指定したキーワード&gt; &lt;追加するメッセージ&gt;」です。<br />
 省略するとこの機能は無効になります。<br />
 指定したときだけこの機能が有効になります。<br />
+modifier で許可された人だけ使えます。<br />
 </p>
 <div class="element"><span class="key">add</span>:<span class="value">反応追加</span></div>
 <p class="comment">
@@ -858,6 +841,7 @@ formatで指定できるものと同じです。#(message)は追加されたメ�
 実際の削除方法は「&lt;removeで指定したキーワード&gt; &lt;削除するキーワード&gt;」です。<br />
 省略するとこの機能は無効になります。<br />
 指定したときだけこの機能が有効になります。<br />
+modifier で許可された人だけ使えます。<br />
 </p>
 <div class="element"><span class="key">remove</span>:<span class="value">反応削除</span></div>
 <p class="comment">
@@ -866,7 +850,30 @@ formatで指定できるものと同じです。#(message)は削除されたメ�
 </p>
 <div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): #(key) #(message;に対する反応 %s|;) を #(count) 件削除しました。</span></div>
 <p class="comment">
-addとremoveを許可する人。省略された場合は「* *!*@*」と見做します。<br />
+反応の確認を行うためのキーワードを指定します。<br />
+通常応答と違って, multivalue-limit の制限を受けずに全てのマッチした応答を返します。<br />
+実際の指定方法は、「&lt;requestで指定したキーワード&gt; &lt;チェックしたい発言&gt;」です。<br />
+省略するとこの機能は無効になります。<br />
+指定したときだけこの機能が有効になります。<br />
+modifier で許可された人だけ使えます。<br />
+</p>
+<div class="element"><span class="key">request</span>:<span class="value">反応チェック</span></div>
+<p class="comment">
+request に反応するときのフォーマットを指定します。<br />
+#(key) がキーワード、 #(message) が発言に置換されます。<br />
+request を指定したときのみ必要。<br />
+</p>
+<div class="element"><span class="key">reply-format</span>:<span class="value">「#(key)」という発言に「#(message)」と反応します。</span></div>
+<p class="comment">
+request に反応する最大個数(反応マスクの数)を指定します。<br />
+(１つの反応マスクに対応するメッセージの数は制限されません。)<br />
+あまり大きな値を指定すると、アタックが可能になったり、ログが流れて邪魔なので注意してください。<br />
+通常の反応には関与しません。また、応答の行数ではありません。<br />
+</p>
+<div class="element"><span class="key">max-reply</span>:<span class="value">5</span></div>
+<p class="comment">
+編集系コマンド, add とremove と request を許可する人。<br />
+省略された場合は「* *!*@*」(全員許可)と見做します。<br />
 </p>
 <div class="element"><span class="key">modifier</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
