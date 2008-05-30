@@ -279,7 +279,7 @@ debug-dumpfile: fetchtitle.log<br />
 </p>
 <p class="comment">
 NOTE:<br />
-&nbsp;利用するにはcodereposから<br />
+&nbsp;利用するにはCodeReposから<br />
 &nbsp;module/Tools/HTTPClient.pm     rev.8220<br />
 &nbsp;main/Tiarra/Socket/Buffered.pm rev.8219<br />
 &nbsp;以降が必要です.<br />
@@ -748,72 +748,123 @@ Auto::Aliasを有効にしていれば、エイリアス置換を行ないます
 </p>
 <p class="comment">
 使用するブロックの定義。<br />
+省略すると std を使用.<br />
+複数個の blocks の指定も可能.<br />
 </p>
 <div class="element"><span class="key">blocks</span>:<span class="value">std</span></div>
 <div class="block element"><span class="block key">std</span>
 <div class="block content">
 <p class="comment">
+1つの応答ブロックの定義.<br />
+一応全ての項目が省略可能ではあるけれど,<br />
+通常は最低限 file と file-encoding を使用する.<br />
+IRCで応答の追加削除等を行いたいときにはそれに更に設定を追加する形.<br />
+(IRC上で応答の追加削除は行うが保存はしない時に限ってfileを省略可能.)<br />
+</p>
+<p class="comment">
+機能:<br />
+- 通常応答<br />
+- 登録数確認(count-query)<br />
+- 反応確認(request)<br />
+- 反応追加(add)<br />
+- 反応削除(remove)<br />
+通常応答以外は設定を省略することで機能を無効にできます。<br />
+</p>
+<p class="comment">
 データファイルと文字コードを指定します。<br />
-ファイルの中では一行に一つの&quot;反応:メッセージ&quot;を書いて下さい。<br />
+ファイルの中では一行に一つの&quot;反応マスク:メッセージ&quot;を書いて下さい。<br />
 </p>
 <div class="element"><span class="key">file</span>:<span class="value">reply.txt</span></div>
 <div class="element"><span class="key">file-encoding</span>:<span class="value">euc</span></div>
 <p class="comment">
-反応チェックを行うキーワードを指定します。<br />
-実際の指定方法は、「&lt;requestで指定したキーワード&gt; &lt;チェックしたい発言&gt;」です。<br />
+１つの発言で複数の反応マスクにマッチする場合,<br />
+どれにマッチするかは未定義です.<br />
+ただ, どちらか1つにのみマッチします.<br />
 </p>
-<div class="element"><span class="key">request</span>:<span class="value">反応チェック</span></div>
 <p class="comment">
-request に反応するときのフォーマットを指定します。<br />
-#(key) がキーワード、 #(message) が発言に置換されます。<br />
+同じ反応マスクに複数個のメッセージが記述してあった場合の処理.<br />
+multivalue: random #==&gt; ランダムに1つ選択.<br />
+multivalue: all    #==&gt; 全て返す.<br />
+multivalue: seq    #==&gt; 順番に1つずつ返す.<br />
+省略時及び認識できなかったときは random.<br />
 </p>
-<div class="element"><span class="key">reply-format</span>:<span class="value">「#(key)」という発言に「#(message)」と反応します。</span></div>
+<div class="element"><span class="key">multivalue</span>:<span class="value">random</span></div>
 <p class="comment">
-request に反応する最大個数を指定します。<br />
-あまり大きな値を指定すると、アタックが可能になったり、ログが流れて邪魔なので注意してください。<br />
+返す最大行数.<br />
+multivalue: all の時のみ有効.<br />
+(それ以外の時は1行しか返さない)<br />
+デフォルトは 5 行まで.<br />
 </p>
-<div class="element"><span class="key">max-reply</span>:<span class="value">5</span></div>
-<p class="comment">
-メッセージの登録数を返答するキーワードを指定します。<br />
-</p>
-<div class="element"><span class="key">count-query</span>:<span class="value">反応登録数</span></div>
-<p class="comment">
-メッセージの登録数を返答するときの反応を指定します。<br />
-formatで指定できるものと同じです。#(count)は登録数になります。<br />
-</p>
-<div class="element"><span class="key">count-format</span>:<span class="value">反応は#(count)件登録されています。</span></div>
+<div class="element"><span class="key">multivalue-limit</span>:<span class="value">5</span></div>
 <p class="comment">
 反応する人のマスク。<br />
+通常応答と登録数の返答時にチェックされる。<br />
 </p>
 <div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
 <p class="comment">
 plum: mask: *!*@*<br />
 </p>
 <p class="comment">
+このブロックが発言に反応する確率を指定します。<br />
+百分率です。省略された場合は100と見做されます。<br />
+</p>
+<div class="element"><span class="key">rate</span>:<span class="value">100</span></div>
+<p class="comment">
+反応の確認を行うためのキーワードを指定します。<br />
+実際の指定方法は、「&lt;requestで指定したキーワード&gt; &lt;チェックしたい発言&gt;」です。<br />
+省略するとこの機能は無効になります。<br />
+指定したときだけこの機能が有効になります。<br />
+</p>
+<div class="element"><span class="key">request</span>:<span class="value">反応チェック</span></div>
+<p class="comment">
+request に反応するときのフォーマットを指定します。<br />
+#(key) がキーワード、 #(message) が発言に置換されます。<br />
+request を指定したときのみ必要。<br />
+</p>
+<div class="element"><span class="key">reply-format</span>:<span class="value">「#(key)」という発言に「#(message)」と反応します。</span></div>
+<p class="comment">
+request に反応する最大個数(ブロックの数)を指定します。<br />
+あまり大きな値を指定すると、アタックが可能になったり、ログが流れて邪魔なので注意してください。<br />
+通常の反応には関与しません。また、応答の行数ではありません。<br />
+</p>
+<div class="element"><span class="key">max-reply</span>:<span class="value">5</span></div>
+<p class="comment">
+メッセージの登録数を返答するキーワードを指定します。<br />
+省略するとこの機能は無効になります。<br />
+指定したときだけこの機能が有効になります。<br />
+</p>
+<div class="element"><span class="key">count-query</span>:<span class="value">反応登録数</span></div>
+<p class="comment">
+メッセージの登録数を返答するときの反応を指定します。<br />
+formatで指定できるものと同じです。#(count)は登録数になります。<br />
+count-query を指定したときのみ必要。<br />
+</p>
+<div class="element"><span class="key">count-format</span>:<span class="value">反応は#(count)件登録されています。</span></div>
+<p class="comment">
+メッセージを追加するキーワードを指定します。<br />
+ここで指定したキーワードを発言すると、新しいメッセージを追加します。<br />
+実際の追加方法は「&lt;addで指定したキーワード&gt; &lt;追加するメッセージ&gt;」です。<br />
+省略するとこの機能は無効になります。<br />
+指定したときだけこの機能が有効になります。<br />
+</p>
+<div class="element"><span class="key">add</span>:<span class="value">反応追加</span></div>
+<p class="comment">
 反応が追加されたときの反応を指定します。<br />
 formatで指定できるものと同じです。#(message)は追加されたメッセージになります。<br />
 </p>
 <div class="element"><span class="key">added-format</span>:<span class="value">#(name|nick.now): #(key) に対する反応 #(message) を追加しました。</span></div>
 <p class="comment">
+メッセージを削除するキーワードを指定します。<br />
+実際の削除方法は「&lt;removeで指定したキーワード&gt; &lt;削除するキーワード&gt;」です。<br />
+省略するとこの機能は無効になります。<br />
+指定したときだけこの機能が有効になります。<br />
+</p>
+<div class="element"><span class="key">remove</span>:<span class="value">反応削除</span></div>
+<p class="comment">
 メッセージが削除されたときの反応を指定します。<br />
 formatで指定できるものと同じです。#(message)は削除されたメッセージになります。<br />
 </p>
 <div class="element"><span class="key">removed-format</span>:<span class="value">#(name|nick.now): #(key) #(message;に対する反応 %s|;) を #(count) 件削除しました。</span></div>
-<p class="comment">
-発言に反応する確率を指定します。百分率です。省略された場合は100と見做されます。<br />
-</p>
-<div class="element"><span class="key">rate</span>:<span class="value">100</span></div>
-<p class="comment">
-メッセージを追加するキーワードを指定します。<br />
-ここで指定したキーワードを発言すると、新しいメッセージを追加します。<br />
-実際の追加方法は「&lt;addで指定したキーワード&gt; &lt;追加するメッセージ&gt;」です。<br />
-</p>
-<div class="element"><span class="key">add</span>:<span class="value">反応追加</span></div>
-<p class="comment">
-メッセージを削除するキーワードを指定します。<br />
-実際の削除方法は「&lt;removeで指定したキーワード&gt; &lt;削除するキーワード&gt;」です。<br />
-</p>
-<div class="element"><span class="key">remove</span>:<span class="value">反応削除</span></div>
 <p class="comment">
 addとremoveを許可する人。省略された場合は「* *!*@*」と見做します。<br />
 </p>
