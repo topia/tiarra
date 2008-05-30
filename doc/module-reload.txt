@@ -48,6 +48,30 @@ $info->{stash} = 自由に使うえりあ.
 案3
 ---
 
+BBSを用いる.
+main いじらなくていいのでお手軽.
+
+とりあえず Tools::Rreload をつくってみた.
+動作確認してないからうごくかはわかんない.
+
+ my $my_key = __PACKAGE__;
+
+ # At destruct().
+ Tools::Reload->store($my_key, $value);
+
+ # At new().
+ my $value = Tools::Reload->fetch($my_key);
+ if( !$value )
+ {
+   # new loading.
+ }else
+ {
+   # reloading.
+ }
+
+案4
+---
+
 思いついたらふやす.
 
 
@@ -58,3 +82,4 @@ $info->{stash} = 自由に使うえりあ.
 モジュールに紐づけるオプションなりなんなり.
 ModuleManager が $module->destruct() よんだあともまだ残ってたら捨てるとか.
 
+[EOF]
