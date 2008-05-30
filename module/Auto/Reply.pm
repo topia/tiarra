@@ -13,39 +13,82 @@ use Auto::AliasDB::CallbackUtils;
 use Tools::HashDB;
 use Mask;
 
+our $DEFAULT_BLOCK_NAME = 'std';
+our $DEFAULT_MUILTILINE_LIMIT = 10;
+
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
     $this->{config} = [];
 
-    $this->_load;
+    eval{
+      $this->_load;
+    };
+    if( $@ )
+    {
+      $this->_error("$@");
+    }
     return $this;
+}
+
+sub _error
+{
+  my $this = shift;
+  my $msg  = shift;
+
+  $this->_runloop->notify_error(__PACKAGE__." -- ".$msg);
 }
 
 sub _load {
     my $this = shift;
 
     my $BLOCKS_NAME = 'blocks';
+    my @block_names = $this->config->get($BLOCKS_NAME, 'all');
+    if( !@block_names )
+    {
+      @block_names = $DEFAULT_BLOCK_NAME;
+      if( !$this->config->get($DEFAULT_BLOCK_NAME) )
+      {
+        $this->_("Both blocks: records and std block are not defined");
+        return;
+      }
+    }
 
-    foreach my $blockname ($this->config->get($BLOCKS_NAME, 'all')) {
-	die "$blockname block name is reserved!" if $blockname eq $BLOCKS_NAME;
+    foreach my $blockname (@block_names) {
+	if( $blockname eq $BLOCKS_NAME )
+	{
+	  $this->_error("block name $blockname is reserved!");
+	  next;
+	}
 	my $block = $this->config->get($blockname);
-	die "$blockname isn't block!" unless UNIVERSAL::isa($block, 'Configuration::Block');
+	if( !$block )
+	{
+	  $this->_error("block $blockname is not defined");
+	  next;
+	}
+	if( !UNIVERSAL::isa($block, 'Configuration::Block') )
+	{
+	  $this->_error("$blockname isn't block!");
+	  next;
+	}
 	push(@{$this->{config}}, {
-	    mask => [Mask::array_or_all_chan($block->mask('all'))],
-	    request => [$block->request('all')],
-	    reply_format => [$block->reply_format('all')],
-	    max_reply => $block->max_reply,
-	    rate => $block->rate,
-	    count_query => [$block->count_query('all')],
-	    count_format => [$block->count_format('all')],
-	    add => [$block->get('add', 'all')],
-	    added_format => [$block->added_format('all')],
-	    remove => [$block->remove('all')],
+	    mask           => [Mask::array_or_all_chan($block->mask('all'))],
+	    request        => [$block->request('all')],
+	    reply_format   => [$block->reply_format('all')],
+	    max_reply      => $block->max_reply,
+	    rate           => $block->rate,
+	    count_query    => [$block->count_query('all')],
+	    count_format   => [$block->count_format('all')],
+	    add            => [$block->get('add', 'all')],
+	    added_format   => [$block->added_format('all')],
+	    remove         => [$block->remove('all')],
 	    removed_format => [$block->removed_format('all')],
-	    modifier => [$block->modifier('all')],
-	    use_re => $block->use_re,
-	    database => Tools::HashDB->new(
+	    modifier       => [$block->modifier('all')],
+	    use_re         => $block->use_re,
+	    multivalue     => $block->multivalue,
+	    multivalue_limit => $block->multivalue_limit,
+	    multivalue_seq   => 0, # updated internally.
+	    database       => Tools::HashDB->new(
 		$block->file,
 		$block->file_encoding,
 		$block->use_re,
@@ -132,7 +175,31 @@ sub message_arrived {
 	    if (Mask::match_deep_chan($block->{mask}, $msg->prefix, $get_full_ch_name->())) {
 		my $key = (_search($block, $msg->param(1), 1, $block->{rate}))[0];
 		if (defined $key) {
-		    $reply_anywhere->($block->{database}->get_value_random($key));
+		  my $multivalue = $block->{multivalue} || 'random';
+		  if( $multivalue eq 'all' )
+		  {
+		    my $limit = $block->{multivalue_limit} || $DEFAULT_MUILTILINE_LIMIT;
+		    my $values = $block->{database}->get_array($key);
+		    if( @$values > $limit )
+		    {
+		      $values = [ @$values[0..$limit-1] ];
+		    }
+		    $reply_anywhere->($values);
+		  }elsif( $multivalue eq 'seq' || $multivalue eq 'sequence' )
+		  {
+		    my $values = $block->{database}->get_array($key);
+		    my $seq = $block->{multivalue_seq} || 0;
+		    if( $seq < 0 || $seq >= @$values )
+		    {
+		      $seq = 0;
+		    }
+		    $reply_anywhere->($values->[$seq]);
+		    $block->{multivalue_seq} = ($seq + 1) % @$values;
+		  }else
+		  {
+		    my $value = $block->{database}->get_value_random($key);
+		    $reply_anywhere->($value);
+		  }
 		}
 	    }
 	}
@@ -176,56 +243,102 @@ default: off
 # Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。
 
 # 使用するブロックの定義。
+# 省略すると std を使用.
+# 複数個の blocks の指定も可能.
 blocks: std
 
 std {
+  # 1つの応答ブロックの定義.
+  # 一応全ての項目が省略可能ではあるけれど,
+  # 通常は最低限 file と file-encoding を使用する.
+  # IRCで応答の追加削除等を行いたいときにはそれに更に設定を追加する形.
+  # (IRC上で応答の追加削除は行うが保存はしない時に限ってfileを省略可能.)
+
+  # 機能:
+  # - 通常応答
+  # - 登録数確認(count-query)
+  # - 反応確認(request)
+  # - 反応追加(add)
+  # - 反応削除(remove)
+  # 通常応答以外は設定を省略することで機能を無効にできます。
+
   # データファイルと文字コードを指定します。
-  # ファイルの中では一行に一つの"反応:メッセージ"を書いて下さい。
+  # ファイルの中では一行に一つの"反応マスク:メッセージ"を書いて下さい。
   file: reply.txt
   file-encoding: euc
 
-  # 反応チェックを行うキーワードを指定します。
+  # １つの発言で複数の反応マスクにマッチする場合, 
+  # どれにマッチするかは未定義です.
+  # ただ, どちらか1つにのみマッチします.
+
+  # 同じ反応マスクに複数個のメッセージが記述してあった場合の処理.
+  # multivalue: random #==> ランダムに1つ選択.
+  # multivalue: all    #==> 全て返す.
+  # multivalue: seq    #==> 順番に1つずつ返す.
+  # 省略時及び認識できなかったときは random.
+  -multivalue: random
+  # 返す最大行数.
+  # multivalue: all の時のみ有効.
+  # (それ以外の時は1行しか返さない)
+  # デフォルトは 5 行まで.
+  -multivalue-limit: 5
+
+  # 反応する人のマスク。
+  # 通常応答と登録数の返答時にチェックされる。
+  mask: * *!*@*
+  # plum: mask: *!*@*
+
+  # このブロックが発言に反応する確率を指定します。
+  # 百分率です。省略された場合は100と見做されます。
+  rate: 100
+
+
+  # 反応の確認を行うためのキーワードを指定します。
   # 実際の指定方法は、「<requestで指定したキーワード> <チェックしたい発言>」です。
+  # 省略するとこの機能は無効になります。
+  # 指定したときだけこの機能が有効になります。
   request: 反応チェック
 
   # request に反応するときのフォーマットを指定します。
   # #(key) がキーワード、 #(message) が発言に置換されます。
+  # request を指定したときのみ必要。
   reply-format: 「#(key)」という発言に「#(message)」と反応します。
 
-  # request に反応する最大個数を指定します。
+  # request に反応する最大個数(ブロックの数)を指定します。
   # あまり大きな値を指定すると、アタックが可能になったり、ログが流れて邪魔なので注意してください。
+  # 通常の反応には関与しません。また、応答の行数ではありません。
   max-reply: 5
 
   # メッセージの登録数を返答するキーワードを指定します。
+  # 省略するとこの機能は無効になります。
+  # 指定したときだけこの機能が有効になります。
   count-query: 反応登録数
 
   # メッセージの登録数を返答するときの反応を指定します。
   # formatで指定できるものと同じです。#(count)は登録数になります。
+  # count-query を指定したときのみ必要。
   count-format: 反応は#(count)件登録されています。
 
-  # 反応する人のマスク。
-  mask: * *!*@*
-  # plum: mask: *!*@*
+  # メッセージを追加するキーワードを指定します。
+  # ここで指定したキーワードを発言すると、新しいメッセージを追加します。
+  # 実際の追加方法は「<addで指定したキーワード> <追加するメッセージ>」です。
+  # 省略するとこの機能は無効になります。
+  # 指定したときだけこの機能が有効になります。
+  -add: 反応追加
 
   # 反応が追加されたときの反応を指定します。
   # formatで指定できるものと同じです。#(message)は追加されたメッセージになります。
   added-format: #(name|nick.now): #(key) に対する反応 #(message) を追加しました。
 
+  # メッセージを削除するキーワードを指定します。
+  # 実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。
+  # 省略するとこの機能は無効になります。
+  # 指定したときだけこの機能が有効になります。
+  -remove: 反応削除
+
   # メッセージが削除されたときの反応を指定します。
   # formatで指定できるものと同じです。#(message)は削除されたメッセージになります。
   removed-format: #(name|nick.now): #(key) #(message;に対する反応 %s|;) を #(count) 件削除しました。
-
-  # 発言に反応する確率を指定します。百分率です。省略された場合は100と見做されます。
-  rate: 100
-
-  # メッセージを追加するキーワードを指定します。
-  # ここで指定したキーワードを発言すると、新しいメッセージを追加します。
-  # 実際の追加方法は「<addで指定したキーワード> <追加するメッセージ>」です。
-  add: 反応追加
-
-  # メッセージを削除するキーワードを指定します。
-  # 実際の削除方法は「<removeで指定したキーワード> <削除するキーワード>」です。
-  remove: 反応削除
 
   # addとremoveを許可する人。省略された場合は「* *!*@*」と見做します。
   modifier: * *!*@*
