@@ -67,7 +67,7 @@ server-out-encoding: jis
 client-in-encoding: jis
 client-out-encoding: jis
 
-# Tiarraは標準出力に様々なメッセージを出力するが、その文字コードを指定する。省略時にはeucとなる。
+# Tiarraは標準出力に様々なメッセージを出力するが、その文字コードを指定する。省略時にはutf8となる。
 # ただしtiarra.confのパースが完了するまでは文字コードの変換は行なわれない(つまりこの設定が有効にならない)ことに注意して下さい。
 stdout-encoding: utf8
 
