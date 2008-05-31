@@ -65,7 +65,7 @@ our $use_threads;
 our $use_ipv6;
 our $use_threads_state_checking;
 BEGIN {
-    $use_threads = Tiarra::OptionalModules->threads;
+    $use_threads = !$^C && Tiarra::OptionalModules->threads;
     if ($use_threads) {
 	require threads;
 	require threads::shared;
