@@ -23,7 +23,7 @@ use Unicode::Japanese;
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 our $DEBUG = 0;
 
@@ -469,6 +469,7 @@ sub _on_request
     return;
   }
 
+  $DEBUG and $this->_debug("$peer: check auth ...");
   my $accepted = $this->auth($conflist, $req);
   if( @$accepted )
   {
@@ -534,23 +535,30 @@ sub auth
   };
   foreach my $conf (@$conflist)
   {
+    $DEBUG and $this->_debug("$req->{peer}: check auth for $conf->{name}");
     my $authlist = $conf->{auth} or next;
     foreach my $auth (@$authlist)
     {
-      $auth or next;
+      if( !$auth )
+      {
+        $DEBUG and ::printmsg("$req->{peer}: - skip: empty value");
+      }
       my @param = split(' ', $auth) or next;
       $param[0] =~ /^:/ or unshift(@param, ':basic');
       my $sub = $AUTH->{$param[0]};
       if( !$sub )
       {
+        $DEBUG and ::printmsg("$req->{peer}: - skip: unsupported: $param[0]");
         next;
       }
       my $ok = $this->$sub(\@param, $req);
       if( $ok )
       {
+        $DEBUG and $this->_debug("$req->{peer}: - $conf->{name} accepted ($param[0])");
         push(@accepts, $conf);
       }elsif( defined($ok) )
       {
+        $DEBUG and $this->_debug("$req->{peer}: auth denied by $conf->{name}");
         return undef;
       }
     }
@@ -565,10 +573,18 @@ sub _auth_basic
   my $req   = shift;
 
   my $line = $req->{Header}{Authorization};
-  $line or return;
+  if( !$line )
+  {
+    $DEBUG and ::printmsg("$req->{peer}: no Authorization: header");
+    return;
+  }
 
   my ($type, $val) = split(' ', $line, 2);
-  $type eq 'Basic' or return;
+  if( $type ne 'Basic' )
+  {
+    $DEBUG and ::printmsg("$req->{peer}: not Basic Authorization (got $type)");
+    return;
+  }
 
   require MIME::Base64;
   my $dec = MIME::Base64::decode($val);
@@ -586,6 +602,7 @@ sub _auth_basic
     $DEBUG and ::printmsg("$req->{peer}: $param->[0] pass $param->[2] does not match with '$pass' (pass)");
     return;
   }
+  $DEBUG and ::printmsg("$req->{peer}: accept user $param->[0] pass $param->[2] with '$user' '$pass'");
   1;
 }
 
@@ -919,8 +936,10 @@ sub _find_conf
 # $match = _verify_value($enc, $plain).
 # パスワードの比較検証.
 # "{MD5}xxx" (MD5)
+# "{SMD5}xxx" (Salted MD5, hex(md5(pass+salt)+salt)
 # "{B}xxx"   (BASE64)
 # "{RAW}xxx" (生パスワード)
+# "{CRYPT}xxx" (cryptパスワード)
 # "xxx"      (生パスワード)
 #
 sub _verify_value
@@ -950,10 +969,34 @@ sub _verify_value
       die "no Digest::MD5";
     }
     my $cmp = Digest::MD5::md5_hex($plain);
-    return $enc eq $cmp;
+    return $cmp eq lc($enc);
+  }elsif( $type =~ /^(SMD5)\z/ )
+  {
+    eval { require Digest::MD5; };
+    if( $@ )
+    {
+      die "no Digest::MD5";
+    }
+    my $enc_hex  = substr($enc, 0, 32);
+    my $enc_salt = pack("H*",substr($enc, 32));
+    my $cmp = Digest::MD5::md5_hex($plain.$enc_salt);
+    return $cmp eq lc($enc_hex);
   }elsif( $type =~ /^(RAW)\z/ )
   {
     return $enc eq $plain;
+  }elsif( $type =~ /^(CRYPT)\z/ )
+  {
+    my $cmp = crypt($plain,substr($enc,0,2));
+    if( length($plain) > 8 )
+    {
+      my $cmp2 = crypt(substr($plain, 0, 8),substr($enc,0,2));
+      if( $cmp eq $cmp2 )
+      {
+        die "CRYPT supports upto 8 bytes";
+        return;
+      }
+    }
+    return $cmp eq $enc;
   }else
   {
     die "unsupported packed value, type=$type";
@@ -1950,7 +1993,7 @@ allow-private {
   # auth: :softbank <端末ID>
   # auth: :softbank <UID>
   # auth: :au <SUBNO>
-  # <pass> には {MD5}xxxx や {B}xxx を利用可能.
+  # 各値(<pass>等)には {MD5}xxxx や {B}xxx や {CRYPT}xxx を利用可能.
   # そのままべた書きも出来るけれど.
   auth: :basic user pass
   # 公開するチャンネルの指定.
