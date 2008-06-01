@@ -23,7 +23,7 @@ use Unicode::Japanese;
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 our $DEBUG = 0;
 
@@ -34,6 +34,37 @@ our $DEFAULT_SHOW_LINES = 20;
 # 開発メモ.
 # 認証毎で既読情報を保持(とりあえず共通で保持まで実装).
 # sharedモードの時はセッション内でのみ保持.
+
+=begin COMMENT
+
+System::WebClient - ブラウザ上でログを見たり発言したりできるようにする Tiarra モジュール.
+
+ /
+   #==> [POST/_post_list] ENTER.
+   #==> [GET/_gen_list]   /log/*/* を一覧.
+ /log/<network>/<channel>/
+   #==> [POST/_post_log] 発言.
+   #==> [GET/_gen_log]   ログの閲覧.
+   #==> ?r=XXX ==> ここまでは見たからこれの次から表示.
+   #==> ?x=XXX ==> 最新を表示するけれど,ここまではみたから表示しない.
+ /log/<network>/<channel>/info
+   #==> [POST/_post_chan_info] TOPIC/JOIN/PART/DELETE.
+   #==> [GET/_gen_chan_info]   チャンネル情報表示.
+ /style/style.css
+   #==> 空のCSSファイル.
+ <それ以外>
+   #==> 404.
+
+(*) 存在するけれど閲覧許可のないページであっても, 
+    403 (Forbidden) ではなく 404 (Not Found) を返す.
+(*) ENTER: チャンネル情報を作成. この情報はそこにチャンネルがある(あった)ということを
+           保持していて, PART後も残るため過去ログが閲覧できる.
+(*) DELETE: 保持しているチャンネル情報を削除.
+            そのチャンネルの情報がもういらないのなら, 存在していたことを削除できる.
+
+=end COMMENT
+
+=cut
 
 1;
 
@@ -1175,7 +1206,7 @@ sub _gen_list
 
         my $channame_label = $this->_escapeHTML($channame);
         $channame_label =~ s/^![0-9A-Z]{5}/!/;
-        my $ref = $pack->{anchor} ? "?r=$pack->{anchor}" : '';
+        my $ref = $pack->{anchor} ? "?x=$pack->{anchor}" : '';
         if( $is_pc )
         {
           $content .= qq{    <li><a href="$link$ref">$channame_label</a>$unseen</li>\n};
@@ -1372,6 +1403,26 @@ sub _gen_log
   }
   $rindex ||= 0;
   # $rindex も含めてindex系は [0..$#$recent] の範囲の値.
+  if( my $xtoken = $cgi->{x} )
+  {
+    my $re = qr/\Q$xtoken\E\z/;
+    foreach my $i ($rindex..$#$recent )
+    {
+      my $info = $recent->[$i];
+      my $anchor = "L.$info->{ymd}.$info->{lineno}";
+      if( $anchor =~ $re )
+      {
+        if( $i < $#$recent )
+        {
+          $rindex = $i + 1;
+        }else
+        {
+          $rindex = $#$recent;
+        }
+        last;
+      }
+    }
+  }
 
   my $last;
   if( $rindex + $show_lines > @$recent )
@@ -1493,7 +1544,7 @@ sub _gen_log_html
 talk:<input type="text" name="m" size="60" />
   <input type="submit" value="発言/更新" /><br />
 <&NAME_INPUT_RAW>
-<input type="hidden" name="r" size="10" value="<&RTOKEN>" />
+<input type="hidden" name="x" size="10" value="<&RTOKEN>" />
 </p>
 </form>
 
@@ -1501,7 +1552,7 @@ talk:<input type="text" name="m" size="60" />
 
 <p>
 [
-<a href="./?r=<&NEXT_RTOKEN>" accesskey="*">更新</a>[*] |
+<a href="./?x=<&NEXT_RTOKEN>" accesskey="*">更新</a>[*] |
 <a href="<&TOP_PATH>" accesskey="0">List</a>[0] |
 <a href="info" accesskey="#">info</a>[#]
 ]
