@@ -220,6 +220,7 @@ sub _config
       # 9. ニコニコ動画 (メンテ画面).
       status     => 503,
       url        => 'http://www.nicovideo.jp/*',
+      recv_limit => 10*1024,
       extract    => sub{
         if( m{<div class="mb16p4 TXT12">\s*<p>現在ニコニコ動画は(メンテナンス中)です。</p>\s*<p>(.*?)<br />}s )
         {
