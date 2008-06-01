@@ -55,6 +55,10 @@ System::WebClient - ブラウザ上でログを見たり発言したりできる
  <それ以外>
    #==> 404.
 
+session 情報:
+  $req->{session}{seen} -- 未読管理.
+    $req->{session}{seen}{$netname}{$ch_short} = $recent内のオブジェクト.
+
 (*) 存在するけれど閲覧許可のないページであっても, 
     403 (Forbidden) ではなく 404 (Not Found) を返す.
 (*) ENTER: チャンネル情報を作成. この情報はそこにチャンネルがある(あった)ということを
@@ -1365,8 +1369,6 @@ sub _gen_log
   my $recent = $cache->{recent};
   my $cgi    = $this->_get_cgi_hash($req);
 
-  $req->{session}{seen}{$netname}{$ch_short} = @$recent && $recent->[-1];
-
   # 表示位置の探索.
   my $show_lines = $DEFAULT_SHOW_LINES;
   my $rindex;
@@ -1433,15 +1435,35 @@ sub _gen_log
     $last = $rindex + $show_lines - 1;
   }
 
+  # 既読情報の更新.
+  my $last_seen_index;
+  if( my $cur = $req->{session}{seen}{$netname}{$ch_short} )
+  {
+    foreach my $i ($last+1 .. $#$recent)
+    {
+      if( $recent->[$i] == $cur )
+      {
+        $last_seen_index = $i;
+        last;
+      }
+    }
+  }
+  if( !defined($last_seen_index) )
+  {
+    $last_seen_index = $last;
+    my $last_seen = @$recent ? $recent->[$last] : undef;
+    $req->{session}{seen}{$netname}{$ch_short} = $last_seen;
+  }
+
   my $next_index = $last < $#$recent ? $last + 1 : $#$recent;
   my $prev_index = $rindex < $show_lines ? 0 : ($rindex - $show_lines);
-  my ($next_rtoken, $prev_rtoken) = map {
+  my ($next_rtoken, $prev_rtoken, $last_seen_rtoken) = map {
     my $i = $_;
-    my $info = $recent->[$i];
+    my $info = @$recent ? $recent->[$i] : {ymd=>'-00',lineno=>0};
     my $anchor = "L.$info->{ymd}.$info->{lineno}";
     $anchor =~ s/.*-//;
     $anchor;
-  } $next_index, $prev_index;
+  } $next_index, $prev_index, $last_seen_index;
 
   my $nr_cached_lines = @$recent;
   my $lines2 = $nr_cached_lines==1 ? 'line' : 'lines';
@@ -1516,6 +1538,7 @@ sub _gen_log
     RTOKEN  => $next_rtoken,
     NEXT_RTOKEN => $next_rtoken,
     PREV_RTOKEN => $prev_rtoken,
+    LAST_SEEN_RTOKEN => $last_seen_rtoken,
   });
 }
 sub _gen_log_html
@@ -1544,7 +1567,7 @@ sub _gen_log_html
 talk:<input type="text" name="m" size="60" />
   <input type="submit" value="発言/更新" /><br />
 <&NAME_INPUT_RAW>
-<input type="hidden" name="x" size="10" value="<&RTOKEN>" />
+<input type="hidden" name="x" size="10" value="<&LAST_SEEN_RTOKEN>" />
 </p>
 </form>
 
@@ -1552,7 +1575,7 @@ talk:<input type="text" name="m" size="60" />
 
 <p>
 [
-<a href="./?x=<&NEXT_RTOKEN>" accesskey="*">更新</a>[*] |
+<a href="./?x=<&LAST_SEEN_RTOKEN>" accesskey="*">更新</a>[*] |
 <a href="<&TOP_PATH>" accesskey="0">List</a>[0] |
 <a href="info" accesskey="#">info</a>[#]
 ]
