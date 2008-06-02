@@ -555,10 +555,10 @@ sub detach {
     _update_cache() unless $pkg_caller->isa('Multicast');
 
     my @result;
-    if ((my $sep_index = index($str,$separator)) != -1) {
+    if ((my $sep_index = rindex($str,$separator)) != -1) {
 	my $before_sep = substr($str,0,$sep_index);
 	my $after_sep = substr($str,$sep_index+length($separator));
-	if ((my $colon_pos = index($after_sep,':')) != -1) {
+	if ((my $colon_pos = rindex($after_sep,':')) != -1) {
 	    # #さいたま@taiyou:*.jp  →  #さいたま:*.jp + taiyou
 	    @result = ($before_sep.substr($after_sep,$colon_pos),
 		       substr($after_sep,0,$colon_pos),
