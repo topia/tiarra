@@ -26,7 +26,7 @@ our %modules = (
     },
     'unix_dom' => {
 	requires => [qw(IO::Socket::UNIX)],
-	note => 'for control port support'
+	note => 'for control port support',
     },
     'encode' => {
 	requires => [qw(Encode)],
