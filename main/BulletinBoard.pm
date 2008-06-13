@@ -22,7 +22,11 @@ sub _new {
 sub set {
     my ($class_or_this,$key,$value) = @_;
     my $this = $class_or_this->_this;
-    $this->{table}->{$key} = $value;
+    if (defined $value) {
+	$this->{table}->{$key} = $value;
+    } else {
+	delete $this->{table}->{$key};
+    }
     $this;
 }
 
@@ -39,13 +43,13 @@ sub keys {
 sub AUTOLOAD {
     # $board->foo_bar => $board->get('foo-bar')
     # $board->foo_bar('foo') => $board->set('foo-bar','foo');
-    my ($class_or_this,$newvalue) = @_;
+    my $class_or_this = shift;
     my $this = $class_or_this->_this;
     (my $key = $AUTOLOAD) =~ s/.+?:://g;
     $key =~ s/_/-/g;
 
-    if (defined $newvalue) {
-	$this->set($key,$newvalue);
+    if (@_ > 0) {
+	$this->set($key, @_);
     }
     else {
 	$this->get($key);
