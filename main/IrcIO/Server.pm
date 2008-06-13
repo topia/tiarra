@@ -184,8 +184,6 @@ sub reload_config {
 		port => $_,
 	    } } @servers,
 	   ];
-    $this->{server_host} = undef;
-    $this->{server_port} = undef;
     $this->{server_password} = $conf->password;
     $this->{initial_nick} = $this->config_local_or_general('nick'); # ログイン時に設定するnick。
     $this->{user_shortname} = $this->config_local_or_general('user');
@@ -270,6 +268,8 @@ sub connect {
     $this->finalizing(undef);
 
     # 初期化すべきフィールドを初期化
+    $this->{server_host} = undef;
+    $this->{server_port} = undef;
     $this->{nick_retry} = 0;
     $this->{logged_in} = undef;
     $this->state_connecting(1);
