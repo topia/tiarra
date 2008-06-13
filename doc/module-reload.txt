@@ -13,6 +13,7 @@ destruct()/new($config).
 (もしくはどこかサブパッケージとかにおいちゃう)
 けれどunloadだった場合にはそれが破棄されない.
 (BBSはそもそも削除がない)
+ (値に undef を指定したら BBS を消すようにしました)
 
 また, 設定変更とモジュール変更が同時に起こった場合,
 モジュールの再起動はかからずに設定の変更のみで処理される.
@@ -27,6 +28,15 @@ defualt: destruct() & new().
   設定の変更でのみ.
   モジュールの再起動時だと, destruct() は古いモジュール,
   new() は新しいモジュールという処理が行えない.
+
+ステータス:
+  とりあえず実装中.
+  $mod->config_reload($old_config) を呼ぶ.
+  $mod->config は既に新しい config になっている.
+  モジュール再読込と設定の変更が同時の場合は:
+
+    $mod->destruct (古いモジュール/新しい config),
+    mod->new (新しいモジュール/新しい config)
 
 案2
 ---
@@ -78,8 +88,21 @@ main いじらなくていいのでお手軽.
 補足:タイマー関係
 -----------------
 
-自分で保持するのも面倒なので, 
+自分で保持するのも面倒なので,
 モジュールに紐づけるオプションなりなんなり.
 ModuleManager が $module->destruct() よんだあともまだ残ってたら捨てるとか.
+
+とりあえず:
+  ModuleManager の ->add_module_object($module, @objects) を呼んで登録,
+  ->remove_module_object($module, @objects) を呼んで解除.
+  weakref を使ったので, 他のモジュールにくっつけ直すとかでなければ,
+  解除は必須ではないです.
+  で, destruct よんだあともまだ残っていたときは
+  $object->module_destruct($module) という感じでよぶ。
+  $module はインスタンスまたはクラス名で, ハッシュのキーはクラス名だけど,
+  ->module_destruct にくる $module がインスタンスかクラス名かはわかりません.
+  Module に ->_add_object, ->_remove_object を増やして簡単に登録できるようにした.
+  module_destruct を Timer, Hook, ExternalSocket, Tiarra::Socket, それから
+  Tiarra::WrapMainLoop に実装した. あと何かありましたっけ.
 
 [EOF]

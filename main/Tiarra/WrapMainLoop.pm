@@ -139,4 +139,11 @@ sub _uninstall {
     $this;
 }
 
+sub module_destruct {
+    my ($this, $module) = @_;
+
+    $this->_closure(undef);
+    $this->lazy_uninstall;
+}
+
 1;

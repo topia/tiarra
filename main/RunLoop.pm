@@ -147,7 +147,8 @@ sub networks {
 
 utils->define_attr_getter(1, qw(default_network clients),
 			  [qw(multi_server_mode_p multi_server_mode)],
-			  [qw(_mod_manager mod_manager)]);
+			  [qw(mod_manager mod_manager)],
+			  [qw(config conf)]);
 
 # クライアントから見た、現在のnick。
 # このnickは実際に使われているnickとは異なっている場合がある。
@@ -1114,7 +1115,7 @@ sub run {
 	$this->unregister_receive_socket($this->{tiarra_server_socket}); # 受信セレクタから登録解除
     }
     undef $this->{control_port};
-    $this->_mod_manager->terminate;
+    $this->mod_manager->terminate;
 }
 
 sub terminate {
@@ -1164,7 +1165,7 @@ sub broadcast_to_servers {
 sub notify_modules {
     my ($class_or_this,$method,@args) = @_;
     my $this = $class_or_this->_this;
-    foreach my $mod (@{$this->_mod_manager->get_modules}) {
+    foreach my $mod (@{$this->mod_manager->get_modules}) {
 	eval {
 	    $mod->$method(@args);
 	}; if ($@) {
@@ -1181,7 +1182,7 @@ sub apply_filters {
 
     my $source = $src_messages;
     my $filtered = [];
-    foreach my $mod (@{$this->_mod_manager->get_modules}) {
+    foreach my $mod (@{$this->mod_manager->get_modules}) {
 	# (普通ないはずだが) $mod が undef だったらこのモジュールをとばす。
 	next unless defined $mod;
 	# sourceが空だったらここで終わり。
@@ -1198,13 +1199,13 @@ sub apply_filters {
 		my $modname = ref($mod);
 		my $error = $@;
 		# ブラックリストに入れておく
-		$this->_mod_manager->add_to_blacklist($modname);
+		$this->mod_manager->add_to_blacklist($modname);
 		$this->notify_error(
 		    "Exception in ".$modname.".\n".
 			"This module added to blacklist!\n".
 			    "The message was '".$src->serialize."'.\n".
 				"   $error");
-		$this->_mod_manager->remove_from_blacklist($modname);
+		$this->mod_manager->remove_from_blacklist($modname);
 		@reply = ($src);
 	    }
 	    
