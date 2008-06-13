@@ -27,6 +27,22 @@ sub destruct {
     # 引数は無し。
 }
 
+sub config_reload {
+    my ($this, $old_config) = @_;
+    # モジュールの設定が変更された時に呼ばれる。
+    # 新しい config は $this->config で取得できます。
+
+    # 定義されていない場合は destruct と new をそれぞれ呼ぶ。
+    eval {
+	$this->destruct;
+    }; if ($@) {
+	$this->_runloop->notify_error(
+	    "Couldn't destruct module on reload config of " . ref($this)
+		. ".\n$@");
+    }
+    return ref($this)->new($this->_runloop);
+}
+
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
     # サーバーまたはクライアントからメッセージが来た時に呼ばれる。

@@ -28,6 +28,12 @@
 #               ::printmsg($this->errmsg('foo socket error'));
 #               $this->disconnect;
 #             },
+#     Name => undef, # 名前。エラー表示とかで使います。 Tiarra::Socket->name 参照。
+#     Module => undef,
+#         # 登録もとのモジュールを指定します。
+#         # ModuleManager に登録しておいて、モジュールをアンロードした時に
+#         # もしソケットが残っていたら、自動的に捨てます。
+#         # Module のサブクラスまたはパッケージ名で指定してください。
 #     )->install;
 #
 # $esock->uninstall;
@@ -92,6 +98,11 @@ sub new {
 
     if (defined $opts{Name}) {
 	$this->name($opts{Name});
+    }
+
+    if (defined $opts{Module}) {
+	require ModuleManager;
+	ModuleManager->shared_manager->add_module_object($opts{Module}, $this);
     }
 
     $this;
@@ -165,6 +176,14 @@ sub exception {
 
     $this->__check_caller;
     $this->{exception}->($this) if defined $this->{exception};
+}
+
+sub module_destruct {
+    my ($this, $module) = @_;
+
+    $this->SUPER::module_destruct($module);
+    $this->{read} = $this->{write} = $this->{wanttowrite} =
+	$this->{exception} = undef;
 }
 
 1;

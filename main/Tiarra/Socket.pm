@@ -262,6 +262,13 @@ sub _increment_caller {
     $opts;
 }
 
+sub module_destruct {
+    my ($this, $module) = @_;
+
+    eval { $this->detach; };
+    undef $this->{runloop};
+}
+
 1;
 
 =pod

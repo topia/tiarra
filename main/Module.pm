@@ -39,6 +39,22 @@ sub destruct {
     # 引数は無し。
 }
 
+sub config_reload {
+    my ($this, $old_config) = @_;
+    # モジュールの設定が変更された時に呼ばれる。
+    # 新しい config は $this->config で取得できます。
+
+    # デフォルト動作。
+    eval {
+	$this->destruct;
+    }; if ($@) {
+	$this->_runloop->notify_error(
+	    "Couldn't destruct module on reload config of " . ref($this)
+		. ".\n$@");
+    }
+    return ref($this)->new($this->_runloop);
+}
+
 sub message_arrived {
     my ($this,$message,$sender) = @_;
     # サーバーまたはクライアントからメッセージが来た時に呼ばれる。
@@ -173,6 +189,20 @@ sub config {
     # オーバーライドする必要は無い。
     # 戻り値はConfiguration::Block。
     $this->_conf->find_module_conf(ref($this),'block');
+}
+
+sub _add_object {
+    my ($this, @disposables) = @_;
+
+    $this->_runloop->mod_manager->add_module_object($this, @disposables);
+    $this;
+}
+
+sub _remove_object {
+    my ($this, @disposables) = @_;
+
+    $this->_runloop->mod_manager->remove_module_object($this, @disposables);
+    $this;
 }
 
 1;

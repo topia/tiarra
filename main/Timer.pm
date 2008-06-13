@@ -11,12 +11,14 @@
 #
 # 3秒後にHello, world!と表示する。
 # my $timer = Timer->new(
+#     Module => __PACKAGE__,
 #     After => 3,
 #     Code => sub { print "Hello, world!"; }
 # )->install;
 #
 # 3秒毎にHello, world!と表示する。
 # my $timer = Timer->new(
+#     Module => __PACKAGE__,
 #     After => 3, # Intervalでも良い
 #     Code => sub { print "Hello, world!"; },
 #     Repeat => 1
@@ -24,6 +26,7 @@
 #
 # 3秒後にHello, world!と表示する。
 # my $timer = Timer->new(
+#     Module => __PACKAGE__,
 #     At => time + 3,
 #     Code => sub { print "Hello, world!"; }
 # )->install;
@@ -85,12 +88,17 @@ sub new {
 	if ($args{'Repeat'}) {
 	    $obj->{interval} = $args{'After'};
 	}
-	
+
 	$obj->{fire_time} = time + $args{'After'};
     }
 
     if (defined $args{'Name'}) {
 	$obj->{name} = $args{'Name'};
+    }
+
+    if (defined $args{'Module'}) {
+	require ModuleManager;
+	ModuleManager->shared_manager->add_module_object($args{'Module'}, $obj);
     }
 
     $obj;
@@ -175,6 +183,13 @@ sub reset {
 	croak "Only Interval(Repeat) Timer can reset.\n";
     }
     $this;
+}
+
+sub module_destruct {
+    my ($this, $module) = @_;
+
+    undef $this->{code};
+    $this->{runloop} && $this->uninstall;
 }
 
 1;

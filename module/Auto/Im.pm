@@ -15,19 +15,27 @@ sub new {
   my ($class) = shift;
   my $this = $class->SUPER::new(@_);
 
+  $this->config_reload(undef);
+
+  return $this;
+}
+
+sub config_reload {
+  my ($this, $old_config) = @_;
+
   if ($this->config->secret) {
-      # signature required
-      require Digest::SHA;
+    # signature required
+    require Digest::SHA;
   }
 
   my $regex = join '|', (
-      (map { "(?:$_)" } $this->config->regex_keyword('all')),
-      (map { "(?i:\Q$_\E)" } map { split /,/ } $this->config->keyword('all')),
-     );
+    (map { "(?:$_)" } $this->config->regex_keyword('all')),
+    (map { "(?i:\Q$_\E)" } map { split /,/ } $this->config->keyword('all')),
+   );
   eval {
-      $this->{regex} = qr/$regex/;
+    $this->{regex} = qr/$regex/;
   }; if ($@) {
-      $this->_runloop->notify_error($@);
+    $this->_runloop->notify_error($@);
   }
 
   return $this;

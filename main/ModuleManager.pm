@@ -9,7 +9,7 @@ use strict;
 use Carp;
 use warnings;
 use UNIVERSAL;
-use RunLoop;
+use Scalar::Util qw(refaddr weaken);
 use Tiarra::SharedMixin qw(shared shared_manager);
 use Tiarra::ShorthandConfMixin;
 use Tiarra::Utils;
@@ -22,12 +22,13 @@ sub __initialized {
 }
 
 sub _new {
-    shift->new(shift || RunLoop->shared);
+    shift->new(shift || do { require RunLoop && RunLoop->shared });
 }
 
 sub new {
     my ($class, $runloop) = @_;
     croak 'runloop is not specified!' unless defined $runloop;
+    weaken($runloop);
     my $obj = {
 	runloop => $runloop,
 	modules => [], # 現在使用されている全てのモジュール
@@ -36,6 +37,7 @@ sub new {
 	mod_timestamps => {}, # 現在使用されている全モジュールおよびサブモジュールの初めてuseされた時刻
 	mod_blacklist => {}, # 過去に正常動作しなかったモジュール。
 	updated_once => 0, # 過去にupdate_modulesが実行された事があるか。
+	mod_disposables => {}, # モジュールに関連づけられているタイマーとか。アンロードした後で全部捨てる。
     };
     bless $obj,$class;
 }
@@ -159,15 +161,77 @@ sub check_timestamp_update {
     }
 }
 
+sub add_module_object {
+    my $this = shift->_this;
+    my ($modname, @disposables) = @_;
+    $modname = ref($modname) || $modname;
+
+    my ($foo);
+    my (%addrs);
+    @{$this->{mod_disposables}->{$modname}} = grep {
+	defined $_ && !($addrs{refaddr($_)}++)
+    } (@{$this->{mod_disposables}->{$modname}},
+       map { weaken($_); $_ } @disposables);
+
+    $this;
+}
+
+sub remove_module_object {
+    my $this = shift->_this;
+    my ($modname, @disposables) = @_;
+    $modname = ref($modname) || $modname;
+
+    return unless $this->{mod_disposables}->{$modname};
+
+    my $arr = $this->{mod_disposables}->{$modname};
+    @$arr = grep { defined $_ } @$arr;
+
+    my %targets = map { refaddr($_) => 1 } @disposables;
+    @$arr = grep { !$targets{refaddr($_)} } @$arr;
+
+    if (!@$arr) {
+	delete $this->{mod_disposables}->{$modname};
+    }
+
+    $this;
+}
+
+sub _destruct_module_object {
+    my $this = shift->_this;
+    my $module = shift; # module instance or module name
+    my $modname = ref($module) || $module;
+
+    my $arr = delete $this->{mod_disposables}->{$modname};
+
+    return unless $arr;
+
+    foreach my $object (grep { defined $_ } @$arr) {
+	eval {
+	    $object->module_destruct($module);
+	}; if ($@) {
+	    $this->_runloop->notify_error($@);
+	}
+    }
+
+    $this;
+}
+
 sub update_modules {
     # +で指定されたモジュール一覧を読み、modulesを再構成する。
     # 必要なモジュールがまだロードされていなければロードし、
     # もはや必要とされなくなったモジュールがあれば破棄する。
     # 二度目以降、つまり起動後にこれが実行された場合は
     # モジュールのロードや破棄に関して成功時にもメッセージを出力する。
+    # check_module_update => 1 を指定するとモジュール自体の更新もチェックする。
     my $this = shift->_this;
+    my %mode = @_; # check_module_update => 1
     my $mod_configs = $this->_conf->get_list_of_modules;
-    my ($new,$deleted,$changed,$not_changed) = $this->_check_difference($mod_configs);
+
+    my (%new,%deleted,%conf_changed,%not_changed);
+    # (modname => old or new config)
+    my (%mod_changed);
+    # (modname => depth)
+
 
     my $show_msg = sub {
 	if ($this->{updated_once}) {
@@ -186,31 +250,151 @@ sub update_modules {
     my %loaded_mods = map {
 	ref($_) => $_;
     } @{$this->{modules}};
+    my %loaded_mods_idx;
+    for (my $i = 0; $i < @{$this->{modules}}; $i++) {
+	$loaded_mods_idx{ref $this->{modules}->[$i]} = $i;
+    }
+    my %new_mod_configs = map {
+	$_->block_name => $_;
+    } @$mod_configs;
+
+    my ($new,$deleted,$changed,$not_changed) = $this->_check_difference($mod_configs);
+    $new{$_->block_name} = $_ for @$new;
+    $deleted{$_->block_name} = $_ for @$deleted;
+    $conf_changed{$_->block_name} = $_ for @$changed;
+    $not_changed{$_->block_name} = $_ for @$not_changed;
+
+    if ($mode{check_module_update}) {
+	my $check_used;
+	$check_used = sub {
+	    my ($modname, $depth) = @_;
+	    ++$depth;
+	    no strict 'refs';
+	    # このモジュールに%USEDは定義されているか？
+	    my $USED = \%{$modname.'::USED'};
+	    return unless defined $USED;
+
+	    # USEDの全ての要素に対し再帰的にマークを付ける。
+	    foreach my $used_elem (keys %$USED) {
+		if (!defined $mod_changed{$used_elem} ||
+			$mod_changed{$used_elem} < $depth) {
+		    $mod_changed{$used_elem} = $depth;
+		    $show_msg->("$used_elem will be reloaded because of ".
+				    "modification of $modname");
+		    $check_used->($used_elem, $depth);
+		}
+	    }
+	};
+
+	my $check = sub {
+	    my ($modname,$timestamp) = @_;
+	    # 既に更新されたものとしてマークされていれば抜ける。
+	    return if $mod_changed{$modname};
+
+	    if ($this->check_timestamp_update($modname, $timestamp)) {
+		# 更新されている。少なくともこのモジュールはリロードされる。
+		$mod_changed{$modname} = 1;
+		$show_msg->("$modname has been modified. It will be reloaded.");
+
+		$check_used->($modname, 1);
+	    }
+	};
+
+	while (my ($modname,$timestamp) = each %{$this->{mod_timestamps}}) {
+	    $check->($modname,$timestamp);
+	}
+    }
+
+    # 正規化
+    foreach my $modname (keys %mod_changed) {
+	delete $not_changed{$modname};
+	delete $new{$modname};
+	delete $conf_changed{$modname};
+    }
+    foreach my $modname (grep { !$loaded_mods{$_} } keys %conf_changed) {
+	$new{$modname} ||= $conf_changed{$modname};
+	delete $conf_changed{$modname};
+    }
+
+    my %mod_rebuilt_mods;
+
+    # モジュール再読み込み。
+    if (%mod_changed) {
+	my @mods_load_order = map { $_->[0] }
+	    sort { $a->[1] <=> $b->[1] }
+		map { [$_, $mod_changed{$_}]; }
+		    keys %mod_changed;
+
+	# 先に destruct して回る
+	foreach my $modname (reverse @mods_load_order) {
+	    my $mod = $loaded_mods{$modname};
+	    if ($mod) {
+		eval {
+		    $mod->destruct;
+		}; if ($@) {
+		    $this->_runloop->notify_error($@);
+		}
+		$this->_destruct_module_object($mod);
+	    } else {
+		eval {
+		    $modname->destruct;
+		}; if ($@ && $modname->can('destruct')) {
+		    $this->_runloop->notify_error($@);
+		}
+		$this->_destruct_module_object($modname);
+	    }
+	}
+
+	# マークされたモジュールをリロードするが、それが$loaded_mods_idxに登録されていたら
+	# インスタンスを作り直す。
+	foreach my $modname (@mods_load_order) {
+	    my $idx = $loaded_mods_idx{$modname};
+	    if (defined $idx) {
+		my $conf_block = $new_mod_configs{$modname};
+		# message_io_hook が定義されているモジュールが死ぬと怖いので
+		# とりあえず undef を入れて無視させる。
+		$this->{modules}->[$idx] = undef;
+		$this->_unload($modname);
+		$mod_rebuilt_mods{$modname} = $this->_load($conf_block);
+		# _unload でブラックリストから消えるから大丈夫だと思うが、一応。
+		$this->remove_from_blacklist($modname);
+	    }
+	    else {
+		# アンロード後、use。
+		no strict 'refs';
+		# その時、%USEDを保存する。@USEは保存しない。
+		my %USED = %{$modname.'::USED'};
+		$this->_unload($modname);
+		eval qq{
+		    use $modname;
+		}; if ($@) {
+		    $this->_runloop->notify_error($@);
+		}
+		%{$modname.'::USED'} = %USED;
+	    }
+	}
+    }
 
     # 新たに追加されたモジュール、作り直されたモジュール、変更されなかったモジュールを
     # モジュール名 => Moduleの形式でテーブルにする。
+    my $modname;
     my %new_mods = map {
 	# 新たに追加されたモジュール。
 	$show_msg->("Module ".$_->block_name." will be loaded newly.");
 	$this->remove_from_blacklist($_->block_name);
 	$_->block_name => $this->_load($_);
-    } @$new;
-    my %rebuilt_mods = map {
+    } values %new;
+    my %conf_rebuilt_mods = map {
 	# 作り直すモジュール。
-	# %loaded_modsに古い物が入っているので、破棄する。
-	$show_msg->("Configuration of the module ".$_->block_name." has been changed. It will be restarted.");
-	eval {
-	    $loaded_mods{$_->block_name}->destruct;
-	}; if ($@) {
-	    $this->_runloop->notify_error($@);
-	}
-	$this->remove_from_blacklist($_->block_name);
-	$_->block_name => $this->_load($_);
-    } @$changed;
+	$modname = $_->block_name;
+	$show_msg->("Configuration of the module ".$modname." has been changed. It will be restarted.");
+	$this->remove_from_blacklist($modname);
+	$_->block_name => $this->_config_reload($loaded_mods{$modname}, $_);
+    } values %conf_changed;
     my %not_changed_mods = map {
 	# 設定変更されなかったモジュール。
 	# %loaded_modsに実物が入っている。
-	my $modname = $_->block_name;
+	$modname = $_->block_name;
 	if (!defined $loaded_mods{$modname} &&
 		$this->check_timestamp_update($modname)) {
 	    # ロードできてなくて、なおかつアップデートされていたらロードしてみる。
@@ -220,38 +404,41 @@ sub update_modules {
 	} else {
 	    $modname => $loaded_mods{$modname};
 	}
-    } @$not_changed;
+    } values %not_changed;
 
     # $mod_configsに書かれた順序に従い、$this->{modules}を再構成。
     # 但しロードに失敗したモジュールはnullになっているので除外。
     @{$this->{modules}} = grep { defined $_ } map {
-	my $modname = $_->block_name;
-	$not_changed_mods{$modname} || $rebuilt_mods{$modname} || $new_mods{$modname};
-    } @$mod_configs;
+	$not_changed_mods{$_} || $mod_rebuilt_mods{$_} ||
+	    $conf_rebuilt_mods{$_} || $new_mods{$_};
+    } map { $_->block_name } @$mod_configs;
 
-    my $deleted_any = @$deleted > 0;
-    foreach (@$deleted) {
+    foreach (keys %deleted) {
 	# 削除されたモジュール。
 	# %loaded_modsに古い物が入っている場合は破棄した上、アンロードする。
-	$show_msg->("Module ".$_->block_name." will be unloaded.");
-	if (defined $loaded_mods{$_->block_name}) {
+	my $modname = $_;
+	my $mod = $loaded_mods{$modname};
+	$show_msg->("Module ".$modname." will be unloaded.");
+	if (defined $mod) {
 	    eval {
-		$loaded_mods{$_->block_name}->destruct;
+		$mod->destruct;
 	    }; if ($@) {
 		$this->_runloop->notify_error($@);
 	    }
+	    $this->_destruct_module_object($mod);
 	}
 	$this->_unload($_);
     }
 
-    # gc の前に一度キャッシュクリア
-    $this->_clear_module_cache;
-
-    if ($deleted_any > 0) {
+    if (%deleted || %mod_changed) {
 	# 何か一つでもアンロードしたモジュールがあれば、最早参照されなくなったモジュールが
 	# あるかどうかを調べ、一つでもあればmark and sweepを実行。
 	my $fixed = $this->fix_USED_fields;
+
 	if ($fixed) {
+	    # gc の前に一度キャッシュクリア
+	    $this->_clear_module_cache;
+
 	    $this->gc;
 	}
     }
@@ -265,7 +452,7 @@ sub update_modules {
 sub _check_difference {
     # 前回の_check_difference実行時から、現在のモジュール設定がどのように変化したか。
     # 戻り値は(<新規追加>,<削除>,<変更>,<無変更>) それぞれARRAY<Configuration::Block>への参照である。
-    # 新規追加と変更はそれぞれ新しいConfiguration::Blockが、削除には(新しいものが無いので)古いConfiguration::Blockが返される。
+    # 新規追加は新しいConfiguration::Blockが、変更と削除にはそれぞれ古いConfiguration::Blockが返される。
     my ($this,$mod_configs) = @_;
     # まずは新たに登場したモジュールと、設定を変更されたモジュールを探す。
     my @new;
@@ -281,7 +468,7 @@ sub _check_difference {
 	    }
 	    else {
 		# 内容が変わった。
-		push @changed,$conf;
+		push @changed,$old_conf;
 	    }
 	}
 	else {
@@ -311,128 +498,7 @@ sub reload_modules_if_modified {
     # インスタンスも当然作り直す。
     my $this = shift;
 
-    my $show_msg = sub {
-	$this->_runloop->notify_msg($_[0]);
-    };
-
-    my $mods_to_be_reloaded = {}; # モジュール名 => 1
-    my $check = sub {
-	my ($modname,$timestamp) = @_;
-	# 既に更新されたものとしてマークされていれば抜ける。
-	return if $mods_to_be_reloaded->{$modname};
-
-	if ($this->check_timestamp_update($modname, $timestamp)) {
-	    # 更新されている。少なくともこのモジュールはリロードされる。
-	    $mods_to_be_reloaded->{$modname} = 1;
-	    $show_msg->("$modname has been modified. It will be reloaded.");
-
-	    my $trace;
-	    $trace = sub {
-		my ($modname, $depth) = @_;
-		++$depth;
-		no strict 'refs';
-		# このモジュールに%USEDは定義されているか？
-		my $USED = \%{$modname.'::USED'};
-		if (defined $USED) {
-		    # USEDの全ての要素に対し再帰的にマークを付ける。
-		    foreach my $used_elem (keys %$USED) {
-			if (!defined $mods_to_be_reloaded->{$used_elem} ||
-				$mods_to_be_reloaded->{$used_elem} < $depth) {
-			    $mods_to_be_reloaded->{$used_elem} = $depth;
-			    $show_msg->("$used_elem will be reloaded because of modification of $modname");
-			    $trace->($used_elem, $depth);
-			}
-		    }
-		}
-	    };
-
-	    $trace->($modname, 1);
-	}
-    };
-
-    while (my ($modname,$timestamp) = each %{$this->{mod_timestamps}}) {
-	$check->($modname,$timestamp);
-    }
-
-    # 一つでもマークされたモジュールがあれば、$this->{modules}内の何処に
-    # 目的のモジュールが在るのかを調べるために、モジュール名 => 位置のテーブルを作る。
-    if (keys(%$mods_to_be_reloaded) > 0) {
-	my $mod2index = {};
-	for (my $i = 0; $i < @{$this->{modules}}; $i++) {
-	    $mod2index->{ref $this->{modules}->[$i]} = $i;
-	}
-
-	my @mods_load_order = map { $_->[0] }
-	    sort { $a->[1] <=> $b->[1] }
-		map { [$_, $mods_to_be_reloaded->{$_}]; }
-		    keys %$mods_to_be_reloaded;
-
-	# 先に destruct して回る
-	foreach my $modname (reverse @mods_load_order) {
-	    my $idx = $mod2index->{$modname};
-	    if (defined $idx) {
-		eval {
-		    $this->{modules}->[$idx]->destruct;
-		}; if ($@) {
-		    $this->_runloop->notify_error($@);
-		}
-	    } else {
-		eval {
-		    $modname->destruct;
-		}; if ($@ && $modname->can('destruct')) {
-		    $this->_runloop->notify_error($@);
-		}
-	    }
-	}
-
-	# マークされたモジュールをリロードするが、それが$mod2indexに登録されていたら
-	# インスタンスを作り直す。
-	foreach my $modname (@mods_load_order) {
-	    my $idx = $mod2index->{$modname};
-	    if (defined $idx) {
-		my $conf_block = $this->{mod_configs}->{$modname};
-		# message_io_hook が定義されているモジュールが死ぬと怖いので
-		# とりあえず undef を入れて無視させる。
-		$this->{modules}->[$idx] = undef;
-		$this->_unload($conf_block);
-		$this->{modules}->[$idx] = $this->_load($conf_block); # 失敗するとundefが入る。
-		# _unload でブラックリストから消えるから大丈夫だと思うが、一応。
-		$this->remove_from_blacklist($modname);
-	    }
-	    else {
-		# アンロード後、use。
-		no strict 'refs';
-		# その時、%USEDを保存する。@USEは保存しない。
-		my %USED = %{$modname.'::USED'};
-		$this->_unload($modname);
-		eval qq{
-		    use $modname;
-		}; if ($@) {
-		    $this->_runloop->notify_error($@);
-		}
-		%{$modname.'::USED'} = %USED;
-	    }
-	}
-
-	# 全てのモジュールの%USEDを調べて、その%USEDが指しているモジュールが
-	# 本当にそのモジュールを参照しているのかどうかをチェック。
-	# モジュールの更新で最早参照しなくなっていれば、%USEDから削除する。
-	# このような事が起こるのはリロード時に%USEDを保存するためである。
-	my $fixed = $this->fix_USED_fields;
-
-	# %USEDの不整合性が見付かったら、もはや必要とされなくなった
-	# モジュールがあるかも知れない。gcを実行。
-	if ($fixed) {
-	    $this->gc;
-	}
-
-	# $this->{modules}にはundefの要素が入っているかも知れないので、そのような要素は除外する。
-	@{$this->{modules}} = grep {
-	    defined $_;
-	} @{$this->{modules}};
-
-	$this->_clear_module_cache;
-    }
+    $this->update_modules(check_module_update => 1);
 }
 
 sub _load {
@@ -501,6 +567,38 @@ sub _load {
 
     # timestampに登録
     $this->timestamp($mod_name,time);
+
+    return $mod;
+}
+
+sub _config_reload {
+    # モジュールをuseしてインスタンスを生成して返す。
+    # 失敗したらundefを返す。
+    my ($this,$oldmod,$mod_oldconf) = @_;
+    my $modname = ref($oldmod);
+
+    # インスタンス生成
+    my $mod;
+    eval {
+	$mod = $oldmod->config_reload($mod_oldconf);
+    }; if ($@) {
+	$this->_runloop->notify_error(
+	    "Couldn't reload module config $modname because of exception.\n$@");
+	# 念のため古いやつは destruct しておく。エラーは無視。
+	eval { $oldmod->destruct };
+	$this->_destruct_module_object($oldmod);
+	return undef;
+    }
+
+    # このインスタンスは本当に$mod_nameそのものか？
+    if (ref($mod) ne $modname) {
+	$this->_runloop->notify_error(
+	    "A thing ".$modname."->new returned was not a instance of $modname.");
+	# 念のため古いやつは destruct しておく。エラーは無視。
+	eval { $oldmod->destruct };
+	$this->_destruct_module_object($oldmod);
+	return undef;
+    }
 
     return $mod;
 }
@@ -619,6 +717,7 @@ sub gc {
 	    eval {
 		$key->destruct;
 	    };
+	    $this->_destruct_module_object($key);
 
 	    $this->_runloop->notify_msg(
 		"Submodule $key is no longer required. It will be unloaded.");

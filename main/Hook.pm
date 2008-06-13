@@ -177,6 +177,14 @@ sub call {
     }
 }
 
+
+sub module_destruct {
+    my ($this, $module) = @_;
+
+    $this->uninstall if $this->{target};
+    undef $this->{code};
+}
+
 # -----------------------------------------------------------------------------
 package HookTarget;
 
