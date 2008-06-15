@@ -469,6 +469,7 @@ sub _on_request
     client    => $cli,
     peer      => $peer,
     conflist  => $conflist,
+    authtoken => undef,
     ua_type   => undef,
     cgi_hash  => undef, # generated on demand.
     req_param => undef, # config params, generated on demand.
@@ -505,11 +506,21 @@ sub _on_request
   }
 
   $DEBUG and $this->_debug("$peer: check auth ...");
-  my $accepted = $this->auth($conflist, $req);
-  if( @$accepted )
+  my $accepted_list = $this->auth($conflist, $req);
+  my $authtoken_list;
+  if( @$accepted_list )
   {
     $DEBUG and $this->_debug("$peer: has auth");
-    @$conflist = @$accepted;
+    @$conflist = map{ $_->{conf} } @$accepted_list;
+    $authtoken_list = [];
+    foreach my $auth (@$accepted_list)
+    {
+      if( grep { $_ eq $auth->{token} } @$authtoken_list )
+      {
+        next;
+      }
+      push(@$authtoken_list, $auth->{token});
+    }
   }else
   {
     $DEBUG and $this->_debug("$peer: no auth");
@@ -517,6 +528,8 @@ sub _on_request
     $DEBUG and $this->_debug("$peer: has guest entry ".(@$conflist?"yes":"no"));
   }
   my $need_auth = @$conflist == 0;
+
+  $req->{authtoken} = $authtoken_list->[0] || 'noauth';
 
   if( $req->{Path} =~ /\?auth(?:=|[&;]|$)/ )
   {
@@ -540,7 +553,7 @@ sub _on_request
   my $sid = '*';
   $req->{session} = $this->_get_session($sid);
 
-  $this->_debug("$peer: accept.");
+  $this->_debug("$peer: accept: $req->{authtoken}");
   $this->_dispatch($req);
 }
 
@@ -586,12 +599,15 @@ sub auth
         $DEBUG and ::printmsg("$req->{peer}: - skip: unsupported: $param[0]");
         next;
       }
-      my $ok = $this->$sub(\@param, $req);
-      if( $ok )
+      my $token = $this->$sub(\@param, $req);
+      if( $token )
       {
         $DEBUG and $this->_debug("$req->{peer}: - $conf->{name} accepted ($param[0])");
-        push(@accepts, $conf);
-      }elsif( defined($ok) )
+        push(@accepts, {
+          token => $token,
+          conf  => $conf,
+        });
+      }elsif( defined($token) )
       {
         $DEBUG and $this->_debug("$req->{peer}: auth denied by $conf->{name}");
         return undef;
@@ -638,7 +654,7 @@ sub _auth_basic
     return;
   }
   $DEBUG and ::printmsg("$req->{peer}: accept user $param->[0] pass $param->[2] with '$user' '$pass'");
-  1;
+  "basic:$user";
 }
 
 sub _auth_softbank
@@ -662,11 +678,11 @@ sub _auth_softbank
   };
   if( _verify_value($param->[1], $uid) )
   {
-    return 1;
+    return "softbank:$uid";
   }
   if( _verify_value($param->[1], $sn) )
   {
-    return 1;
+    return "softbank:$sn";
   }
   defined($uid) or $uid = '';
   defined($sn)  or $sn  = '';
@@ -689,7 +705,7 @@ sub _auth_au
     $DEBUG and ::printmsg("$req->{peer}: $param->[0] pass $param->[1] does not match with '$subno' (subno)");
     return;
   }
-  return 1;
+  return "au:$subno";
 }
 
 sub _dispatch
