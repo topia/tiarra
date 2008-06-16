@@ -61,11 +61,47 @@ sub equals {
 	return undef;
     }
     # キーの数
-    my @this_keys = keys %{$this->[TABLE]};
-    my @that_keys = keys %{$that->[TABLE]};
+    my @this_keys = sort keys %{$this->[TABLE]};
+    my @that_keys = sort keys %{$that->[TABLE]};
     if (@this_keys != @that_keys) {
 	return undef;
     }
+    my $walk;
+    $walk = sub {
+	my ($this_value, $that_value) = @_;
+
+	# 値の型
+	if (ref($this_value) ne ref($that_value)) {
+	    return undef;
+	}
+
+	# 値
+	if (ref($this_value) eq 'ARRAY') {
+	    # 配列なので要素数と全要素を比較。
+	    if (@$this_value != @$that_value) {
+		return undef;
+	    }
+	    my $valsize = @$this_value;
+	    for (my $j = 0; $j < $valsize; $j++) {
+		if (!$walk->($this_value->[$j], $that_value->[$j])) {
+		    return undef;
+		}
+	    }
+	}
+	elsif (UNIVERSAL::isa($this_value,'Configuration::Block')) {
+	    # ブロックなので再帰的に比較。
+	    if (!$this_value->equals($that_value)) {
+		return undef;
+	    }
+	}
+	else {
+	    if ($this_value ne $that_value) {
+		return undef;
+	    }
+	}
+	1;
+    };
+
     # 各要素
     my $size = @this_keys;
     for (my $i = 0; $i < $size; $i++) {
@@ -76,43 +112,18 @@ sub equals {
 	# 値の型
 	my $this_value = $this->[TABLE]->{$this_keys[$i]};
 	my $that_value = $that->[TABLE]->{$that_keys[$i]};
-	if (ref($this_value) ne ref($that_value)) {
+	if (!$walk->($this_value, $that_value)) {
 	    return undef;
-	}
-	# 値
-	if (ref($this_value) eq 'ARRAY') {
-	    # 配列なので要素数と全要素を比較。
-	    if (@$this_value != @$that_value) {
-		return undef;
-	    }
-	    my $valsize = @$this_value;
-	    for (my $j = 0; $j < $valsize; $j++) {
-		if ($this_value->[$j] ne $that_value->[$j]) {
-		    return undef;
-		}
-	    }
-	}
-	elsif (UNIVERSAL::isa($this_value,'Configuration::Block')) {
-	    # ブロックなので再帰的に比較。
-	    my $ret = $this_value->equals($that_value);
-	    if (!$ret) {
-		return undef;
-	    }
-	}
-	else {
-	    if ($this_value ne $that_value) {
-		return undef;
-	    }
 	}
     }
     return 1;
 }
 
-sub eval_code {
+sub _eval_code {
     # 渡された文字列中の、全ての%CODE{ ... }EDOC%を評価して返す。
     my ($this,$str) = @_;
 
-    if (ref($str)) {
+    if (!defined($str) || ref($str)) {
 	return $str; # 文字列でなかったらそのまま返す。
     }
 
@@ -133,15 +144,54 @@ sub eval_code {
     $evaluated;
 }
 
+sub _coerce_to_block {
+    my ($this, $key, $value) = @_;
+
+    if (ref($value) and UNIVERSAL::isa($value, 'Configuration::Block')) {
+	return $value;
+    }
+    else {
+	my $tmp_block = Configuration::Block->new($key);
+	$tmp_block->set($key, $value);
+	return $tmp_block;
+    }
+}
+
 sub get {
-    my ($this,$key,$option) = @_;
+    my $this = shift;
+    my $key = shift;
+    my %option;
+    if (@_) {
+	@option{@_} = (1) x @_;
+    }
+
+    if ($option{all}) {
+	# list context
+	my @values = $this->_get($key, %option);
+	return map {
+	    $option{block} ? $this->_coerce_to_block($key, $_) : $_;
+	} map {
+	    $this->_eval_code($_);
+	} @values;
+    } else {
+	# scalar context
+	my $value = $this->_eval_code($this->_get($key, %option));
+	if ($option{block}) {
+	    $value = $this->_coerce_to_block($key, $value);
+	}
+	return $value;
+    }
+}
+
+sub _get {
+    my ($this, $key, %option) = @_;
 
     unless (exists $this->[TABLE]->{$key}) {
 	# そのような値は定義されていない。
-	if ($option && $option eq 'all') {
+	if ($option{all}) {
 	    return ();
 	}
-	elsif ($option and $option eq 'block') {
+	elsif ($option{block}) {
 	    return Configuration::Block->new($key);
 	}
 	else {
@@ -150,43 +200,20 @@ sub get {
     }
 
     my $value = $this->[TABLE]->{$key};
-    if ($option && $option eq 'all') {
-	if (ref($value) eq 'ARRAY') {
-	    return map {
-		$this->eval_code($_);
-	    } @{$value}; # 配列リファなら逆参照して返す。
-	}
-	else {
-	    return $this->eval_code($value);
-	}
+    if (ref($value) ne 'ARRAY') {
+	# 配列のリファレンスでなければそのまま返す。
+	return $value;
+    } elsif ($option{all}) {
+	# 逆参照して返す。
+	return @{$value};
     }
-    elsif ($option && $option eq 'random') {
-	if (ref($value) eq 'ARRAY') {
-	    # 配列リファならランダムに選んで返す
-	    return $this->eval_code(
-		$value->[int(rand(0xffffffff)) % @$value]);
-	}
-	else {
-	    return $this->eval_code($value);
-	}
-    }
-    elsif ($option and $option eq 'block') {
-	if (ref($value) and UNIVERSAL::isa($value, 'Configuration::Block')) {
-	    return $value;
-	}
-	else {
-	    my $tmp_block = Configuration::Block->new($key);
-	    $tmp_block->set($key, $value);
-	    return $tmp_block;
-	}
+    elsif ($option{random}) {
+	# ランダムに選んで返す
+	return $value->[int(rand(0xffffffff)) % @$value];
     }
     else {
-	if (ref($value) eq 'ARRAY') {
-	    return $this->eval_code($value->[0]); # 配列リファなら先頭の値を返す。
-	}
-	else {
-	    return $this->eval_code($value);
-	}
+	# 先頭の値を返す。
+	return $value->[0];
     }
 }
 
@@ -223,26 +250,30 @@ sub reinterpret_encoding {
     my ($this,$encoding) = @_;
 
     my $unicode = Tiarra::Encoding->new;
+    my $walk;
+    $walk = sub {
+	my $value = shift;
+
+	if (ref($value) eq 'ARRAY') {
+	    # 配列なので中身を全て変換。
+	    my @newarray = map {
+		$walk->($_);
+	    } @$value;
+	    \@newarray;
+	}
+	elsif (UNIVERSAL::isa($value, 'Configuration::Block')) {
+	    # ブロックなので再帰的にコード変換。
+	    $value->reinterpret_encoding($encoding);
+	}
+	else {
+	    $unicode->set($value, $encoding)->utf8
+	}
+    };
+
     my $newtable = {};
     while (my ($key,$value) = each %{$this->[TABLE]}) {
 	my $newkey = $unicode->set($key,$encoding)->utf8;
-	my $newvalue = do {
-	    if (ref($value) eq 'ARRAY') {
-		# 配列なので中身を全てコード変換。
-		my @newarray = map {
-		    $unicode->set($_,$encoding)->utf8;
-		} @$value;
-		\@newarray;
-	    }
-	    elsif (UNIVERSAL::isa($value,'Configuration::Block')) {
-		# ブロックなので再帰的にコード変換。
-		$value->reinterpret_encoding($encoding);
-	    }
-	    else {
-		$unicode->set($value,$encoding)->utf8;
-	    }
-	};
-	$newtable->{$newkey} = $newvalue;
+	$newtable->{$newkey} = $walk->($value);;
     }
 
     $this->[TABLE] = $newtable;
@@ -250,8 +281,8 @@ sub reinterpret_encoding {
 }
 
 sub AUTOLOAD {
-    my ($this,$option) = @_;
-    
+    my ($this,@options) = @_;
+
     if ($AUTOLOAD =~ /::DESTROY$/) {
 	# DESTROYは伝達させない。
 	return;
@@ -259,7 +290,7 @@ sub AUTOLOAD {
 
     (my $key = $AUTOLOAD) =~ s/.+?:://g;
     $key =~ s/_/-/g;
-    return $this->get($key,$option);
+    return $this->get($key,@options);
 }
 
 1;
