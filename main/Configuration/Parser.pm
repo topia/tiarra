@@ -108,7 +108,7 @@ sub _parse_blockcontent {
 
 	    # ブロックをパース。
 	    my $newblock = $this->_parse_block('block');
-	    $block->set($newblock->block_name,$newblock);
+	    $block->add($newblock->block_name,$newblock);
 	}
 	elsif ($type eq 'blockend') {
 	    # 読み過ぎたので戻す。
