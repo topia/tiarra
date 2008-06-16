@@ -726,9 +726,10 @@ L<Tiarra::Mixin::NewIRCMessage>
 
 =head1 AUTHOR
 
-originally developed by phonohawk E<lt>phonohawk@ps.sakura.ne.jpE<gt>.
+originally developed by phonohawk E<lt>phonohawk@ps.sakura.ne.jpE<gt>
+and Topia E<lt>topia@clovery.jpE<gt>.
 
-now maintained by Topia E<lt>topia@clovery.jpE<gt>.
+now maintained by Tiarra Development Team.
 
 =head1 LICENSE
 
