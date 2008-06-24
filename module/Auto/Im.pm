@@ -53,7 +53,8 @@ sub message_arrived {
 	  my $full_ch_name = $msg->param(0);
 
 	  if ($text =~ $this->{regex} && Mask::match_deep_chan(
-	      [$this->config->mask('all')],$msg->prefix,$full_ch_name)) {
+	      [Mask::array_or_all_chan($this->config->mask('all'))],
+	      $msg->prefix,$full_ch_name)) {
 
 	      my $url = "http://im.kayac.com/api/post/" . $this->config->user;
 	      my $text = Auto::AliasDB->stdreplace(
