@@ -23,17 +23,14 @@ use Unicode::Japanese;
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 our $DEBUG = 0;
 
 our $DEFAULT_MAX_LINES = 100;
-our $DEFAULT_NAME      = '???';
 our $DEFAULT_SHOW_LINES = 20;
-
-# 開発メモ.
-# 認証毎で既読情報を保持(とりあえず共通で保持まで実装).
-# sharedモードの時はセッション内でのみ保持.
+our $DEFAULT_SITE_NAME  = "Tiarra::WebClient";
+our $DEFAULT_SESSION_EXPIRE = 7 * 24 * 60*60;
 
 =begin COMMENT
 
@@ -50,6 +47,9 @@ System::WebClient - ブラウザ上でログを見たり発言したりできる
  /log/<network>/<channel>/info
    #==> [POST/_post_chan_info] TOPIC/JOIN/PART/DELETE.
    #==> [GET/_gen_chan_info]   チャンネル情報表示.
+ /config
+   #==> [POST/_post_config] NAME
+   #==> [GET/_gen_config]   shared時の名前設定
  /style/style.css
    #==> 空のCSSファイル.
  <それ以外>
@@ -58,6 +58,7 @@ System::WebClient - ブラウザ上でログを見たり発言したりできる
 session 情報:
   $req->{session}{seen} -- 未読管理.
     $req->{session}{seen}{$netname}{$ch_short} = $recent内のオブジェクト.
+  $req->{session}{name} -- shared用の名前.
 
 (*) 存在するけれど閲覧許可のないページであっても, 
     403 (Forbidden) ではなく 404 (Not Found) を返す.
@@ -101,7 +102,7 @@ sub new
   $this->{bbs_val}   = undef;
   $this->{cache}     = undef;
   $this->{max_lines} = undef;
-  $this->{sess}      = undef;
+  $this->{session_master} = undef;
   $this->_load_cache();
 
   my $config = $this->config;
@@ -175,7 +176,7 @@ sub _load_cache
 
   $this->{bbs_val} = $BBS_VAL;
   $this->{cache}   = $BBS_VAL->{cache};
-  $this->{session} = $BBS_VAL->{session};
+  $this->{session_master} = $BBS_VAL->{session};
 
   $runloop->notify_msg(__PACKAGE__."#_load_cache, bbs[$BBS_KEY].inited_at ".localtime($BBS_VAL->{inited_at}));
   $runloop->notify_msg(__PACKAGE__."#_load_cache, bbs[$BBS_KEY].unloaded_at ".($BBS_VAL->{unloaded_at}?localtime($BBS_VAL->{unloaded_at}):'-'));
@@ -511,12 +512,16 @@ sub _on_request
   if( @$accepted_list )
   {
     $DEBUG and $this->_debug("$peer: has auth");
+    # update @$conflist.
     @$conflist = map{ $_->{conf} } @$accepted_list;
+
+    # extract authtoken list.
     $authtoken_list = [];
     foreach my $auth (@$accepted_list)
     {
       if( grep { $_ eq $auth->{token} } @$authtoken_list )
       {
+        # no dup.
         next;
       }
       push(@$authtoken_list, $auth->{token});
@@ -527,10 +532,8 @@ sub _on_request
     @$conflist = grep{ !$_->{auth} } @$conflist;
     $DEBUG and $this->_debug("$peer: has guest entry ".(@$conflist?"yes":"no"));
   }
+
   my $need_auth = @$conflist == 0;
-
-  $req->{authtoken} = $authtoken_list->[0] || 'noauth';
-
   if( $req->{Path} =~ /\?auth(?:=|[&;]|$)/ )
   {
     $need_auth = 1;
@@ -550,22 +553,131 @@ sub _on_request
     return;
   }
 
-  my $sid = '*';
-  $req->{session} = $this->_get_session($sid);
 
-  $this->_debug("$peer: accept: $req->{authtoken}");
+  $req->{authtoken} = ($authtoken_list && @$authtoken_list) ? $authtoken_list->[0]->{atoken} : undef;
+  if( !$req->{authtoken} )
+  {
+    $DEBUG and $this->_debug("$peer: no authtoken, check cookie");
+    CHECK_COOKIE:{
+      my $cookies = $req->{Header}{Cookie} || '';
+      my @cookies = split(/\s*[;,]\s*/, $cookies);
+      my $ck = shift @cookies || '';
+      my ($key, $val) = split(/=/, $ck);
+      $key && $val or last CHECK_COOKIE;
+      $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/ge;
+    $DEBUG and $this->_debug("$peer: cookie: [$key]=[$val]");
+      if( $val !~ /^sid:(\d+):(\d+)(?::|\z)/ )
+      {
+        last CHECK_COOKIE;
+      }
+      my ($seq, $check) = ($1, $2);
+      my $sid = "sid:$seq:$check";
+      $req->{authtoken} = $sid;
+      $DEBUG and $this->_debug("$peer: $sid");
+    }
+  }
+
+  my $mode = $this->_get_req_param($req, 'mode');
+  if( $mode eq 'owner' )
+  {
+    $req->{authtoken} ||= "owner:*";
+  }
+  $this->_update_session($req);
+  if( $mode ne 'owner' && !$req->{session}{name} )
+  {
+    $this->_debug("$peer: login required (no name).");
+    return $this->_login($req);
+  }
+
+
+  $this->_debug("$peer: accept: sid=$req->{sid}");
   $this->_dispatch($req);
 }
 
-sub _get_session
+# -----------------------------------------------------------------------------
+# my $sess = $this->_new_session().
+# Set-Cookie も設定される.
+#
+sub _new_session
 {
   my $this = shift;
-  my $sid  = shift;
+  my $req  = shift;
 
-  my $sess = ($this->{session}{$sid} ||= {});
+  our $seed ||= int(rand(0xFFFF_FFFF));
+  our $seq  ||= 0;
+  $seq ++;
+  my $sid = "sid:$seed:$seq";
+  $DEBUG and $this->_debug("_new_session: $sid");
+
+  $req->{authtoken} = $sid;
+  my $sess = $this->_update_session($req);
+  $req->{cookies}{SID} = $sess->{_sid};
+  $sess;
+}
+
+# -----------------------------------------------------------------------------
+# my $sess = $this->_delete_session($req).
+# 削除用の Set-Cookie も設定される.
+#
+sub _delete_session
+{
+  my $this = shift;
+  my $req  = shift;
+  my $sess = $req->{session} || {};
+  my $sid  = $sess->{_sid} || '';
+  my $deleted = delete $this->{session_master}{$sid};
+  if( $deleted )
+  {
+    $deleted->{_deleted} = 1;
+  }
+  if( $sid )
+  {
+    $req->{cookies}{SID} = undef;
+  }
+  $deleted;
+}
+
+# -----------------------------------------------------------------------------
+# $this->_update_session($req);
+# 指定のsessionを取得.
+# なかったら生成される.
+#
+sub _update_session
+{
+  my $this = shift;
+  my $req  = shift;
+
+  my $sid = $req->{authtoken};
+  if( !$sid )
+  {
+    $DEBUG and $this->_debug("_get_session: no sid");
+    $req->{session} = {};
+    return;
+  }
+
+  my $sess = ($this->{session_master}{$sid} ||= {});
   my $now  = time;
+  if( $sess->{_updated_at} )
+  {
+    if( $sess->{_updated_at} + $DEFAULT_SESSION_EXPIRE < $now )
+    {
+      # clean up.
+      $sess = {};
+      $this->{session_master}{$sid} = $sess;
+    }
+  }
+
+  $sess->{_sid}        ||= $sid;
   $sess->{_created_at} ||= $now;
+  $sess->{_expire}     ||= $DEFAULT_SESSION_EXPIRE;
   $sess->{_updated_at} =   $now;
+
+  # $sess->{seen} = \%seen;
+  # $sess->{name} = $name;
+  $DEBUG and $this->_debug("_get_session: ".Dumper($sess));use Data::Dumper;
+
+  $req->{session} = $sess;
+
   $sess;
 }
 
@@ -576,38 +688,45 @@ sub auth
   my $req      = shift;
   my @accepts;
 
+  # 認証関数.
+  # $val = $sub->($this, \@param, $req).
+  # \%hashref #==> accept.
+  # undef     #==> ignore.
+  # ''        #==> deny.
   our $AUTH ||= {
     ':basic'    => \&_auth_basic,
     ':softbank' => \&_auth_softbank,
     ':au'       => \&_auth_au,
   };
+
   foreach my $conf (@$conflist)
   {
     $DEBUG and $this->_debug("$req->{peer}: check auth for $conf->{name}");
     my $authlist = $conf->{auth} or next;
     foreach my $auth (@$authlist)
     {
-      if( !$auth )
+      my @param = split(' ', $auth || '');
+      if( !@param )
       {
         $DEBUG and ::printmsg("$req->{peer}: - skip: empty value");
+        next;
       }
-      my @param = split(' ', $auth) or next;
       $param[0] =~ /^:/ or unshift(@param, ':basic');
-      my $sub = $AUTH->{$param[0]};
-      if( !$sub )
+      my $auth_sub = $AUTH->{$param[0]};
+      if( !$auth_sub )
       {
         $DEBUG and ::printmsg("$req->{peer}: - skip: unsupported: $param[0]");
         next;
       }
-      my $token = $this->$sub(\@param, $req);
-      if( $token )
+      my $val = $this->$auth_sub(\@param, $req);
+      if( $val )
       {
         $DEBUG and $this->_debug("$req->{peer}: - $conf->{name} accepted ($param[0])");
         push(@accepts, {
-          token => $token,
-          conf  => $conf,
+          atoken => $val->{atoken}, # auth token, string or undef.
+          conf   => $conf,
         });
-      }elsif( defined($token) )
+      }elsif( defined($val) )
       {
         $DEBUG and $this->_debug("$req->{peer}: auth denied by $conf->{name}");
         return undef;
@@ -653,8 +772,13 @@ sub _auth_basic
     $DEBUG and ::printmsg("$req->{peer}: $param->[0] pass $param->[2] does not match with '$pass' (pass)");
     return;
   }
+
+  # accept.
   $DEBUG and ::printmsg("$req->{peer}: accept user $param->[0] pass $param->[2] with '$user' '$pass'");
-  "basic:$user";
+  +{
+    id => "basic:$user",
+    atoken => undef,
+  };
 }
 
 sub _auth_softbank
@@ -665,6 +789,8 @@ sub _auth_softbank
 
   #TODO: carrier ip-addresses range.
 
+  # UIDはhttp領域若しくはsecure.softbank.ne.jp経由.
+  # SNは端末の設定.
   my $uid = $req->{Header}{'X-JPHONE-UID'};
   my $sn = do{
     my ($ua1) = split(' ', $req->{Header}{'User-Agent'} || '');
@@ -678,11 +804,21 @@ sub _auth_softbank
   };
   if( _verify_value($param->[1], $uid) )
   {
-    return "softbank:$uid";
+    # accept.
+    my $id = "softbank:$uid";
+    return +{
+      id     => $id,
+      atoken => $id,
+    };
   }
   if( _verify_value($param->[1], $sn) )
   {
-    return "softbank:$sn";
+    # accept.
+    my $id = "softbank:$sn";
+    return +{
+      id     => $id,
+      atoken => $id,
+    };
   }
   defined($uid) or $uid = '';
   defined($sn)  or $sn  = '';
@@ -705,9 +841,119 @@ sub _auth_au
     $DEBUG and ::printmsg("$req->{peer}: $param->[0] pass $param->[1] does not match with '$subno' (subno)");
     return;
   }
-  return "au:$subno";
+  my $id = return "au:$subno";
+  return +{
+    id     => $id,
+    atoken => $id,
+  };
 }
 
+# -----------------------------------------------------------------------------
+# $this->_login($req).
+# special case for _dispatch().
+#
+sub _login
+{
+  my $this = shift;
+  my $req  = shift;
+
+  $DEBUG and $this->_debug("$req->{peer}: login: process login dispatcher");
+  my $path = $req->{Path};
+  if( $path !~ s{\Q$this->{path}}{/} )
+  {
+    $this->_response($req, 404);
+    return;
+  }
+  $path =~ s/\?.*//;
+
+  if( $path eq '/' )
+  {
+    $this->_location($req, "/login");
+  }elsif( $path eq '/login' )
+  {
+    my $done = $req->{Method} eq 'POST' && $this->_post_login($req);
+    if( !$done )
+    {
+      my $html = $this->_gen_login($req);
+      $this->_new_session($req);
+      $this->_response($req, [html=>$html]);
+    }
+  }elsif( $path eq '/logout' )
+  {
+    # but not loged in.
+    $this->_location($req, "/login");
+  }else
+  {
+    $this->_response($req, 404);
+    return;
+  }
+}
+
+sub _post_login
+{
+  my $this = shift;
+  my $req  = shift;
+
+  my $cgi = $this->_get_cgi_hash($req);
+  if( my $name = $cgi->{n} )
+  {
+    $DEBUG and $this->_debug("$req->{peer}: _post_login: name=$name");
+    $this->_new_session($req); # regen.
+    $req->{session}{name} = $name;
+    my $path = $cgi->{path} || "/";;
+    $this->_location($req, $path);
+    return 1;
+  }
+
+  $DEBUG and $this->_debug("$req->{peer}: _post_login: skip");
+  undef;
+}
+sub _gen_login
+{
+  my $this = shift;
+  my $req  = shift;
+
+  my $tmpl = $this->_gen_login_html();
+  $this->_expand($req, $tmpl, {
+    NAME        => $this->_escapeHTML($req->{session}{name} || '' ),
+    PATH        => '',
+  });
+}
+sub _gen_login_html
+{
+  <<HTML;
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja-JP">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type"  content="text/css" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" type="text/css" href="<&CSS>" />
+  <title>login</title>
+</head>
+<body>
+<div class="main">
+<div class="uatype-<&UA_TYPE>">
+
+<h1>Login</h1>
+
+<form action="login" method="post">
+名前: <input type="text" name="n" value="<&NAME>" /><br />
+<input type="submit" value="Login" /><br />
+<input type="hidden" name="path" value="<&PATH>" />
+</form>
+
+</div>
+</div>
+</body>
+</html>
+HTML
+}
+
+# -----------------------------------------------------------------------------
+# $this->_dispatch($req).
+#
 sub _dispatch
 {
   my $this = shift;
@@ -785,6 +1031,21 @@ sub _dispatch
   }elsif( $path eq '/style/style.css' )
   {
     $this->_response($req, [css=>'']);
+  }elsif( $path eq '/login' )
+  {
+    $this->_login($req);
+  }elsif( $path eq '/logout' )
+  {
+    $this->_delete_session($req);
+    $this->_location($req, "/");
+  }elsif( $path eq '/config' )
+  {
+    my $done = $req->{Method} eq 'POST' && $this->_post_config($req);
+    if( !$done )
+    {
+      my $html = $this->_gen_config($req);
+      $this->_response($req, [html=>$html]);
+    }
   }else
   {
     $this->_response($req, 404);
@@ -891,7 +1152,8 @@ sub _response
 {
   my $this = shift;
   my $req  = shift;
-  my $res  = shift;
+  my $res  = shift; # number or hash-ref or array-ref.
+
   if( ref($res) eq 'ARRAY' )
   {
     my $spec = $res;
@@ -922,9 +1184,38 @@ sub _response
       die "unkown response spec: $spec->[0]";
     }
   }
+  if( $req->{cookies} )
+  {
+    my @cookies;
+    foreach my $key (sort keys %{$req->{cookies}})
+    {
+      my $val = $req->{cookies}{$key};
+      $key =~ /^[a-zA-Z]\w+\z/ or die "invalid cookie name: $key";
+      if( defined($val) )
+      {
+        $val =~ s/([^-.\w])/'%'.unpack("H*",$1)/ge;
+        length($val) >= 100 and die "value of cookies.$key is too long";
+      }else
+      {
+        # delete.
+        $val = "x; expires=Sun, 10-Jun-2001 12:00:00 GMT";
+      }
+      my $cookie = "$key=$val; path=$this->{path}";
+      push(@cookies, $cookie);
+    }
+    if( @cookies )
+    {
+      ref($res) or $res = {
+        Code => $res,
+      };
+      $res->{Header}{'Set-Cookie'} = $cookies[0];
+      @cookies >= 2 and die "currently multiple cookies are not supported";
+    }
+  }
 
   my $cli = $req->{client};
   $cli->response($res);
+  #$DEBUG and $this->_debug( Tools::HTTPParser->to_string($res) );
 
   # no Keep-Alive.
   $req->{client}->disconnect_after_writing();
@@ -938,6 +1229,7 @@ sub _location
   my $req  = shift;
   my $path = shift;
 
+  $DEBUG and $this->_debug("$req->{peer}: location: $path");
   $path = $this->{path} . $path;
   $path =~ s{//+}{/}g;
   my $res = {
@@ -1247,12 +1539,23 @@ sub _gen_list
   }
   $content .= $is_pc ? "</ul>\n" : "<div\n>";
 
+  my $shared_box = '';
+  my $mode = $this->_get_req_param($req, 'mode');
+  if( $mode ne 'owner' )
+  {
+    $shared_box .= "<br />\n";
+    $shared_box .= "[\n";
+    $shared_box .= qq{<a href="config">設定</a>\n};
+    $shared_box .= "|\n";
+    $shared_box .= qq{<a href="logout">ログアウト</a>\n};
+    $shared_box .= "]\n";
+  }
   my $tmpl = $this->_gen_list_html();
-  $this->_expand($tmpl, {
+  $this->_expand($req, $tmpl, {
     CONTENT => $content,
-    UA_TYPE => $req->{ua_type},
     SHOW_TOGGLE_LABEL => $show_all ? 'MiniList' : 'ShowAll',
     SHOW_TOGGLE_VALUE => $show_all ? 'updated' : 'all',
+    SHARED_BOX => $shared_box,
   });
 }
 sub _gen_list_html
@@ -1286,6 +1589,7 @@ ENTER: <input type="text" name="enter" value="" />
 <a href="./" accesskey="0">再表示</a>[0] |
 <a href="./?show=<&SHOW_TOGGLE_VALUE>" accesskey="#"><&SHOW_TOGGLE_LABEL></a>[#]
 ]
+<&SHARED_BOX>
 </p>
 
 </div>
@@ -1328,14 +1632,19 @@ sub _post_list
 sub _expand
 {
   my $this = shift;
+  my $req  = shift;
   my $tmpl = shift;
   my $vars = shift;
 
-  my $top_path_esc = $this->_escapeHTML($this->{path});
-  my $css_esc      = $this->_escapeHTML($this->config->css || "$this->{path}style/style.css");
+  my $top_path_esc  = $this->_escapeHTML($this->{path});
+  my $css_esc       = $this->_escapeHTML($this->config->css || "$this->{path}style/style.css");
+  my $site_name_esc = $this->_escapeHTML($this->config->site_name || $DEFAULT_SITE_NAME);
+  $req->{ua_type} =~ /^\w+\z/ or die "invalid ua_type: [$req->{ua_type}]";
   my $common_vars = {
-    TOP_PATH => $top_path_esc,
-    CSS      => $css_esc,
+    TOP_PATH  => $top_path_esc,
+    CSS       => $css_esc,
+    UA_TYPE   => $req->{ua_type},
+    SITE_NAME => $site_name_esc,
   };
 
   $tmpl =~ s{<&(.*?)>}{
@@ -1534,23 +1843,32 @@ sub _gen_log
   my $ch_long = Multicast::attach($ch_short, $netname);
   $ch_long =~ s/^![0-9A-Z]{5}/!/;
   my $ch_long_esc = $this->_escapeHTML($ch_long);
-  my $name_esc = $this->_escapeHTML($cgi->{n} || '');
+  my $name_esc = $this->_escapeHTML($req->{session}{name} || '');
 
   my $mode = $this->_get_req_param($req, 'mode');
-  my $name_input_raw = '';
+  my $name_marker_raw = '';
   if( $mode ne 'owner' )
   {
-    $name_input_raw = qq{name:<input type="text" name="n" size="10" value="$name_esc" /><br />};
+    $name_marker_raw = qq{$name_esc&gt; };
+  }
+
+  my $h1_ch_long_raw;
+  if( $req->{ua_type} eq 'pc' )
+  {
+    $h1_ch_long_raw = "<h1>$ch_long_esc</h1>";
+  }else
+  {
+    $h1_ch_long_raw = "<b>$ch_long_esc</b>";
   }
 
   my $tmpl = $this->_gen_log_html();
-  $this->_expand($tmpl, {
+  $this->_expand($req, $tmpl, {
     CONTENT_RAW => $content,
-    UA_TYPE     => $req->{ua_type},
     NAVI_RAW    => $navi_raw,
     CH_LONG => $ch_long_esc,
+    H1_CH_LONG_RAW => $h1_ch_long_raw,
     NAME    => $name_esc,
-    NAME_INPUT_RAW => $name_input_raw,
+    NAME_MARKER_RAW => $name_marker_raw,
     RTOKEN  => $next_rtoken,
     NEXT_RTOKEN => $next_rtoken,
     PREV_RTOKEN => $prev_rtoken,
@@ -1574,15 +1892,14 @@ sub _gen_log_html
 <div class="main">
 <div class="uatype-<&UA_TYPE>">
 
-<h1><&CH_LONG></h1>
+<&H1_CH_LONG_RAW>
 
 <&CONTENT_RAW>
 
 <form action="./" method="post">
 <p>
-talk:<input type="text" name="m" size="60" />
+talk:<&NAME_MARKER_RAW><input type="text" name="m" size="60" />
   <input type="submit" value="発言/更新" /><br />
-<&NAME_INPUT_RAW>
 <input type="hidden" name="x" size="10" value="<&LAST_SEEN_RTOKEN>" />
 </p>
 </form>
@@ -1696,12 +2013,12 @@ sub _post_log
   my $mode = $this->_get_req_param($req, 'mode');
 
   my $cgi = $this->_get_cgi_hash($req);
-  my $name   = $cgi->{n} || '';
   if( my $m = $cgi->{m} )
   {
     if( $mode ne 'owner' )
     {
-      $m = ($name || $this->config->name_default || $DEFAULT_NAME) . "> " . $m;
+      my $name = $req->{session}{name} or die "no session.name";
+      $m = "$name> $m";
     }
     $m =~ s/[\r\n].*//s;
     my $network = RunLoop->shared_loop->network($netname);
@@ -1793,9 +2110,8 @@ sub _gen_chan_info
   my $ch_long_esc = $this->_escapeHTML($ch_long);
 
   my $tmpl = $this->_tmpl_chan_info();
-  $this->_expand($tmpl, {
+  $this->_expand($req, $tmpl, {
     CONTENT_RAW => $content_raw,
-    UA_TYPE     => $req->{ua_type},
     CH_LONG   => $ch_long_esc,
     TOPIC     => $topic_esc,
     IN_TOPIC  => $in_topic_esc,
@@ -1939,6 +2255,75 @@ sub _post_chan_info
 
   return undef;
 }
+
+# -----------------------------------------------------------------------------
+# $html = $this->_gen_config($req).
+#
+sub _gen_config
+{
+  my $this = shift;
+  my $req  = shift;
+
+  my $name_esc = $this->_escapeHTML( $req->{session}{name} || '' );
+
+  my $tmpl = $this->_tmpl_config();
+  $this->_expand($req, $tmpl, {
+    NAME      => $name_esc,
+  });
+}
+sub _tmpl_config
+{
+  <<HTML;
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja-JP">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type"  content="text/css" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" type="text/css" href="<&CSS>" />
+  <title>設定</title>
+</head>
+<body>
+<div class="main">
+<div class="uatype-<&UA_TYPE>">
+
+<h1>設定</h1>
+
+<form action="./config" method="post">
+名前: <input type="text" name="n" value="<&NAME>" /><br />
+<input type="submit" value="変更" /><br />
+</form>
+
+<p>
+[
+<a href="./" accesskey="*">戻る</a>[*] |
+<a href="<&TOP_PATH>" accesskey="0">List</a>[0] |
+<a href="config" accesskey="#">再表示</a>[#]
+]
+</p>
+
+</div>
+</div>
+</body>
+</html>
+HTML
+}
+
+sub _post_config
+{
+  my $this = shift;
+  my $req  = shift;
+
+  my $cgi = $this->_get_cgi_hash($req);
+  if( $cgi->{n} )
+  {
+    $req->{session}{name} = $cgi->{n};
+  }
+
+  return undef;
+}
+
 
 # -----------------------------------------------------------------------------
 # $txt = $this->_escapeHTML($html).
@@ -2110,9 +2495,10 @@ allow-public {
 # asc (旧->新) か desc (新->旧).
 - sort-order: asc
 
-# 発言BOXで名前指定しなかったときのデフォルトの名前.
-# mode: shared の時に使われる.
--name-default: (noname)
+# name-default 設定は VERSION 0.05 で廃止されました.
+# # 発言BOXで名前指定しなかったときのデフォルトの名前.
+# # mode: shared の時に使われる.
+# -name-default: (noname)
 
 # 外部にTiarraさんを使っているときに, そこのネットワークを切り出して表示する.
 # exteact-network: <netname> <remote-sep>
