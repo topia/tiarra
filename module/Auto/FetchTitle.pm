@@ -1675,7 +1675,7 @@ sub _parse_response
   $content = $ENCODER->new($content, $enc)->utf8;
   $result->{decoded_content} = $content;
 
-  my ($title) = $content =~ m{<title\s*>\s*(.*?)\s*</title\s*>}is;
+  my ($title) = $content =~ m{<title(?:\s[^<>]*|\s*)>\s*(.*?)\s*</title\s*>}is;
   $DEBUG && !$title and $this->_debug($full_ch_name, "debug: no title elements in document");
 
   if( defined($title) )
