@@ -238,7 +238,7 @@ sub filter_prereq
     return;
   }
 
-  $ctx->_apply_recv_limit($req, 12*1024);
+  $ctx->_apply_recv_limit($req, 15*1024);
 
   $ctx->_add_cookie_header($req, $this->{cookie_jar});
 }
