@@ -8,6 +8,7 @@ use base qw(Module);
 use Mask;
 use Multicast;
 use Timer;
+use base qw(Tiarra::Mixin::NewIRCMessage);
 
 sub new {
     my $class = shift;
