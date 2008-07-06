@@ -291,9 +291,19 @@ sub _config
     },
     {
       # 18. biglobe.
-      url        => 'http://news.biglobe.ne.jp/politics/*',
+      url        => 'http://news.biglobe.ne.jp/*',
       recv_limit => 30*1024,
       extract    => qr{<h4 class="ch15">(.*?)(?:&nbsp;.*)?</h4>}s,
+    },
+    {
+      # 19. i-revo.
+      url        => 'http://www.i-revo.jp/corporate/news/*',
+      extract    => qr{<h2>.*?<h2>(.*?)</h2>}s,
+    },
+    {
+      # 20. dq-status
+      url        => 'http://u-enterprise.com/dqstatus/*',
+      extract    => qr{<h1 id=maga_title>(.*?)</h1>}s,
     },
   ];
   $config;
