@@ -566,12 +566,12 @@ sub _on_request
       $key && $val or last CHECK_COOKIE;
       $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/ge;
     $DEBUG and $this->_debug("$peer: cookie: [$key]=[$val]");
-      if( $val !~ /^sid:(\d+):(\d+)(?::|\z)/ )
+      if( $val !~ /^sid:(\d+):(\d+):(\d+)(?::|\z)/ )
       {
         last CHECK_COOKIE;
       }
-      my ($seq, $check) = ($1, $2);
-      my $sid = "sid:$seq:$check";
+      my ($seed, $seq, $check) = ($1, $2, $3);
+      my $sid = "sid:$seed:$seq:$check";
       $req->{authtoken} = $sid;
       $DEBUG and $this->_debug("$peer: $sid");
     }
@@ -606,7 +606,8 @@ sub _new_session
   our $seed ||= int(rand(0xFFFF_FFFF));
   our $seq  ||= 0;
   $seq ++;
-  my $sid = "sid:$seed:$seq";
+  my $rnd = int(rand(0xFFFF_FFFF));
+  my $sid = "sid:$seed:$seq:$rnd";
   $DEBUG and $this->_debug("_new_session: $sid");
 
   $req->{authtoken} = $sid;
