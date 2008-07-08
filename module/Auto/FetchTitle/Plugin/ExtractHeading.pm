@@ -305,6 +305,12 @@ sub _config
       url        => 'http://u-enterprise.com/dqstatus/*',
       extract    => qr{<h1 id=maga_title>(.*?)</h1>}s,
     },
+    {
+      # 21. emily.
+      url        => 'http://shop-emily.com/shopdetail/*/order/',
+      recv_limit => 20*1024,
+      extract    => qr{<font class=woong>&gt;</font> <font color=red class=woong>(.*?)</a>}s,
+    },
   ];
   $config;
 }
