@@ -508,6 +508,7 @@ sub _on_request
 
   $DEBUG and $this->_debug("$peer: check auth ...");
   my $accepted_list = $this->auth($conflist, $req);
+  $DEBUG and $this->_debug("$peer: auth=".Dumper($accepted_list));use Data::Dumper;
   my $authtoken_list;
   if( @$accepted_list )
   {
@@ -590,7 +591,7 @@ sub _on_request
   }
 
 
-  $this->_debug("$peer: accept: sid=$req->{sid}");
+  $this->_debug("$peer: accept: sid=".($req->{authtoken}||'-'));
   $this->_dispatch($req);
 }
 
@@ -939,7 +940,7 @@ sub _gen_login_html
 
 <h1>Login</h1>
 
-<form action="login" method="post">
+<form action="login" method="POST">
 名前: <input type="text" name="n" value="<&NAME>" /><br />
 <input type="submit" value="Login" /><br />
 <input type="hidden" name="path" value="<&PATH>" />
@@ -1580,7 +1581,7 @@ sub _gen_list_html
 
 <&CONTENT>
 
-<form action="./" method="post">
+<form action="./" method="POST">
 ENTER: <input type="text" name="enter" value="" />
 <input type="submit" value="入室" /><br />
 </form>
@@ -1897,7 +1898,7 @@ sub _gen_log_html
 
 <&CONTENT_RAW>
 
-<form action="./" method="post">
+<form action="./" method="POST">
 <p>
 talk:<&NAME_MARKER_RAW><input type="text" name="m" size="60" />
   <input type="submit" value="発言/更新" /><br />
@@ -1984,6 +1985,7 @@ sub _get_cgi_hash
       foreach my $pair (split(/[&;]/, $query))
       {
         my ($key, $val) = split(/=/, $pair, 2);
+        $val =~ tr/+/ /;
         $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
         $cgi->{$key} = $val;
       }
@@ -1995,6 +1997,7 @@ sub _get_cgi_hash
     foreach my $pair (split(/[&;]/, $req->{Content}))
     {
       my ($key, $val) = split(/=/, $pair, 2);
+      $val =~ tr/+/ /;
       $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/gie;
       $cgi->{$key} = $val;
     }
@@ -2141,7 +2144,7 @@ sub _tmpl_chan_info
 
 <&CONTENT_RAW>
 
-<form action="./info" method="post">
+<form action="./info" method="POST">
 TOPIC: <span class="chan-topic"><&TOPIC></span><br />
 <input type="text" name="topic" value="<&IN_TOPIC>" />
 <input type="submit" value="変更" /><br />
@@ -2151,17 +2154,17 @@ TOPIC: <span class="chan-topic"><&TOPIC></span><br />
 NAMES: <span class="chan-names"><&NAMES></span><br />
 </p>
 
-<form action="./info" method="post">
+<form action="./info" method="POST">
 PART: <input type="text" name="part" value="<&PART_MSG>" />
 <input type="submit" value="退室" /><br />
 </form>
 
-<form action="./info" method="post">
+<form action="./info" method="POST">
 JOIN <input type="hidden" name="join" value="<&CH_LONG>" />
 <input type="submit" value="入室" /><br />
 </form>
 
-<form action="./info" method="post">
+<form action="./info" method="POST">
 DELETE <input type="hidden" name="delete" value="<&CH_LONG>" />
 <input type="submit" value="削除" /><br />
 </form>
@@ -2291,7 +2294,7 @@ sub _tmpl_config
 
 <h1>設定</h1>
 
-<form action="./config" method="post">
+<form action="./config" method="POST">
 名前: <input type="text" name="n" value="<&NAME>" /><br />
 <input type="submit" value="変更" /><br />
 </form>
