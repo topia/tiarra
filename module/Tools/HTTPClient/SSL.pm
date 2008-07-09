@@ -216,7 +216,7 @@ sub _recv
     {
       my $e = $ssl->errstr;
       #print "read: $e\n";
-      if( $e =~ /SSL wants a read first!/ )
+      if( $e =~ /SSL wants a read first/ )
       {
         last;
       }
