@@ -476,6 +476,7 @@ sub _on_request
     cgi_hash  => undef, # generated on demand.
     req_param => undef, # config params, generated on demand.
     session   => undef,
+    path      => undef, # path under $config->{path}.
   };
   if( my $ua = $req->{Header}{'User-Agent'} )
   {
@@ -573,7 +574,7 @@ sub _on_request
       my ($key, $val) = split(/=/, $ck);
       $key && $val or last CHECK_COOKIE;
       $val =~ s/%([0-9a-f]{2})/pack("H*",$1)/ge;
-    $DEBUG and $this->_debug("$peer: cookie: [$key]=[$val]");
+      $DEBUG and $this->_debug("$peer: cookie: [$key]=[$val]");
       if( $val !~ /^sid:(\d+):(\d+):(\d+)(?::|\z)/ )
       {
         last CHECK_COOKIE;
@@ -585,6 +586,16 @@ sub _on_request
     }
   }
 
+  my $path = $req->{Path};
+  if( $path !~ s{\Q$this->{path}}{/} )
+  {
+    $this->_debug("$peer: outside request, [$path] is not contened in [$this->{path}]");
+    $this->_response($req, 404);
+    return;
+  }
+  $path =~ s/\?.*//;
+  $req->{path} = $path;
+
   my $mode = $this->_get_req_param($req, 'mode');
   if( $mode eq 'owner' )
   {
@@ -592,9 +603,24 @@ sub _on_request
   }
   $this->_update_session($req);
 
-  if( $mode ne 'owner' && !$req->{session}{name} )
+  my $need_name;
+  if( $mode eq 'owner' )
   {
-    $this->_debug("$peer: login required (no name).");
+    $need_name = undef;
+  }elsif( $req->{session}{name} )
+  {
+    $need_name = undef;
+  }elsif( $path eq '/style/style.css' )
+  {
+    $need_name = undef;
+  }else
+  {
+    $need_name = 1;
+  }
+  
+  if( $need_name )
+  {
+    $this->_debug("$peer: login required (no name). [vpath=$req->{path}]");
     eval{
       $this->_login($req);
     };
@@ -603,7 +629,7 @@ sub _on_request
     my $aid  = $req->{authid}        || '-';
     my $sid  = $req->{authtoken}     || '-';
     my $name = $req->{session}{name} || '-';
-    $this->_debug("$peer: accept: id=$aid, name=$name, sid=$sid");
+    $this->_debug("$peer: accept: auth=$aid, name=$name, sid=$sid");
     eval {
       $this->_dispatch($req);
     };
@@ -877,15 +903,9 @@ sub _login
 {
   my $this = shift;
   my $req  = shift;
+  my $path = $req->{path};
 
   $DEBUG and $this->_debug("$req->{peer}: login: process login dispatcher");
-  my $path = $req->{Path};
-  if( $path !~ s{\Q$this->{path}}{/} )
-  {
-    $this->_response($req, 404);
-    return;
-  }
-  $path =~ s/\?.*//;
 
   if( $path eq '/' )
   {
@@ -903,6 +923,9 @@ sub _login
   {
     # but not loged in.
     $this->_location($req, "/login");
+  }elsif( $path eq '/style/style.css' )
+  {
+    $this->_response($req, [css=>'']);
   }else
   {
     $this->_response($req, 404);
@@ -979,14 +1002,7 @@ sub _dispatch
 {
   my $this = shift;
   my $req  = shift;
-
-  my $path = $req->{Path};
-  if( $path !~ s{\Q$this->{path}}{/} )
-  {
-    $this->_response($req, 404);
-    return;
-  }
-  $path =~ s/\?.*//;
+  my $path = $req->{path};
 
   if( $path eq '/' )
   {
