@@ -470,7 +470,8 @@ sub _on_request
     client    => $cli,
     peer      => $peer,
     conflist  => $conflist,
-    authtoken => undef,
+    authid    => undef, # login token (basic, etc.)
+    authtoken => undef, # session token (sid).
     ua_type   => undef,
     cgi_hash  => undef, # generated on demand.
     req_param => undef, # config params, generated on demand.
@@ -508,7 +509,8 @@ sub _on_request
 
   $DEBUG and $this->_debug("$peer: check auth ...");
   my $accepted_list = $this->auth($conflist, $req);
-  $DEBUG and $this->_debug("$peer: auth=".Dumper($accepted_list));use Data::Dumper;
+  #$DEBUG and $this->_debug("$peer: auth=".Dumper($accepted_list));use Data::Dumper;
+  my $authid_list;
   my $authtoken_list;
   if( @$accepted_list )
   {
@@ -517,15 +519,20 @@ sub _on_request
     @$conflist = map{ $_->{conf} } @$accepted_list;
 
     # extract authtoken list.
+    $authid_list    = [];
     $authtoken_list = [];
     foreach my $auth (@$accepted_list)
     {
-      if( grep { $_ eq $auth->{token} } @$authtoken_list )
+      if( !grep { $_ eq $auth->{token} } @$authtoken_list )
       {
-        # no dup.
-        next;
+        # unique.
+        push(@$authtoken_list, $auth);
       }
-      push(@$authtoken_list, $auth->{token});
+      if( !grep { $_ eq $auth->{id} } @$authid_list )
+      {
+        # unique.
+        push(@$authid_list, $auth);
+      }
     }
   }else
   {
@@ -554,7 +561,7 @@ sub _on_request
     return;
   }
 
-
+  $req->{authid}    = ($authid_list    && @$authid_list)    ? $authid_list   ->[0]->{id}     : undef;
   $req->{authtoken} = ($authtoken_list && @$authtoken_list) ? $authtoken_list->[0]->{atoken} : undef;
   if( !$req->{authtoken} )
   {
@@ -584,15 +591,25 @@ sub _on_request
     $req->{authtoken} ||= "owner:*";
   }
   $this->_update_session($req);
+
   if( $mode ne 'owner' && !$req->{session}{name} )
   {
     $this->_debug("$peer: login required (no name).");
-    return $this->_login($req);
+    eval{
+      $this->_login($req);
+    };
+  }else
+  {
+    my $aid  = $req->{authid}        || '-';
+    my $sid  = $req->{authtoken}     || '-';
+    my $name = $req->{session}{name} || '-';
+    $this->_debug("$peer: accept: id=$aid, name=$name, sid=$sid");
+    eval {
+      $this->_dispatch($req);
+    };
   }
-
-
-  $this->_debug("$peer: accept: sid=".($req->{authtoken}||'-'));
-  $this->_dispatch($req);
+  $@ and $this->_debug("$peer: error: $@");
+  $DEBUG and $this->_debug("$peer: done");
 }
 
 # -----------------------------------------------------------------------------
@@ -609,7 +626,7 @@ sub _new_session
   $seq ++;
   my $rnd = int(rand(0xFFFF_FFFF));
   my $sid = "sid:$seed:$seq:$rnd";
-  $DEBUG and $this->_debug("_new_session: $sid");
+  $DEBUG and $this->_debug("$req->{peer}: _new_session: $sid");
 
   $req->{authtoken} = $sid;
   my $sess = $this->_update_session($req);
@@ -652,7 +669,7 @@ sub _update_session
   my $sid = $req->{authtoken};
   if( !$sid )
   {
-    $DEBUG and $this->_debug("_get_session: no sid");
+    $DEBUG and $this->_debug("$req->{peer}: _get_session: no sid");
     $req->{session} = {};
     return;
   }
@@ -676,7 +693,8 @@ sub _update_session
 
   # $sess->{seen} = \%seen;
   # $sess->{name} = $name;
-  $DEBUG and $this->_debug("_get_session: ".Dumper($sess));use Data::Dumper;
+  $DEBUG and $this->_debug("$req->{peer}: _get_session: $sess->{_sid}");
+  #$DEBUG and $this->_debug("$req->{peer}: _get_session: ".Dumper($sess));use Data::Dumper;
 
   $req->{session} = $sess;
 
@@ -726,6 +744,7 @@ sub auth
         $DEBUG and $this->_debug("$req->{peer}: - $conf->{name} accepted ($param[0])");
         push(@accepts, {
           atoken => $val->{atoken}, # auth token, string or undef.
+          id     => $val->{id},     # auth id,    string. not undef.
           conf   => $conf,
         });
       }elsif( defined($val) )
@@ -2322,6 +2341,9 @@ sub _post_config
   my $cgi = $this->_get_cgi_hash($req);
   if( $cgi->{n} )
   {
+    my $old = $req->{session}{name} || '-';
+    $this->_debug("$req->{peer}: rename: $old => $cgi->{n}");
+
     $req->{session}{name} = $cgi->{n};
   }
 
