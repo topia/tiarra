@@ -25,7 +25,7 @@ use Scalar::Util qw(weaken);
 
 our $VERSION = '0.05';
 
-our $DEBUG = 1;
+our $DEBUG = 0;
 
 our $DEFAULT_MAX_LINES = 100;
 our $DEFAULT_SHOW_LINES = 20;
@@ -703,7 +703,7 @@ sub _update_session
     {
       # accept weak session.
       $sid = $w_sid;
-      $req->{auth} = $w_sid;
+      $req->{authtoken} = $w_sid;
     }else
     {
       $DEBUG and $this->_debug("$req->{peer}: _update_session: no sid");
@@ -2035,7 +2035,13 @@ sub _gen_log
       my $anchor = "L.$ymd.$info->{lineno}";
       my $rtoken = $anchor;
       $rtoken =~ s/.*-//;
-      $content .= qq{<a id="$anchor" href="?r=$rtoken">$info->{lineno}</a>/$line_html\n};
+
+      my $a_tag = qq{<a id="$anchor" href="?r=$rtoken">};
+      if( $line_html !~ s{^(\d\d:\d\d(?::\d\d)?)}{$a_tag$1</a>} )
+      {
+        $line_html = "$a_tag$info->{lineno}</a>/" . $line_html;
+      }
+      $content .= $line_html . "\n";
     }
     $content .= "</pre>\n";
   }else
