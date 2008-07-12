@@ -2474,7 +2474,7 @@ default: off
 bind-addr: 127.0.0.1
 bind-port: 8668
 path: /irc
-css:  /style/irc-style.css
+css:  /irc/style/style.css
 # 上の設定をapacheでReverseProxyさせる場合, httpd.conf には次のように設定.
 #  ProxyPass        /irc/ http://localhost:8667/irc/
 #  ProxyPassReverse /irc/ http://localhost:8667/irc/
