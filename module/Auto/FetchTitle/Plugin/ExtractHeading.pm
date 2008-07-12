@@ -290,10 +290,16 @@ sub _config
       extract    => qr{<h1>(.*?)</h1>}s,
     },
     {
-      # 18. biglobe.
+      # 18a. biglobe.news.
       url        => 'http://news.biglobe.ne.jp/*',
       recv_limit => 30*1024,
       extract    => qr{<h4 class="ch15">(.*?)(?:&nbsp;.*)?</h4>}s,
+    },
+    {
+      # 18b. biglobe.
+      url        => 'http://soudan1.biglobe.ne.jp/*',
+      recv_limit => 8*1024,
+      extract    => qr{<div class="ok_selection_content">(.*?)</div>}s,
     },
     {
       # 19. i-revo.
@@ -310,6 +316,21 @@ sub _config
       url        => 'http://shop-emily.com/shopdetail/*/order/',
       recv_limit => 20*1024,
       extract    => qr{<font class=woong>&gt;</font> <font color=red class=woong>(.*?)</a>}s,
+    },
+    {
+      # 22. wikipedia.
+      url        => 'http://ja.wikipedia.org/wiki/*',
+      extract    => sub{
+        my $req = shift;
+        if( my $anchor = $req->{anchor} )
+        {
+          $anchor =~ s/\.([0-9A-F]{2})/pack("H*",$1)/ge;
+          $anchor;
+        }else
+        {
+          return;
+        }
+      },
     },
   ];
   $config;
