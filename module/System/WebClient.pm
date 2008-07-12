@@ -23,7 +23,7 @@ use Unicode::Japanese;
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 our $DEBUG = 0;
 
@@ -1850,7 +1850,12 @@ sub _expand
     CSS       => $css_esc,
     UA_TYPE   => $req->{ua_type},
     SITE_NAME => $site_name_esc,
+    VERSION   => '-',
   };
+  if( $req->{session}{name} )
+  {
+    $common_vars->{VERSION} = $VERSION;
+  }
 
   $tmpl =~ s{<&(.*?)>}{
     my $key = $1;
@@ -2507,6 +2512,10 @@ sub _tmpl_config
 名前: <input type="text" name="n" value="<&NAME>" /><br />
 <input type="submit" value="変更" /><br />
 </form>
+
+<p>
+System::WebClient version <&VERSION>.
+</p>
 
 <p>
 [
