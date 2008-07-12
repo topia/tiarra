@@ -25,7 +25,7 @@ use Scalar::Util qw(weaken);
 
 our $VERSION = '0.05';
 
-our $DEBUG = 0;
+our $DEBUG = 1;
 
 our $DEFAULT_MAX_LINES = 100;
 our $DEFAULT_SHOW_LINES = 20;
@@ -695,9 +695,21 @@ sub _update_session
   my $sid = $req->{authtoken};
   if( !$sid )
   {
-    $DEBUG and $this->_debug("$req->{peer}: _get_session: no sid");
-    $req->{session} = {};
-    return;
+    # check weak session.
+    my $cgi = $this->_get_cgi_hash($req);
+    my $w_sid = $cgi->{SID};
+    my $sess = $w_sid && $this->{session_master}{$w_sid};
+    if( $sess && $sess->{_weak} )
+    {
+      # accept weak session.
+      $sid = $w_sid;
+      $req->{auth} = $w_sid;
+    }else
+    {
+      $DEBUG and $this->_debug("$req->{peer}: _update_session: no sid");
+      $req->{session} = {};
+      return;
+    }
   }
 
   my $sess = ($this->{session_master}{$sid} ||= {});
@@ -712,9 +724,13 @@ sub _update_session
     }
   }
 
-  $sess->{_sid}        ||= $sid;
-  $sess->{_created_at} ||= $now;
-  $sess->{_expire}     ||= $DEFAULT_SESSION_EXPIRE;
+  if( !$sess->{_sid} )
+  {
+    $sess->{_sid}        = $sid;
+    $sess->{_created_at} = $now;
+    $sess->{_expire}     = $DEFAULT_SESSION_EXPIRE;
+    $sess->{_weak}       = undef;
+  }
   $sess->{_updated_at} =   $now;
 
   # $sess->{seen} = \%seen;
@@ -941,12 +957,27 @@ sub _post_login
   my $cgi = $this->_get_cgi_hash($req);
   if( my $name = $cgi->{n} )
   {
-    $DEBUG and $this->_debug("$req->{peer}: _post_login: name=$name");
-    $this->_new_session($req); # regen.
-    $req->{session}{name} = $name;
-    my $path = $cgi->{path} || "/";;
-    $this->_location($req, $path);
-    return 1;
+    if( $req->{Header}{Cookie} )
+    {
+      $DEBUG and $this->_debug("$req->{peer}: _post_login: name=$name");
+      $this->_new_session($req); # regen.
+      $req->{session}{name} = $name;
+      my $path = $cgi->{path} || "/";
+      $this->_location($req, $path);
+      return 1;
+    }
+    if( $cgi->{weak} )
+    {
+      $DEBUG and $this->_debug("$req->{peer}: _post_login: name=$name (weak session)");
+      $this->_new_session($req); # regen.
+      $req->{session}{name}  = $name;
+      $req->{session}{_weak} = 1;
+      my $path = $cgi->{path} || "/";
+      $this->_location($req, $path);
+      return 1;
+    }
+    $DEBUG and $this->_debug("$req->{peer}: _post_login: name=$name (no cookie)");
+    return $this->_form_session($req);
   }
 
   $DEBUG and $this->_debug("$req->{peer}: _post_login: skip");
@@ -987,6 +1018,63 @@ sub _gen_login_html
 <input type="submit" value="Login" /><br />
 <input type="hidden" name="path" value="<&PATH>" />
 </form>
+
+</div>
+</div>
+</body>
+</html>
+HTML
+}
+
+sub _form_session
+{
+  my $this = shift;
+  my $req  = shift;
+
+  my $cgi = $this->_get_cgi_hash($req);
+  my $name = $cgi->{n};
+  defined($name) or die "no cgi.name";
+
+  my $tmpl = $this->_gen_form_session_html();
+  my $html = $this->_expand($req, $tmpl, {
+    NAME        => $this->_escapeHTML($name),
+    PATH        => '',
+  });
+  $this->_response($req, [html=>$html]);
+  1;
+}
+sub _gen_form_session_html
+{
+  <<HTML;
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja-JP">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type"  content="text/css" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" type="text/css" href="<&CSS>" />
+  <title>login (weak session)</title>
+</head>
+<body>
+<div class="main">
+<div class="uatype-<&UA_TYPE>">
+
+<h1>Login</h1>
+
+<form action="login" method="POST">
+名前: <input type="text" name="n" value="<&NAME>" /><br />
+<input type="submit" value="Login" /><br />
+<input type="hidden" name="path" value="<&PATH>" />
+(<label for="weak"><input type="checkbox" name="weak" id="weak" />(※)弱いセッションを使う</label>)
+</form>
+
+<p>
+(※) 携帯等Cookieの機能が使えない場合, 
+代替手段としてクエリにセッションIDを埋め込みます.<br />
+ログインしてもこのページが繰り返し表示されてしまう場合にのみ
+チェックを入れてください.
+</p>
 
 </div>
 </div>
@@ -1250,6 +1338,12 @@ sub _response
     }
   }
 
+  if( $req->{session}{_weak} && ref($res) )
+  {
+    # HTTPコードだけの場合はLocation等もナイので書き換えの必要はなし.
+    $this->_rewrite_html($req, $res);
+  }
+
   my $cli = $req->{client};
   $cli->response($res);
   #$DEBUG and $this->_debug( Tools::HTTPParser->to_string($res) );
@@ -1260,6 +1354,11 @@ sub _response
   return;
 }
 
+# -----------------------------------------------------------------------------
+# $this->_location($path).
+# サイト内リダイレクト.
+# weak-sessionであればSIDの付与は自動で行われる.
+#
 sub _location
 {
   my $this = shift;
@@ -1269,6 +1368,16 @@ sub _location
   $DEBUG and $this->_debug("$req->{peer}: location: $path");
   $path = $this->{path} . $path;
   $path =~ s{//+}{/}g;
+  if( $req->{session}{_weak} )
+  {
+    if( $path =~ /\?/ )
+    {
+      $path .= "&SID=$req->{session}{_sid}";
+    }else
+    {
+      $path .= "?SID=$req->{session}{_sid}";
+    }
+  }
   my $res = {
     Code => 302,
     Header => {
@@ -1276,6 +1385,65 @@ sub _location
     },
   };
   $this->_response($req, $res);
+}
+
+# -----------------------------------------------------------------------------
+# $this->_rewrite_html($req, $res).
+# weak-session時のHTML書き換え.
+#
+sub _rewrite_html
+{
+  my $this = shift;
+  my $req  = shift;
+  my $res  = shift;
+
+  $req->{session}{_weak} or return;
+
+  my $sid_enc = $this->_escapeHTML($req->{session}{_sid});
+
+  $res->{Content} =~ s{(<.*?>)}{
+    my $tag = $1;
+    if( $tag =~ /^<form\b/ )
+    {
+      $tag .= qq{<input type="hidden" name="SID" value="$sid_enc" />};
+    }else
+    {
+      $tag =~ s{\b(href|src)\s*=\s*(".*?"|[^\s>]*)}{
+        my ($key, $val) = ($1, $2);
+        my $quoted   = $val =~ s/^"(.*)"\z/$1/s;
+        my $fragment = $val =~ s/(#.*)//s ? $1 : '';
+        my ($path, $query) = split(/\?/, $val, 2);
+        my @params;
+        if( defined($query) )
+        {
+          @params = split(/[&;]/, $query);
+          foreach my $pair (@params)
+          {
+            my ($k, $v) = split(/=/, $pair, 2);
+            $k =~ tr/+/ /;
+            $k =~ s/%([0-9a-f]{2})/pack("H*",$1)/ge;
+            if( $k eq 'SID' )
+            {
+              $pair = undef;
+            }
+          }
+          @params = grep{ defined($_) } @params;
+        }
+        push(@params, "SID=$sid_enc");
+        my $new_val = $path . '?' . join('&', @params);
+        if( $quoted )
+        {
+          $new_val = qq{"$new_val"};
+        }
+        "$key=$new_val";
+      }ges;
+    }
+    $tag;
+  }ges;
+
+  $res->{Header}{'Content-Length'} = length($res->{Content});
+
+  $res;
 }
 
 # -----------------------------------------------------------------------------
