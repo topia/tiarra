@@ -280,7 +280,7 @@ WebClient を起動させる場所の指定.<br />
 <div class="element"><span class="key">bind-addr</span>:<span class="value">127.0.0.1</span></div>
 <div class="element"><span class="key">bind-port</span>:<span class="value">8668</span></div>
 <div class="element"><span class="key">path</span>:<span class="value">/irc</span></div>
-<div class="element"><span class="key">css</span>:<span class="value">/style/irc-style.css</span></div>
+<div class="element"><span class="key">css</span>:<span class="value">/irc/style/style.css</span></div>
 <p class="comment">
 上の設定をapacheでReverseProxyさせる場合, httpd.conf には次のように設定.<br />
 &nbsp;ProxyPass        /irc/ http://localhost:8667/irc/<br />
@@ -325,7 +325,7 @@ auth: :basic &lt;user&gt; &lt;pass&gt;<br />
 auth: :softbank &lt;端末ID&gt;<br />
 auth: :softbank &lt;UID&gt;<br />
 auth: :au &lt;SUBNO&gt;<br />
-&lt;pass&gt; には {MD5}xxxx や {B}xxx を利用可能.<br />
+各値(&lt;pass&gt;等)には {MD5}xxxx や {B}xxx や {CRYPT}xxx を利用可能.<br />
 そのままべた書きも出来るけれど.<br />
 </p>
 <div class="element"><span class="key">auth</span>:<span class="value">:basic user pass</span></div>
@@ -360,10 +360,11 @@ asc (旧-&gt;新) か desc (新-&gt;旧).<br />
 </p>
 <div class="element"><span class="key"> sort-order</span>:<span class="value">asc</span></div>
 <p class="comment">
-発言BOXで名前指定しなかったときのデフォルトの名前.<br />
-mode: shared の時に使われる.<br />
+name-default 設定は VERSION 0.05 で廃止されました.<br />
+# 発言BOXで名前指定しなかったときのデフォルトの名前.<br />
+# mode: shared の時に使われる.<br />
+-name-default: (noname)<br />
 </p>
-<div class="element"><span class="key">name-default</span>:<span class="value">(noname)</span></div>
 <p class="comment">
 外部にTiarraさんを使っているときに, そこのネットワークを切り出して表示する.<br />
 exteact-network: &lt;netname&gt; &lt;remote-sep&gt;<br />
