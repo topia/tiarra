@@ -60,6 +60,15 @@ our $HAS_IMAGE_EXIFTOOL = do{
   !$@;
 };
 
+our $HAS_TOOLS_ID3TAG = do{
+  eval {
+    local($SIG{__DIE__}) = 'DEFAULT';
+    require Tools::ID3Tag;
+    Module::Use->import('Tools::ID3Tag');
+  };
+  !$@;
+};
+
 our $MAX_ACTIVE_REQUESTS        = 3;
 our $MAX_URLS_IN_SINGLE_MESSAGE = 3;
 our $DEFAULT_RECV_LIMIT         = 4*1024; # 4K bytes.
@@ -1696,11 +1705,11 @@ sub _parse_response
   if( $reply eq '' )
   {
     $DEBUG and $this->_debug($full_ch_name, "debug: check icecast");
-    if( my $icy_name = $headers->{'icy-name'} )
+    if( my $icy_name = $headers->{'Icy-Name'} )
     {
       # Icecast.
-      my $desc    = $headers->{'icy-description'};
-      my $bitrate = $headers->{'icy-br'};
+      my $desc    = $headers->{'Icy-Description'};
+      my $bitrate = $headers->{'Icy-Br'};
       $reply = $icy_name;
       if( defined($bitrate) )
       {
@@ -1713,11 +1722,33 @@ sub _parse_response
       $reply = $ENCODER->new($reply,'auto')->utf8;
     }
   }
-  if( $ctype eq 'audio/x-mpegurl' && $res->{StreamState} eq 'finished' )
+  if( $ctype eq 'audio/x-mpegurl' && ($res->{StreamState} eq 'finished' || $res->{StreamState} eq 'body') )
   {
-    if( $content =~ m{^(\w+://[-.\w]+\S*)\s*$}m )
+    if( $content =~ m{^(\w+://[-.\w:]+\S*)\s*\z} )
     {
       $result->{redirect} = substr($content, 0, length($1)); # keep taintness.
+    }
+  }
+  if( !$reply && $ctype eq 'audio/mpeg' && ($res->{StreamState} eq 'finished' || $res->{StreamState} eq 'body') )
+  {
+    if( $content =~ m{^ID3} && $HAS_TOOLS_ID3TAG )
+    {
+      # from raw content.
+      my $info = Tools::ID3Tag->extract($res->{Content});
+      #$DEBUG and $this->_debug($req, "ID3Tag.size    = ".($info->{size} || '-')."/".length($content));
+      #$DEBUG and $this->_debug($req, "ID3Tag.version = ".($info->{version} || '-'));
+      #$DEBUG and $this->_debug($req, "ID3Tag.title   = ".($info->{title} || '-'));
+      #$DEBUG and $this->_debug($req, "ID3Tag.album   = ".($info->{album} || '-'));
+      #$DEBUG and $this->_debug($req, "ID3Tag.artist  = ".($info->{artist} || '-'));
+      $reply = $info->{title} || 'no title';
+      if( $info->{album} )
+      {
+        $reply .= " / $info->{album}";
+      }
+      if( $info->{artist} )
+      {
+        $reply .= " ($info->{artist})";
+      }
     }
   }
 
