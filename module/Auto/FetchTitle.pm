@@ -1632,7 +1632,9 @@ sub _parse_response
   }
 
   # detect refresh tag.
-  if( $content =~ m{<META HTTP-EQUIV="refresh" CONTENT="(\d+);URL=(.*?)">}i )
+  my $content2 = $content;
+  $content2 =~ s/<!--.*?-->//g;
+  if( $content2 =~ m{<META HTTP-EQUIV="refresh" CONTENT="(\d+);URL=(.*?)">}i )
   {
     my $after = $1;
     my $url   = $2;
@@ -1642,7 +1644,7 @@ sub _parse_response
 
   # detect encoding.
   my $enc = 'auto';
-  if( $content =~ m{<meta\s+http-equiv="Content-Type"\s+content="\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)"\s*/?>}i )
+  if( $content2 =~ m{<meta\s+http-equiv="Content-Type"\s+content="\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)"\s*/?>}i )
   {
     my $e = lc($1);
     $enc = $e =~ /s\w*jis/     ? 'sjis'
@@ -1681,10 +1683,11 @@ sub _parse_response
   }
 
   # decode.
-  $content = $ENCODER->new($content, $enc)->utf8;
+  $content  = $ENCODER->new($content,  $enc)->utf8;
+  $content2 = $ENCODER->new($content2, $enc)->utf8;
   $result->{decoded_content} = $content;
 
-  my ($title) = $content =~ m{<title(?:\s[^<>]*|\s*)>\s*(.*?)\s*</title\s*>}is;
+  my ($title) = $content2 =~ m{<title(?:\s[^<>]*|\s*)>\s*(.*?)\s*</title\s*>}is;
   $DEBUG && !$title and $this->_debug($full_ch_name, "debug: no title elements in document");
 
   if( defined($title) )
