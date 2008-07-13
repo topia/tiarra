@@ -50,7 +50,7 @@ tiarra-port: 6667
 # crypt は ./tiarra --make-password で行えます。
 tiarra-password: xl7cflIcH9AwE
 
-# 外部プログラムからtiarraをコントロールする為のUNIXドメインソケットの名前。
+# 外部プログラムからTiarraをコントロールする為のUNIXドメインソケットの名前。
 # 例えば"foo"を指定した場合、ソケット/tmp/tiarra-control/fooが作られる。
 # 省略された場合はこの機能を無効とする。
 # また、非UNIX環境ではそもそもUNIXドメインソケットが利用可能でないため、
@@ -103,7 +103,7 @@ chanmask-mode: tiarra
 -ipv4-bind-addr: 0.0.0.0
 -ipv6-bind-addr: ::0
 
-# tiarra が、 001 や 002 や、 recent log を送信するときなどに使う prefix
+# Tiarra が、 001 や 002 や、 recent log を送信するときなどに使う prefix
 # を指定します。 hostname や fqdn っぽいものを指定すると良いかもしれません。
 # デフォルトは tiarra です。普通変える必要はありません。
 -sysmsg-prefix: tiarra

@@ -22,7 +22,7 @@ use Scalar::Util qw(weaken);
 use Tiarra::Encoding;
 use Tools::HTTPClient;
 
-our $VERSION   = '0.04';
+our $VERSION = '0.04';
 
 # 全角空白.
 our $U_IDEOGRAPHIC_SPACE = "\xe3\x80\x80";
@@ -132,7 +132,7 @@ sub new
   $this->{debug}         = $this->config->debug;
   $this->{old_config}    = $this->config;
 
-  $this->{request_queue} = {};   # { $ch_full => [] }.
+  $this->{request_queue} = {}; # { $ch_full => [] }.
   $this->{reply_queue}   = undef;
   $this->{reply_timer}   = undef;
 
@@ -525,7 +525,7 @@ sub _create_request
     old          => undef,    # undef for first (non-redirect) request.
     ini_req      => undef,    # undef for first (non-redirect) request.
     redirected   => undef,    # nr of redirects (integer).
-    applied_filters => undef,    # array-ref.
+    applied_filters => undef, # array-ref.
 
     url          => $url,
     anchor       => $anchor,
@@ -571,7 +571,7 @@ sub _check_mask
 
   foreach my $mask (@{$this->{mask}})
   {
-    my $chan_match = Mask::match($mask->{ch_mask},  $full_ch_name);
+    my $chan_match = Mask::match($mask->{ch_mask}, $full_ch_name);
     if( !$chan_match )
     {
       defined($chan_match) or next;
@@ -921,7 +921,7 @@ sub _request_filter
 
   if( $when eq 'prereq' )
   {
-    $req->{headers}{'User-Agent'} ||= "FetchTitle/$VERSION (tiarra)";
+    $req->{headers}{'User-Agent'} ||= "FetchTitle/$VERSION (Tiarra)";
     if( $url =~ m{https?://\w+\.2ch\.net(?:/|$)} )
     {
       $DEBUG and $this->_debug($req, "debug: change user-agent for 2ch");
@@ -967,7 +967,7 @@ sub _request_filter
       {
         push(@types, 'basic');
       }
-      if( $block->cookie && !grep {$_ eq 'cookie'}  @types)
+      if( $block->cookie && !grep {$_ eq 'cookie'} @types)
       {
         push(@types, 'cookie');
       }
@@ -1196,7 +1196,7 @@ sub _request_progress
 
   if( my $addr = !$req->{addr_checked} && $req->{httpclient}->{addr} )
   {
-    my $desc  = $this->_addr_check($addr);
+    my $desc = $this->_addr_check($addr);
     if( !$desc )
     {
       $req->{addr_checked} = 'not local';
@@ -1252,7 +1252,7 @@ sub _addr_check_ipv4
   my $addr = shift;
 
   my @digits = $addr =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)\z/;
-  @digits or  return undef;
+  @digits or return undef;
   grep{ $_>255 || /^0./ } @digits and return undef;
   my $addr_num = ($digits[0] << 24) | ($digits[1] << 16) | ($digits[2] << 8) | $digits[3];
 
@@ -1634,19 +1634,19 @@ sub _parse_response
   # detect refresh tag.
   my $content2 = $content;
   $content2 =~ s/<!--.*?-->//g;
-  if( $content2 =~ m{<META HTTP-EQUIV="refresh" CONTENT="(\d+);URL=(.*?)">}i )
+  if( $content2 =~ m{<META\s+HTTP-EQUIV\s*=\s*(["'])refresh\1\s+CONTENT\s*=\s*(["'])(\d+)\s*;\s*URL=(.+?)\2>}i )
   {
-    my $after = $1;
-    my $url   = $2;
+    my $after = $3;
+    my $url   = $4;
     $DEBUG and $this->_debug($full_ch_name, "debug: meta.refresh found: $after; $url");
     $result->{redirect} = $url;
   }
 
   # detect encoding.
   my $enc = 'auto';
-  if( $content2 =~ m{<meta\s+http-equiv="Content-Type"\s+content="\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)"\s*/?>}i )
+  if( $content2 =~ m{<meta\s+http-equiv\s*=\s*(["'])Content-Type\1\s+content\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\2\s*/?>}i )
   {
-    my $e = lc($1);
+    my $e = lc($3);
     $enc = $e =~ /s\w*jis/     ? 'sjis'
          : $e =~ /euc/         ? 'euc'
          : $e =~ /utf-?8/      ? 'utf8'
@@ -1656,7 +1656,7 @@ sub _parse_response
     $DEBUG and $this->_debug($full_ch_name, "debug: charset $enc from meta ($e)");
   }
   if( $enc eq 'auto' && $headers->{'Content-Type'} && $headers->{'Content-Type'} =~ /;\s*charset=(\S+)/ )
-    {
+  {
     my $e = lc($1);
     $enc = $e =~ /s\w*jis/     ? 'sjis'
          : $e =~ /euc/         ? 'euc'
@@ -1687,7 +1687,7 @@ sub _parse_response
   $content2 = $ENCODER->new($content2, $enc)->utf8;
   $result->{decoded_content} = $content;
 
-  my ($title) = $content2 =~ m{<title(?:\s[^<>]*|\s*)>\s*(.*?)\s*</title\s*>}is;
+  my ($title) = $content2 =~ m{<title(?:\s[^<>]*)?>\s*(.*?)\s*</title\s*>}is;
   $DEBUG && !$title and $this->_debug($full_ch_name, "debug: no title elements in document");
 
   if( defined($title) )
@@ -1700,7 +1700,7 @@ sub _parse_response
   }
 
   my ($ctype) = split(/[ ;]/, $headers->{'Content-Type'}, 2);
-  $ctype ||=  'unknown/unkown';
+  $ctype ||= 'unknown/unkown';
   $result->{content_type} = $ctype;
   $DEBUG and $this->_debug($full_ch_name, "debug: content-type: $ctype");
 
@@ -1818,7 +1818,7 @@ sub _parse_url
   my $url  = shift;
   ref($url) and $url = $url->{url};
 
-  my ($scheme, $domain, $path) = $url =~ m{^(http|https)://(?:[^/]+\@)?([^/]+)(.*)};
+  my ($scheme, $domain, $path) = $url =~ m{^(https?)://(?:[^/]+\@)?([^/]+)(.*)};
   if( !$scheme )
   {
     return;
@@ -2024,20 +2024,20 @@ sub _fixup_title
 
 # -----------------------------------------------------------------------------
 # $txt = $this->_unescapeHTML($html).
-# HTML中の実際参照をデリファレンス. (ってHTMLもそういうのかな？)
+# HTML中の文字参照をデリファレンス. (ってHTMLもそういうのかな？)
 #
 sub _unescapeHTML
 {
   my $this = shift;
   my $html = shift;
   my $map = {
-   nbsp => ' ',
-   lt   => '<',
-   gt   => '>',
-   amp  => '&',
-   quot => '"',
-   laquo => "\xc2\xab",
-   raquo => "\xc2\xbb",
+    nbsp  => ' ', # "\xc2\xa0"
+    lt    => '<',
+    gt    => '>',
+    amp   => '&',
+    quot  => '"',
+    laquo => "\xc2\xab",
+    raquo => "\xc2\xbb",
   };
   $html =~ s{&#(\d+);|&#x([0-9a-fA-F]+);|&(\w+);}{
     if( defined($1) || defined($2) )
@@ -2086,8 +2086,8 @@ sub _reply
   if( !$this->{reply_timer} )
   {
     $this->{reply_timer} = Timer->new(
-      After    => -1, # immediately.
-      Code     => sub{ $this->_reply_timer_handler() },
+      After => -1, # immediately.
+      Code  => sub{ $this->_reply_timer_handler() },
     )->install();
   }
 }

@@ -278,7 +278,7 @@ info: クライアントが送信した CTCP DCC のアドレスを変換する�
 default: off
 section: important
 
-# CTCP DCC に指定されているアドレスを、 tiarra で取得したものに
+# CTCP DCC に指定されているアドレスを、 Tiarra で取得したものに
 # 書き換えます。(EXPERIMENTAL)
 #
 # IPv4 のみサポートしています。
@@ -305,7 +305,7 @@ server-socket {
 
 client-socket {
   # クライアントソケットのリモートアドレスを取ります。
-  # client [this address]<-> tiarra <-> server
+  # client [this address]<-> Tiarra <-> server
 }
 
 dns {
@@ -325,16 +325,16 @@ http {
 
 # リゾルバの選び方
 #
-#  * tiarra を動作させているサーバとインターネットの間にルータ等があり、
+#  * Tiarra を動作させているサーバとインターネットの間にルータ等があり、
 #    グローバルアドレスがない場合
 #      *-socket は役に立ちません。 http を利用してください。
 #      適当な DDNS を持っていればdns も良いでしょう。
 #
-#  * tiarra がレンタルサーバなどLAN上にないサーバで動作している場合
+#  * Tiarra がレンタルサーバなどLAN上にないサーバで動作している場合
 #      server-socket, http は役に立ちません。
 #      client-socket がお勧めです。
 #
-#  * tiarra がLAN上にあり、グローバルアドレスのついているホストで
+#  * Tiarra がLAN上にあり、グローバルアドレスのついているホストで
 #    動作している場合
 #      client-socket は役に立ちません。
 #      server-socket がお勧めです。

@@ -39,7 +39,7 @@ CTCP::Versionのintervalと同じ。<br />
           <span class="description">クライアントが送信した CTCP DCC のアドレスを変換する。</span></div>
         <div class="content">
 	  <p class="comment">
-&nbsp;CTCP DCC に指定されているアドレスを、 tiarra で取得したものに<br />
+&nbsp;CTCP DCC に指定されているアドレスを、 Tiarra で取得したものに<br />
 &nbsp;書き換えます。(EXPERIMENTAL)<br />
 <br />
 &nbsp;IPv4 のみサポートしています。<br />
@@ -72,7 +72,7 @@ client &lt;-&gt; tiarra[this address] &lt;-&gt; server<br />
 <div class="block content">
 <p class="comment">
 クライアントソケットのリモートアドレスを取ります。<br />
-client [this address]&lt;-&gt; tiarra &lt;-&gt; server<br />
+client [this address]&lt;-&gt; Tiarra &lt;-&gt; server<br />
 </p>
 </div></div>
 <div class="block element"><span class="block key">dns</span>
@@ -99,16 +99,16 @@ IP アドレス取得用 regex<br />
 <p class="comment">
 &nbsp;リゾルバの選び方<br />
 <br />
-&nbsp;&nbsp;* tiarra を動作させているサーバとインターネットの間にルータ等があり、<br />
+&nbsp;&nbsp;* Tiarra を動作させているサーバとインターネットの間にルータ等があり、<br />
 &nbsp;&nbsp;&nbsp;&nbsp;グローバルアドレスがない場合<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*-socket は役に立ちません。 http を利用してください。<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;適当な DDNS を持っていればdns も良いでしょう。<br />
 <br />
-&nbsp;&nbsp;* tiarra がレンタルサーバなどLAN上にないサーバで動作している場合<br />
+&nbsp;&nbsp;* Tiarra がレンタルサーバなどLAN上にないサーバで動作している場合<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server-socket, http は役に立ちません。<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;client-socket がお勧めです。<br />
 <br />
-&nbsp;&nbsp;* tiarra がLAN上にあり、グローバルアドレスのついているホストで<br />
+&nbsp;&nbsp;* Tiarra がLAN上にあり、グローバルアドレスのついているホストで<br />
 &nbsp;&nbsp;&nbsp;&nbsp;動作している場合<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;client-socket は役に立ちません。<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server-socket がお勧めです。<br />
