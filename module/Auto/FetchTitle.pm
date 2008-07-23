@@ -1634,28 +1634,22 @@ sub _parse_response
   # detect refresh tag.
   my $content2 = $content;
   $content2 =~ s/<!--.*?-->//g;
-  if( $content2 =~ m{<META\s+HTTP-EQUIV\s*=\s*(["'])refresh\1\s+CONTENT\s*=\s*(["'])(\d+)\s*;\s*URL=(.+?)\2>}i )
+  if( $content2 =~ m{
+                     <META(?:\s[^>]*?)?\s
+                     (?:HTTP-EQUIV\s*=\s*(["'])refresh\1(?:\s[^>]*?)?\sCONTENT\s*=\s*(["'])(\d+)\s*;\s*URL=(.+?)\2
+                       |CONTENT\s*=\s*(["'])(\d+)\s*;\s*URL=(.+?)\5(?:\s[^>]*?)?\sHTTP-EQUIV\s*=\s*(["'])refresh\8)
+                     (?:\s[^>]*|/)?>
+                   }ix )
   {
-    my $after = $3;
-    my $url   = $4;
+    my $after = $3 || $6;
+    my $url   = $4 || $7;
     $DEBUG and $this->_debug($full_ch_name, "debug: meta.refresh found: $after; $url");
     $result->{redirect} = $url;
   }
 
   # detect encoding.
   my $enc = 'auto';
-  if( $content2 =~ m{<meta\s+http-equiv\s*=\s*(["'])Content-Type\1\s+content\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\2\s*/?>}i )
-  {
-    my $e = lc($3);
-    $enc = $e =~ /s\w*jis/     ? 'sjis'
-         : $e =~ /euc/         ? 'euc'
-         : $e =~ /utf-?8/      ? 'utf8'
-         : $e =~ /iso-2022-jp/ ? 'jis'
-         : $e =~ /\bjis\b/     ? 'jis'
-         : $enc;
-    $DEBUG and $this->_debug($full_ch_name, "debug: charset $enc from meta ($e)");
-  }
-  if( $enc eq 'auto' && $headers->{'Content-Type'} && $headers->{'Content-Type'} =~ /;\s*charset=(\S+)/ )
+  if( $headers->{'Content-Type'} && $headers->{'Content-Type'} =~ /;\s*charset=(\S+)/ )
   {
     my $e = lc($1);
     $enc = $e =~ /s\w*jis/     ? 'sjis'
@@ -1665,6 +1659,22 @@ sub _parse_response
          : $e =~ /\bjis\b/     ? 'jis'
          : $enc;
     $DEBUG and $this->_debug($full_ch_name, "debug: charset $enc from http-header ($e)");
+  }
+  if( $enc eq 'auto' && $content2 =~ m{
+                                       <meta(?:\s[^>]*?)?\s
+                                       (?:http-equiv\s*=\s*(["'])Content-Type\1(?:\s[^>]*?)?\scontent\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\2
+                                         |content\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\4(?:\s[^>]+?)?\shttp-equiv\s*=\s*(["'])Content-Type\6)
+                                       (?:\s[^>]*|/)?>
+                                     }ix )
+  {
+    my $e = lc($3 || $5);
+    $enc = $e =~ /s\w*jis/     ? 'sjis'
+         : $e =~ /euc/         ? 'euc'
+         : $e =~ /utf-?8/      ? 'utf8'
+         : $e =~ /iso-2022-jp/ ? 'jis'
+         : $e =~ /\bjis\b/     ? 'jis'
+         : $enc;
+    $DEBUG and $this->_debug($full_ch_name, "debug: charset $enc from meta ($e)");
   }
   if( $enc eq 'auto' )
   {
