@@ -332,6 +332,26 @@ sub _config
         }
       },
     },
+    {
+      # 23. cure-maid.
+      url        => 'http://www.curemaid.jp/index.php*',
+      recv_limit => 30*1024,
+      extract    => qr{<h2 class="entry-header">(.*?)</h2>}s,
+      timeout    => 5,
+    },
+    {
+      # 24. kyoto-np.
+      url        => 'http://www.kyoto-np.co.jp/article.php?*',
+      recv_limit => 20*1024,
+      extract    => qr{<td bgcolor="#FFFFFF" class="j25"><strong>(.*?)</strong></td>}s,
+      #timeout    => 5,
+    },
+    {
+      # 25. fukuishimbun.
+      url        => 'http://www.fukuishimbun.co.jp/modules/news2/article.php?storyid=*',
+      recv_limit => 20*1024,
+      extract    => qr{<h3 class="XL">(.*)</h3>}s,
+    },
   ];
   $config;
 }
