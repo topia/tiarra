@@ -352,6 +352,11 @@ sub _config
       recv_limit => 20*1024,
       extract    => qr{<h3 class="XL">(.*)</h3>}s,
     },
+    {
+      # 26. royce.
+      url        => 'http://www.e-royce.com/items/other/*',
+      recv_limit => 50*1024,
+    },
   ];
   $config;
 }
