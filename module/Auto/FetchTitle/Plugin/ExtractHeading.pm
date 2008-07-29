@@ -357,6 +357,11 @@ sub _config
       url        => 'http://www.e-royce.com/items/other/*',
       recv_limit => 50*1024,
     },
+    {
+      # 27. nintendo.
+      url        => 'http://www.nintendo.co.jp/corporate/release/*',
+      extract    => qr{<DIV CLASS="title">(.*?)</DIV>}s,
+    },
   ];
   $config;
 }
