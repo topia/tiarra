@@ -107,7 +107,7 @@ sub _parse_extra_config
        $type ||= 're';
        if( $type eq 're' )
        {
-         $value =~ s{^/(.*)/(\w*)\z/}{(?$2:$1)};
+         $value =~ s{^/(.*)/(\w*)\z}{(?$2:$1)};
          my $re = eval{
            local($SIG{__DIE__}) = 'DEFAULT';
            qr/$value/s;
@@ -361,6 +361,104 @@ sub _config
       # 27. nintendo.
       url        => 'http://www.nintendo.co.jp/corporate/release/*',
       extract    => qr{<DIV CLASS="title">(.*?)</DIV>}s,
+    },
+    {
+      # 28a. subeshi.
+      url        => 'http://seizo.inte.co.jp/beshi/r/?k=*',
+      extract    => sub{
+        my ($p1,$p2,$p3,$p4,$p5) = m{\Q<embed src="../img/graph.swf?\Epoint0=(\d+)&point1=(\d+)&point2=(\d+)&point3=(\d+)&point4=(\d+)"} or return;
+        my ($name) = m{<div id="type_nameLabel">(.*?)　さんのヒト型は</div>};
+        if( $name && m{/typeText/(\d+).gif} )
+        {
+          my $type = $1;
+          my $typenames = [qw(
+            ひょっとこ
+            捨て猫
+            暴君
+            ひまわり
+            ノリノリ
+            ガラス彫刻
+            評論家
+            ハードボイルド
+            勇者
+            リーダー
+            全知全能
+            みのむし
+          )];
+          if( my $typename = $typenames->[$type] )
+          {
+            my $params = "生き様=$p1,素直さ=$p2,積極性=$p3,心理=$p4,タフさ=$p5";
+            return "$name さんのヒト型は「$typename」型です ($params)";
+          }else
+          {
+            return;
+          }
+        }else
+        {
+          return;
+        }
+      },
+    },
+    {
+      # 28b. subeshi (aishou).
+      url        => 'http://seizo.inte.co.jp/beshi/aishoResult/*',
+      extract    => sub{
+        my ($type1) = m{/img/aishoType/(\d+)-1.gif};
+        my ($type2) = m{/img/aishoType/(\d+)-2.gif};
+        my ($name1) = m{<div id="user1Name">(.*?)</div>};
+        my ($name2) = m{<div id="user2Name">(.*?)</div>};
+        my $keylabels = {
+          love   => '恋愛',
+          work   => '仕事',
+          friend => '友情',
+        };
+        my $data = {};
+        foreach my $key (qw(love work friend))
+        {
+          my ($pt)   = m{<div id="\Q$key\EPoint">(\d+点)</div>};
+          my ($area) = m{<div id="\Q$key\E_area">(.*?)<div id="\w+_area">}s;
+          defined($pt) or $pt = '?';
+          my @marks = $area =~ m{<div class="mark[0-4]">(.*?)</div>}g;
+          my $label = $keylabels->{$key};
+          my $marks = join('', @marks);
+          $data->{$key} = {
+            label => $label,
+            pt    => $pt,
+            marks => $marks,
+            data  => "$label=$pt/$marks",
+          };
+        }
+        if( !grep{!defined($_)} ($type1, $type2, $name1, $name2) )
+        {
+          my $typenames = [qw(
+            ひょっとこ
+            捨て猫
+            暴君
+            ひまわり
+            ノリノリ
+            ガラス彫刻
+            評論家
+            ハードボイルド
+            勇者
+            リーダー
+            全知全能
+            みのむし
+          )];
+          my $typename1 = $typenames->[$type1] || '?';
+          my $typename2 = $typenames->[$type2] || '?';
+          my $pair = "$name1\[$typename1]/$name2\[$typename2]";
+          my $params = join(", ", map{$data->{$_}{data}} qw(love work friend));
+          return "$pair ($params)";
+        }else
+        {
+          return;
+        }
+      },
+    },
+    {
+      # 29. godiva.
+      url        => 'http://www.godiva-l.com/recipes/drink/recipes*.html',
+      extract    => qr{<img src="../../images/recipes/drink/re_name\d+.gif" alt="(.*?)" width=".*?" height=".*?">}s,
     },
   ];
   $config;
