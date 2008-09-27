@@ -174,8 +174,10 @@ sub detect_page
       my $val = $page->{values}[$idx];
       my $conf_key = "mixi_$key";
       my $allowed;
-      foreach my $conf_val ($block->$conf_key('all'))
+      foreach my $_conf_val ($block->$conf_key('all'))
       {
+        my $conf_val = $_conf_val; # copy (unalias).
+        $conf_val =~ s/\s*#.*//s;
         $allowed ||= $conf_val && $conf_val == $val;
       }
       if( !$allowed )
@@ -238,7 +240,7 @@ sub filter_prereq
     return;
   }
 
-  $ctx->_apply_recv_limit($req, 15*1024);
+  $ctx->_apply_recv_limit($req, 100*1024);
 
   $ctx->_add_cookie_header($req, $this->{cookie_jar});
 }
