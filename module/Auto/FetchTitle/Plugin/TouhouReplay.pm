@@ -72,7 +72,7 @@ sub filter_prereq
     return;
   }
 
-  $ctx->_apply_recv_limit($req, 100*1024);
+  $ctx->_apply_recv_limit($req, 500*1024);
 
   $this;
 }
