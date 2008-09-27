@@ -2655,7 +2655,7 @@ default: off
 
 # WebClient を起動させる場所の指定.
 bind-addr: 127.0.0.1
-bind-port: 8668
+bind-port: 8667
 path: /irc
 css:  /irc/style/style.css
 # 上の設定をapacheでReverseProxyさせる場合, httpd.conf には次のように設定.
