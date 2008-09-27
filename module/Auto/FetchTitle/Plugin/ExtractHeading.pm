@@ -460,6 +460,21 @@ sub _config
       url        => 'http://www.godiva-l.com/recipes/drink/recipes*.html',
       extract    => qr{<img src="../../images/recipes/drink/re_name\d+.gif" alt="(.*?)" width=".*?" height=".*?">}s,
     },
+    {
+      # 30a. 血液型ゲノム.
+      url        => 'http://blood-genome.com/d/92008/*',
+      extract    => qr{<h2>(.*?)</table>}s,
+    },
+    {
+      # 30b. 血液型ゲノム(相性).
+      url        => 'http://blood-genome.com/c/92008/*',
+      extract    => sub{
+        my ($point)  = m{<h2>(.*?)</h2>}s;
+        my ($compat) = m{<div class=infw>(.*?)</div>}s;
+        $compat =~ s/^(.*?。).*。(.*?。)/$1...$2/;
+        "$point, $compat";
+      },
+    },
   ];
   $config;
 }
