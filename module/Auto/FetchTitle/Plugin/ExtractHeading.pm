@@ -160,7 +160,8 @@ sub _config
       # 2. zakzak.
       url        => 'http://www.zakzak.co.jp/*',
       recv_limit => 10*1024,
-      extract    => qr{<font class="kijimidashi".*?>(.*?)</font>}s,
+      #extract    => qr{<font class="kijimidashi".*?>(.*?)</font>}s,
+      extract    => qr{<div class="titleArea">(.*?)</div>}s,
     },
     {
       # 3a. nikkei.
