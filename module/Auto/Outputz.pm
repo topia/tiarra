@@ -5,6 +5,7 @@ package Auto::Outputz;
 use strict;
 use warnings;
 use base qw(Module);
+use Multicast;
 use Module::Use qw(Auto::AliasDB Tools::HTTPClient Auto::Utils);
 use Auto::AliasDB;
 use Tools::HTTPClient; # >= r11345
@@ -80,9 +81,10 @@ sub _channel_match {
     foreach my $ch (@{$this->{channels}}) {
 	if (Mask::match($ch->[1],$channel)) {
 	    my $name = Tools::HashTools::replace_recursive(
-		$ch->[0], [{channel => $this->_mangle_string($channel),
-		            channel_short => $this->_mangle_string($chan_short),
-		            network => $this->_mangle_string($network)}]);
+		$ch->[0], [{
+		    channel => $this->_mangle_string($channel),
+		    channel_short => $this->_mangle_string($chan_short),
+		    network => $this->_mangle_string($network)}]);
 
 	    $this->{matching_cache}->{$channel} = $name;
 	    return $name;
@@ -142,6 +144,12 @@ default: off
 # 復活の呪文。
 key: some secret
 
+# 送信対象にするコマンドの設定。
+# 省略された場合は PRIVMSG 。
+# パラメータ1が送信先、パラメータ2が本文でなければ動作しないので、
+# 動作するコマンドは PRIVMSG/NOTICE/TOPIC/PART 程度。
+-command: PRIVMSG
+
 # 各チャンネルのURIの設定。
 # 記述された順序で検索されるので、全てのチャンネルにマッチする"*"などは最後に書かなければならない。
 # フォーマットは次の通り。
@@ -149,6 +157,6 @@ key: some secret
 # #(channel) はチャンネル名に、 #(channel_short) はネットワークなしの
 # チャンネル名に、 #(network) はネットワーク名にそれぞれ置き換えられる。
 # また、危険な文字は自動的にエスケープされる。
-channel: http://irc.example.com/#(network)/#(channel_short) *
+channel: http://#(network).irc.example.com/#(channel_short) *
 
 =cut
