@@ -177,7 +177,7 @@ sub _eval_at {
     my $result = '';
     foreach my $line (split /\n/,$body) {
 	# この行が@undef,@ifdef,@ifndef文でないなら、@defineされた全ての置換を実行。
-	if ($line !~ m/^\s*\@\s*(?:undef|ifdef|ifndef)\s+/) {
+	if ($line !~ m/^\s*\@\s*(?:undef|(?:els)?ifn?def)\s+/) {
 	    while (my ($key,$value) = each %{$this->{consts}}) {
 		$line =~ s/\Q$key\E/$value/g;
 	    }
@@ -187,7 +187,7 @@ sub _eval_at {
 	    # if文のブロック内である。
 	    my $action = $ifstack[@ifstack - 1];
 	    
-	    if ($line =~ m/^\s*\@\s*(?:if|elsif|ifdef|ifndef|else|endif)/) {
+	    if ($line =~ m/^\s*\@\s*(?:(?:els)?if(?:n?def)?|else|endif)/) {
 		# 状態が変わる可能性がある。
 		# とりあえず何もしない。
 	    }
@@ -206,11 +206,11 @@ sub _eval_at {
 	    $line =~ s/^\s*\@\s*|\s*$//g;
 
 	    # ifdefとifndefはif文に書換える
-	    if ($line =~ m/^ifdef\s+(.+)$/) {
-		$line = q{if $this->defined_p(q@}.$1.q{@)};
+	    if ($line =~ m/^(els)?ifdef\s+(.+)$/) {
+		$line = $1.q{if $this->defined_p(q@}.$2.q{@)};
 	    }
-	    elsif ($line =~ m/^ifndef\s+(.+)$/) {
-		$line = q{if !$this->defined_p(q@}.$1.q{@)};
+	    elsif ($line =~ m/^(els)?ifndef\s+(.+)$/) {
+		$line = $1.q{if !$this->defined_p(q@}.$2.q{@)};
 	    }
 
 	    if ($line =~ m/^include\s+(.+)$/) {
@@ -235,7 +235,7 @@ sub _eval_at {
 		print "$1\n";
 	    }
 	    elsif ($line =~ m/^if\s+(.+)$/) {
-		if (@ifstack > 0 && !$ifstack[@ifstack - 2]) {
+		if (@ifstack > 0 && !$ifstack[@ifstack - 1]) {
 		    # 下のフレームが存在し、一つ下のフレームのアクションが'消す'なら、無条件に消す。
 		    push @ifstack,0;
 		}
