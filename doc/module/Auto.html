@@ -661,6 +661,13 @@ mask: *            +*!*@*<br />
 </p>
 <div class="element"><span class="key">key</span>:<span class="value">some secret</span></div>
 <p class="comment">
+送信対象にするコマンドの設定。<br />
+省略された場合は PRIVMSG 。<br />
+パラメータ1が送信先、パラメータ2が本文でなければ動作しないので、<br />
+動作するコマンドは PRIVMSG/NOTICE/TOPIC/PART 程度。<br />
+</p>
+<div class="element"><span class="key">command</span>:<span class="value">PRIVMSG</span></div>
+<p class="comment">
 各チャンネルのURIの設定。<br />
 記述された順序で検索されるので、全てのチャンネルにマッチする&quot;*&quot;などは最後に書かなければならない。<br />
 フォーマットは次の通り。<br />
@@ -669,7 +676,7 @@ channel: &lt;URI&gt; (&lt;チャンネル名&gt; / &#39;priv&#39;)@&lt;ネット
 チャンネル名に、 #(network) はネットワーク名にそれぞれ置き換えられる。<br />
 また、危険な文字は自動的にエスケープされる。<br />
 </p>
-<div class="element"><span class="key">channel</span>:<span class="value">http://irc.example.com/#(network)/#(channel_short) *</span></div>
+<div class="element"><span class="key">channel</span>:<span class="value">http://#(network).irc.example.com/#(channel_short) *</span></div>
 
         </div>
       </div>
