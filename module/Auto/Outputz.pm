@@ -28,6 +28,7 @@ sub config_reload {
       die __PACKAGE__.": key must be filled.";
   }
 
+  $this->{channels} = [];
   foreach ($this->config->channel('all')) {
       my ($dirname,$mask) = split /\s+/;
       if (!defined($dirname) || $dirname eq '' ||
