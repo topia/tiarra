@@ -28,6 +28,10 @@ use base 'Auto::FetchTitle::Plugin';
 our $DEBUG;
 *DEBUG = \$Auto::FetchTitle::DEBUG;
 
+our $MSG_NOPERM_EN = "requested page in mixi is not permitted";
+our $MSG_NOPERM_JA = "mixi内の指定されたページは許可リストにありませんでした";
+our $MSG_NOPERM    = $MSG_NOPERM_JA;
+
 1;
 
 # -----------------------------------------------------------------------------
@@ -54,6 +58,81 @@ sub register
     'filter.prereq'   => \&filter_prereq,
     'filter.response' => \&filter_response,
   });
+}
+
+# -----------------------------------------------------------------------------
+# $this->not_permitted($ctx, $req, $block).
+#
+sub not_permitted
+{
+  my $this = shift;
+  my $ctx  = shift;
+  my $req  = shift;
+  my $block = shift;
+
+  my $txt = $block->mixi_noperm_msg || $MSG_NOPERM;
+  my $type = $txt =~ s/^(\w+):\s*// ? $1 : 'noerror';
+
+  $txt = Tools::HashTools::replace_recursive(
+    $txt, [{url => $req->{url}}]
+  );
+
+  if( !$req->{response} )
+  {
+    # prereq.
+    if( $type eq 'noerror' )
+    {
+      $req->{response} = $this->response_noerror($txt);
+    }else
+    {
+      # scalar response means error message.
+      $req->{response} = $txt;
+    }
+  }else
+  {
+    if( $type ne 'noerror' )
+    {
+      $txt = "(エラー) $txt";
+    }
+    $req->{result}{result} = $txt;
+  }
+}
+
+# -----------------------------------------------------------------------------
+# $res = $this->response_noerror($msg).
+#
+sub response_noerror
+{
+  my $this = shift;
+  my $txt  = shift;
+
+  my $txt_esc = $this->_escapeHTML($txt);
+  my $content = "<title>$txt_esc</title>\n";
+
+  my $res = {
+    Protocol => 'HTTP/1.0',
+    Code     => 200,
+    Message  => 'Success',
+    Header   => {
+      'Content-Type'   => 'text/html; charset=utf-8',
+      'Content-Length' => length($content),
+    },
+    Content     => $content,
+    StreamState => 'finished',
+  };
+  $res;
+}
+
+sub _escapeHTML
+{
+  my $this = shift;
+  my $txt  = shift;
+  $txt =~ s/&/&amp;/g;
+  $txt =~ s/</&lt;/g;
+  $txt =~ s/>/&gt;/g;
+  $txt =~ s/"/&quot;/g;
+  $txt =~ s/'/&#39;/g;
+  $txt;
 }
 
 # -----------------------------------------------------------------------------
@@ -158,27 +237,34 @@ sub detect_page
   foreach my $page (@allow_pages)
   {
     $DEBUG and $ctx->_debug($req, "- check $page->{name}.");
-    my @values = $req->{url} =~ $page->{re};
+    my $values = [$req->{url} =~ $page->{re}];
     my $keys = $page->{keys} || [''];
-    if( @values != @$keys)
+    if( @$values != @$keys)
     {
       $DEBUG and $ctx->_debug($req, "- - not match.");
       next;
     }
-    $page->{values} = \@values;
 
     foreach my $idx (0..$#$keys)
     {
       my $key = $keys->[$idx];
       $key or next;
-      my $val = $page->{values}[$idx];
+      my $val = $values->[$idx];
       my $conf_key = "mixi_$key";
       my $allowed;
       foreach my $_conf_val ($block->$conf_key('all'))
       {
         my $conf_val = $_conf_val; # copy (unalias).
         $conf_val =~ s/\s*#.*//s;
-        $allowed ||= $conf_val && $conf_val == $val;
+        $conf_val or next;
+        foreach my $item (split(/[,\s]+/, $conf_val))
+        {
+          $item or next;
+          $item eq '*' and $allowed=1, last;
+          $item =~ /^0*(\d+)\z/ or next;
+          $1 == $val and $allowed=1, last;
+        }
+        $allowed and last;
       }
       if( !$allowed )
       {
@@ -187,6 +273,7 @@ sub detect_page
       }
     }
     $DEBUG and $ctx->_debug($req, "- - match.");
+    $page->{values} = $values;
     return $page;
   }
   return undef;
@@ -236,11 +323,11 @@ sub filter_prereq
   my $allowed = $this->detect_page($ctx, $req, $block);
   if( !$allowed )
   {
-    $req->{response} = "requested page in mixi is not permitted";
+    $this->not_permitted($ctx, $req, $block);
     return;
   }
 
-  $ctx->_apply_recv_limit($req, 100*1024);
+  $ctx->_apply_recv_limit($req, 1000*1024);
 
   $ctx->_add_cookie_header($req, $this->{cookie_jar});
 }
@@ -271,6 +358,14 @@ sub filter_response
   }
 
   my $result = $req->{result};
+  if( $result->{decoded_content} =~ m{<div id="errorArea">(.*?)</div>}s )
+  {
+    my $txt = $1;
+    $txt = $ctx->_fixup_title($txt);
+    $req->{result}{result} = $txt . ' - ' . $req->{result}{result};
+    return;
+  }
+
   if( $result->{decoded_content} =~ m{<form action="(/login.pl)" method="post" name="login_form">(.*)</form>}s )
   {
     my $path = $1;
@@ -282,7 +377,7 @@ sub filter_response
     my $page = $this->detect_page($ctx, $req, $block);
     if( !$page )
     {
-      $req->{response} = "requested page in mixi is not permitted";
+      $this->not_permitted($ctx, $req, $block);
       return;
     }
   }
@@ -381,6 +476,12 @@ default: off
 #        timeout: 10
 #        #閲覧可能なコミュニティの指定.
 #        #mixi-community: 0
+#        #閲覧可能なユーザの指定.
+#        #指定したユーザには足跡踏んで見に行きます.
+#        #mixi-friend:    0
+#        #閲覧可能にしていないページを表示したときのメッセージ.
+#        #要求されたページを #(url) で展開できます.
+#        #mixi-noperm-msg: not permitted #(url).
 #      }
 #    }
 #  }
@@ -389,7 +490,12 @@ default: off
 # mixi-pass には {B}bbbb でBASE64エンコード値も可能.
 #
 # newsだけしか使わない場合でも, ログイン処理が必要なので
-# mixi.jp/* 側も必要になります.
+# mixi.jp 内のいくつかのURLはこのプラグインで処理する必要があります.
+#   url: http://news.mixi.jp/*
+#   url: http://mixi.jp/issue_ticket.pl?*
+#   url: http://mixi.jp/login.pl
+#   url: http://mixi.jp/check.pl?*
+# (それぞれ, ニュースページ, ログイン処理, エラー検出, 途中経路になります.)
 
 =end tiarra-doc
 
