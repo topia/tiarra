@@ -342,6 +342,12 @@ Auto::FetchTitle { ... } での設定.<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;timeout: 10<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#閲覧可能なコミュニティの指定.<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#mixi-community: 0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#閲覧可能なユーザの指定.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#指定したユーザには足跡踏んで見に行きます.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#mixi-friend:    0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#閲覧可能にしていないページを表示したときのメッセージ.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#要求されたページを #(url) で展開できます.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#mixi-noperm-msg: not permitted #(url).<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
 &nbsp;&nbsp;&nbsp;&nbsp;}<br />
 &nbsp;&nbsp;}<br />
@@ -350,7 +356,12 @@ Auto::FetchTitle { ... } での設定.<br />
 &nbsp;mixi-pass には {B}bbbb でBASE64エンコード値も可能.<br />
 <br />
 &nbsp;newsだけしか使わない場合でも, ログイン処理が必要なので<br />
-&nbsp;mixi.jp/* 側も必要になります.<br />
+&nbsp;mixi.jp 内のいくつかのURLはこのプラグインで処理する必要があります.<br />
+&nbsp;&nbsp;&nbsp;url: http://news.mixi.jp/*<br />
+&nbsp;&nbsp;&nbsp;url: http://mixi.jp/issue_ticket.pl?*<br />
+&nbsp;&nbsp;&nbsp;url: http://mixi.jp/login.pl<br />
+&nbsp;&nbsp;&nbsp;url: http://mixi.jp/check.pl?*<br />
+&nbsp;(それぞれ, ニュースページ, ログイン処理, エラー検出, 途中経路になります.)<br />
 </p>
 
         </div>
