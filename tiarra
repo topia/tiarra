@@ -372,6 +372,7 @@ sub install_signal_handlers {
     }
     $SIG{HUP} = \&handle_reload;
     $SIG{USR1} = \&handle_conf_reload;
+    $SIG{PIPE} = 'IGNORE';
 }
 
 sub handle_exit {
