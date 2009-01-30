@@ -59,7 +59,7 @@ sub _is_supported {
     return $tried_providers{$modname} if defined $tried_providers{$modname};
     my $retval = eval 'require ' . $modname;
     warn $@ if $@;
-    $tried_providers{$modname} = $retval;
+    $tried_providers{$modname} = $retval || 0;
     return $retval;
 }
 
