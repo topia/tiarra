@@ -165,7 +165,7 @@ sub control_requested {
 
 =begin tiarra-doc
 
-info:    Skelton for tiarra-module.
+info:    Skeleton for tiarra-module.
 default: off
 #section: important
 

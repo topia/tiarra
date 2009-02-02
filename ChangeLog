@@ -428,7 +428,7 @@
 
 	* main/IrcIO/Server.pm (new):
 	$this->{channels}のキーを、小文字に変換しておく。
-	
+
 	大文字小文字に一貫性の無いチャンネル名をクライアントに送る、
 	EFnetやFreenet(IRC)のようなircdに接続していると、しばしば
 	Tiarraは混乱する。この問題を回避するため、チャンネル名同士の
@@ -438,7 +438,7 @@
 	大文字小文字を無視してチャンネルを探索するように変更。
 	$server->channel($name)のようにしてChannelInfoを得ている
 	場合には、何ら変更は必要無い。
-	
+
 	チャンネル名 => ChannelInfoのハッシュを返す、$server->channels
 	を使っている場合は、そのキーが小文字に変換されている事に注意しなければ
 	ならない。
@@ -446,7 +446,7 @@
 	* main/Multicast.pm (lc, uc): 追加
 	IRC方式で大文字と小文字の変換を行う。IRC方式とは、[]\がそれぞれ{}|の
 	大文字であると定義されている方式である。
-	
+
 	* main/Mask.pm (compile): 追加
 	マスクからコンパイル済み正規表現を生成する部分を、独立した関数にした。
 	大量のマッチングを高速に行う場合は、Mask::の関数を何度も呼ぶ代わりに
@@ -901,9 +901,9 @@
 	ニューメリックリプライをシンボルとして定義するクラス。
 	useで全シンボルをエクスポート。
 
-	* main/IrcIO.pm: 
+	* main/IrcIO.pm:
 	CRが無く、LFだけで終わっているメッセージも受け入れる。
-	
+
 2004-01-23  Topia  <topia@clovery.jp>
 
 	* tiarra: $0 自体が symlink だったときに、@INC に symlink 先の
@@ -915,7 +915,7 @@
 
 	* tiarra: 起動時オプション --make-password 追加。
 	make-passwordの機能をtiarra本体に移した。
-	
+
 	* make-password: 削除
 
 2004-01-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
@@ -1348,7 +1348,7 @@
 	* module/Channel/Freeze.pm
 	(freeze):
 	カンマで区切られた複数のチャンネル名を認識。
-	
+
 	(defrost):
 	凍結していないチャンネルをdefrostするとエラーが起こる問題を解決。
 	チャンネル名をマスクとして扱うように変更。
@@ -1367,13 +1367,13 @@
 	* main/Timer.pm (interval):
 	明示的にundefを渡す事で、リピート終了可能に。
 	uninstallすれば一緒なので大した意味は無い。
-	
-	* main/IrcIO/Server.pm (_TOPIC): 
+
+	* main/IrcIO/Server.pm (_TOPIC):
 	TOPICメッセージを受信した時、古いトピックを'old-topic'として註釈を付ける。
 
 2003-07-17  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
-	* tiarra-conf.el (tiarra-conf-jump-to-block): 
+	* tiarra-conf.el (tiarra-conf-jump-to-block):
 	ブロック名を入力し、その位置へジャンプするコマンド。
 	デフォルトでは C-c C-. 及び C-c . に割当てられている。
 
@@ -1491,7 +1491,7 @@
 
 	* IO/Socket/INET6.pm: 追加。
 	IO::Socket::INETをIPv6に移植。Socket6.pmが必要。
-	
+
 	* RunLoop.pm, IrcIO/Server.pm: IPv6対応。
 	general/tiarra-ip-versionに'v6'を指定する事で、IPv6でのリスニングを行なう。
 	また、サーバーには最初にIPv6での接続を試みてからIPv4にフォールバックする。
@@ -1526,7 +1526,7 @@
 	* Auto/Utils.pm: sendto_channel_closure 関数追加。
 	  NOTICE/PRIVMSG の処理は面倒なので、これを自動的に処理する。
 	  sendto_channel_closure, generate_reply_closures に使用方法のコメントを追加。
-	
+
 2003-05-15  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* conf:
@@ -1576,7 +1576,7 @@
 
 	* tiarra: SIGHUPを受信した時の動作を変更。
 	  これまではシャットダウンしていたが、以後は設定をリロードする。
-	
+
 	* ChannelInfo.pm (fullname): 追加
 
 	* RunLoop.pm: 各ネットワークの設定を変更した後リロードすると、
@@ -1588,7 +1588,7 @@
 	* IrcIO.pm (server_p,client_p): 追加。
 	  それぞれIrcIO::Serverであれば1を返すメソッドと
 	  IrcIO::Clientであれば1を返すメソッド。
-	
+
 2003-04-13  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* User/Vanish.pm: 追加
@@ -1610,7 +1610,7 @@
 
 	* LinedINETSocket.pm: メソッドconnectの動作をconnectとattachの二つに分けた。
 	  これにより予め開かれたIO::Socket::INETに対してLinedINETSocketの機能を適用可能。
-	
+
 2003-04-05  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Auto/Joined.pm: 追加。
@@ -1647,7 +1647,7 @@
 
 2003-03-23  Topia  <topia@clovery.jp>
 
-	* CTCP/Version.pm: add perl version infomation.
+	* CTCP/Version.pm: add perl version information.
 
 	* CTCP/ClientInfo.pm: separate ' ' instead of '/'. (ref. TAGGED DATA)
 
@@ -1663,7 +1663,7 @@
 	* Channel/Join/Invite.pm: add.
 
 	* Auto/Utils.pm (get_ch_name): add.
-	(generate_reply_closures): 
+	(generate_reply_closures):
 	  add param ch_place(6th). default:0.
 	    place of channel name in msg->params.
 	  $get_ch_name closure return static string.
@@ -1672,7 +1672,7 @@
 	  generate_reply_closures's 3rd param(use_alias) to undef.(use default)
 
 	* Auto/AliasDB/CallbackUtils.pm: add register_extcallbacks.
-	  (for regist insecure callbacks)
+	  (for register insecure callbacks)
 
 2003-03-19  Topia  <topia@clovery.jp>
 
@@ -1804,7 +1804,7 @@
 2003-03-03  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Configuration/Block.pm: ブロック内ブロックを扱えるように。
-	
+
 	* Configuration/LexicalAnalyzer.pm: 新規追加。confの字句解析器。
 
 	* Configuration/Parser.pm: 新規追加。confの構文解析器。
@@ -1890,7 +1890,7 @@
 	  ソケットの監視にはExternalSocketを用いる。使い方はExternalSocket.pmにある。
 
 	* Timer.pm: uninstallした時はrunloopにundefを代入する。
-	
+
 2003-02-20  phonohawk  <phonohawk@ps.sakura.ne.jp>
 
 	* Module.pm (notification_of_message_io) : 新規追加。

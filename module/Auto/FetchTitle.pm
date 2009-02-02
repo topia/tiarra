@@ -1636,8 +1636,8 @@ sub _parse_response
   $content2 =~ s/<!--.*?-->//g;
   if( $content2 =~ m{
                      <META(?:\s[^>]*?)?\s
-                     (?:HTTP-EQUIV\s*=\s*(["'])refresh\1(?:\s[^>]*?)?\sCONTENT\s*=\s*(["'])(\d+)\s*;\s*URL=(.+?)\2
-                       |CONTENT\s*=\s*(["'])(\d+)\s*;\s*URL=(.+?)\5(?:\s[^>]*?)?\sHTTP-EQUIV\s*=\s*(["'])refresh\8)
+                     (?:HTTP-EQUIV\s*=\s*(["'])refresh\1(?:\s[^>]*?)?\sCONTENT\s*=\s*(["'])(\d+)\s*;\s*URL=([^"'<]+)\2|
+                        CONTENT\s*=\s*(["'])(\d+)\s*;\s*URL=([^"'<]+)\5(?:\s[^>]*?)?\sHTTP-EQUIV\s*=\s*(["'])refresh\8)
                      (?:\s[^>]*|/)?>
                    }ix )
   {
@@ -1662,8 +1662,8 @@ sub _parse_response
   }
   if( $enc eq 'auto' && $content2 =~ m{
                                        <meta(?:\s[^>]*?)?\s
-                                       (?:http-equiv\s*=\s*(["'])Content-Type\1(?:\s[^>]*?)?\scontent\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\2
-                                         |content\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\4(?:\s[^>]+?)?\shttp-equiv\s*=\s*(["'])Content-Type\6)
+                                       (?:http-equiv\s*=\s*(["'])Content-Type\1(?:\s[^>]*?)?\scontent\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\2|
+                                          content\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\4(?:\s[^>]+?)?\shttp-equiv\s*=\s*(["'])Content-Type\6)
                                        (?:\s[^>]*|/)?>
                                      }ix )
   {
