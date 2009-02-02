@@ -2,7 +2,7 @@
 ====================================
 Tiarra さんのつかいかた(for Windows)
 ====================================
-(rev.002 2008/05/31) (ja.sjis)
+(rev.003 2009/02/02) (ja.sjis)
 
 ... 目次 ...
 1. ActivePerl をいれる.
@@ -71,6 +71,24 @@ Tiarra さんのつかいかた(for Windows)
        tiarra-password: XXXXXXXXXXXXX
      というふうに設定ファイルを書き換えます.
 
+     例えば test というパスワードを使うときには, 
+     >>>>ここから>>>>
+       'svnversion' は、内部コマンドまたは外部コマンド、
+       操作可能なプログラムまたはバッチ ファイルとして認識されていません。
+       Tiarra encrypts your raw password to use it for config file.
+       
+       
+       Please enter raw password: test
+       
+       QJprAoiCPxwfY is your encoded password.
+       Use this for the general/tiarra-password entry.
+       続行するには何かキーを押してください . . .
+     <<<<ここまで<<<<
+     といったふうにでるので, この場合は tiarra.conf には
+       tiarra-password: QJprAoiCPxwfY
+     と記述します.
+     (実際の暗号化パスワードは実行する毎に違うものが表示されます)
+
      注意) このパスワードでは8文字より長い部分は無視されます.
 
 2-6. Webブラウザ接続パスワード.
@@ -96,6 +114,7 @@ Tiarra さんのつかいかた(for Windows)
      ファイルの最後の方に,
        [pid:1896 2008/04/08 01:37:06] Tiarra started listening 6667/tcp. (IPv4)
      みたいな行がでていればきっと大丈夫です.
+     6667 の部分がポート番号になります.
 
 (エラー診断1)
   画面に
@@ -129,13 +148,53 @@ Tiarra さんのつかいかた(for Windows)
        server: localhost
        port:   6667
      につなげます.
+
+     例, LimeChat2(Windows) の場合
+     メニューから、 "サーバ(S)" → "サーバを追加(S)..." ダイアログに
+     設定名 → てきとうに何でもOK
+     ホスト名 → localhost
+     ポート番号 → 6667
+     サーバパスワードを使う → [2-5] の tiarra-password
+     ニックネーム → [2-4] の nick
+     ログイン名 → [2-4] の user
+     名前 → （つかわないのでなんでも）
+
 4-2. 繋がればOK.
      あとは普通と一緒.
 
+     Tiarra さん経由で接続すると、チャンネル名の後ろに "@ircnet" という
+     文字列が追加されて表示されます.
+     とりあえず気にしないでください・ｘ・
+     (これは Tiarra さんが複数のサーバに接続できるので, どのサーバ上の
+      チャンネルかを区別するためのものです)
+
 (エラー診断1)
-  * 繋がらない.
-  解決方法:
-    (あとでかく)
+  * IRCクライアントからTiarraさんにつながらない.
+    >> [3] を確認.
+(エラー診断2)
+  * パスワードが違うといわれる
+    >> [2-5] と [4-1] を確認.
+       IRC クライアントで設定するのはパスワードそのもの,
+       tiarra.conf の tiarra-password に記述するのは暗号化された
+       パスワードなので実際に入力(設定)する値は別の文字列になります.
+(エラー診断3)
+  * Tiarra さんにはつながってもチャンネルに入れない.
+    >> TiarraさんからIRCサーバの接続ができてないとおもわれます.
+       接続ログは tiarra.log で確認できます.
+
+    接続開始のログ(まだ接続途中)::
+      [pid:5065 2009/01/26 21:38:28] network/ircnet: Connecting to irc.nara.wide.ad.jp(192.244.23.4)/6667 (IPv4)
+      [pid:5065 2009/01/26 21:38:29] network/ircnet: Opened connection to irc.nara.wide.ad.jp(192.244.23.4)/6667 (IPv4).
+      [pid:5065 2009/01/26 21:38:29] network/ircnet: Server replied 020(RPL_HELLO). Please wait.
+
+    接続完了のログ::
+      [pid:5065 2009/01/26 21:39:19] network/ircnet: Logged-in successfuly into irc.nara.wide.ad.jp(192.244.23.4)/6667 (IPv4).
+
+    接続失敗のログ(1)::
+      ERROR :Closing Link: xxx[yyy@zzz.zzz.zzz.zzz] (Too many host connections (global))
+
+    接続失敗のログ(2)::
+      ERROR :Closing Link: xxx[yyy@zzz.zzz.zzz.zzz] (Too many host connections (local))
 
 5. ブラウザからつなげる.
 ------------------------
@@ -192,6 +251,9 @@ Tiarra さんのつかいかた(for Windows)
      で行えます.
 
 更新履歴.
+rev.003 2009/02/02 LimeChar2での設定例を加筆.
+                   接続できない際のチェックを加筆.
+                   パスワードの設定方法について加筆.
 rev.002 2008/05/31 微妙に調整.
 rev.001 2008/04/08 初版
 [EOF]
