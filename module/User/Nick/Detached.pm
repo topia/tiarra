@@ -8,15 +8,31 @@ use strict;
 use warnings;
 use base qw(Module);
 use RunLoop;
+our $BB_KEY = __PACKAGE__.'/old-nick';
+
+sub destruct {
+    my $this = shift;
+    # 掲示板から最終nickを消す
+    BulletinBoard->shared->set($BB_KEY, undef);
+}
+
+sub config_reload {
+    my ($this, $old_config) = @_;
+    # リロードのときは掲示板を保持しておきたいので定義だけしておく。
+}
 
 sub client_attached {
     my ($this,$client) = @_;
-    # クライアントが接続されたという事は、
-    # 少なくとも一つ以上のクライアントが存在するに決まっている。
-    RunLoop->shared->broadcast_to_servers(
-	$this->construct_irc_message(
-	    Command => 'NICK',
-	    Param => RunLoop->shared->current_nick));
+
+    # 掲示板に古いnickが保存されていたら変更する。
+    my $old_nick = BulletinBoard->shared->get($BB_KEY);
+    if (defined $old_nick) {
+	BulletinBoard->shared->set($BB_KEY, undef);
+	RunLoop->shared->broadcast_to_servers(
+	    $this->construct_irc_message(
+		Command => 'NICK',
+		Param => $old_nick));
+    }
 }
 
 sub client_detached {
@@ -25,6 +41,7 @@ sub client_detached {
     if (@{RunLoop->shared->clients} == 1 &&
 	defined $this->config->detached) {
 
+	BulletinBoard->shared->set($BB_KEY, RunLoop->shared->current_nick);
 	RunLoop->shared->broadcast_to_servers(
 	    $this->construct_irc_message(
 		Command => 'NICK',
@@ -37,7 +54,12 @@ sub connected_to_server {
     # クライアントの数が0ならNICKを実行。
     if (@{RunLoop->shared->clients} == 0 &&
 	defined $this->config->detached) {
-	
+
+	if (!defined BulletinBoard->shared->get($BB_KEY)) {
+	    # 定義されていない場合(起動直後など)は現在のnickを記録しておく
+	    BulletinBoard->shared->set($BB_KEY, RunLoop->shared->current_nick);
+	}
+
 	$server->send_message(
 	    $this->construct_irc_message(
 		Command => 'NICK',
