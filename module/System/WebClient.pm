@@ -31,6 +31,7 @@ our $DEFAULT_MAX_LINES = 100;
 our $DEFAULT_SHOW_LINES = 20;
 our $DEFAULT_SITE_NAME  = "Tiarra::WebClient";
 our $DEFAULT_SESSION_EXPIRE = 7 * 24 * 60*60;
+our $NO_TOPIC = '(no-topic)';
 
 =begin COMMENT
 
@@ -1092,6 +1093,22 @@ sub _dispatch
   my $req  = shift;
   my $path = $req->{path};
 
+  my $mode = $this->_get_req_param($req, 'mode');
+  if( $mode ne 'owner' )
+  {
+    my $cgi = $this->_get_cgi_hash($req);
+    my $cgi_dump = join('&', map{
+      my $key = $_;
+      my $val = $cgi->{$key};
+      for($key, $val)
+      {
+        $_ =~ s/([%=\x00-\x1f])/'%'.pack("H*", $1)/ge;
+      }
+      "$key=$val";
+    } sort keys %$cgi);
+    $this->_debug("$req->{peer}: _dispatch: mode=$mode, path=[$path], cgi=[$cgi_dump], method=$req->{Method}");
+  }
+
   if( $path eq '/' )
   {
     my $done = $req->{Method} eq 'POST' && $this->_post_list($req);
@@ -1892,7 +1909,7 @@ sub _gen_log
   {
     if( my $chan = $net->channel($ch_short) )
     {
-      my $topic = $chan->topic || '(no-topic)';
+      my $topic = $chan->topic || $NO_TOPIC;
       my $topic_esc = $this->_escapeHTML($topic);
       $content .= "<p>\n";
       $content .= "<span class=\"chan-topic\">TOPIC: $topic_esc</span><br />\n";
@@ -2289,12 +2306,15 @@ sub _gen_chan_info
 
   my $content_raw = "";
 
-  my ($topic_esc, $names_esc);
+  my ($topic_disp_esc, $topic_esc, $names_esc);
   if( my $net = $this->_runloop->network($netname) )
   {
     if( my $chan = $net->channel($ch_short) )
     {
-      my $topic = $chan->topic || '(none)';
+      my $topic = $chan->topic;
+      defined($topic) or $topic = '';
+      my $topic_disp = $topic eq '' ? $NO_TOPIC : $topic;
+
       my $names = $chan->names || {};
       $names = [ values %$names ];
       @$names = map{
@@ -2304,18 +2324,20 @@ sub _gen_chan_info
         "$sigil$nick";
       } @$names;
       @$names = sort @$names;
+      $topic_disp_esc = $this->_escapeHTML($topic_disp);
       $topic_esc = $this->_escapeHTML($topic);
       $names_esc = $this->_escapeHTML(join(' ', @$names));
     }
   }else
   {
+    $topic_disp_esc = $NO_TOPIC;
+    $topic_esc = '';
+    $names_esc = '';
   }
-  $topic_esc ||= '-';
-  $names_esc ||= '-';
 
   my $in_topic_esc;
   my $cgi = $this->_get_cgi_hash($req);
-  if( my $in_topic = $cgi->{topic} )
+  if( defined(my $in_topic = $cgi->{topic}) )
   {
     $in_topic_esc = $this->_escapeHTML($in_topic);
   }else
@@ -2328,10 +2350,14 @@ sub _gen_chan_info
   my $ch_long_esc = $this->_escapeHTML($ch_long);
 
   my $tmpl = $this->_tmpl_chan_info();
+  $tmpl =~ s{<!begin:no_shared_mode>\s*(.*)<!end:no_shared_mode>\s*}{
+    my $mode = $this->_get_req_param($req, 'mode');
+    $mode eq 'owner' ? $1 : '';
+  }ges;
   $this->_expand($req, $tmpl, {
     CONTENT_RAW => $content_raw,
     CH_LONG   => $ch_long_esc,
-    TOPIC     => $topic_esc,
+    TOPIC     => $topic_disp_esc,
     IN_TOPIC  => $in_topic_esc,
     NAMES     => $names_esc,
     PART_MSG  => 'Leaving...',
@@ -2365,9 +2391,10 @@ TOPIC: <span class="chan-topic"><&TOPIC></span><br />
 </form>
 
 <p>
-NAMES: <span class="chan-names"><&NAMES></span><br />
+参加者: <span class="chan-names"><&NAMES></span><br />
 </p>
 
+<!begin:no_shared_mode>
 <form action="./info" method="POST">
 PART: <input type="text" name="part" value="<&PART_MSG>" />
 <input type="submit" value="退室" /><br />
@@ -2382,6 +2409,7 @@ JOIN <input type="hidden" name="join" value="<&CH_LONG>" />
 DELETE <input type="hidden" name="delete" value="<&CH_LONG>" />
 <input type="submit" value="削除" /><br />
 </form>
+<!end:no_shared_mode>
 
 <p>
 [
@@ -2418,14 +2446,26 @@ sub _post_chan_info
     my $network = RunLoop->shared_loop->network($netname);
     if( $network )
     {
-      my $for_server = $msg_to_send->clone;
-      $for_server->param(0, $ch_short);
-      $network->send_message($for_server);
+      my $chan = $network->channel($ch_short);
+      my $cur_topic = $chan ? $chan->topic : undef;
+      if( !defined($cur_topic) || $cgi->{topic} ne $cur_topic )
+      {
+        my $for_server = $msg_to_send->clone;
+        $for_server->param(0, $ch_short);
+        $network->send_message($for_server);
+      }else
+      {
+        $this->_debug("$req->{peer}: topic not changed cur=[$cur_topic] new=[$cgi->{topic}]");
+      }
     }
   }
 
   if( exists($cgi->{part}) )
   {
+    my $mode = $this->_get_req_param($req, 'mode');
+    if( $mode eq 'owner' )
+    {
+
     my $msg_to_send = Auto::Utils->construct_irc_message(
       Command => 'PART',
       Params  => [ '', $cgi->{part} ],
@@ -2440,10 +2480,19 @@ sub _post_chan_info
       $for_server->param(0, $ch_short);
       $network->send_message($for_server);
     }
+
+    }else
+    {
+      $this->_debug("$req->{peer}: part is not allowed when mode is not 'owner'");
+    }
   }
 
   if( exists($cgi->{join}) )
   {
+    my $mode = $this->_get_req_param($req, 'mode');
+    if( $mode eq 'owner' )
+    {
+
     my $msg_to_send = Auto::Utils->construct_irc_message(
       Command => 'JOIN',
       Params  => [ '' ],
@@ -2458,10 +2507,19 @@ sub _post_chan_info
       $for_server->param(0, $ch_short);
       $network->send_message($for_server);
     }
+
+    }else
+    {
+      $this->_debug("$req->{peer}: join is not allowed when mode is not 'owner'");
+    }
   }
 
   if( exists($cgi->{'delete'}) )
   {
+    my $mode = $this->_get_req_param($req, 'mode');
+    if( $mode eq 'owner' )
+    {
+
     delete $this->{cache}{$netname}{$ch_short};
     if( !keys %{$this->{cache}{$netname}} )
     {
@@ -2469,6 +2527,11 @@ sub _post_chan_info
     }
     $this->_location($req, "/");
     return 1;
+
+    }else
+    {
+      $this->_debug("$req->{peer}: delete is not allowed when mode is not 'owner'");
+    }
   }
 
   return undef;
@@ -2702,7 +2765,7 @@ allow-private {
 }
 allow-public {
   host: *
-  auth: user2 pass2
+  auth: :basic user2 pass2
   mask: #公開チャンネル@ircnet
 }
 
