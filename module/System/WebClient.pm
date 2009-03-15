@@ -635,7 +635,22 @@ sub _on_request
       $this->_dispatch($req);
     };
   }
-  $@ and $this->_debug("$peer: error: $@");
+  if( my $err = $@ )
+  {
+    eval{
+      $this->_debug("$peer: error on _dispatch/_login: $err");
+      my $cli = $req->{client};
+      $cli->response(500);
+      #$DEBUG and $this->_debug( Tools::HTTPParser->to_string($res) );
+
+      # no Keep-Alive.
+      $cli->disconnect_after_writing();
+    };
+    if( $@ )
+    {
+      $this->_debug("error on response: $@");
+    }
+  }
   $DEBUG and $this->_debug("$peer: done");
 }
 
@@ -1290,6 +1305,11 @@ sub _detect_channel
   return undef;
 }
 
+# $this->_response($req, [html => $html]).
+# $this->_response($req, [error => $text]).
+# $this->_response($req, [css  => $css_text]).
+# $this->_response($req, \%res).
+# $this->_response($req, $retcode).
 sub _response
 {
   my $this = shift;
@@ -1309,6 +1329,17 @@ sub _response
           'Content-Length' => length($html),
         },
         Content => $html,
+      };
+    }elsif( $spec->[0] eq 'error' )
+    {
+      my $text = "error: ".$spec->[1];
+      $res = {
+        Code => 200,
+        Header => {
+          'Content-Type'   => 'text/plain; charset=utf-8',
+          'Content-Length' => length($text),
+        },
+        Content => $text,
       };
     }elsif( $spec->[0] eq 'css' )
     {
@@ -1366,7 +1397,7 @@ sub _response
   #$DEBUG and $this->_debug( Tools::HTTPParser->to_string($res) );
 
   # no Keep-Alive.
-  $req->{client}->disconnect_after_writing();
+  $cli->disconnect_after_writing();
 
   return;
 }
@@ -1609,11 +1640,17 @@ sub _gen_list
   if( my $show = $this->_get_cgi_hash($req)->{show} )
   {
     $show_all = $show eq 'all';
+  }else
+  {
+    # default: owner=updated, shared=all
+    my $mode = $this->_get_req_param($req, 'mode');
+    $show_all = $mode eq 'owner' ? undef : 1;
   }
 
   # 表示できるネットワーク＆チャンネルを抽出.
   #
   my %channels;
+  my $nr_channles_all = 0;
   foreach my $netname (keys %{$this->{cache}})
   {
     foreach my $ch_short (keys %{$this->{cache}{$netname}})
@@ -1621,18 +1658,19 @@ sub _gen_list
       my $ok = $this->_can_show($req, $ch_short, $netname);
       if( $ok )
       {
+        ++ $nr_channles_all;
         my $cache  = $this->{cache}{$netname}{$ch_short};
         my $pack = {
           disp_netname  => $netname,
           disp_ch_short => $ch_short,
           anchor        => undef,
-          unseen        => undef,
-          unseen_plus   => undef,
+          unseen        => undef, # nr lines.
+          unseen_plus   => undef, # bool.
         };
 
         my $recent = $cache->{recent} || [];
         my $seen = $req->{session}{seen}{$netname}{$ch_short} || 0;
-        my $nr_unseen = 0;
+        my $nr_unseen = 0; # lines.
         foreach my $r (reverse @$recent)
         {
           $r == $seen and last;
@@ -1658,6 +1696,8 @@ sub _gen_list
     }
   }
   # 別のTiarraさんのネットワークを解凍(設定があったとき).
+  # %channels に取り出したもの(表示チェック済み)から抽出.
+  # 抽出した分は%channelsからは除去(重複回避のために).
   my %new_channels;
   foreach my $extract_line ( $this->config->extract_network('all') )
   {
@@ -1709,22 +1749,7 @@ sub _gen_list
       {
         my $channame = $pack->{disp_ch_short};
         ++$seqno;
-        my $link_ch = $channame;
-        if( $link_ch =~ s/^#// )
-        {
-          # normal channels.
-        }elsif( $link_ch =~ s/^![0-9A-Z]{5}/!/ )
-        {
-          # channel    =  ( "#" / "+" / ( "!" channelid ) / "&" ) chanstring [ ":" chanstring ]
-          # channelid  = 5( %x41-5A / digit )   ; 5( A-Z / 0-9 )
-          # (RFC2812)
-        }else
-        {
-          $link_ch = "=$link_ch";
-        }
-        my $link = "log\0$netname\0$link_ch\0";
-        $link =~ s{/}{%252F}g;
-        $link =~ tr{\0}{/};
+        my $link = $this->_path_channel($req, $netname, $channame);
         $link = $this->_escapeHTML($link);
 
         my $unseen;
@@ -1757,7 +1782,8 @@ sub _gen_list
     }
   }else
   {
-    $content = $is_pc ? "<li>no channels</li>\n" : "no channels\n";
+    my $msg = $nr_channles_all == 0 ? '表示できるチャンネルがありません' : '全て既読です';
+    $content .= $is_pc ? "<li>$msg</li>\n" : "$msg\n";
   }
   $content .= $is_pc ? "</ul>\n" : "<div\n>";
 
@@ -1775,7 +1801,7 @@ sub _gen_list
   my $tmpl = $this->_gen_list_html();
   $this->_expand($req, $tmpl, {
     CONTENT => $content,
-    SHOW_TOGGLE_LABEL => $show_all ? 'MiniList' : 'ShowAll',
+    SHOW_TOGGLE_LABEL => $show_all ? '未読表示' : '全て表示',
     SHOW_TOGGLE_VALUE => $show_all ? 'updated' : 'all',
     SHARED_BOX => $shared_box,
   });
@@ -1802,8 +1828,8 @@ sub _gen_list_html
 <&CONTENT>
 
 <form action="./" method="POST">
-ENTER: <input type="text" name="enter" value="" />
-<input type="submit" value="入室" /><br />
+チャンネル: <input type="text" name="enter" value="" />
+<input type="submit" value="作成" /><br />
 </form>
 
 <p>
@@ -1821,6 +1847,33 @@ ENTER: <input type="text" name="enter" value="" />
 HTML
 }
 
+sub _path_channel
+{
+  my $this = shift;
+  my $req  = shift;
+  my $netname  = shift;
+  my $ch_short = shift;
+
+  my $link_ch = $ch_short;
+  if( $link_ch =~ s/^#// )
+  {
+    # normal channels.
+  }elsif( $link_ch =~ s/^![0-9A-Z]{5}/!/ )
+  {
+    # channel    =  ( "#" / "+" / ( "!" channelid ) / "&" ) chanstring [ ":" chanstring ]
+    # channelid  = 5( %x41-5A / digit )   ; 5( A-Z / 0-9 )
+    # (RFC2812)
+  }else
+  {
+    $link_ch = "=$link_ch";
+  }
+
+  my $link = "log\0$netname\0$link_ch\0";
+  $link =~ s{/}{%252F}g;
+  $link =~ tr{\0}{/};
+  $link;
+}
+
 sub _post_list
 {
   my $this = shift;
@@ -1832,20 +1885,19 @@ sub _post_list
     my ($ch_short, $netname) = Multicast::detach($ch_long);
     if( !$this->_can_show($req, $ch_short, $netname) )
     {
+      $this->_debug("$req->{peer} enter[$netname/$ch_short] not in allowed channels");
       return;
     }
     my $network  = $this->_runloop->network($netname);
     if( $network )
     {
       $this->{cache}{$netname}{$ch_short} ||= $this->_new_cache_entry($netname, $ch_short);
-      $DEBUG and $this->_debug("enter: $netname/$ch_short");
-      my $link_ch = $ch_short;
-      $link_ch =~ s/^#// or $link_ch = "=$link_ch";
-      my $link = "log\0$netname\0$link_ch\0";
-      $link =~ s{/}{%2F}g;
-      $link =~ tr{\0}{/};
+      $this->_debug("$req->{peer}: enter[$netname/$ch_short]");
+      my $link = '/' . $this->_path_channel($req, $netname, $ch_short);
       $this->_location($req, $link);
-      return 1;
+    }else
+    {
+      $this->_debug("$req->{peer} enter[$netname/$ch_short] no network");
     }
   }
   return undef;
@@ -2076,6 +2128,8 @@ sub _gen_log
   my $ch_long = Multicast::attach($ch_short, $netname);
   $ch_long =~ s/^![0-9A-Z]{5}/!/;
   my $ch_long_esc = $this->_escapeHTML($ch_long);
+  my $join_mark = $this->_joined($req, $netname, $ch_short) ? '' : ' (退室)';
+
   my $name_esc = $this->_escapeHTML($req->{session}{name} || '');
 
   my $mode = $this->_get_req_param($req, 'mode');
@@ -2085,20 +2139,26 @@ sub _gen_log
     $name_marker_raw = qq{$name_esc&gt; };
   }
 
+  # channel name.
   my $h1_ch_long_raw;
   if( $req->{ua_type} eq 'pc' )
   {
-    $h1_ch_long_raw = "<h1>$ch_long_esc</h1>";
+    $h1_ch_long_raw = "<h1>$ch_long_esc$join_mark</h1>";
   }else
   {
-    $h1_ch_long_raw = "<b>$ch_long_esc</b>";
+    $h1_ch_long_raw = "<b>$ch_long_esc$join_mark</b>";
   }
 
   my $tmpl = $this->_gen_log_html();
+  my $joined_mark = $this->_joined($req, $netname, $ch_short) ? 'if_joined' : 'if_not_joined';
+  $tmpl =~ s{<!begin:(if_joined|if_not_joined)>\s*(.*?)<!end:\1>\s*}{
+    $1 eq $joined_mark ? $2 : '';
+  }ges;
   $this->_expand($req, $tmpl, {
     CONTENT_RAW => $content,
     NAVI_RAW    => $navi_raw,
     CH_LONG => $ch_long_esc,
+    JOIN_MARK      => $join_mark,
     H1_CH_LONG_RAW => $h1_ch_long_raw,
     NAME    => $name_esc,
     NAME_MARKER_RAW => $name_marker_raw,
@@ -2119,7 +2179,7 @@ sub _gen_log_html
   <meta http-equiv="Content-Style-Type"  content="text/css" />
   <meta http-equiv="Content-Script-Type" content="text/javascript" />
   <link rel="stylesheet" type="text/css" href="<&CSS>" />
-  <title><&CH_LONG></title>
+  <title><&CH_LONG><&JOIN_MARK></title>
 </head>
 <body>
 <div class="main">
@@ -2129,13 +2189,24 @@ sub _gen_log_html
 
 <&CONTENT_RAW>
 
+<!begin:if_joined>
 <form action="./" method="POST">
 <p>
 talk:<&NAME_MARKER_RAW><input type="text" name="m" size="60" />
   <input type="submit" value="発言/更新" /><br />
-<input type="hidden" name="x" size="10" value="<&LAST_SEEN_RTOKEN>" />
+<input type="hidden" name="x" value="<&LAST_SEEN_RTOKEN>" />
 </p>
 </form>
+<!end:if_joined>
+<!begin:if_not_joined>
+<form action="./" method="POST">
+<p>
+<input type="hidden" name="join" value="<&CH_LONG>" />
+<input type="submit" value="入室" /><br />
+<input type="hidden" name="x" value="<&LAST_SEEN_RTOKEN>" />
+</p>
+</form>
+<!end:if_not_joined>
 
 <&NAVI_RAW>
 
@@ -2152,6 +2223,26 @@ talk:<&NAME_MARKER_RAW><input type="text" name="m" size="60" />
 </body>
 </html>
 HTML
+}
+
+# $bool = $this->_joined($req, $netname, $ch_short).
+sub _joined
+{
+  my $this     = shift;
+  my $req      = shift;
+  my $netname  = shift;
+  my $ch_short = shift;
+
+  my $network = RunLoop->shared_loop->network($netname);
+  if( $network )
+  {
+    my $channel = $network->channel($ch_short);
+    if( $channel )
+    {
+      return 1;
+    }
+  }
+  return undef;
 }
 
 sub _get_req_param
@@ -2285,11 +2376,74 @@ sub _post_log
       }else
       {
         RunLoop->shared_loop->notify_error("no such channel [$ch_short] on network [$netname]");
+        my $text = "not joined: [$ch_short\@netname]";
+        my $res = {
+          Code => 200,
+          Header => {
+            'Content-Type'   => 'text/plain; charset=utf-8',
+            'Content-Length' => length($text),
+          },
+          Content => $text,
+        };
+        $this->_response($req, $res);
+        return 1;
       }
     }else
     {
       RunLoop->shared_loop->notify_error("no network to talk: $netname");
     }
+  }
+  if( my $ch_long = $cgi->{join} )
+  {
+    my ($ch_short, $netname) = Multicast::detach($ch_long);
+    if( $this->_can_show($req, $ch_short, $netname) )
+    {
+      $this->_do_join($netname, $ch_short);
+      my $link = '/' . $this->_path_channel($req, $netname, $ch_short);
+      if( $cgi->{x} )
+      {
+        $link .= "?x=$cgi->{x}";
+      }
+      my $count = 0;
+      my $code = sub{
+        my $timer = shift;
+        if( $this->_joined($req, $netname, $ch_short) )
+        {
+          $DEBUG and $this->_debug("$req->{peer}: join check: ok");
+        }else
+        {
+          ++ $count;
+          if( $count < 10 )
+          {
+            $DEBUG and $this->_debug("$req->{peer}: join check: not yet");
+            return;
+          }
+          $DEBUG and $this->_debug("$req->{peer}: join check: timeout");
+        }
+        eval{
+          $this->_location($req, $link);
+        };
+        if( $@ )
+        {
+          print "$req->{peer}: join: error on location: $@";
+        }
+        if( $timer )
+        {
+          $timer->{interval} = undef; # uninstall.
+        }
+      };
+      my $timer = Timer->new(
+        Module   => __PACKAGE__,
+        Interval => 0.3,
+        Repeat   => 1,
+        Code     => $code,
+      )->install;
+    }else
+    {
+      $this->_debug("$req->{peer} _post_log[$netname/$ch_short] not in allowed channels");
+      $this->_response($req, [error => "not in allowed channel"]);
+    }
+    return 1;
   }
   return undef;
 }
@@ -2327,6 +2481,11 @@ sub _gen_chan_info
       $topic_disp_esc = $this->_escapeHTML($topic_disp);
       $topic_esc = $this->_escapeHTML($topic);
       $names_esc = $this->_escapeHTML(join(' ', @$names));
+    }else
+    {
+      $topic_disp_esc = $NO_TOPIC;
+      $topic_esc = '';
+      $names_esc = '';
     }
   }else
   {
@@ -2350,7 +2509,7 @@ sub _gen_chan_info
   my $ch_long_esc = $this->_escapeHTML($ch_long);
 
   my $tmpl = $this->_tmpl_chan_info();
-  $tmpl =~ s{<!begin:no_shared_mode>\s*(.*)<!end:no_shared_mode>\s*}{
+  $tmpl =~ s{<!begin:no_shared_mode>\s*(.*?)<!end:no_shared_mode>\s*}{
     my $mode = $this->_get_req_param($req, 'mode');
     $mode eq 'owner' ? $1 : '';
   }ges;
@@ -2399,12 +2558,14 @@ TOPIC: <span class="chan-topic"><&TOPIC></span><br />
 PART: <input type="text" name="part" value="<&PART_MSG>" />
 <input type="submit" value="退室" /><br />
 </form>
+<!end:no_shared_mode>
 
 <form action="./info" method="POST">
 JOIN <input type="hidden" name="join" value="<&CH_LONG>" />
 <input type="submit" value="入室" /><br />
 </form>
 
+<!begin:no_shared_mode>
 <form action="./info" method="POST">
 DELETE <input type="hidden" name="delete" value="<&CH_LONG>" />
 <input type="submit" value="削除" /><br />
@@ -2489,29 +2650,7 @@ sub _post_chan_info
 
   if( exists($cgi->{join}) )
   {
-    my $mode = $this->_get_req_param($req, 'mode');
-    if( $mode eq 'owner' )
-    {
-
-    my $msg_to_send = Auto::Utils->construct_irc_message(
-      Command => 'JOIN',
-      Params  => [ '' ],
-    );
-
-    # send to server.
-    #
-    my $network = RunLoop->shared_loop->network($netname);
-    if( $network )
-    {
-      my $for_server = $msg_to_send->clone;
-      $for_server->param(0, $ch_short);
-      $network->send_message($for_server);
-    }
-
-    }else
-    {
-      $this->_debug("$req->{peer}: join is not allowed when mode is not 'owner'");
-    }
+    $this->_do_join($netname, $ch_short);
   }
 
   if( exists($cgi->{'delete'}) )
@@ -2535,6 +2674,30 @@ sub _post_chan_info
   }
 
   return undef;
+}
+
+sub _do_join
+{
+  my $this = shift;
+  my $netname  = shift;
+  my $ch_short = shift;
+
+  my $msg_to_send = Auto::Utils->construct_irc_message(
+    Command => 'JOIN',
+    Params  => [ '' ],
+  );
+
+  # send to server.
+  #
+  my $network = RunLoop->shared_loop->network($netname);
+  if( $network )
+  {
+    my $for_server = $msg_to_send->clone;
+    $for_server->param(0, $ch_short);
+    $network->send_message($for_server);
+  }
+
+  return 1;
 }
 
 # -----------------------------------------------------------------------------
