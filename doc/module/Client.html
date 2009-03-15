@@ -256,6 +256,35 @@ names rehash に使うコマンドを指定します。<br />
       </div>
 
       
+      <hr class="sep" />
+      
+      
+      <div id="module-Client::SingleServer" class="module">
+        <div class="module-header"><h2 title="指定したクライアントのためにシングルサーバモードをエミュレーションする">Client::SingleServer</h2>
+          <span class="description">指定したクライアントのためにシングルサーバモードをエミュレーションする</span></div>
+        <div class="content">
+	  <p class="comment">
+このモジュールは実験的なモジュールです。<br />
+本番環境に適用する前には、動作について十分に確認してください。<br />
+</p>
+<p class="comment">
+使用する client option は server-only=network name の形式で指定してください。<br />
+</p>
+<p class="comment">
+realname (クライアントにより 名前 / 名前の説明 などになっている場合もあり) に<br />
+$server-only=ircnet$ などと指定すれば動作するかと思います。<br />
+</p>
+<p class="comment">
+設定されたクライアントを接続している最中にモジュールのロード・アンロードを<br />
+行った場合の動作は未定義です。<br />
+かならずクライアントを切断してから切り替えてください。<br />
+また、アップデート等で本モジュールの更新を行う際にもクライアントの切断を推奨します。<br />
+</p>
+
+        </div>
+      </div>
+
+      
       
     </div>
 
@@ -281,6 +310,8 @@ names rehash に使うコマンドを指定します。<br />
         <li><a href="#module-Client::Rehash" title="全チャンネル分の names の内部キャッシュをクライアントに送信する。">Client::Rehash</a></li>
         
         <li><a href="#module-Client::ShowNick" title="show network">Client::ShowNick</a></li>
+        
+        <li><a href="#module-Client::SingleServer" title="指定したクライアントのためにシングルサーバモードをエミュレーションする">Client::SingleServer</a></li>
         
         <li><a href="../module-toc.html">モジュール一覧に戻る</a></li>
       </ul>
