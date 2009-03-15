@@ -19,7 +19,7 @@ Tiarra::Utils->define_attr_getter(0, [qw(_runloop runloop)]);
 sub new {
     my ($class, $runloop) = @_;
     if (!defined $runloop) {
-	carp 'please update module constructor; see Skelton.pm';
+	carp 'please update module constructor; see Skeleton.pm';
 	$runloop = RunLoop->shared;
     }
     # モジュールが必要になった時に呼ばれる。
