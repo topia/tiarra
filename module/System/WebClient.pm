@@ -23,7 +23,7 @@ use Unicode::Japanese;
 use IO::Socket::INET;
 use Scalar::Util qw(weaken);
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 our $DEBUG = 0;
 
