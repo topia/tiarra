@@ -305,12 +305,18 @@ sub _attach_RPL_WHOISCHANNELS {
 
 sub _detach_RPL_WHOISCHANNELS {
     my ($message,$sender) = @_;
+    my $to;
+    my $detach = sub {
+	my ($ret,$net) = detach(shift);
+	$to = $net;
+	return $ret;
+    };
     $message->params->[2] =
 	join(' ',
 	     map {
-		 s/^([\@+]*)(.+)$/$1.detach($2)/e; $_;
+		 s/^([\@+]*)(.+)$/$1.$detach->($2)/e; $_;
 	     } split / /,$message->params->[2]);
-    $message;
+    forward_to_server($message,$to);
 }
 
 my $g2l_cache = {};
@@ -348,10 +354,11 @@ sub _gen_detach_translator {
     if (!exists $detach_cache->{$index}) {
 	$detach_cache->{$index} = sub {
 	    my ($message, $sender) = @_;
+	    my ($new,$to) = detach($message->param($index));
 	    $message->param(
 		$index,
-		detach($message->param($index)));
-	    forward_to_server($message, $sender);
+		$new);
+	    forward_to_server($message, $to);
 	};
     }
     $detach_cache->{$index};
