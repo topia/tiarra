@@ -1449,6 +1449,8 @@ sub _rewrite_html
 
   my $sid_enc = $this->_escapeHTML($req->{session}{_sid});
 
+  if( defined($res->{Content}) )
+  {
   $res->{Content} =~ s{(<.*?>)}{
     my $tag = $1;
     if( $tag =~ /^<form\b/ )
@@ -1490,6 +1492,7 @@ sub _rewrite_html
   }ges;
 
   $res->{Header}{'Content-Length'} = length($res->{Content});
+  }
 
   $res;
 }
@@ -1750,7 +1753,6 @@ sub _gen_list
         my $channame = $pack->{disp_ch_short};
         ++$seqno;
         my $link = $this->_path_channel($req, $netname, $channame);
-        $link = $this->_escapeHTML($link);
 
         my $unseen;
         if( !$pack->{unseen} )
@@ -1869,7 +1871,9 @@ sub _path_channel
   }
 
   my $link = "log\0$netname\0$link_ch\0";
+  $link =~ s{%}{%25}g;
   $link =~ s{/}{%252F}g;
+  $link =~ s{([^\0\x20-\x7e])}{'%'.unpack('H*', $1)}ges;
   $link =~ tr{\0}{/};
   $link;
 }
