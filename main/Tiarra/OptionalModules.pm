@@ -108,6 +108,10 @@ sub check {
 
     return $this->{$name}->{status} if defined $this->{$name};
     die "module $name spec. not found" unless defined $modules{$name};
+    if ($ENV{"TIARRA_DISABLE_\U$name\E"}) {
+	$this->{$name}->{status} = !1;
+	return !1;
+    }
 
     my $failed;
     for my $mod (@{$modules{$name}->{requires}}) {
