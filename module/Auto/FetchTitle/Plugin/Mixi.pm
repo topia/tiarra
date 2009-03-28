@@ -146,7 +146,6 @@ sub detect_page
   my $req   = shift;
   my $block = shift;
 
-local($DEBUG) = 1;
   $DEBUG and $ctx->_debug(__PACKAGE__."#detect_page, $req->{url}.");
   my @allow_pages = (
     {
