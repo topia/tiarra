@@ -146,6 +146,7 @@ sub detect_page
   my $req   = shift;
   my $block = shift;
 
+local($DEBUG) = 1;
   $DEBUG and $ctx->_debug(__PACKAGE__."#detect_page, $req->{url}.");
   my @allow_pages = (
     {
@@ -202,6 +203,28 @@ sub detect_page
       re       => qr{^http://mixi\.jp/show_friend.pl\?id=(\d+)\z},
       keys     => ['friend'],
     },
+
+    # album.
+    {
+      name     => 'friend-album-list',
+      can_show => 1,
+      re       => qr{^http://mixi.jp/list_album.pl\?id=(\d+)(?:&from=navi)?\z},
+      keys     => ['friend'],
+    },
+    {
+      name     => 'friend-album-photolist',
+      can_show => 1,
+      re       => qr{^http://mixi.jp/view_album.pl\?id=(\d+)&owner_id=(\d+)&mode=(?:photo|comment)\z},
+      keys     => ['-albumid', 'friend'],
+    },
+    {
+      name     => 'friend-album-photo',
+      can_show => 1,
+      re       => qr{^http://mixi.jp/view_album_photo.pl\?album_id=(\d+)&owner_id=(\d+)&number=(\d+)(?:&page=(\d+))?\z},
+      keys     => ['-albumid', 'friend', '-photoid', '-page'],
+    },
+
+    # obsolete?
     {
       name     => 'friend-list-diary/album/review/comment',
       can_show => 1,
@@ -249,6 +272,7 @@ sub detect_page
     {
       my $key = $keys->[$idx];
       $key or next;
+      $key =~ /^\w/ or next;
       my $val = $values->[$idx];
       my $conf_key = "mixi_$key";
       my $allowed;
