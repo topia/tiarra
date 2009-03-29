@@ -349,6 +349,7 @@ sub _log_writer
   my $info   = $this->{last_line};
 
   #RunLoop->shared_loop->notify_msg(">> $channel $line");
+  my $line_html;
   if( !$info )
   {
     # PRIVMSG/NOTICE 以外.
@@ -360,8 +361,11 @@ sub _log_writer
       netname  => $netname,
       ch_short => $ch_short,
       msg       => $line,
+      command   => $this->{last_msg}->command(),
+      time      => $this->{last_msg}->time(),
       formatted => $line,
     };
+    $line_html = $this->_escapeHTML($line);
   }else
   {
     # チャンネル名なしに整形し直し.
@@ -372,11 +376,23 @@ sub _log_writer
       $info->{marker}[1],
       $info->{msg},
     );
+    my $msg_html = $this->_escapeHTML($info->{msg});
+    if( $info->{command} ? $info->{command} eq 'NOTICE' : $info->{marker}[0] eq '(' )
+    {
+      $msg_html = qq{<font color="gray">$msg_html</font>};
+    }
+    $line_html = sprintf(
+      '%s%s%s %s',
+      $this->_escapeHTML($info->{marker}[0]),
+      $this->_escapeHTML($info->{speaker}),
+      $this->_escapeHTML($info->{marker}[1]),
+      $msg_html,
+    );
   };
   my $netname  = $info->{netname};
   my $ch_short = $info->{ch_short};
 
-  my @tm = localtime(time());
+  my @tm = localtime($info->{time} || time());
   $tm[5] += 1900;
   $tm[4] += 1;
   my $time = sprintf('%02d:%02d:%02d', @tm[2,1,0]);
@@ -384,6 +400,7 @@ sub _log_writer
   $info->{time} = $time;
   $info->{ymd} = sprintf('%04d-%02d-%02d', @tm[5,4,3]);
   $info->{formatted} = "$time $line";
+  $info->{formatted_html} = "$time $line_html";
 
   #RunLoop->shared_loop->notify_msg(__PACKAGE__."#_log_writer, $netname, $ch_short, [$channel] $line");
 
@@ -2105,7 +2122,7 @@ sub _gen_log
         my $rtoken = $ymd;
         $content .= qq{[<b><a id="$anchor" href="?r=$rtoken">$ymd</a></b>]\n};
       }
-      my $line_html = $this->_escapeHTML($info->{formatted});
+      my $line_html = $info->{formatted_html} || $this->_escapeHTML($info->{formatted});
       if( $req->{ua_type} ne 'pc' )
       {
         $line_html =~ s/^(\d\d:\d\d):\d\d /$1 /;
@@ -2198,6 +2215,7 @@ sub _gen_log_html
 <p>
 talk:<&NAME_MARKER_RAW><input type="text" name="m" size="60" />
   <input type="submit" value="発言/更新" /><br />
+  <input type="submit" name="nt" value="NOTICE" /><br />
 <input type="hidden" name="x" value="<&LAST_SEEN_RTOKEN>" />
 </p>
 </form>
@@ -2357,8 +2375,9 @@ sub _post_log
       my $channel = $network->channel($ch_short);
       if( $channel || !Multicast::channel_p($ch_short) )
       {
+        my $as_notice = $cgi->{nt} ? 1 : 0;
         my $msg_to_send = Auto::Utils->construct_irc_message(
-          Command => 'PRIVMSG',
+          Command => $as_notice ? 'NOTICE' : 'PRIVMSG',
           Params  => [ '', $m ],
         );
 
