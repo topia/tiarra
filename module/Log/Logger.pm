@@ -261,6 +261,9 @@ sub _build_message
     ch_short  => $ch_short,
     netname   => $netname,
     msg       => $msg->param(1),
+    command   => $msg->command(),
+    time      => $msg->time(),
+    #msg_orig  => $msg,
     formatted => $line,
   };
 }
