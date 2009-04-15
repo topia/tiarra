@@ -930,7 +930,7 @@ sub _auth_au
 
   #TODO: carrier ip-addresses range.
   # http://www.au.kddi.com/ezfactory/tec/spec/ezsava_ip.html
-  my $subno = $req->{Header}{'X-UP-SUBNO'};
+  my $subno = $req->{Header}{'X-UP-SUBNO'} || $req->{Header}{'X-Up-Subno'};
   if( !_verify_value($param->[1], $subno) )
   {
     defined($subno) or $subno = '';
