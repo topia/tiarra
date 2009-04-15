@@ -937,7 +937,7 @@ sub _auth_au
     $DEBUG and ::printmsg("$req->{peer}: $param->[0] pass $param->[1] does not match with '$subno' (subno)");
     return;
   }
-  my $id = return "au:$subno";
+  my $id = "au:$subno";
   return +{
     id     => $id,
     atoken => $id,
