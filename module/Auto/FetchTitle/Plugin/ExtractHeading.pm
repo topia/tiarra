@@ -165,19 +165,20 @@ sub _config
     },
     {
       # 3a. nikkei.
-      url        => 'http://www.nikkei.co.jp/*',
-      recv_limit => 16*1024,
-      extract => [
-        qr{<META NAME="TITLE" CONTENT="(.*?)">}s,
-        qr{<h3 class="topNews-ttl3">(.*?)</h3>}s,
-      ],
-      remove => qr/^NIKKEI NET：/,
-    },
-    {
-      # 3b. nikkei.
       url        => 'http://release.nikkei.co.jp/*',
       recv_limit => 18*1024,
       extract => qr{<h1 id="heading" class="heading">(.*)</h1>}s,
+    },
+    {
+      # 3b. nikkei.
+      url        => 'http://*.nikkei.co.jp/*',
+      recv_limit => 16*1024,
+      extract => [
+        qr{<META NAME="TITLE" CONTENT="(.*?)">}is,
+        qr{<h3 class="topNews-ttl3">(.*?)</h3>}is,
+        qr{<h3><!-- FJZONE START NAME="MIDASHI" -->(.*?)<!-- FJZONE END NAME="MIDASHI" --></h3>}is,
+      ],
+      remove => qr/^NIKKEI NET：/,
     },
     {
       # 4a. nhkニュース.
@@ -475,6 +476,13 @@ sub _config
         $compat =~ s/^(.*?。).*。(.*?。)/$1...$2/;
         "$point, $compat";
       },
+    },
+    {
+      # 31. candyfruit.
+      url        => 'http://www.wisecart.ne.jp/candyfruit/*',
+      extract    => qr{<font class=goods_zoom><b>(.*?)</b></font>}s,
+      recv_limit => 50*1024,
+      timeout    => 10,
     },
   ];
   $config;
