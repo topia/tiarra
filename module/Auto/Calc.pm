@@ -24,6 +24,9 @@ use Mask;
 use Symbol ();
 use Safe;
 
+# 全角空白.
+our $U_IDEOGRAPHIC_SPACE = "\xe3\x80\x80";
+
 sub new {
     my $class = shift;
     my $this = $class->SUPER::new(@_);
@@ -48,8 +51,32 @@ sub destruct {
     Symbol::delete_package(__PACKAGE__.'::Root')
 }
 
+sub __message_io_hook
+{
+    my ($this,$msg,$io,$type) = @_;
+    # 自分のWebClient からも使いたいけれど, どうもうまくいかない模様.
+
+    # print "io_hook: $io $type ",$msg->command," ", $msg->param(1)," $msg\n";
+    if( $type eq 'out' && $io->isa('IrcIO::Server') )
+    {
+      # print ">> action\n";
+      my @ret = $this->_action($msg, $io);
+      # print "ret: ".join(", ", @ret)."\n";
+      return @ret;
+    }
+    return $msg;
+}
+
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
+    # print "arrived: $sender - ",$msg->command," ", $msg->param(1),"\n";
+    # print ">> action\n";
+    $this->_action($msg, $sender);
+}
+
+sub _action
+{
+    my ($this, $msg, $sender) = @_;
     my @result = ($msg);
 
     my $return_value = sub {
@@ -63,6 +90,15 @@ sub message_arrived {
 	my $method = $msg->param(1);
 	$method =~ s/^\s*(.*)\s*$/$1/;
 
+	if( my $val = $this->config->support_shared_webclient )
+	{
+		# no や false は除外的.
+		if( $val !~ /^[nf]/i )
+		{
+			$method =~ s/^[^\s>]+>\s*//;
+		}
+	}
+
 	# init
 	if (Mask::match_deep([$this->config->init('all')], $method)) {
 	    if (Mask::match_deep_chan([$this->config->init_mask('all')],
@@ -74,12 +110,13 @@ sub message_arrived {
 	}
 
 	my $keyword;
-	($keyword, $method) = split(/\s+/, $method, 2);
+	($keyword, $method) = split(/(?:\s|$U_IDEOGRAPHIC_SPACE)+/o, $method, 2);
 
 	# request
 	if (Mask::match_deep([$this->config->request('all')], $keyword)) {
+	    my $prefix = $msg->prefix->clone->prefix || '*!*@*';
 	    if (Mask::match_deep_chan([$this->config->mask('all')],
-				      $msg->prefix, $get_full_ch_name->())) {
+				      $prefix, $get_full_ch_name->())) {
 		my ($ret, $err, $signal);
 		do {
 		    # disable warning
@@ -106,6 +143,7 @@ sub message_arrived {
 		    alarm $timeout if ($timeout);
 		    no strict;
 		    $ret = $this->{safe}->reval($method);
+		    $err ||= $@;
 		    alarm 0 if ($timeout);
 		};
 
@@ -180,6 +218,7 @@ sub message_arrived {
 }
 
 1;
+
 =pod
 info: Perlの式を計算させるモジュール。
 default: off
@@ -235,5 +274,10 @@ init-mask: * +*!*@*
 
 # 再初期化したときの発言を指定します。
 init-format: 初期化しました。
+
+# 別の shared-mode な System::WebClient からの発言に対応(yes/no).
+# 自分自身の発言は未対応.
+# [default: no]
+-support-shared-webclient: no
 
 =cut
