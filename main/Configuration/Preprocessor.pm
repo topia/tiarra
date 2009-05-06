@@ -206,11 +206,8 @@ sub _eval_at {
 	    $line =~ s/^\s*\@\s*|\s*$//g;
 
 	    # ifdefとifndefはif文に書換える
-	    if ($line =~ m/^(els)?ifdef\s+(.+)$/) {
-		$line = $1.q{if $this->defined_p(q@}.$2.q{@)};
-	    }
-	    elsif ($line =~ m/^(els)?ifndef\s+(.+)$/) {
-		$line = $1.q{if !$this->defined_p(q@}.$2.q{@)};
+	    if ($line =~ m/^(els|)if(n)?def\s+(.+)$/) {
+		$line = $1.q{if }.($2?'!':'').q{$this->defined_p(q@}.$3.q{@)};
 	    }
 
 	    if ($line =~ m/^include\s+(.+)$/) {
