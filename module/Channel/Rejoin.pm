@@ -37,7 +37,7 @@ sub message_arrived {
 	my $cmd = $msg->command;
 	if ($cmd eq 'PART') {
 	    foreach my $ch_fullname (split /,/,$msg->param(0)) {
-		$this->check_channel(
+		$this->check_and_rejoin_channel(
 		    scalar Multicast::detatch($ch_fullname),
 		    $sender);
 	    }
@@ -45,20 +45,27 @@ sub message_arrived {
 	elsif ($cmd eq 'KICK') {
 	    # RFC2812によると、複数のチャンネルを持つKICKメッセージが
 	    # クライアントに届く事は無い。
-	    $this->check_channel(
+	    $this->check_and_rejoin_channel(
 		scalar Multicast::detatch($msg->param(0)),
 		$sender);
 	}
 	elsif ($cmd eq 'QUIT' || $cmd eq 'KILL') {
 	    # 註釈affected-channelsに影響のあったチャンネルのリストが入っているはず。
 	    foreach (@{$msg->remark('affected-channels')}) {
-		$this->check_channel($_,$sender);
+		$this->check_and_rejoin_channel($_,$sender);
 	    }
 	}
 
 	$this->session_work($msg,$sender);
     }
     $msg;
+}
+
+sub check_and_rejoin_channel {
+    my ($this,$ch_name,$server) = @_;
+    if ($this->check_channel($ch_name,$server)) {
+	$this->rejoin($ch_name,$server);
+    }
 }
 
 sub check_channel {
@@ -86,7 +93,7 @@ sub check_channel {
 	# 自分が@を持っている。
 	return;
     }
-    $this->rejoin($ch_name,$server);
+    return 1;
 }
 
 sub rejoin {
@@ -184,6 +191,16 @@ sub rejoin {
 sub part_and_join {
     my ($this,$session) = @_;
     $session->{got_oper} = 1;
+    if (!$this->check_channel($session->{ch_shortname}, $session->{server})) {
+	# 情報を取得している間に状況が変化した
+	RunLoop->shared->notify_msg(
+	    "Channel::Rejoin is cancelled to rejoin to $session->{ch_fullname}.");
+	# part/join をやめたので発行すべきコマンドはない。
+	$session->{cmd_buf} = [];
+	# フラグ類のクリーンアップを行う
+	$this->revive($session);
+	return;
+    }
     foreach (qw/PART JOIN/) {
 	$session->{server}->send_message(
 	    $this->construct_irc_message(
