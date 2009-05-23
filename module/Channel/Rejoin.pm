@@ -27,6 +27,7 @@ sub new {
     # got_Ilist => +I(略
     # got_oper => 既にPART->JOINしているかどうか。
     # cmd_buf => ARRAY<Tiarra::IRC::Message>
+    # num_got_errors => このチャンネルのエラーをみた回数
     $this;
 }
 
@@ -133,6 +134,7 @@ sub rejoin {
 	ch => $ch,
 	server => $server,
 	cmd_buf => [],
+	num_got_errors => 0,
     };
     
     # do-not-touch-mode-of-channelsを取得
@@ -173,6 +175,9 @@ sub rejoin {
 		    Command => 'MODE',
 		    Params => [$ch_name,$_]));
 	}
+	$session->{got_elist} =
+	    $session->{got_blist} =
+	    $session->{got_Ilist} = 0;
     }
     else {
 	$session->{got_elist} =
@@ -248,7 +253,7 @@ sub session_work {
 	    }
 	}
     };
-    
+
     if ($msg->command eq RPL_CHANNELMODEIS) {
 	# MODEリプライ
 	$session = $this->{sessions}->{$msg->param(1)};
@@ -288,11 +293,18 @@ sub session_work {
 	    $this->revive($session);
 	}
     }
+    elsif ($msg->command eq ERR_CHANOPRIVSNEEDED) {
+	$session = $this->{sessions}->{$msg->param(1)};
+	if (defined $session) {
+	    $session->{num_got_errors}++;
+	}
+    }
 
     # $sessionが空でなければ、必要な情報が全て揃った可能性がある。
     if (defined $session && !$session->{got_oper} &&
-	$session->{got_mode} && $session->{got_blist} &&
-	$session->{got_elist} && $session->{got_Ilist}) {
+	$session->{got_mode} && ($session->{got_blist} +
+	$session->{got_elist} + $session->{got_Ilist} +
+	$session->{num_got_errors}) >= 3) {
 	$this->part_and_join($session);
     }
 }
