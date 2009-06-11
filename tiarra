@@ -117,7 +117,8 @@ sub help {
     print "  --dumpversion    print version\n";
     print "  --show-env       print environment information\n";
     print "  --config=<file>  tiarra configuration file; default is 'tiarra.conf'\n";
-    print "  --quiet          don't output any messages to stdout and stderr\n";
+    print "  --quiet          don't output any messages to stdout and stderr,\n";
+    print "                   and move to background (runs as daemon)\n";
     print "  --no-fork        don't move to background when started in quiet mode\n";
     print "  --debug          show debug information\n";
     print "  --make-password  prompt you a password to encrypt.\n";
