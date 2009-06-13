@@ -8,6 +8,7 @@ package Tiarra::Socket::Connect;
 use strict;
 use warnings;
 use Carp;
+use List::Util qw(shuffle);
 use Tiarra::Socket;
 use base qw(Tiarra::Socket);
 use Timer;
@@ -196,7 +197,7 @@ sub _connect_after_resolve {
 	return undef; # end
     }
 
-    foreach my $addr (@{$entry->answer_data}) {
+    foreach my $addr (shuffle @{$entry->answer_data}) {
 	push (@{$addrs_by_types{$this->probe_type_by_addr($addr)}},
 	      $addr);
     }
