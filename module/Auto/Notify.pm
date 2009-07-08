@@ -88,7 +88,7 @@ sub message_arrived {
 
 sub strip_mirc_formatting {
     my ($this, $text) = @_;
-    $text =~ s/(\x03\d{,2}(,\d{,2})?|\x0f|\x02|\x1f|\x16)//;
+    $text =~ s/(\x03\d{,2}(,\d{,2})?|\x0f|\x02|\x1f|\x16)//g;
     $text;
 }
 
