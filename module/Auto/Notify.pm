@@ -23,8 +23,6 @@ sub new {
 sub config_reload {
   my ($this, $old_config) = @_;
 
-  $this->config_im_kayac($this->config);
-
   my $regex = join '|', (
     (map { "(?:$_)" } $this->config->regex_keyword('all')),
     (map { "(?i:\Q$_\E)" } map { split /,/ } $this->config->keyword('all')),
@@ -105,7 +103,7 @@ sub send_im_kayac {
     my $url = "http://im.kayac.com/api/post/" . $config->user;
     $text = Auto::AliasDB->stdreplace(
 	$msg->prefix,
-	$config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
+	$config->format || $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
 	$msg, $sender,
 	channel => $full_ch_name,
 	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
@@ -159,7 +157,7 @@ sub send_prowl {
     my $url = URI->new("https://prowl.weks.net/publicapi/add");
     $text = Auto::AliasDB->stdreplace(
 	$msg->prefix,
-	$config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
+	$config->format || $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
 	$msg, $sender,
 	channel => $full_ch_name,
 	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
@@ -215,6 +213,9 @@ im {
 
 # 通知先のタイプを指定します。
 type: im_kayac
+
+# 通知先ごとにフォーマットを指定できます
+-format: XX
 
 # im.kayac.comで登録したユーザ名を入力します。
 # im.kayac.comについては http://im.kayac.com/#docs を参考にしてください。
