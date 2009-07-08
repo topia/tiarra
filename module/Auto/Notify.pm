@@ -214,9 +214,6 @@ im {
 # 通知先のタイプを指定します。
 type: im_kayac
 
-# 通知先ごとにフォーマットを指定できます
--format: XX
-
 # im.kayac.comで登録したユーザ名を入力します。
 # im.kayac.comについては http://im.kayac.com/#docs を参考にしてください。
 user: username
@@ -236,6 +233,10 @@ prowl {
 
 # 通知先のタイプを指定します。
 type: prowl
+
+# 通知先ごとにフォーマットを指定できます。
+# この例では先頭に時刻を追加しています。
+-format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
 
 # Prowl で表示された apikey を入力します。
 # Prowl については http://prowl.weks.net/ を参考にしてください。
