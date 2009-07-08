@@ -86,6 +86,12 @@ sub message_arrived {
   return @result;
 }
 
+sub strip_mirc_formatting {
+    my ($this, $text) = @_;
+    $text =~ s/(\x03\d{,2}(,\d{,2})?|\x0f|\x02|\x1f|\x16)//;
+    $text;
+}
+
 sub config_im_kayac {
     my ($this, $config) = @_;
 
@@ -107,7 +113,7 @@ sub send_im_kayac {
 	$msg, $sender,
 	channel => $full_ch_name,
 	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
-	text => $text,
+	text => $this->strip_mirc_formatting($text),
        );
     my @data = (message => $text);
     if ($config->secret) {
@@ -161,7 +167,7 @@ sub send_prowl {
 	$msg, $sender,
 	channel => $full_ch_name,
 	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
-	text => $text,
+	text => $this->strip_mirc_formatting($text),
        );
     my @data = (apikey => $config->apikey,
 		priority => $config->priority || 0,
@@ -201,7 +207,7 @@ mask: * *!*@*
 # 複数指定したい時は,(コンマ)で区切るか、複数行指定してください。
 keyword: hoge
 
-# im.kayac.com に送るメッセージのフォーマットを指定します。
+# メッセージのフォーマットを指定します。
 # デフォルト値: [tiarra][#(channel):#(nick.now)] #(text)
 # #(channel) のかわりに #(raw_channel) を利用するとネットワーク名がつきません。
 format: [tiarra][#(channel):#(nick.now)] #(text)
