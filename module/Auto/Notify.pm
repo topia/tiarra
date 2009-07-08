@@ -36,7 +36,7 @@ sub config_reload {
   }
 
   $this->{blocks} = [];
-  foreach my $blockname (split /\s+/, $this->config->blocks) {
+  foreach my $blockname (map {split /\s+/} $this->config->blocks('all')) {
       my $block = $this->config->get($blockname, 'block');
       if (!defined $block) {
 	  die "not found block: $blockname";
