@@ -123,9 +123,9 @@ sub str {
     my $result = $this->{current};
 
     # 未置換の<&foo>があればそれを消してcarp。
-    while ($result =~ s/<\&(.+?)>//) {
-	carp "Unexpanded tag: <\&$1>";
-    }
+    #while ($result =~ s/<\&(.+?)>//) {
+    #    carp "Unexpanded tag: <\&$1>";
+    #}
 
     # <!mark:foo>を消す。
     $result =~ s/<!mark:.+?>//g;
