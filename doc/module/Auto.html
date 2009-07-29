@@ -593,6 +593,89 @@ fatalerror-[state]が指定されてない場合は代わりに fatalerror を�
       <hr class="sep" />
       
       
+      <div id="module-Auto::Notify" class="module">
+        <div class="module-header"><h2 title="名前が呼ばれると、その発言をim.kayac.comに送信する">Auto::Notify</h2>
+          <span class="description">名前が呼ばれると、その発言をim.kayac.comに送信する</span></div>
+        <div class="content">
+	  <p class="comment">
+反応する人のマスクを指定します。<br />
+省略すると全員に反応します。<br />
+</p>
+<div class="element"><span class="key">mask</span>:<span class="value">* *!*@*</span></div>
+<p class="comment">
+反応するキーワードを正規表現で指定します。<br />
+複数指定したい時は複数行指定してください。<br />
+</p>
+<div class="element"><span class="key">regex-keyword</span>:<span class="value">(?i:fugahoge)</span></div>
+<p class="comment">
+反応するキーワードを指定します。<br />
+複数指定したい時は,(コンマ)で区切るか、複数行指定してください。<br />
+</p>
+<div class="element"><span class="key">keyword</span>:<span class="value">hoge</span></div>
+<p class="comment">
+メッセージのフォーマットを指定します。<br />
+デフォルト値: [tiarra][#(channel):#(nick.now)] #(text)<br />
+#(channel) のかわりに #(raw_channel) を利用するとネットワーク名がつきません。<br />
+</p>
+<div class="element"><span class="key">format</span>:<span class="value">[tiarra][#(channel):#(nick.now)] #(text)</span></div>
+<p class="comment">
+使用するブロックを指定します<br />
+</p>
+<div class="element"><span class="key">blocks</span>:<span class="value">im prowl</span></div>
+<div class="block element"><span class="block key">im</span>
+<div class="block content">
+<p class="comment">
+通知先のタイプを指定します。<br />
+</p>
+<div class="element"><span class="key">type</span>:<span class="value">im_kayac</span></div>
+<p class="comment">
+im.kayac.comで登録したユーザ名を入力します。<br />
+im.kayac.comについては http://im.kayac.com/#docs を参考にしてください。<br />
+</p>
+<div class="element"><span class="key">user</span>:<span class="value">username</span></div>
+<p class="comment">
+im.kayac.comで秘密鍵認証を選択した場合は設定してください。<br />
+省略すると認証なしになります。<br />
+</p>
+<div class="element"><span class="key">secret</span>:<span class="value">some secret</span></div>
+<p class="comment">
+im.kayac.comでパスワード認証を選択した場合は設定してください。<br />
+省略すると認証なしになります。<br />
+secret と両方指定した場合は secret が優先されています。<br />
+</p>
+<div class="element"><span class="key">password</span>:<span class="value">some password</span></div>
+</div></div>
+<div class="block element"><span class="block key">prowl</span>
+<div class="block content">
+<p class="comment">
+通知先のタイプを指定します。<br />
+</p>
+<div class="element"><span class="key">type</span>:<span class="value">prowl</span></div>
+<p class="comment">
+通知先ごとにフォーマットを指定できます。<br />
+この例では先頭に時刻を追加しています。<br />
+</p>
+<div class="element"><span class="key">format</span>:<span class="value">#(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)</span></div>
+<p class="comment">
+Prowl で表示された apikey を入力します。<br />
+Prowl については http://prowl.weks.net/ を参考にしてください。<br />
+</p>
+<div class="element"><span class="key">apikey</span>:<span class="value">XXXXXX</span></div>
+<p class="comment">
+http://forums.cocoaforge.com/viewtopic.php?f=45&amp;t=20339<br />
+</p>
+<div class="element"><span class="key">priority</span>:<span class="value">0</span></div>
+<div class="element"><span class="key">application</span>:<span class="value">tiarra</span></div>
+<div class="element"><span class="key">event</span>:<span class="value">keyword</span></div>
+</div></div>
+
+        </div>
+      </div>
+
+      
+      <hr class="sep" />
+      
+      
       <div id="module-Auto::Oper" class="module">
         <div class="module-header"><h2 title="特定の文字列を発言した人を+oする。">Auto::Oper</h2>
           <span class="description">特定の文字列を発言した人を+oする。</span></div>
@@ -1007,6 +1090,8 @@ plum: mask: +*!*@*<br />
         <li><a href="#module-Auto::Joined" title="特定のチャンネルに誰かがJOINする度に特定のメッセージを発言する。">Auto::Joined</a></li>
         
         <li><a href="#module-Auto::MesMail" title="伝言をメールとして送信する。">Auto::MesMail</a></li>
+        
+        <li><a href="#module-Auto::Notify" title="名前が呼ばれると、その発言をim.kayac.comに送信する">Auto::Notify</a></li>
         
         <li><a href="#module-Auto::Oper" title="特定の文字列を発言した人を+oする。">Auto::Oper</a></li>
         
