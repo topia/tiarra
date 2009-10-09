@@ -32,7 +32,7 @@ use FunctionalVariable;
 use Hook;
 use base qw(Hook);
 our $HOOK_TARGET_NAME = 'Tiarra::TerminateManager';
-our @HOOK_NAME_CANDIDATES = qw(main);
+our @HOOK_NAME_CANDIDATES = qw(main forked);
 our $HOOK_NAME_DEFAULT = 'main';
 our $HOOK_TARGET_DEFAULT;
 FunctionalVariable::tie(

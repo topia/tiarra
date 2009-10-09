@@ -120,6 +120,7 @@ sub help {
     print "  --quiet          don't output any messages to stdout and stderr,\n";
     print "                   and move to background (runs as daemon)\n";
     print "  --no-fork        don't move to background when started in quiet mode\n";
+    print "  --force-fork     (debugging option) force fork without quiet\n";
     print "  --debug          show debug information\n";
     print "  --make-password  prompt you a password to encrypt.\n";
     print "                   *Tiarra doesn't do its normal work with this option*\n";
@@ -231,6 +232,7 @@ sub main {
 
     my $quiet = &find_option('quiet');
     my $no_fork = &find_option('no-fork');
+    my $force_fork = &find_option('force-fork');
 
     my $boot = sub  {
 	eval {
@@ -282,13 +284,22 @@ sub main {
     }
 
     # quietモードであり、且つno-forkオプションが指定されなかったらfork。
-    if ($quiet && !$no_fork) {
+    if ($force_fork || ($quiet && !$no_fork)) {
+	## HACK
+	if ($Tiarra::Resolver::use_threads) {
+	    Tiarra::Resolver->shared->destruct(1);
+	}
 	my $child_pid = fork;
 	if ($child_pid == 0) {
-	    # 子プロセス
+	    ## HACK
+	    if ($Tiarra::Resolver::use_threads) {
+		Tiarra::Resolver->shared->init;
+	    }
 	    return $boot->();
 	} elsif (!defined $child_pid) {
 	    print "Tiarra: fork() failed.\n";
+	} else {
+	    return 'FORKED';
 	}
     } else {
 	return $boot->();
@@ -421,6 +432,11 @@ sub shutdown {
 
 my $exitval = main;
 &debug_mode && print "cleanup TerminateManager...";
-Tiarra::TerminateManager->terminate('main');
+if ($exitval eq 'FORKED') {
+    $exitval = 0;
+    Tiarra::TerminateManager->terminate('forked');
+} else {
+    Tiarra::TerminateManager->terminate('main');
+}
 &debug_mode && print "done.\n";
 exit $exitval;
