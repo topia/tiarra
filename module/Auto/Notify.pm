@@ -130,7 +130,7 @@ sub send_im_kayac {
 	       my $stat = shift;
 	       if (!ref($stat)) {
 		   $runloop->notify_warn(__PACKAGE__." im.kayac.com: post failed: $stat");
-	       } elsif ($stat->{Content} !~ /"result":\s+"ok"/) {
+	       } elsif ($stat->{Content} !~ /"result":\s*"(ok|posted)"/) {
 		   # http://im.kayac.com/#docs
 		   # (but actually responce is '"result": "ok"')
 		   (my $content = $stat->{Content}) =~ s/[\n\r\s]+/ /;
