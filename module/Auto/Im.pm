@@ -78,9 +78,14 @@ sub message_arrived {
 		 )->start(
 		     Callback => sub {
 			 my $stat = shift;
-			 $runloop->notify_warn(__PACKAGE__." post failed: $stat")
-			     unless ref($stat);
-			 ## FIXME: check response (should check 'error')
+			 if (!ref($stat)) {
+			     $runloop->notify_warn(__PACKAGE__." post failed: $stat");
+			 } elsif ($stat->{Content} !~ /"result":\s*"(ok|posted)"/) {
+			     # http://im.kayac.com/#docs
+			     # (but actually responce is '"result": "ok"')
+			     (my $content = $stat->{Content}) =~ s/[\n\r\s]+/ /;
+			     $runloop->notify_warn(__PACKAGE__." post failed: $content");
+			 }
 		     },
 		    );
 	  }
