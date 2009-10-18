@@ -1,3 +1,24 @@
+2009-10-19  Topia  <topia@clovery.jp>
+
+	* Auto::Im
+	  - 結果チェックを改善
+	* tiarra, Tiarra::Resolver, Tiarra::Terminatemanager
+	  - スレッドが有効で --quiet を利用した時(fork した時)に
+	    動作しないバグを修正
+	* Auto::Notify
+	  - 追加。 im.kayac.com と Prowl の両方をサポート
+	* Tiarra::Socket::Connect
+	  - DNS round-robin サポート
+	* Channel::Rejoin
+	  - +b/+e/+I が取れない場合にもきちんと rejoin できるようにした
+	* Auto::Calc
+	  - 全角空白対応
+	* Auto::FetchTitle::Plugin::*
+	  - 細かくは ChangeLog.svn を参照ください。
+	* System::WebClient, Log::Logger
+	  - NOTICE 対応
+	* 2004-08-22 から2009-02-06 の間の NEWS は書いていません
+
 2004-08-22  Topia  <topia@clovery.jp>
 
 	* Client::Rehash
