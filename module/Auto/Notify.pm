@@ -88,7 +88,7 @@ sub message_arrived {
 
 sub strip_mirc_formatting {
     my ($this, $text) = @_;
-    $text =~ s/(\x03\d\d?(,\d\d?)?|[\x0f\x02\x1f\x16])//g;
+    $text =~ s/(?:\x03\d\d?(?:,\d\d?)?|[\x0f\x02\x1f\x16])//g;
     $text;
 }
 
@@ -130,10 +130,10 @@ sub send_im_kayac {
 	       my $stat = shift;
 	       if (!ref($stat)) {
 		   $runloop->notify_warn(__PACKAGE__." im.kayac.com: post failed: $stat");
-	       } elsif ($stat->{Content} !~ /"result":\s*"(ok|posted)"/) {
+	       } elsif ($stat->{Content} !~ /"result":\s*"(?:ok|posted)"/) {
 		   # http://im.kayac.com/#docs
 		   # (but actually responce is '"result": "ok"')
-		   (my $content = $stat->{Content}) =~ s/[\n\r\s]+/ /;
+		   (my $content = $stat->{Content}) =~ s/\s+/ /;
 		   $runloop->notify_warn(__PACKAGE__." im.kayac.com: post failed: $content");
 	       }
 	   },
@@ -190,7 +190,7 @@ sub send_prowl {
 	       if (!ref($stat)) {
 		   $runloop->notify_warn(__PACKAGE__." prowl: post failed: $stat");
 	       } elsif ($stat->{Content} !~ /<success /) {
-		   (my $content = $stat->{Content}) =~ s/[\n\r\s]+/ /;
+		   (my $content = $stat->{Content}) =~ s/\s+/ /;
 		   $runloop->notify_warn(__PACKAGE__." prowl: post failed: $content");
 	       }
 	   },
