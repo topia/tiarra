@@ -16,6 +16,7 @@ sub new {
     # channellist : HASH
     #   shortname => チャンネルショートネーム
     #   key => channel key
+    $this->{interval} = 1; # interval (sec)
     $this->_init;
 }
 
@@ -41,6 +42,13 @@ sub _init {
 	}
     }
 
+    if ($this->config->interval) {
+	$this->{interval} = 0+$this->config->interval;
+	if ($this->{interval} == 0) {
+	    die "Channel::Join::Connect: do not set interval to 0!"
+	}
+    }
+
     $this;
 }
 
@@ -51,7 +59,7 @@ sub connected_to_server {
 
     if (defined($session)) {
 	Timer->new(
-	    Interval => 1,
+	    Interval => $this->{interval},
 	    Repeat => 1,
 	    Code => sub {
 		my $timer = shift;
@@ -98,4 +106,12 @@ section: important
 #   「#aaaaa@ircnet」、「#bbbbb@ircnet:*.jp」、「#ccccc@ircnet」、「#ddddd@ircnet」の4つのチャンネルに入る。
 -channel: #aaaaa@ircnet,#bbbbb@ircnet:*.jp, #ccccc@ircnet
 -channel: #ddddd@ircnet
+
+# join 送出の間隔(秒)
+# Excess Flood になってしまう場合に変更してください。
+# irc.2ch.net にて 25 チャンネル以上 join している場合に
+# 引っかかった例があるようです。
+# 本モジュールでは1度に1コマンドで5つのチャンネルへの join を発行します。
+# デフォルトは1秒です。
+-interval: 1
 =cut
