@@ -1,3 +1,16 @@
+2010-02-11  Topia  <topia@clovery.jp>
+
+	* Channel::Rejoin
+	  - freenode の新しい ircd である ircd-seven との相性問題を解決
+	* all.conf, sample.conf: (thanks drry)
+	  - デフォルトのサーバ通信文字コードを utf8 にし、
+	    ircnet には jis を明示するようにした。
+	  - ircnet のサーバ設定が古くなってしまったのを改善。
+	  - freenode と ustream の設定サンプルを追加
+	  - デフォルトのクライアント通信文字コードを utf8 にした。
+	    クライアントが jis しか通さない場合は $encoding=jis$ をリアル
+	    ネーム欄に指定することで対応できます。
+
 2009-10-19  Topia  <topia@clovery.jp>
 
 	* Auto::Im
