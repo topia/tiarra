@@ -194,7 +194,7 @@ sub _channel_match {
 	      sprintf('=%02x', unpack("C", $1));
 	    }ge;
 	    my $chan_dir = Tools::HashTools::replace_recursive(
-		$ch->[0], [{channel => $chan_filename}]);
+		$ch->[0], [{channel => $chan_filename, lc_channel => lc $chan_filename}]);
 	    my $fpath_format = "$chan_dir/$fname_format";
 
 	    $this->{matching_cache}->{$channel} = $fpath_format;
