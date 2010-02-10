@@ -677,8 +677,6 @@ sub _receive_after_logged_in {
     }
     elsif ($msg->command eq 'JOIN') {
 	$this->_JOIN($msg);
-        # JOIN時のExcessFlood対策 (syo68k)
-        sleep(2);
     }
     elsif ($msg->command eq 'KICK') {
 	$this->_KICK($msg);
