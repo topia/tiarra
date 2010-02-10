@@ -103,9 +103,13 @@ channel: others *<br />
 それ以外(privも含む)のログはothers/%Y.%m.%d.txtに保存される。<br />
 #(channel) はチャンネル名に展開される。<br />
 (古いバージョンだと展開されずにそのままディレクトリ名になってしまいます。)<br />
+IRCのチャンネル名は大文字小文字が区別されず、サーバからは各送信者が指定した通りの<br />
+チャンネル名が送られてきます。そのため、大文字小文字が区別されるファイルシステムでは<br />
+同じチャンネルが別々のディレクトリに作られることになります。<br />
+この問題を回避するため、チャンネル名を小文字に統一した #(lc_channel) が利用できます。<br />
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">priv priv</span></div>
-<div class="element"><span class="key">channel</span>:<span class="value">#(channel) *</span></div>
+<div class="element"><span class="key">channel</span>:<span class="value">#(lc_channel) *</span></div>
 <div class="element"><span class="key">channel</span>:<span class="value">others *</span></div>
 <p class="comment">
 ファイル名のエンコーディング.<br />
