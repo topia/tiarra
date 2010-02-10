@@ -100,6 +100,10 @@ sub check_channel {
 sub rejoin {
     my ($this,$ch_name,$server) = @_;
     my $ch_fullname = Multicast::attach($ch_name,$server->network_name);
+    if (defined $this->{sessions}->{$ch_fullname}) {
+	# 動作中のセッションがあるのでキャンセルする。
+	return;
+    }
     RunLoop->shared->notify_msg(
 	"Channel::Rejoin is going to rejoin to ${ch_fullname}.");
 
@@ -312,6 +316,8 @@ sub session_work {
 sub revive {
     my ($this,$session) = @_;
     Timer->new(
+	Name => 'Channel::Rejoin cmd queue',
+	Module => $this,
 	Interval => 1,
 	Repeat => 1,
 	Code => sub {
@@ -327,11 +333,18 @@ sub revive {
 	    }
 	    if (@$cmd_buf == 0) {
 		# cmd_bufが空だったら終了。
+		# ただし、10秒以内に再び単独になっても無視する
 		# untouchablesから消去
 		my $untouchables = BulletinBoard->shared->do_not_touch_mode_of_channels;
 		delete $untouchables->{$session->{ch_fullname}};
-		# session消去
-		delete $this->{sessions}->{$session->{ch_fullname}};
+		Timer->new(
+		    Name => 'Channel::Rejoin delay cleanup',
+		    Module => $this,
+		    After => 10,
+		    Code => sub {
+			# session消去
+			delete $this->{sessions}->{$session->{ch_fullname}};
+		    })->install;
 		# タイマーをアンインストール
 		$timer->uninstall;
 	    }
