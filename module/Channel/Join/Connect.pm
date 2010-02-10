@@ -73,7 +73,11 @@ sub connected_to_server {
 			$this->construct_irc_message(
 			    Command => 'JOIN',
 			    Params => [join(',', @param_chan), join(',', @param_key)]));
-		}
+
+                    # JOIN時のExcessFlood対策 (syo68k)
+                    sleep(10);
+
+                }
 		if (@$session == 0) {
 		    delete $this->{sessions}->{$server->network_name};
 		    $timer->uninstall;
