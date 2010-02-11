@@ -17,6 +17,7 @@ sub new {
     #   shortname => チャンネルショートネーム
     #   key => channel key
     $this->{interval} = 1; # interval (sec)
+    $this->{channels} = 5; # channels
     $this->_init;
 }
 
@@ -42,6 +43,10 @@ sub _init {
 	}
     }
 
+    ## FIXME _conf_general
+    $this->{interval} = $this->_runloop->_conf_general->join_interval;
+    $this->{channels} = $this->_runloop->_conf_general->join_channels_per_command;
+
     if ($this->config->interval) {
 	$this->{interval} = 0+$this->config->interval;
 	if ($this->{interval} == 0) {
@@ -65,7 +70,7 @@ sub connected_to_server {
 		my $timer = shift;
 		if (@$session > 0) {
 		    # 一度に五つずつ送り出す。
-		    my $msg_per_trigger = 5;
+		    my $msg_per_trigger = $this->{channels};
 		    my (@param_chan, @param_key);
 		    for (my $i = 0; $i < @$session && $i < $msg_per_trigger; $i++) {
 			if (!defined($session->[$i]->{key}) || $session->[$i]->{key} eq '') {
@@ -108,10 +113,7 @@ section: important
 -channel: #ddddd@ircnet
 
 # join 送出の間隔(秒)
-# Excess Flood になってしまう場合に変更してください。
-# 2ちゃんねるIRCの3鯖(irc.juggler.jp) にて 25 チャンネル以上 join している場合に
-# 引っかかった例があるようです。
-# 本モジュールでは1度に1コマンドで5つのチャンネルへの join を発行します。
-# デフォルトは1秒です。
+# この設定は obsolete です。 general/join-interval を利用してください。
+# 設定されていた場合は general/join-interval に優先されます。
 -interval: 1
 =cut
