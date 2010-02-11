@@ -471,6 +471,10 @@ sub _cleanup {
 	$this->{timer}->uninstall;
 	$this->{timer} = undef;
     }
+    if (defined $this->{rejoin_timer}) {
+	$this->{rejoin_timer}->uninstall;
+	$this->{rejoin_timer} = undef;
+    }
     if ($this->state_terminating) {
 	$this->state_terminated(1);
     } elsif ($this->state_finalizing) {
@@ -1247,7 +1251,9 @@ sub _handle_fix_nick {
 	# 常に Tiarra が処理します。
 
 	$this->_set_to_next_nick($msg->param(1));
-	return undef;
+	$msg->remark('do-not-send-to-clients',1);
+	## 破棄せず do-not-send-to-clients をつける。
+	return $msg;
     } elsif ($mode == 1) {
 	# クライアントにそのまま投げます。
 	# 複数のクライアントが nick 重複を処理する場合は非常に危険です。
@@ -1328,6 +1334,58 @@ sub modify_nick {
 	}
     }
     return $nick;
+}
+
+sub rejoin_all_channels {
+    my ($this) = @_;
+    # 記憶している全てのチャンネルにJOINする。
+    # そもそもJOINしていないチャンネルは通常IrcIO::Serverは記憶していないが、
+    # サーバーから切断された時だけは例外である。
+    my @ch_with_key; # パスワードを持ったチャンネルの配列。要素は["チャンネル名","パスワード"]
+    my @ch_without_key; # パスワードを持たないチャンネルの配列。要素は"チャンネル名"
+
+    foreach my $ch ($this->channels_list) {
+	my $key = $ch->parameters('k');
+	if (defined $key && $key ne '') {
+	    push(@ch_with_key, [$ch->name, $key]);
+	} else {
+	    push(@ch_without_key, $ch->name);
+	}
+    }
+
+    my $interval = $this->_runloop->_conf_general->join_interval;
+    my $channels = $this->_runloop->_conf_general->join_channels_per_command;
+
+    $this->{rejoin_timer} = Timer->new(
+	Name => $this->_gen_msg('rejoin timer'),
+	Interval => $interval,
+	Repeat => 1,
+	Code => sub {
+	    my $timer = shift;
+	    my $remind = $channels;
+	    if ($remind && @ch_with_key) {
+		my (@targets) = splice(@ch_with_key, 0, $remind);
+		$this->send_message(
+		    $this->construct_irc_message(
+			Command => 'JOIN',
+			Params => [join(',', map { $_->[0] } @targets),
+				   join(',', map { $_->[1] } @targets)]));
+		$remind -= scalar(@targets);
+	    }
+	    if ($remind && @ch_without_key) {
+		my (@targets) = splice(@ch_without_key, 0, $remind);
+		$this->send_message(
+		    $this->construct_irc_message(
+			Command => 'JOIN',
+			Params => [join(',', @targets)]));
+		$remind -= scalar(@targets);
+	    }
+	    if (!@ch_with_key && !@ch_without_key) {
+		## nothing found
+		$this->{rejoin_timer} = undef;
+		$timer->uninstall;
+	    }
+	})->install;
 }
 
 1;

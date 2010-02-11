@@ -419,60 +419,7 @@ sub _action_message_for_each {
 }
 sub _rejoin_all_channels {
     my ($this,$network) = @_;
-    # networkが記憶している全てのチャンネルにJOINする。
-    # そもそもJOINしていないチャンネルは通常IrcIO::Serverは記憶していないが、
-    # サーバーから切断された時だけは例外である。
-    # 尚、註釈kicked-outが付けられているチャンネルにはJOINしない。
-    my @ch_with_key; # パスワードを持ったチャンネルの配列。要素は["チャンネル名","パスワード"]
-    my @ch_without_key; # パスワードを持たないチャンネルの配列。要素は"チャンネル名"
-    foreach my $ch (values %{$network->channels}) {
-	next if $ch->remarks('kicked-out');
-
-	my $password = $ch->parameters('k');
-	if (defined $password && $password ne '') {
-	    push @ch_with_key,[$ch->name,$password];
-	}
-	else {
-	    push @ch_without_key,$ch->name;
-	}
-    }
-    # JOIN実行
-    my ($buf_ch,$buf_key) = ('','');
-    my $buf_flush = sub {
-	return if ($buf_ch eq '');
-	my $params = do {
-	    if ($buf_key eq '') {
-		[$buf_ch];
-	    }
-	    else {
-		[$buf_ch,$buf_key];
-	    }
-	};
-	$network->send_message(
-	    $this->construct_irc_message(
-		Command => 'JOIN',
-		Params => $params));
-	$buf_ch = $buf_key = '';
-    };
-    my $buf_put = sub {
-	my ($ch,$key) = @_;
-	$buf_ch .= ($buf_ch eq '' ? $ch : ",$ch");
-	$buf_key .= ($buf_key eq '' ? $key : ",$key") if defined $key;
-	if (length($buf_ch) + length($buf_key) > 400) {
-	    # 400バイトを越えたら自動でフラッシュする。
-	    $buf_flush->();
-	}
-    };
-    # パスワード付きのチャンネルにJOIN
-    foreach (@ch_with_key) {
-	$buf_put->($_->[0],$_->[1]);
-    }
-    $buf_flush->();
-    # パスワード無しのチャンネルにJOIN
-    foreach (@ch_without_key) {
-	$buf_put->($_);
-    }
-    $buf_flush->();
+    $network->rejoin_all_channels();
 }
 
 sub update_networks {
