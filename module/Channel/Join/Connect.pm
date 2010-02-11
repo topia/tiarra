@@ -45,7 +45,9 @@ sub _init {
 
     ## FIXME _conf_general
     $this->{interval} = $this->_runloop->_conf_general->join_interval;
+    $this->{interval} = 1 unless defined $this->{interval};
     $this->{channels} = $this->_runloop->_conf_general->join_channels_per_command;
+    $this->{channels} = 5 unless defined $this->{channels};
 
     if ($this->config->interval) {
 	$this->{interval} = 0+$this->config->interval;
