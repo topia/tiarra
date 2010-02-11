@@ -1,3 +1,17 @@
+2010-02-12  Topia  <topia@clovery.jp>
+
+	* Log::Channel (thanks klm)
+	  - ログディレクトリの大文字小文字問題に対応するため
+	    lc_channel を追加した。
+	* IrcIO::Server, Channel::Join::Connect (thanks syo68k)
+	  - irc.juggler.jp において多数のチャンネルに join する際に
+	    Excess Flood が生じる問題に対応するため、 interval と
+	    channels を設定可能にした。
+	* Channel::Rejoin
+	  - chanserv で管理されていると検出した場合は無視するようにした。
+	* Network::Freenode
+	  - freenode 用の ChanServ 検出モジュール。
+
 2010-02-11  Topia  <topia@clovery.jp>
 
 	* Channel::Rejoin
