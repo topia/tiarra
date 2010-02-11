@@ -42,6 +42,12 @@ package Log;
 description: ログの記録
 =cut
 
+* Network
+package Network;
+=pod
+description: 個別IRC ネットワーク対応のモジュール
+=cut
+
 * System
 package System;
 =pod
