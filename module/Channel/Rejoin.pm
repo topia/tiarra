@@ -94,6 +94,10 @@ sub check_channel {
 	# 自分が@を持っている。
 	return;
     }
+    if ($ch->remark('chanserv-controlled')) {
+	# ChanServ 管理チャンネルであれば、無駄な努力はしない。
+	return;
+    }
     return 1;
 }
 
@@ -221,7 +225,9 @@ sub part_and_join {
 sub session_work {
     my ($this,$msg,$server) = @_;
     my $session;
-    # ウォッチの対象になるのはJOIN,324,368,349,347。
+    # ウォッチの対象になるのはJOIN,324,368,349,347,482。
+    # リストはコマンドを発行していれば IrcIO::Server が
+    # 保持しておいてくれる。
 
     my $got_reply = sub {
 	my $type = shift;
