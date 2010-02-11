@@ -134,6 +134,16 @@ sysmsg-prefix-use-masks {
 # multi-server-mode 時のデフォルトは 0 、 single-server-mode 時のデフォルトは 1 です。
 -nick-fix-mode: 0
 
+# Tiarra がチャンネルに join する際の挙動を設定します。
+
+# JOIN コマンドを送信する間隔 (秒)
+# デフォルトは1秒です。
+join-interval: 1
+
+# 一つの JOIN コマンドで指定するチャンネルの数
+# デフォルトは5チャンネルです。
+join-channels-per-command: 5
+
 messages {
   # Tiarra が使用する、いくつかのメッセージを指定する。
 
