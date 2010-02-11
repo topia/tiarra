@@ -95,6 +95,15 @@
 </p>
 <div class="element"><span class="key">channel</span>:<span class="value">#aaaaa@ircnet,#bbbbb@ircnet:*.jp, #ccccc@ircnet</span></div>
 <div class="element"><span class="key">channel</span>:<span class="value">#ddddd@ircnet</span></div>
+<p class="comment">
+join 送出の間隔(秒)<br />
+Excess Flood になってしまう場合に変更してください。<br />
+2ちゃんねるIRCの3鯖(irc.juggler.jp) にて 25 チャンネル以上 join している場合に<br />
+引っかかった例があるようです。<br />
+本モジュールでは1度に1コマンドで5つのチャンネルへの join を発行します。<br />
+デフォルトは1秒です。<br />
+</p>
+<div class="element"><span class="key">interval</span>:<span class="value">1</span></div>
 
         </div>
       </div>
