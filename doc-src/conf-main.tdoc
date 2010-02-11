@@ -135,6 +135,10 @@ sysmsg-prefix-use-masks {
 -nick-fix-mode: 0
 
 # Tiarra がチャンネルに join する際の挙動を設定します。
+# デフォルト設定で Excess Flood になってしまう場合に設定してください。
+#
+# irc.juggler.jp (2ch@IRC) にて 25 チャンネル以上 join している場合に
+# Excess Flood になってしまった事例があるそうです。
 
 # JOIN コマンドを送信する間隔 (秒)
 # デフォルトは1秒です。
