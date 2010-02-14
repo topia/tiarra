@@ -19,6 +19,7 @@ use Mask;
 use Multicast;
 
 our $DEFAULT_FILENAME_ENCODING = $^O eq 'MSWin32' ? 'sjis' : 'utf8';
+our $DEFAULT_NEWLINE = $^O eq 'MSWin32' ? "\r\n" : "\n";
 
 sub new {
     my $class = shift;
@@ -303,8 +304,15 @@ sub _write {
 	}
     }->();
     if (defined $writer) {
+        my $newline;
+        if (defined $this->config->crlf) {
+            $newline = $this->config->crlf ? "\r\n" : "\n";
+        }
+        else {
+            $newline = $DEFAULT_NEWLINE;
+        }
 	$writer->reserve(
-	    Tiarra::Encoding->new("$header $line\n",'utf8')->conv(
+	    Tiarra::Encoding->new("$header $line$newline",'utf8')->conv(
 		$this->config->charset || 'jis'));
     } else {
 	# XXX: do warn with properly frequency
@@ -422,5 +430,10 @@ channel: #(lc_channel) *
 # ascii は実際には utf8 と同等で8bit部分が全てquoted-printableされる.
 # デフォルトはWindowsではsjis, それ以外では utf8.
 -filename-encoding: utf8
+
+# ログの改行コード出力をCRLFにするかどうか.
+# デフォルトはWindowsでは1(CRLF), それ以外では0(LF).
+# Windowsでログを扱うことが多い場合、1にするとちょっと幸せになれるかもしれない.
+-crlf: 0
 
 =cut
