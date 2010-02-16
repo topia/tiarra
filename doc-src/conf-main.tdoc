@@ -297,12 +297,12 @@ info-is-omitted: 1
 no-switch: 1
 
 
-server: chat.freenode.net 6667
+server: chat.freenode.net 6666 8001
 
-# freenodeではパスワードとして「アカウント パスワード」のように、
+# freenode独自の機能として、パスワードに「アカウント パスワード」のような、
 # アカウントに空白とパスワードを続けたものを指定することで、
 # NICKコマンドの前の接続の段階でidentifyすることができるため、
-# nickの重複や異なるnick等、nickとは無関係に自動identifyが可能。
+# nick重複の際や異なるnick、異なるuser等、nick/userとは無関係に自動identifyが可能。
 -password: account secret
 =cut
 

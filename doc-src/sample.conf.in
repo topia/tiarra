@@ -37,10 +37,10 @@
 #
 # block
 # {foo: bar}
-# 
+#
 # block {
 # foo: bar}
-# 
+#
 # block
 # {foo: bar
 # }
