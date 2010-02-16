@@ -58,7 +58,7 @@ sub message_arrived {
       # channel-reply のチェック。
       foreach ($this->config->channel_reply('all')) {
 	my ($chan_mask, $msg_mask, $reply_msg) = split(' ', $_, 3);
-	$chan_mask =~ s/\[(.*)\]$//;
+	$chan_mask =~ s/\[([^\]]*)\]$//;
 	my @opts = split(/,/,$1||'');
 
 	defined($reply_msg) or next;
@@ -93,7 +93,7 @@ default: off
 # Auto::Aliasを有効にしていれば、エイリアス置換を行ないます。
 
 # 反応する発言と、それに対する返事を定義します。
-# エイリアス置換が有効です。#(nick.now)と$(channel)はそれぞれ
+# エイリアス置換が有効です。#(nick.now)と#(channel)はそれぞれ
 # 相手の現在のnickとチャンネル名に置換されます。
 #
 # コマンド: reply
