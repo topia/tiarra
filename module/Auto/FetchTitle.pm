@@ -1631,9 +1631,9 @@ sub _parse_response
     push(@opts, "http status $status_code");
   }
 
-  # detect refresh tag.
+  # detect refresh tag with URL.
   my $content2 = $content;
-  $content2 =~ s/<!--.*?-->//g;
+  $content2 =~ s/<!--.*?-->//sg;
   if( $content2 =~ m{
                      <META(?:\s[^>]*?)?\s
                      (?:HTTP-EQUIV\s*=\s*(["'])refresh\1(?:\s[^>]*?)?\sCONTENT\s*=\s*(["'])(\d+)\s*;\s*URL=([^"'<]+)\2|
