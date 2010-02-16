@@ -51,8 +51,8 @@ $LATIN1_MAP[0x82-0x80] = ',';
 $LATIN1_MAP[0xa0-0x80] = ' ';
 
 our $TOP_LEVEL_DOMAINS = {
-  map{ $_=>1 } qw(.biz  .com  .edu  .gov  .info  .int  .mil  .net  .org
-  .aero  .asia  .cat  .coop  .jobs  .mobi  .museum  .tel  .travel)
+  map{ $_=>1 } qw(.biz  .com  .edu  .gov  .info  .int  .mil  .name  .net  .org
+  .aero  .asia  .cat  .coop  .jobs  .mobi  .museum  .pro  .tel  .travel)
 };
 
 our $HAS_IMAGE_EXIFTOOL = do{
@@ -474,9 +474,8 @@ sub _dispatch
     }
     $DEBUG and $this->_debug($full_ch_name, "debug: check $_url");
     my $url = $_url;
-    $url =~ s{^(?=ttps?://)}{h};
-    $url =~ m{^https?://} or next;
-    $url =~ s{^https?://[-\w.\x80-\xff]+\z}{$&/};
+    $url =~ s{^h?(?=ttps?://)}{h} or next;
+    $url =~ s{^(https?://[-\w.\xa0-\xff]+)\z}{$1/};
     $DEBUG && $url ne $_url and $this->_debug($full_ch_name, "debug: fixed url is $url");
 
     # 処理対象か確認.
@@ -512,7 +511,7 @@ sub _create_request
   my $mask_conf    = shift;
 
   my $url_orig = $url;
-  $url =~ s/([^ -~])/'%'.uc(unpack("H*",$1))/ge;
+  $url =~ s{([^-_.!~*'()a-zA-Z0-9;/?:&=+,#\@\$\[\]])}{'%'.uc(unpack("H*",$1))}ge;
   if( $url ne $url_orig )
   {
     $this->_debug($full_ch_name, "url will be encoded: $url");
@@ -1829,12 +1828,13 @@ sub _parse_url
   my $url  = shift;
   ref($url) and $url = $url->{url};
 
-  my ($scheme, $domain, $path) = $url =~ m{^(https?)://(?:[^/]+\@)?([^/]+)(.*)};
+  my ($scheme, $domain, $path) = $url =~ m{^(https?)://(?:[^/@]+\@)?([^/]+)(.*?)(?:[?#].*)?}i;
   if( !$scheme )
   {
     return;
   }
-  $path =~ s/[\?#].*//;
+  $domain = lc $domain;
+  $domain =~ s/\.?(?::\d+)?$//; # TODO: IPv6 literals
   $path =~ s{/$}{};
   ($scheme, $domain, $path);
 }
@@ -1955,24 +1955,31 @@ sub _parse_cookies
     if( $attrs{domain} )
     {
       my $pass;
+      $attrs{domain} = lc $attrs{domain};
       if( $attrs{domain} eq $domain )
       {
         $pass = 1;
-      }elsif( $domain =~ /\Q$attrs{domain}\E\z/ && $attrs{domain} =~ /^\./ )
+      }elsif( $attrs{domain} =~ /^\.(.+)/ )
       {
-        my $nr_dots = $attrs{domain} =~ tr/././;
-        $pass = $nr_dots >= 3;
-        $pass ||= $attrs{domain} =~ /\.[^.]{3,}\.jp\z/;
-        $pass ||= $attrs{domain} =~ /(\.\w+)\z/ && $TOP_LEVEL_DOMAINS->{$1};
+        my $ge_domain = quotemeta $1;
+        if ( $domain =~ /(?:\A|\.)$ge_domain\z/ )
+        {
+          my $nr_dots = $attrs{domain} =~ tr/././;
+          $pass = $nr_dots >= 3;
+          $pass ||= $attrs{domain} =~ /\.[^.]{3,}\.jp\z/;
+          $pass ||= $attrs{domain} =~ /(\.[-a-z0-9]+)\z/ && $TOP_LEVEL_DOMAINS->{$1};
+        }
       }
       if( !$pass )
       {
         $this->_error("_parse_cookies, domain $attrs{domain} does not match with one in url $domain, ignore this cookie");
         next;
       }
+    }else
+    {
+      $attrs{domain}  = lc $domain;
     }
     $attrs{_scheme}   = $scheme;
-    $attrs{domain}  ||= $domain;
     $attrs{path}    ||= $path;
     $attrs{_ident}    = join(';', @attrs{qw(_scheme domain path name)});
 
