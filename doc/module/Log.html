@@ -118,6 +118,12 @@ ascii は実際には utf8 と同等で8bit部分が全てquoted-printableされ
 デフォルトはWindowsではsjis, それ以外では utf8.<br />
 </p>
 <div class="element"><span class="key">filename-encoding</span>:<span class="value">utf8</span></div>
+<p class="comment">
+ログの改行コード出力をCRLFにするかどうか.<br />
+デフォルトはWindowsでは1(CRLF), それ以外では0(LF).<br />
+Windowsでログを扱うことが多い場合、1にするとちょっと幸せになれるかもしれない.<br />
+</p>
+<div class="element"><span class="key">crlf</span>:<span class="value">0</span></div>
 
         </div>
       </div>
