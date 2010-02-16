@@ -1599,7 +1599,7 @@ sub _parse_response
     $this->_extract_cookies($req);
   }
 
-  if( my $loc = $headers->{Location} )
+  if( my $loc = $headers->{'Location'} )
   {
     $DEBUG and $this->_debug($full_ch_name, "debug: has Location header: $loc");
     if( $loc =~ m{^\s*(\w+://[-.\w]+\S*)\s*$} )
@@ -1662,12 +1662,13 @@ sub _parse_response
   }
   if( $enc eq 'auto' && $content2 =~ m{
                                        <meta(?:\s[^>]*?)?\s
-                                       (?:http-equiv\s*=\s*(["'])Content-Type\1(?:\s[^>]*?)?\scontent\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\2|
-                                          content\s*=\s*(["'])\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\4(?:\s[^>]+?)?\shttp-equiv\s*=\s*(["'])Content-Type\6)
+                                       (?:http-equiv\s*=\s*(["']?)Content-Type\1(?:\s[^>]*?)?\scontent\s*=\s*(["']?)\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\2|
+                                          content\s*=\s*(["']?)\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\4(?:\s[^>]+?)?\shttp-equiv\s*=\s*(["']?)Content-Type\6|
+                                          charset\s*=\s*(["']?)([-\w])+\7)
                                        (?:\s[^>]*|/)?>
                                      }ix )
   {
-    my $e = lc($3 || $5);
+    my $e = lc($3 || $5 || $8);
     $enc = $e =~ /s\w*jis/     ? 'sjis'
          : $e =~ /euc/         ? 'euc'
          : $e =~ /utf-?8/      ? 'utf8'
