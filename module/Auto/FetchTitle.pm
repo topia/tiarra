@@ -1835,7 +1835,7 @@ sub _parse_url
     return;
   }
   $path =~ s/[\?#].*//;
-  $path =~ s{[^/]$}{};
+  $path =~ s{/$}{};
   ($scheme, $domain, $path);
 }
 
