@@ -68,11 +68,10 @@ sub real_flush {
 
     my $ret = 0;
     my $size = 1;
-    while ($size && $this->has_data) {
+    if ($this->has_data) {
 	# use buffer directly; perhaps reduce memory allocation
-	$size = $file->syswrite($this->{buffer}, $this->length);
-	if (defined $size) {
-	    substr($this->{buffer}, 0, $size) = '';
+	if ($file->print($this->{buffer})) {
+	    $this->{buffer} = '';
 	    $ret = 1;
 	} else {
 	    $this->_notify_warn($!);
