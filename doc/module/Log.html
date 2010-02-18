@@ -119,11 +119,12 @@ ascii は実際には utf8 と同等で8bit部分が全てquoted-printableされ
 </p>
 <div class="element"><span class="key">filename-encoding</span>:<span class="value">utf8</span></div>
 <p class="comment">
-ログの改行コード出力をCRLFにするかどうか.<br />
-デフォルトはWindowsでは1(CRLF), それ以外では0(LF).<br />
-Windowsでログを扱うことが多い場合、1にするとちょっと幸せになれるかもしれない.<br />
+Windows でログファイルが LF になって困る場合は<br />
+module/Log/Writer/File.pm を r36798 以降に上げてください。<br />
+http://fleur.hio.jp/perldoc/perl/5.8.1/perldelta.ja.html#Win32:_sysopen,_sysread,_syswrite<br />
+syswrite がテキストモードをサポートしなくなっているそうですので、<br />
+print に書き換えて対応しています。<br />
 </p>
-<div class="element"><span class="key">crlf</span>:<span class="value">0</span></div>
 
         </div>
       </div>
