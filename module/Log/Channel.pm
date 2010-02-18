@@ -423,4 +423,9 @@ channel: #(lc_channel) *
 # デフォルトはWindowsではsjis, それ以外では utf8.
 -filename-encoding: utf8
 
+# Windows でログファイルが LF になって困る場合は
+# module/Log/Writer/File.pm を r36798 以降に上げてください。
+# http://fleur.hio.jp/perldoc/perl/5.8.1/perldelta.ja.html#Win32:_sysopen,_sysread,_syswrite
+# syswrite がテキストモードをサポートしなくなっているそうですので、
+# print に書き換えて対応しています。
 =cut
