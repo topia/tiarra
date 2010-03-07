@@ -278,7 +278,9 @@ sub _write {
 			$cached_elem->unregister;
 		    };
 		    # 新たなファイルハンドルを生成。
-		    $cached_elem = $make_writer->();
+		    $cached_elem =
+			$this->{writer_cache}->{$channel} =
+			    $make_writer->();
 		    if (defined $cached_elem) {
 			$cached_elem->register;
 		    }
