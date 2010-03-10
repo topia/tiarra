@@ -164,6 +164,10 @@ sub flush {
 sub destruct {
     my ($this, $force) = @_;
 
+    if (!ref($this)) {
+	return 0; # ignore calls from ModuleManager
+    }
+
     my $ret = $this->real_destruct($force);
     $this->parent->object_release($this->uri) if ($ret || $force);
     $ret;
