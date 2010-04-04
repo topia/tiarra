@@ -8,6 +8,7 @@ use strict;
 use warnings;
 use base qw(Module);
 use RunLoop;
+use BulletinBoard;
 our $BB_KEY = __PACKAGE__.'/old-nick';
 
 sub destruct {
