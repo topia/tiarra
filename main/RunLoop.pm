@@ -759,10 +759,12 @@ sub run {
 	Interval => 3 * 60,
 	Code => sub {
 	    foreach my $network ($this->networks_list) {
+		my $target = $network->server_hostname;
 		$network->send_message(
 		    $this->construct_irc_message(
 			Command => 'PING',
-			Param => $network->server_hostname));
+			(defined $target && defined $target->prefix) ?
+			    (Param => $target) : ()));
 
 		my $cntr = $network->remark('pong-drop-counter');
 		$network->remark('pong-drop-counter',
