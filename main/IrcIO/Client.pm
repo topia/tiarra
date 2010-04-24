@@ -224,10 +224,11 @@ sub _receive_while_logging_in {
 		Param => $msg->param(0)));
     }
     elsif ($command eq 'QUIT') {
+	my $message = $msg->param(0) || 'Client Quit';
 	$this->send_message(
 	    $this->construct_irc_message(
 		Command => 'ERROR',
-		Param => 'Closing Link: ['.$this->fullname_from_client.'] ()'));
+		Param => 'Closing Link: ['.$this->fullname_from_client.'] ('.$message.')'));
 	$this->disconnect_after_writing;
     }
 
