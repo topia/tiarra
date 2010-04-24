@@ -41,6 +41,11 @@ utils->define_attr_enum_accessor('domain', 'eq',
 #               #   $msg_or_sock: 対応する IO::Socket のインスタンス。
 #               attach($connector->current_addr, $connector->current_port,
 #                      $msg_or_sock);
+#               # その後上手く行かなかったので再開したいとき
+#               # まず、いらなくなったソケットをクローズ
+#               $msg_or_sock->close;
+#               # このサーバは失敗したものとして、次のサーバから再試行
+#               $connector->resume;
 #           # timeout を指定したときは実装するようにしてください。
 #           } elsif ($genre eq 'timeout') {
 #               # timeout: 引数で指定された timeout が経過して、接続が
@@ -502,6 +507,19 @@ sub interrupt {
     }
     $genre = 'interrupt' unless defined $genre;
     $this->callback->($genre, $this);
+}
+
+sub resume {
+    my ($this) = @_;
+
+    if (defined $this->sock) {
+	$this->detach;
+    }
+    $this->_connect_try_next;
+}
+
+sub want_to_read {
+    0;
 }
 
 sub want_to_write {
