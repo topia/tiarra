@@ -340,7 +340,6 @@ sub attach {
     my ($this, $connector) = @_;
 
     $this->SUPER::attach($connector->sock);
-    $this->{connecting} = undef;
     $this->{server_host} = $connector->host;
     $this->{server_addr} = $connector->current_addr;
     $this->{server_port} = $connector->current_port;
@@ -349,7 +348,6 @@ sub attach {
 
     $this->_send_connection_messages;
 
-    $this->{connector} = undef;
     $this->printmsg("Opened connection to ". $this->destination .".");
     $this->install;
     $this;
@@ -442,7 +440,7 @@ sub _interrupt {
 sub disconnect {
     my ($this, $genre, $errno, @params) = @_;
 
-    $this->_cleanup;
+    $this->_cleanup_connection;
     $this->SUPER::disconnect($genre, $errno, @params);
     if (defined $errno) {
 	$this->printmsg($this->sock_errno_to_msg(
@@ -451,12 +449,14 @@ sub disconnect {
     } else {
 	$this->printmsg("Disconnected from ".$this->destination.".");
     }
-    if ($this->state_reconnecting || $this->state_connected) {
+    $this->{logged_in} = undef;
+    if (defined $this->{connector}) {
+	$this->{connector}->resume;
+    } elsif ($this->state_reconnecting || $this->state_connected) {
 	$this->state_reconnecting(1);
 	$this->reload_config;
 	$this->_queue_retry;
     }
-    $this->{logged_in} = undef;
 }
 
 sub _cleanup {
@@ -467,6 +467,12 @@ sub _cleanup {
 	$this->{connector}->interrupt;
 	$this->{connector} = undef;
     }
+    $this->_cleanup_connection($mode);
+}
+
+sub _cleanup_connection {
+    my ($this, $mode) = @_;
+
     if (defined $this->{timer}) {
 	$this->{timer}->uninstall;
 	$this->{timer} = undef;
@@ -579,6 +585,8 @@ sub _receive_while_logging_in {
 	if (!$this->{new_connection}) {
 	    $this->_runloop->reconnected_server($this);
 	}
+	$this->{connector} = undef;
+	$this->{connecting} = undef;
 	$this->{new_connection} = undef;
 	return;
     }
