@@ -511,7 +511,7 @@ sub _create_request
   my $mask_conf    = shift;
 
   my $url_orig = $url;
-  $url =~ s{([^-_.!~*'()a-zA-Z0-9;/?:&=+,#\@\$\[\]])}{'%'.uc(unpack("H*",$1))}ge;
+  $url =~ s{([^ -~])}{'%'.uc(unpack("H*",$1))}ge;
   if( $url ne $url_orig )
   {
     $this->_debug($full_ch_name, "url will be encoded: $url");
@@ -1697,7 +1697,7 @@ sub _parse_response
   $content2 = $ENCODER->new($content2, $enc)->utf8;
   $result->{decoded_content} = $content;
 
-  my ($title) = $content2 =~ m{<title(?:\s[^<>]*)?>\s*(.*?)\s*</title\s*>}is;
+  my ($title) = $content2 =~ m{<title(?:[ \t\n\r][^<>]*)?>\s*(.*?)\s*</title[ \t\n\r]*>}is;
   $DEBUG && !$title and $this->_debug($full_ch_name, "debug: no title elements in document");
 
   if( defined($title) )
@@ -2031,8 +2031,7 @@ sub _fixup_title
   $title =~ s/<.*?>//g;
 
   $title = $this->_unescapeHTML($title);
-  $title =~ s/[\r\n]+/ /g;
-  $title =~ s/^\s+|\s+$//g;
+  $title =~ s/[ \t\r\n]+/ /g;
   $title =~ s/\xc2([\x80-\xbf])/ $LATIN1_MAP[unpack("C",$1)-0x80]      || $1 /ge;
   $title =~ s/\xc3([\x80-\xbf])/ $LATIN1_MAP[unpack("C",$1)-0x80+0x40] || $1 /ge;
   #$title =~ s/([^ -~])/sprintf('[%02x]',unpack("C",$1))/ge;
