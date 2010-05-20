@@ -188,6 +188,34 @@ sub reload_config {
     $this->{initial_nick} = $this->config_local_or_general('nick'); # ログイン時に設定するnick。
     $this->{user_shortname} = $this->config_local_or_general('user');
     $this->{user_realname} = $this->config_local_or_general('name');
+    my $sslconf = $conf->ssl('block');
+    my $v;
+    $this->{ssl} = {
+	(map {
+	    ($_ => $sslconf->$_);
+	} qw(version cipher_list key_file cert_file dh_file ca_file ca_path)),
+	(map {
+	    ($_ => utils->cond_yesno($sslconf->$_));
+	} qw(use_cert check_crl)),
+    };
+    if (utils->cond_yesno($sslconf->verify, 1)) {
+	$this->{ssl}->{verify_mode} = 0x01;
+    }
+    if (utils->cond_yesno($sslconf->verify_hostname, 1)) {
+	$this->{ssl}->{verifycn_scheme} = {
+	    check_cn=>'always',
+	    wildcards_in_alt=>'leftmost',
+	    wildcards_in_cn=>'leftmost',
+	};
+    }
+    foreach my $key (keys %{$this->{ssl}}) {
+	if (!defined $this->{ssl}->{$key}) {
+	    delete $this->{ssl}->{$key};
+	}
+    }
+    if (!defined $this->{ssl}->{version}) {
+	delete $this->{ssl};
+    }
     #$this->{prefer_socket_types} = [qw(ipv6 ipv4)];
 }
 
@@ -305,6 +333,7 @@ sub _connect_try_next {
 		    $this->_connect_warn($obj);
 		}
 	    },
+	    (defined $this->{ssl} ? (ssl => $this->{ssl}) : ()),
 	    hooks => {
 		before_connect => sub {
 		    $this->_hook_before_connect(@_);
@@ -349,6 +378,15 @@ sub attach {
     $this->_send_connection_messages;
 
     $this->printmsg("Opened connection to ". $this->destination .".");
+    if ($this->{ssl}) {
+	## should be ssl-enabled connection
+	my $sock = $connector->sock;
+	eval {
+	    $this->printmsg("SSL/TLS enabled connection (".
+				$sock->get_cipher().") to ".
+				    $sock->peer_certificate('subject').'.')
+	};
+    }
     $this->install;
     $this;
 }
