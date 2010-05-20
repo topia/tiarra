@@ -306,6 +306,64 @@ server: chat.freenode.net 6666 8001
 -password: account secret
 =cut
 
+* freenode-ssl
+package freenode-ssl;
+=pod
+info: ネットワーク定義例 (freenode with SSL)
+info-is-omitted: 1
+no-switch: 1
+
+server: chat.freenode.net 7000 7070
+
+ssl {
+   # SSL バージョン。必須。 sslv2, sslv23, sslv3, tlsv1 がある。
+   # これが定義されているときのみ SSL 接続を行います。
+   version: sslv23
+
+   # 利用可能な暗号のリスト。 openssl ciphers 参照
+   -cipher-list: ...
+
+   # CA 鍵リストファイル。
+   # verify (デフォルト有効)を行う場合は ca-file か ca-path の
+   # どちらかを必ず指定してください。
+   -ca-file: /usr/local/share/certs/ca-root-nss.crt
+
+   # CA 鍵パス
+   # verify (デフォルト有効)を行う場合は ca-file か ca-path の
+   # どちらかを必ず指定してください。
+   -ca-path: /etc/ssl/certs
+
+   # 証明書の照合を行う(デフォルト有効)
+   -verify: yes
+
+   # ホスト名の照合を行う (デフォルト有効)
+   -verify-hostname: yes
+
+   # CRL のチェックを行う (デフォルト無効)
+   -check-crl: no
+
+   # 以下は必要な場合のみ指定してください
+
+   # クライアント証明書を使う (デフォルト無効)
+   -use-cert: no
+
+   # クライアント証明書ファイル
+   -cert-file: ...
+
+   # クライアント鍵ファイル
+   -key-file: ...
+
+   # dhparam ファイル
+   -dh-file: ...
+}
+
+# freenode独自の機能として、パスワードに「アカウント パスワード」のような、
+# アカウントに空白とパスワードを続けたものを指定することで、
+# NICKコマンドの前の接続の段階でidentifyすることができるため、
+# nick重複の際や異なるnick、異なるuser等、nick/userとは無関係に自動identifyが可能。
+-password: account secret
+=cut
+
 * ustream
 package ustream;
 =pod
