@@ -17,7 +17,7 @@ use Tiarra::Utils;
 utils->define_attr_accessor(0, qw(domain host addr port callback),
 			    qw(bind_addr prefer timeout),
 			    qw(retry_int retry_count),
-			    qw(hooks));
+			    qw(hooks ssl));
 utils->define_attr_enum_accessor('domain', 'eq',
 				 qw(tcp unix));
 
@@ -95,6 +95,9 @@ utils->define_attr_enum_accessor('domain', 'eq',
 #                  array ref, default ipv6, ipv4],
 #       # ソケットドメイン。既定値ですが、必要であれば tcp を指定してください。
 #       domain => 'tcp', # default
+#       # SSL オブション。 IO::Socket::SSL の SSL_ を除いた名前が指定できます。
+#       # ssl->{version} が指定されていなければ SSL へのアップグレードは行いません。
+#       ssl => {version=>'tlsv1'}, # no default
 #       # フック。
 #       hooks => {
 #           # 接続前フック。
@@ -109,6 +112,8 @@ utils->define_attr_enum_accessor('domain', 'eq',
 #               #         # この接続にのみ適用する bind_addr があれば
 #               #         # 指定してください。
 #               #         (bind_addr => [connection local bind_addr]),
+#               #         # この接続にのみ適用する ssl があれば指定してください。
+#               #         (ssl => [connection local ssl]),
 #               #     }
 #               if ( /* not_want_to_connect */ ) {
 #                   # die するとこの接続はスキップされます。
@@ -135,7 +140,7 @@ sub new {
     my $this = $class->SUPER::new(%opts);
     map {
 	$this->$_($opts{$_});
-    } qw(host addr port callback bind_addr timeout retry_int retry_count hooks);
+    } qw(host addr port callback bind_addr timeout retry_int retry_count hooks ssl);
 
     if (!defined $this->callback) {
 	croak 'callback closure required';
@@ -335,7 +340,7 @@ sub _try_connect_tcp {
 	if ($!{EINPROGRESS} || $!{EWOULDBLOCK}) {
 	    $this->install;
 	} else {
-	    $this->_call;
+	    $this->_connected;
 	}
     } else {
 	$this->_connect_warn_try_next($!, 'connect error');
@@ -364,7 +369,7 @@ sub _try_connect_unix {
     my $sock = IO::Socket::UNIX->new(Peer => $this->{connecting}->{addr});
     if (defined $sock) {
 	$this->attach($sock);
-	$this->_call;
+	$this->_connected;
     } else {
 	$this->_connect_warn_try_next($!, 'Couldn\'t connect');
     }
@@ -428,6 +433,14 @@ sub current_bind_addr {
 	$this->bind_addr);
 }
 
+sub current_ssl {
+    my $this = shift;
+
+    utils->get_first_defined(
+	$this->{connecting}->{ssl},
+	$this->ssl);
+}
+
 sub current_type {
     my $this = shift;
 
@@ -466,6 +479,37 @@ sub _notify_skip {
     $this->callback->('skip', $this,
 		      "skip connection attempt to ".$this->destination.$str,
 		      $errno);
+}
+
+sub _connected {
+    # connection successful
+    my $this = shift;
+
+    my $ssl = $this->current_ssl;
+    if (!defined $ssl || !$ssl->{version}) {
+	$this->_call;
+    } elsif (!Tiarra::OptionalModules->ssl) {
+	$this->_warn(
+	    qq{You wants to connect with SSL, }.
+		qq{but SSL support is not enabled. }.
+		    qq{Use non-SSL or install IO::Socket::SSL if possible.\n});
+	$this->_connect_try_next;
+	return;
+    } else {
+	require IO::Socket::SSL;
+	my $sock = $this->sock;
+	$this->detach;
+	my %ssloptions = (
+	    SSL_startHandshake => 0,
+	    map { ("SSL_$_", $ssl->{$_})} keys %$ssl);
+	$ssloptions{SSL_verifycn_name} ||= $this->host;
+	$sock = IO::Socket::SSL->start_SSL(
+	    $sock, %ssloptions);
+	$this->attach($sock);
+	$this->{connecting}->{ssl_upgrading} = 1;
+	$this->install;
+	$this->proc_sock('ssl');
+    }
 }
 
 sub _call {
@@ -519,11 +563,13 @@ sub resume {
 }
 
 sub want_to_read {
-    0;
+    my $connecting = shift->{connecting};
+    $connecting->{ssl_upgrading} ? $connecting->{ssl_want_read} : 0;
 }
 
 sub want_to_write {
-    1;
+    my $connecting = shift->{connecting};
+    $connecting->{ssl_upgrading} ? $connecting->{ssl_want_write} : 1;
 }
 
 sub write { shift->proc_sock('write') }
@@ -534,6 +580,23 @@ sub proc_sock {
     my $this = shift;
     my $state = shift;
 
+    if ($this->{connecting}->{ssl_upgrading}) {
+	my $ret = $this->sock->connect_SSL;
+	if (!$ret) {
+	    $this->{connecting}->{ssl_want_read} =
+		$this->sock->errstr == IO::Socket::SSL::SSL_WANT_READ();
+	    $this->{connecting}->{ssl_want_write} =
+		$this->sock->errstr == IO::Socket::SSL::SSL_WANT_WRITE();
+	    if (!$this->{connecting}->{ssl_want_read} &&
+		    !$this->{connecting}->{ssl_want_write}) {
+		$this->_handle_sock_error($!, 'upgrade to SSL error: ' . $this->sock->errstr);
+	    }
+	} else {
+	    $this->cleanup;
+	    $this->_call;
+	}
+	return
+    }
     if ($state eq 'write') {
 	my $error = $this->errno;
 	$this->cleanup;
@@ -541,14 +604,14 @@ sub proc_sock {
 	    $this->close;
 	    $this->_connect_warn_try_next($error);
 	} else {
-	    $this->_call;
+	    $this->_connected;
 	}
     } elsif (!$this->sock->connect($this->{connecting}->{saddr})) {
 	if ($!{EISCONN} ||
 		($this->_is_winsock && (($! == 10022) || $!{EWOULDBLOCK} ||
 					    $!{EALREADY}))) {
 	    $this->cleanup;
-	    $this->_call;
+	    $this->_connected;
 	} else {
 	    $this->_handle_sock_error($!, 'connection try error');
 	}

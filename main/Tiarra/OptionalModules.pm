@@ -36,6 +36,10 @@ our %modules = (
 	requires => [qw(MIME::Base64)],
 	note => 'for Tiarra::Encoding::Encode\'s base64 support',
     },
+    'ssl' => {
+	requires => [qw(IO::Socket::SSL)],
+	note => 'for ssl-enabled server support',
+    },
    );
 
 sub _new {
