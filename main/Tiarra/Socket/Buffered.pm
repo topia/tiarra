@@ -100,7 +100,7 @@ sub write {
 		!$this->want_to_write) {
 	    $this->disconnect;
 	}
-    } else {
+    } elsif (!$!{EAGAIN}) {
 	# write error
 	$this->handle_io_error('write', $!);
     }
@@ -126,7 +126,7 @@ sub read {
 	} else {
 	    $this->recvbuf .= $recvbuf;
 	}
-    } else {
+    } elsif (!$!{EAGAIN}) {
 	# read error
 	$this->handle_io_error('read', $!);
     }
