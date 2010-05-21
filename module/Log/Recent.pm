@@ -51,7 +51,7 @@ sub destruct {
 sub message_arrived {
     my ($this,$msg,$sender) = @_;
     # Log::Recent/commandにマッチするか？
-    if (Mask::match(lc($this->config->command) || '*', lc($msg->command))) {
+    if (Mask::match(lc($this->config->command || '*'), lc($msg->command))) {
 	$this->{logger}->log($msg,$sender);
     }
     $msg;
