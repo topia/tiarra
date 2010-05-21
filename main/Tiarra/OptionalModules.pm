@@ -10,7 +10,7 @@ use warnings;
 use Tiarra::SharedMixin;
 use Tiarra::Utils;
 # failsafe to module-reload
-our $status = {__initialized=>0};
+our $status = {};
 our %modules = (
     'threads' => {
 	requires => [qw(threads threads::shared Thread::Queue)],
@@ -37,9 +37,8 @@ our %modules = (
 	note => 'for Tiarra::Encoding::Encode\'s base64 support',
     },
     'ssl' => {
-	requires => [qw(IO::Socket::SSL Net::SSLeay)],
+	requires => [qw(IO::Socket::SSL)],
 	note => 'for ssl-enabled server support',
-	firstinit => ($^O eq 'MSWin32'), # MSWin32 is known as broken with threads
     },
    );
 
@@ -118,14 +117,6 @@ sub check {
 	return !1;
     }
 
-    if ($this->{__initialized}) {
-	$this->{__initialized} = 1;
-	# first initialize quick modules
-	foreach ($this->all_modules) {
-	    next unless $modules{$_}{firstinit};
-	    eval { $this->check($_) };
-	}
-    }
     my $failed;
     for my $mod (@{$modules{$name}->{requires}}) {
 	if (!eval "require $mod") {
