@@ -493,6 +493,12 @@ sub _connected {
 	    qq{You wants to connect with SSL, }.
 		qq{but SSL support is not enabled. }.
 		    qq{Use non-SSL or install IO::Socket::SSL if possible.\n});
+	if ($^O eq 'MSWin32' && Tiarra::OptionalModules->threads) {
+	    $this->_warn(
+		qq{threads and SSL are sometimes conflicts with Win32 platform. }.
+		    qq{Please disable thread with set TIARRA_DISABLE_THREADS }.
+			qq{environment variable to 1.\n});
+	}
 	$this->_connect_try_next;
 	return;
     } else {
