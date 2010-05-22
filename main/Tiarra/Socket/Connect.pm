@@ -96,7 +96,9 @@ utils->define_attr_enum_accessor('domain', 'eq',
 #       # ソケットドメイン。既定値ですが、必要であれば tcp を指定してください。
 #       domain => 'tcp', # default
 #       # SSL オブション。 IO::Socket::SSL の SSL_ を除いた名前が指定できます。
-#       # ssl->{version} が指定されていなければ SSL へのアップグレードは行いません。
+#       # ssl->{version} がない場合は SSL へのアップグレードは行いません。
+#       # error_trap は Tiarra::Socket::Connector によって上書きされます。
+#       # verifycn_name は指定がなければ host が補完されます。
 #       ssl => {version=>'tlsv1'}, # no default
 #       # フック。
 #       hooks => {
@@ -280,6 +282,22 @@ sub _try_connect_ipv6 {
     $this->_try_connect_tcp('IO::Socket::INET6');
 }
 
+sub _check_connect_dependency {
+    my $this = shift;
+
+    my $ssl = $this->current_ssl;
+    if (defined $ssl && $ssl->{version}) {
+	if (!Tiarra::OptionalModules->ssl) {
+	    $this->_warn(
+		qq{You wants to connect with SSL, }.
+		    qq{but SSL support is not enabled. }.
+			qq{Use non-SSL or install IO::Socket::SSL if possible.\n});
+	    return 0;
+	}
+    }
+    return 1;
+}
+
 sub _try_connect_tcp {
     my ($this, $package, $addr, %additional) = @_;
 
@@ -290,11 +308,12 @@ sub _try_connect_tcp {
 	$this->_connect_try_next;
 	return;
     }
-    if (defined $this->{hooks}->{before_connect}) {
-	#eval { $this->{hooks}->{before_connect}->('before_connect', ) }
-    }
     if (!eval("require $package")) {
 	$this->_connect_warn("Couldn\'t require socket package: $package");
+	$this->_connect_try_next;
+	return;
+    }
+    if (!$this->_check_connect_dependency) {
 	$this->_connect_try_next;
 	return;
     }
@@ -366,6 +385,10 @@ sub _try_connect_unix {
 	return;
     }
     require IO::Socket::UNIX;
+    if (!$this->_check_connect_dependency) {
+	$this->_connect_try_next;
+	return;
+    }
     my $sock = IO::Socket::UNIX->new(Peer => $this->{connecting}->{addr});
     if (defined $sock) {
 	$this->attach($sock);
@@ -488,27 +511,37 @@ sub _connected {
     my $ssl = $this->current_ssl;
     if (!defined $ssl || !$ssl->{version}) {
 	$this->_call;
-    } elsif (!Tiarra::OptionalModules->ssl) {
-	$this->_warn(
-	    qq{You wants to connect with SSL, }.
-		qq{but SSL support is not enabled. }.
-		    qq{Use non-SSL or install IO::Socket::SSL if possible.\n});
-	$this->_connect_try_next;
-	return;
     } else {
+	## ssl module check is done before start connection,
+	## with _check_connect_dependency.
 	require IO::Socket::SSL;
-	my $sock = $this->sock;
-	$this->detach;
 	my %ssloptions = (
 	    SSL_startHandshake => 0,
 	    map { ("SSL_$_", $ssl->{$_})} keys %$ssl);
 	$ssloptions{SSL_verifycn_name} ||= $this->host;
-	$sock = IO::Socket::SSL->start_SSL(
+	$ssloptions{SSL_error_trap} = sub {
+	    my ($sock, $error) = @_;
+	    ## IO::Socket::SSL downgrading socket on standard error trap.
+	    ## This breaks unregister RunLoop sockets.
+	    $this->{connecting}->{ssl_fatal_error} = $error;
+	};
+	my $sock = $this->sock;
+	$this->detach;
+	my $newsock = IO::Socket::SSL->start_SSL(
 	    $sock, %ssloptions);
-	$this->attach($sock);
-	$this->{connecting}->{ssl_upgrading} = 1;
-	$this->install;
-	$this->proc_sock('ssl');
+	if (defined $newsock) {
+	    $this->attach($newsock);
+	    $this->{connecting}->{ssl_upgrading} = 1;
+	    $this->install;
+	    $this->proc_sock('ssl');
+	} else {
+	    $this->_warn(
+		qq{Couldn\'t set-up SSL: $IO::Socket::SSL::SSL_ERROR.\n});
+	    $this->attach($sock);
+	    $this->close;
+	    $this->_connect_try_next;
+	    return;
+	}
     }
 }
 
@@ -590,6 +623,14 @@ sub proc_sock {
 	    if (!$this->{connecting}->{ssl_want_read} &&
 		    !$this->{connecting}->{ssl_want_write}) {
 		$this->_handle_sock_error($!, 'upgrade to SSL error: ' . $this->sock->errstr);
+		if ($this->{connecting}->{ssl_fatal_error}) {
+		    my $sock = $this->sock;
+		    $this->cleanup;
+		    $this->shutdown(2);
+		    $this->detach;
+		    $sock->close(SSL_no_shutdown=>1, SSL_ctx_free=>1);
+		    $this->_connect_try_next;
+		}
 	    }
 	} else {
 	    $this->cleanup;
