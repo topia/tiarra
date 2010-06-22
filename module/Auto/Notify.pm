@@ -197,6 +197,97 @@ sub send_prowl {
 	  );
 }
 
+sub config_boxcar {
+    my ($this, $config) = @_;
+
+    my $runloop = $this->_runloop;
+    if (!$config->provider_key) {
+	# growl mode
+	require Crypt::SSLeay; # https support
+	if (!$config->user || !$config->password) {
+	    $runloop->notify_warn(__PACKAGE__." boxcar (Growl): please set user and/or password");
+	}
+    } elsif ($config->email_hash) {
+	# ok
+    } elsif ($config->email) {
+	# needs to hash email
+	require Digest::MD5;
+    } elsif ($config->token && $config->secret) {
+	# ok
+    } else {
+	$runloop->notify_warn(__PACKAGE__." boxcar (Provider): please set email-hash, email or token and secret");
+    }
+
+}
+
+sub send_boxcar {
+    my ($this, $config, $text, $msg, $sender, $full_ch_name) = @_;
+
+    $text = $this->strip_mirc_formatting($text);
+    my $screen_name = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->screenname_format || '[tiarra][#(channel):#(nick.now)]',
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $text,
+       );
+    $text = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->format || $this->config->format || '#(text)',
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $text,
+       );
+    my @data = ('notification[from_screen_name]' => $screen_name,
+		'notification[message]' => $text);
+
+    my $runloop = $this->_runloop;
+    if (!$config->provider_key) {
+	# Growl mode
+	Tools::HTTPClient->new(
+	    Request => POST("https://boxcar.io/notifications", \@data),
+	   )->start(
+	       Callback => sub {
+		   my $stat = shift;
+		   if (!ref($stat)) {
+		       $runloop->notify_warn(__PACKAGE__." boxcar: post failed: $stat");
+		   } elsif ($stat->{Content} !~ /^\s*$/) {
+		       (my $content = $stat->{Content}) =~ s/\s+/ /;
+		       $runloop->notify_warn(__PACKAGE__." boxcar: post failed: $content");
+		   }
+	       },
+	      );
+    } else {
+	if ($config->email_hash) {
+	    push(@data, email=>$config->email_hash);
+	} elsif ($config->email) {
+	    push(@data, email=>Digest::MD5->new->add($config->email)->hexdigest);
+	} else {
+	    push(@data,
+		 token => $config->token,
+		 secret => $config->secret);
+	}
+	Tools::HTTPClient->new(
+	    Request => POST("http://boxcar.io/devices/providers/".
+				$config->provider_key."/notifications", \@data),
+	   )->start(
+	       Callback => sub {
+		   my $stat = shift;
+		   if (!ref($stat)) {
+		       $runloop->notify_warn(__PACKAGE__." boxcar: post failed: $stat");
+		   } elsif ($stat->{Content} !~ /^\s*$/) {
+		       (my $content = $stat->{Content}) =~ s/\s+/ /;
+		       $runloop->notify_warn(__PACKAGE__." boxcar: post failed: $content");
+		   }
+	       },
+	      );
+
+    }
+
+}
+
 1;
 
 =pod
@@ -221,7 +312,7 @@ keyword: hoge
 format: [tiarra][#(channel):#(nick.now)] #(text)
 
 # 使用するブロックを指定します
--blocks: im prowl
+-blocks: im prowl boxcar-growl boxcar-provider
 
 im {
 
@@ -260,6 +351,65 @@ type: prowl
 priority: 0
 application: tiarra
 event: keyword
+
+}
+
+boxcar-growl {
+# 利用する前にサービスリストに Growl を追加しておいてください。
+
+type: boxcar
+
+# Boxcar のユーザー名を指定します。必須です。
+user:
+
+# Boxcar のパスワードを指定します。必須です。
+password:
+
+# スクリーンネームのフォーマットを指定できます。
+# デフォルト値: [tiarra][#(channel):#(nick.now)]
+screenname-format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
+
+# 通知先ごとにフォーマットを指定できます。
+# この例では先頭に時刻を追加しています。
+# Boxcar ではスクリーンネームが別になるので、個別指定をお勧めします。
+format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
+
+}
+
+boxcar-provider {
+# 自分用 provider を立てて利用するタイプです。
+# http://boxcar.io/site/providers からサインアップしてください。
+# このとき、 curl のコマンドライン中にある token と secret は
+# サインアップ直後にしか表示されないので、忘れずメモしてください。
+# (もちろんwebhookを立てればいつでも取得できますが……)
+type: boxcar
+
+# provider の API key を指定します。これがないと Growl モードになります。
+provider-key: XXXXXX
+
+# 通知先の指定をします。
+# token と secret, email, email-hash のいずれかを指定するようにしてください。
+
+# トークン。サインアップ直後の curl のコマンドライン中にあります。
+-token: XXXXXX
+
+# シークレット。サインアップ直後の curl のコマンドライン中にあります。
+-secret: XXXXXXXX
+
+# メールアドレス。 Digest::MD5 が必要です。
+-email: XXXX@XXXX
+
+# メールアドレスのMD5ハッシュ。 Digest::MD5 は必要ありません。
+-email-hash: xxxxxx
+
+# スクリーンネームのフォーマットを指定できます。
+# デフォルト値: [tiarra][#(channel):#(nick.now)]
+screenname-format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
+
+# 通知先ごとにフォーマットを指定できます。
+# この例では先頭に時刻を追加しています。
+# Boxcar ではスクリーンネームが別になるので、個別指定をお勧めします。
+format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
 
 }
 
