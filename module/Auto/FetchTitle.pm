@@ -71,8 +71,8 @@ our $HAS_TOOLS_ID3TAG = do{
 
 our $MAX_ACTIVE_REQUESTS        = 3;
 our $MAX_URLS_IN_SINGLE_MESSAGE = 3;
-our $DEFAULT_RECV_LIMIT         = 4*1024; # 4K bytes.
-our $DEFAULT_TIMEOUT            = 3;  # sec.
+our $DEFAULT_RECV_LIMIT         = 64*1024; # 64K bytes. Damn amazon.co.jp!
+our $DEFAULT_TIMEOUT            = 10;  # sec.
 our $MAX_REDIRECTS              = 5;
 our $MAX_REDIRECTS_LIMIT        = 20;
 our $PROCESSING_LIMIT_TIME      = 60; # secs.
@@ -520,6 +520,9 @@ sub _create_request
 
   my $anchor;
   ($url, $anchor) = split(/#/, $url, 2);
+  my $recv_limit = $this->config->recv_limit || $DEFAULT_RECV_LIMIT;
+  $this->_debug($full_ch_name, "recv_limit: $recv_limit");
+
   my $req = {
     old          => undef,    # undef for first (non-redirect) request.
     ini_req      => undef,    # undef for first (non-redirect) request.
@@ -540,7 +543,7 @@ sub _create_request
     addr_checked => undef,
     headers      => {},
     cookies      => [],    # cookies for this request.
-    recv_limit   => $DEFAULT_RECV_LIMIT,
+    recv_limit   => $recv_limit,
     max_redirects=> undef, # integer.
     timeout      => undef,
     response     => undef,
@@ -1193,6 +1196,7 @@ sub _request_progress
   my $rlen = defined($res->{Content}) ? length($res->{Content}) : 0;
   $DEBUG and $this->_debug($req, "debug: progress $rlen / $req->{recv_limit}");
 
+  
   if( my $addr = !$req->{addr_checked} && $req->{httpclient}->{addr} )
   {
     my $desc = $this->_addr_check($addr);
@@ -2308,7 +2312,15 @@ info:    発言に含まれるURLからタイトルを取得.
 default: off
 
 # リクエストタイムアウトまでの時間(秒).
-timeout: 3
+# タイムアウトエラーが頻発するようならこの値を
+# 大きくしてください
+timeout: 10 
+
+# 取得するコンテンツのバイト数
+# イマドキのサイトはこれで十分のはずですが、
+# 遅い回線を使っている場合はこの値を小さく
+# してみてください。
+recv_limit: 65536 
 
 # 有効にするチャンネルとオプションとURLの設定.
 # 書式: mask: <channel> [<&conf>...] <url>
