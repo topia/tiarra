@@ -421,6 +421,7 @@ sub _main
     if( $this->{parser}->isa('Tools::HTTPParser') )
     {
       my $st = $this->{parser}->object->{StreamState};
+      $this->{parser}{rest} = '' if (!defined($this->{parser}{rest}));
       $success = $st =~ /^(?:body|parsed)\z/ && $this->{parser}{rest} eq '';
     }else
     {
