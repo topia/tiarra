@@ -44,6 +44,15 @@ sub message_arrived {
     $msg;
 }
 
+sub disconnected_from_server {
+    my ($this,$server) = @_;
+
+    # 切断されたサーバ宛のクエリーを削除する
+    if (@{$this->{buffer}}) {
+	@{$this->{buffer}} = grep { $_->[0] != $server } @{$this->{buffer}};
+    }
+}
+
 sub setup_timer {
     my ($this) = @_;
     # 既にタイマーが作られていたら何もせずに戻る。
@@ -56,13 +65,14 @@ sub setup_timer {
 		# 一度に二つずつ送り出す。
 		my $msg_per_once = 2;
 		my $buffer = $this->{buffer};
-		for (my $i = 0;
-		     $i < @$buffer && $i < $msg_per_once;
-		     $i++) {
-		    my $entry = $buffer->[$i];
+		# 送信でエラーが起きたらそのエントリは捨てるようにした
+		while ($msg_per_once > 0 && @$buffer) {
+		    my $entry = shift(@$buffer);
+		    # 念のため送信先のサーバに繋がっているかダブルチェック
+		    next unless $entry->[0]->connected;
 		    $entry->[0]->send_message($entry->[1]);
+		    $msg_per_once--;
 		}
-		splice @$buffer,0,2;
 		# バッファが空になったら終了。
 		if (@$buffer == 0) {
 		    $timer->uninstall;
