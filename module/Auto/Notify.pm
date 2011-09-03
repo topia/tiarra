@@ -288,6 +288,86 @@ sub send_boxcar {
 
 }
 
+
+sub config_notifo {
+    my ($this, $config) = @_;
+
+    require Crypt::SSLeay; # https support
+    require MIME::Base64;
+
+    return # subscribe_user is not work with user account
+	if (!defined($config->to) || $config->user eq $config->to);
+    my $url = "https://api.notifo.com/v1/subscribe_user";
+    my $runloop = $this->_runloop;
+    Tools::HTTPClient->new(
+	Request => POST($url, [username => $config->user],
+			Authorization => 'Basic '.
+			    MIME::Base64::encode($config->user .':'.$config->secret, "")),
+       )->start(
+	   Callback => sub {
+	       my $stat = shift;
+	       if (!ref($stat)) {
+		   $runloop->notify_warn(__PACKAGE__." notifo: verify failed: $stat");
+	       } elsif ($stat->{Content} !~ /"status":\s*"success"[,}]/) {
+		   (my $content = $stat->{Content}) =~ s/\s+/ /;
+		   $runloop->notify_warn(__PACKAGE__." notifo: verify failed: $content");
+	       }
+	   },
+	  );
+}
+
+sub send_notifo {
+    my ($this, $config, $text, $msg, $sender, $full_ch_name) = @_;
+
+    my $url = "https://api.notifo.com/v1/send_notification";
+    $text = $this->strip_mirc_formatting($text);
+    my $title = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->title_format || '#(channel):#(nick.now)',
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $text,
+       );
+    my $uri = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->uri_format || '',
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $text,
+       );
+    $text = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->format || $this->config->format || '#(text)',
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $text,
+       );
+    my $data = [label => $config->label || 'tiarra',
+		title => $title,
+		to => $config->to || $config->user,
+		((defined($uri) && $uri ne "") ? (uri => $uri) : ()),
+		msg => $text];
+    my $runloop = $this->_runloop;
+    Tools::HTTPClient->new(
+	Request => POST($url, $data, Authorization => 'Basic '.
+			    MIME::Base64::encode($config->user .':'.$config->secret, "")),
+       )->start(
+	   Callback => sub {
+	       my $stat = shift;
+	       if (!ref($stat)) {
+		   $runloop->notify_warn(__PACKAGE__." notifo: post failed: $stat");
+	       } elsif ($stat->{Content} !~ /"status":\s*"success"[,}]/) {
+		   (my $content = $stat->{Content}) =~ s/\s+/ /;
+		   $runloop->notify_warn(__PACKAGE__." notifo: post failed: $content");
+	       }
+	   },
+	  );
+}
+
+
 1;
 
 =pod
@@ -312,7 +392,7 @@ keyword: hoge
 format: [tiarra][#(channel):#(nick.now)] #(text)
 
 # 使用するブロックを指定します
--blocks: im prowl boxcar-growl boxcar-provider
+-blocks: im prowl boxcar-growl boxcar-provider notifo
 
 im {
 
@@ -409,6 +489,42 @@ screenname-format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
 # 通知先ごとにフォーマットを指定できます。
 # この例では先頭に時刻を追加しています。
 # Boxcar ではスクリーンネームが別になるので、個別指定をお勧めします。
+format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
+
+}
+
+notifo {
+
+# 通知先のタイプを指定します。
+type: notifo
+
+# noifo の Settings ページにある API Username を指定します。
+# http://notifo.com/user/settings
+user: XXXXXXX
+
+# noifo の Settings ページにある API Secret を指定します。
+# http://notifo.com/user/settings
+secret: XXXXXXXXXXXXXXXXXXXXXX
+
+# ラベルを指定します。
+# サービスアカウントでは無視されます。
+label: tiarra
+
+# 通知先のユーザ名を指定します。
+# ユーザアカウントでは無視されます。省略した場合は user に通知します。
+-to: XXXXXXXXXXXXX
+
+# タイトルのフォーマットを指定できます。
+# デフォルト値: #(channel):#(nick.now)
+title-format: #(channel):#(nick.now)
+
+# URIのフォーマットを指定できます。
+# 省略すると通知にURIを含めません。
+# 現状の機構ではURIをエスケープする手段がないので、固定値以外はお勧めしません。
+uri-format:
+
+# 通知先ごとにフォーマットを指定できます。
+# この例では先頭に時刻を追加しています。
 format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
 
 }
