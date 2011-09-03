@@ -361,7 +361,7 @@ sub _config
     },
     {
       # 28a. subeshi.
-      url        => 'http://seizo.inte.co.jp/beshi/r/?k=*',
+      url        => 'http://haken.inte.co.jp/beshi/r/?k=*',
       extract    => sub{
         my ($p1,$p2,$p3,$p4,$p5) = m{\Q<embed src="../img/graph.swf?\Epoint0=(\d+)&point1=(\d+)&point2=(\d+)&point3=(\d+)&point4=(\d+)"} or return;
         my ($name) = m{<div id="type_nameLabel">(.*?)　さんのヒト型は</div>};
