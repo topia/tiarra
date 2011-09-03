@@ -210,13 +210,8 @@ sub _config
     },
     {
       # 8a. amazon (page size).
-      url        => 'http://www.amazon.co.jp/*',
+      url        => 'http://www.amazon.*/*',
       recv_limit => 96*1024,
-    },
-    {
-      # 8b. amazon (page size).
-      url        => 'http://www.amazon.com/*',
-      recv_limit => 15*1024,
     },
     {
       # 9. ニコニコ動画 (メンテ画面).
