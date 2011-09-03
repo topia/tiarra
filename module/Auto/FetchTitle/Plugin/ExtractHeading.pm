@@ -211,7 +211,7 @@ sub _config
     {
       # 8a. amazon (page size).
       url        => 'http://www.amazon.co.jp/*',
-      recv_limit => 15*1024,
+      recv_limit => 96*1024,
     },
     {
       # 8b. amazon (page size).
