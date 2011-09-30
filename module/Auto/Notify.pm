@@ -147,7 +147,7 @@ sub config_prowl {
     require Crypt::SSLeay; # https support
     require URI;
 
-    my $url = URI->new("https://prowl.weks.net/publicapi/verify");
+    my $url = URI->new("https://api.prowlapp.com/publicapi/verify");
     $url->query_form(apikey => $config->apikey);
     my $runloop = $this->_runloop;
     Tools::HTTPClient->new(
@@ -155,7 +155,7 @@ sub config_prowl {
        )->start(
 	   Callback => sub {
 	       my $stat = shift;
-	       $runloop->notify_warn(__PACKAGE__." verify failed: $stat")
+	       $runloop->notify_warn(__PACKAGE__." prowl: verify failed: $stat")
 		   unless ref($stat);
 	       ## FIXME: check response (should check 'error')
 	   },
@@ -165,7 +165,7 @@ sub config_prowl {
 sub send_prowl {
     my ($this, $config, $text, $msg, $sender, $full_ch_name) = @_;
 
-    my $url = URI->new("https://prowl.weks.net/publicapi/add");
+    my $url = URI->new("https://api.prowlapp.com/publicapi/add");
     $text = Auto::AliasDB->stdreplace(
 	$msg->prefix,
 	$config->format || $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
@@ -174,10 +174,32 @@ sub send_prowl {
 	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
 	text => $this->strip_mirc_formatting($text),
        );
+    my $event;
+    if (defined $config->event_format) {
+	$event = Auto::AliasDB->stdreplace(
+	    $msg->prefix,
+	    $config->event_format,
+	    $msg, $sender,
+	    channel => $full_ch_name,
+	    raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	    text => $text,
+	   );
+    } else {
+	$event = $config->event || 'keyword';
+    }
+    my $uri = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->url_format || '', ## config and param are "URL"
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $text,
+       );
     my @data = (apikey => $config->apikey,
 		priority => $config->priority || 0,
 		application => $config->application || 'tiarra',
-		event => $config->event || 'keyword',
+		event => $event,
+		($uri ne "" ? (url => $uri) : ()),
 		description => $text);
     $url->query_form(@data);
 
@@ -368,6 +390,82 @@ sub send_notifo {
 }
 
 
+sub config_nma {
+    my ($this, $config) = @_;
+
+    # I don't have a good feeling to NMA, but Prowl didn't support
+    #  Android, on 2011-09-30.
+    # see also http://www.cocoaforge.com/viewtopic.php?f=45&t=20765#p129361
+    # and check send_prowl and send_nma.
+
+    require Crypt::SSLeay; # https support
+    require URI;
+
+    foreach my $apikey (split(/,/, $config->apikey)) {
+	my $url = URI->new("https://www.notifymyandroid.com/publicapi/verify");
+	$url->query_form(apikey => $apikey,
+			 (defined $config->developerkey ?
+			      (developerkey => $config->developerkey) : ()));
+	my $runloop = $this->_runloop;
+	Tools::HTTPClient->new(
+	    Request => GET($url->as_string()),
+	   )->start(
+	       Callback => sub {
+		   my $stat = shift;
+		   $runloop->notify_warn(__PACKAGE__." NMA: verify failed: $stat")
+		       unless ref($stat);
+		   ## FIXME: check response (should check 'error')
+	       },
+	      );
+    }
+}
+
+sub send_nma {
+    my ($this, $config, $text, $msg, $sender, $full_ch_name) = @_;
+
+    my $url = URI->new("https://www.notifymyandroid.com/publicapi/notify");
+    $text = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->format || $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $this->strip_mirc_formatting($text),
+       );
+    my $event = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->event_format || 'keyword',
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $text,
+       );
+    my @data = (apikey => $config->apikey,
+		priority => $config->priority || 0,
+		application => $config->application || 'tiarra',
+		event => $event,
+		description => $text,
+		(defined $config->developerkey ?
+		     (developerkey => $config->developerkey) : ()));
+    $url->query_form(@data);
+
+    my $runloop = $this->_runloop;
+    Tools::HTTPClient->new(
+	Request => GET($url->as_string()),
+       )->start(
+	   Callback => sub {
+	       my $stat = shift;
+	       if (!ref($stat)) {
+		   $runloop->notify_warn(__PACKAGE__." NMA: post failed: $stat");
+	       } elsif ($stat->{Content} !~ /<success /) {
+		   (my $content = $stat->{Content}) =~ s/\s+/ /;
+		   $runloop->notify_warn(__PACKAGE__." NMA: post failed: $content");
+	       }
+	   },
+	  );
+}
+
+
 1;
 
 =pod
@@ -392,7 +490,7 @@ keyword: hoge
 format: [tiarra][#(channel):#(nick.now)] #(text)
 
 # 使用するブロックを指定します
--blocks: im prowl boxcar-growl boxcar-provider notifo
+-blocks: im prowl boxcar-growl boxcar-provider notifo nma
 
 im {
 
@@ -421,16 +519,30 @@ type: prowl
 
 # 通知先ごとにフォーマットを指定できます。
 # この例では先頭に時刻を追加しています。
--format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
+-format: #(date:%H:%M:%S) #(text)
 
 # Prowl で表示された apikey を入力します。
 # Prowl については http://prowl.weks.net/ を参考にしてください。
 -apikey: XXXXXX
 
+# イベントのフォーマットを指定できます。
+# 省略すると event の設定が利用されます。
+event-format: #(channel):#(nick.now)
+
+# URLのフォーマットを指定できます。
+# 省略すると通知にURLを含めません。
+# 現状の機構ではURLをエスケープする手段がないので、固定値以外はお勧めしません。
+# また、 URL を指定するとアプリ側でのredirect設定は無視されるようです。
+url-format:
+
+# イベントを指定します。(固定値)
+# event-format が指定された場合はそちらが優先されます。
+event: keyword
+
+
 # http://forums.cocoaforge.com/viewtopic.php?f=45&t=20339
 priority: 0
 application: tiarra
-event: keyword
 
 }
 
@@ -526,6 +638,32 @@ uri-format:
 # 通知先ごとにフォーマットを指定できます。
 # この例では先頭に時刻を追加しています。
 format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
+
+}
+
+nma {
+
+# 通知先のタイプを指定します。
+# Notify My Android には nma を指定してください。
+type: nma
+
+# 通知先ごとにフォーマットを指定できます。
+# この例では先頭に時刻を追加しています。
+format: #(date:%H:%M:%S) #(text)
+
+# NMA で表示された apikey を入力します。
+# https://www.notifymyandroid.com/account.php
+# カンマで区切ると複数のAPIキーを指定することができます。
+-apikey: XXXXXX
+
+# イベントのフォーマットを指定できます。
+# デフォルト値: keyword
+event-format: #(channel):#(nick.now)
+
+# https://www.notifymyandroid.com/api.php
+priority: 0
+application: tiarra
+-developerkey:
 
 }
 
