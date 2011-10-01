@@ -166,14 +166,7 @@ sub send_prowl {
     my ($this, $config, $text, $msg, $sender, $full_ch_name) = @_;
 
     my $url = URI->new("https://api.prowlapp.com/publicapi/add");
-    $text = Auto::AliasDB->stdreplace(
-	$msg->prefix,
-	$config->format || $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
-	$msg, $sender,
-	channel => $full_ch_name,
-	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
-	text => $this->strip_mirc_formatting($text),
-       );
+    $text = $this->strip_mirc_formatting($text);
     my $event;
     if (defined $config->event_format) {
 	$event = Auto::AliasDB->stdreplace(
@@ -190,6 +183,14 @@ sub send_prowl {
     my $uri = Auto::AliasDB->stdreplace(
 	$msg->prefix,
 	$config->url_format || '', ## config and param are "URL"
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $text,
+       );
+    $text = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->format || $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
 	$msg, $sender,
 	channel => $full_ch_name,
 	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
@@ -424,14 +425,20 @@ sub send_nma {
     my ($this, $config, $text, $msg, $sender, $full_ch_name) = @_;
 
     my $url = URI->new("https://www.notifymyandroid.com/publicapi/notify");
-    $text = Auto::AliasDB->stdreplace(
-	$msg->prefix,
-	$config->format || $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
-	$msg, $sender,
-	channel => $full_ch_name,
-	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
-	text => $this->strip_mirc_formatting($text),
-       );
+    $text = $this->strip_mirc_formatting($text);
+    my $application;
+    if (defined $config->application_format) {
+	$application = Auto::AliasDB->stdreplace(
+	    $msg->prefix,
+	    $config->application_format,
+	    $msg, $sender,
+	    channel => $full_ch_name,
+	    raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	    text => $text,
+	   );
+    } else {
+	$application = $config->application || 'tiarra';
+    }
     my $event = Auto::AliasDB->stdreplace(
 	$msg->prefix,
 	$config->event_format || 'keyword',
@@ -440,9 +447,17 @@ sub send_nma {
 	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
 	text => $text,
        );
+    $text = Auto::AliasDB->stdreplace(
+	$msg->prefix,
+	$config->format || $this->config->format || '[tiarra][#(channel):#(nick.now)] #(text)',
+	$msg, $sender,
+	channel => $full_ch_name,
+	raw_channel => Auto::Utils::get_raw_ch_name($msg, 0),
+	text => $text,
+       );
     my @data = (apikey => $config->apikey,
 		priority => $config->priority || 0,
-		application => $config->application || 'tiarra',
+		application => $application,
 		event => $event,
 		description => $text,
 		(defined $config->developerkey ?
@@ -649,16 +664,20 @@ type: nma
 
 # 通知先ごとにフォーマットを指定できます。
 # この例では先頭に時刻を追加しています。
-format: #(date:%H:%M:%S) #(text)
+format: #(date:%H:%M:%S) [#(channel):#(nick.now)] #(text)
 
 # NMA で表示された apikey を入力します。
 # https://www.notifymyandroid.com/account.php
 # カンマで区切ると複数のAPIキーを指定することができます。
 -apikey: XXXXXX
 
+# applicationのフォーマットを指定できます。
+# 省略すると application の設定が利用されます。
+application-format: Tiarra - #(channel):#(nick.now)
+
 # イベントのフォーマットを指定できます。
 # デフォルト値: keyword
-event-format: #(channel):#(nick.now)
+event-format: #(text)
 
 # https://www.notifymyandroid.com/api.php
 priority: 0
