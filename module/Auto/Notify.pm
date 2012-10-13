@@ -424,7 +424,7 @@ sub config_nma {
 sub send_nma {
     my ($this, $config, $text, $msg, $sender, $full_ch_name) = @_;
 
-    my $url = URI->new("https://www.notifymyandroid.com/publicapi/notify");
+    my $url = "https://www.notifymyandroid.com/publicapi/notify";
     $text = $this->strip_mirc_formatting($text);
     my $application;
     if (defined $config->application_format) {
@@ -462,11 +462,10 @@ sub send_nma {
 		description => $text,
 		(defined $config->developerkey ?
 		     (developerkey => $config->developerkey) : ()));
-    $url->query_form(@data);
 
     my $runloop = $this->_runloop;
     Tools::HTTPClient->new(
-	Request => GET($url->as_string()),
+	Request => POST($url, [@data]),
        )->start(
 	   Callback => sub {
 	       my $stat = shift;
