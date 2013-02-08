@@ -2241,7 +2241,8 @@ sub _config_reserved_addresses
   our $RESERVED_ADDRESSES ||= [
     [ 0, 0, '0.0.0.0/8',        'Current network',                     'RFC 1700', ],
     [ 0, 0, '10.0.0.0/8',       'Private network',                     'RFC 1918', ],
-    [ 0, 0, '14.0.0.0/8',       'Public data networks',                'RFC 1700', ],
+    # obsoletes by RFC5735
+    #[ 0, 0, '14.0.0.0/8',       'Public data networks',                'RFC 1700', ],
     [ 0, 0, '39.0.0.0/8',       'Reserved',                            'RFC 1797', ],
     [ 0, 0, '127.0.0.0/8',      'Loopback',                            'RFC 3330', ],
     [ 0, 0, '128.0.0.0/16',     'Reserved (IANA)',                     'RFC 3330', ],
