@@ -230,6 +230,12 @@ sub paranoid_check {
     my ($class_or_this, $data, $closure, $my_use_threads) = @_;
     my $this = $class_or_this->_this;
 
+    # remove v4-mapped-v6 suffix
+    if ($use_ipv6 && $data =~ /^::ffff:([0-9.]+)$/i) {
+	warn "paranoid check with v4-mapped-v6 address. please fix caller side: $data";
+	$data = $1;
+    }
+
     # stage 1
     $this->resolve(
 	'host', $data, sub {
