@@ -231,6 +231,7 @@ sub paranoid_check {
     my $this = $class_or_this->_this;
 
     # remove v4-mapped-v6 suffix
+    # (based http://hanzubon.jp/node/5784, with minor changes)
     if ($use_ipv6 && $data =~ /^::ffff:([0-9.]+)$/i) {
 	warn "paranoid check with v4-mapped-v6 address. please fix caller side: $data";
 	$data = $1;
