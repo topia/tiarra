@@ -345,9 +345,10 @@ sub define_enum {
 	} else {
 	    @funcnames = $_;
 	}
+	my $j = $i;
 	$pkg->define_function(
 	    $pkg->get_package,
-	    sub () { $i; },
+	    sub () { $j; },
 	    @funcnames);
 	++$i;
     }

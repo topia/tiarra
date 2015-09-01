@@ -165,7 +165,7 @@ sub _eval_pre {
 	}
 	defined $result ? $result : '';
     };
-    $body =~ s/\%PRE{(.+?)}ERP\%/$evaluate->($1)/seg;
+    $body =~ s/\%PRE\{(.+?)}ERP\%/$evaluate->($1)/seg;
     $body;
 }
 
