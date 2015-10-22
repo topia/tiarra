@@ -1667,7 +1667,7 @@ sub _parse_response
                                        <meta(?:\s[^>]*?)?\s
                                        (?:http-equiv\s*=\s*(["']?)Content-Type\1(?:\s[^>]*?)?\scontent\s*=\s*(["']?)\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\2|
                                           content\s*=\s*(["']?)\w+/\w+(?:\+\w+)*\s*;\s*charset=([-\w]+)\4(?:\s[^>]+?)?\shttp-equiv\s*=\s*(["']?)Content-Type\6|
-                                          charset\s*=\s*(["']?)([-\w])+\7)
+                                          charset\s*=\s*(["']?)([-\w]+)\7)
                                        (?:\s[^>]*|/)?>
                                      }ix )
   {
