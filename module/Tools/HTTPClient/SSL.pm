@@ -33,6 +33,7 @@ sub new
   my $this = bless {}, $pkg;
   $this->{eol}  = $eol;
   $this->{host} = undef;
+  $this->{addr} = undef;
   $this->{port} = undef;
   $this->{ssl}  = undef;
   $this->{queue}   = [];
@@ -72,19 +73,22 @@ sub DESTROY
 }
 
 # -----------------------------------------------------------------------------
-# $obj->connect($host, $port).
+# $obj->connect($host, $addr, $port).
 #
 sub connect
 {
   my $this  = shift;
   my $host  = shift;
+  my $addr  = shift;
   my $port  = shift;
 
   $this->{host} = $host;
+  $this->{addr} = $addr;
   $this->{port} = $port;
   $this->{ssl}  = IO::Socket::SSL->new(
-    PeerHost => $host,
+    PeerAddr => $addr,
     PeerPort => $port,
+    (IO::Socket::SSL->can_client_sni() ? (SSL_hostname => $host) : ()),
     ($^O eq 'MSWin32' ? () : (Blocking => 0)),
   );
   if( !$this->{ssl} )

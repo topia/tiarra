@@ -309,7 +309,7 @@ sub _resolved
     # 接続
     if( $this->{with_ssl} )
     {
-      $this->{socket} = Tools::HTTPClient::SSL->new()->connect($addr, $port);
+      $this->{socket} = Tools::HTTPClient::SSL->new()->connect($this->{host}, $addr, $port);
     }else
     {
       $this->{socket} = LinedINETSocket->new()->connect($addr, $port);
