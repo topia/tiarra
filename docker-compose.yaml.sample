@@ -1,0 +1,28 @@
+version: '3.7'
+x-services-base:
+  x-tiarra: &tiarra
+    build: .
+    image: example.com/tiarra:latest
+    environment: &tiarra-envs
+      LANG: ja_JP.UTF-8
+      TZ: Asia/Tokyo
+      RUN_USER: "${RUN_USER:-}"
+      RUN_UID: "${RUN_UID:-}"
+      RUN_GROUP: "${RUN_GROUP:-}"
+      RUN_GID: "${RUN_GID:-}"
+      TIARRA_CONFIG: "${TIARRA_CONFIG:-}"
+      TIARRA_WORK_DIR: "${TIARRA_WORK_DIR:-}"
+    restart: on-failure
+    init: true
+    stop_grace_period: 5m
+    command:
+      - --debug
+
+services:
+  tiarra:
+    <<: *tiarra
+    environment:
+      <<: *tiarra-envs
+      TIARRA_WORK_DIR: /work
+    volumes:
+      - ./:/work

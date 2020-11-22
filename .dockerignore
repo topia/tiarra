@@ -1,0 +1,12 @@
+*
+!bundle
+!tiarra
+!main
+!module
+!doc
+!doc-src
+!makedoc
+!mini.conf
+!LICENSE
+!README*
+!docker-startup.sh
