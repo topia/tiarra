@@ -140,7 +140,7 @@ sub _eval_code {
 	}
 	$result;
     };
-    (my $evaluated = $str) =~ s/\%CODE\{(.*?)}EDOC\%/$eval->($1)/eg;
+    (my $evaluated = $str) =~ s/\%CODE\{(.*?)\}EDOC\%/$eval->($1)/eg;
     $evaluated;
 }
 
