@@ -362,6 +362,7 @@ sub get_env {
     push @lines, "  - Perl $Config{version} built for $Config{archname}";
     push @lines, "Optional Modules:";
     push @lines, map "  $_", Tiarra::OptionalModules->repr_modules(&debug_mode);
+    push @lines, "  (Please use TIARRA_DISABLE_[FEATURE_NAME_IN_UPPERCASE] env-var to disable force)";
     push @lines, "Bundle Modules:";
     foreach my $mod (qw(Unicode::Japanese enum)) {
 	my $modfile = $mod . '.pm';
