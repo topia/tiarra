@@ -144,7 +144,7 @@ sub send_im_kayac {
 sub config_prowl {
     my ($this, $config) = @_;
 
-    require Crypt::SSLeay; # https support
+    require LWP::Protocol::https; # https support
     require URI;
 
     my $url = URI->new("https://api.prowlapp.com/publicapi/verify");
@@ -226,7 +226,7 @@ sub config_boxcar {
     my $runloop = $this->_runloop;
     if (!$config->provider_key) {
 	# growl mode
-	require Crypt::SSLeay; # https support
+	require LWP::Protocol::https; # https support
 	if (!$config->user || !$config->password) {
 	    $runloop->notify_warn(__PACKAGE__." boxcar (Growl): please set user and/or password");
 	}
@@ -315,7 +315,7 @@ sub send_boxcar {
 sub config_notifo {
     my ($this, $config) = @_;
 
-    require Crypt::SSLeay; # https support
+    require LWP::Protocol::https; # https support
     require MIME::Base64;
 
     return # subscribe_user is not work with user account
@@ -399,7 +399,7 @@ sub config_nma {
     # see also http://www.cocoaforge.com/viewtopic.php?f=45&t=20765#p129361
     # and check send_prowl and send_nma.
 
-    require Crypt::SSLeay; # https support
+    require LWP::Protocol::https; # https support
     require URI;
 
     foreach my $apikey (split(/,/, $config->apikey)) {
