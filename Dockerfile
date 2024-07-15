@@ -1,4 +1,4 @@
-FROM perl:5.32-threaded
+FROM perl:5.41-threaded
 MAINTAINER Topia <topia@clovery.jp>
 
 RUN \
